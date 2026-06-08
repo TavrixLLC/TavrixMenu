@@ -669,7 +669,7 @@ Rules:
 - Use green CTA for save/publish actions
 - Use red only for destructive actions
 - Use bottom sheets for quick edit actions
-- Use clear empty states for missing menu items/products
+- Use clear empty states for missing menu items
 - QR code screen should have a large preview card and share/download buttons
 
 ## Mobile Responsive Rules
@@ -740,7 +740,7 @@ Image rules:
 flutter:
   assets:
     - assets/images/
-    - assets/images/products/
+    - assets/images/menu-items/
     - assets/images/categories/
     - assets/images/rewards/
     - assets/icons/
@@ -773,19 +773,19 @@ Suggested feature state:
 Recommended backend contracts:
 
 ```text
-GET    /restaurants/:id
-GET    /restaurants/:id/menu
-GET    /restaurants/:id/products
-GET    /products/:id
+GET    /businesses/me
+GET    /businesses/:id/categories
+GET    /businesses/:id/items
+GET    /items/:id
 POST   /cart/price-preview
 POST   /orders
 GET    /orders
 GET    /loyalty/profile
 POST   /loyalty/cards/generate
 POST   /ai/recommendations
-POST   /admin/products
-PATCH  /admin/products/:id
-DELETE /admin/products/:id
+POST   /businesses/:id/items
+PATCH  /items/:id
+DELETE /items/:id
 POST   /admin/assets/upload
 POST   /admin/qr-code/generate
 POST   /admin/domain/connect
