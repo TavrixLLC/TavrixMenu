@@ -1,0 +1,180 @@
+generator client {
+  provider = "prisma-client-js"
+}
+
+datasource db {
+  provider = "postgresql"
+  url      = env("DATABASE_URL")
+}
+
+model User {
+  id              String         @id @default(cuid())
+  clerkUserId     String?        @unique @map("clerk_user_id")
+  name            String?
+  email           String?
+  phone           String?
+  status          UserStatus     @default(ACTIVE)
+  createdAt       DateTime       @default(now()) @map("created_at")
+  updatedAt       DateTime       @updatedAt @map("updated_at")
+  ownedBusinesses Business[]     @relation("BusinessOwner")
+  businessUsers   BusinessUser[]
+  auditLogs       AuditLog[]
+
+  @@map("users")
+}
+
+model Business {
+  id             String         @id @default(cuid())
+  ownerId        String         @map("owner_id")
+  name           String
+  slug           String         @unique
+  type           String
+  logoUrl        String?        @map("logo_url")
+  coverUrl       String?        @map("cover_url")
+  currency       String         @default("IQD")
+  language       String         @default("ar")
+  city           String?
+  status         BusinessStatus @default(ACTIVE)
+  createdAt      DateTime       @default(now()) @map("created_at")
+  updatedAt      DateTime       @updatedAt @map("updated_at")
+  owner          User           @relation("BusinessOwner", fields: [ownerId], references: [id], onDelete: Restrict)
+  businessUsers  BusinessUser[]
+  menuCategories MenuCategory[]
+  menuItems      MenuItem[]
+  subscriptions  Subscription[]
+  auditLogs      AuditLog[]
+
+  @@index([ownerId])
+  @@map("businesses")
+}
+
+model BusinessUser {
+  id         String             @id @default(cuid())
+  businessId String             @map("business_id")
+  userId     String             @map("user_id")
+  role       BusinessUserRole
+  status     BusinessUserStatus @default(ACTIVE)
+  createdAt  DateTime           @default(now()) @map("created_at")
+  updatedAt  DateTime           @updatedAt @map("updated_at")
+  business   Business           @relation(fields: [businessId], references: [id], onDelete: Cascade)
+  user       User               @relation(fields: [userId], references: [id], onDelete: Cascade)
+
+  @@unique([businessId, userId])
+  @@index([userId])
+  @@map("business_users")
+}
+
+model MenuCategory {
+  id         String     @id @default(cuid())
+  businessId String     @map("business_id")
+  nameAr     String     @map("name_ar")
+  nameEn     String?    @map("name_en")
+  sortOrder  Int        @default(0) @map("sort_order")
+  isActive   Boolean    @default(true) @map("is_active")
+  createdAt  DateTime   @default(now()) @map("created_at")
+  updatedAt  DateTime   @updatedAt @map("updated_at")
+  business   Business   @relation(fields: [businessId], references: [id], onDelete: Cascade)
+  items      MenuItem[]
+
+  @@index([businessId])
+  @@map("menu_categories")
+}
+
+model MenuItem {
+  id            String       @id @default(cuid())
+  businessId    String       @map("business_id")
+  categoryId    String       @map("category_id")
+  nameAr        String       @map("name_ar")
+  nameEn        String?      @map("name_en")
+  descriptionAr String?      @map("description_ar")
+  descriptionEn String?      @map("description_en")
+  price         Decimal      @db.Decimal(10, 2)
+  imageUrl      String?      @map("image_url")
+  isAvailable   Boolean      @default(true) @map("is_available")
+  sortOrder     Int          @default(0) @map("sort_order")
+  createdAt     DateTime     @default(now()) @map("created_at")
+  updatedAt     DateTime     @updatedAt @map("updated_at")
+  business      Business     @relation(fields: [businessId], references: [id], onDelete: Cascade)
+  category      MenuCategory @relation(fields: [categoryId], references: [id], onDelete: Restrict)
+
+  @@index([businessId])
+  @@index([categoryId])
+  @@map("menu_items")
+}
+
+model Plan {
+  id                   String         @id @default(cuid())
+  name                 String         @unique
+  stripeMonthlyPriceId String?        @map("stripe_monthly_price_id")
+  stripeYearlyPriceId  String?        @map("stripe_yearly_price_id")
+  limitsJson           Json           @map("limits_json")
+  createdAt            DateTime       @default(now()) @map("created_at")
+  updatedAt            DateTime       @updatedAt @map("updated_at")
+  subscriptions        Subscription[]
+
+  @@map("plans")
+}
+
+model Subscription {
+  id                   String             @id @default(cuid())
+  businessId           String             @map("business_id")
+  planId               String             @map("plan_id")
+  stripeCustomerId     String?            @map("stripe_customer_id")
+  stripeSubscriptionId String?            @map("stripe_subscription_id")
+  status               SubscriptionStatus @default(INACTIVE)
+  currentPeriodEnd     DateTime?          @map("current_period_end")
+  createdAt            DateTime           @default(now()) @map("created_at")
+  updatedAt            DateTime           @updatedAt @map("updated_at")
+  business             Business           @relation(fields: [businessId], references: [id], onDelete: Cascade)
+  plan                 Plan               @relation(fields: [planId], references: [id], onDelete: Restrict)
+
+  @@index([businessId])
+  @@index([planId])
+  @@map("subscriptions")
+}
+
+model AuditLog {
+  id           String    @id @default(cuid())
+  businessId   String?   @map("business_id")
+  userId       String?   @map("user_id")
+  action       String
+  metadataJson Json?     @map("metadata_json")
+  createdAt    DateTime  @default(now()) @map("created_at")
+  business     Business? @relation(fields: [businessId], references: [id], onDelete: SetNull)
+  user         User?     @relation(fields: [userId], references: [id], onDelete: SetNull)
+
+  @@index([businessId])
+  @@index([userId])
+  @@map("audit_logs")
+}
+
+enum UserStatus {
+  ACTIVE
+  SUSPENDED
+}
+
+enum BusinessStatus {
+  ACTIVE
+  SUSPENDED
+  PENDING
+}
+
+enum BusinessUserRole {
+  OWNER
+  MANAGER
+  STAFF
+}
+
+enum BusinessUserStatus {
+  ACTIVE
+  INVITED
+  DISABLED
+}
+
+enum SubscriptionStatus {
+  INACTIVE
+  TRIALING
+  ACTIVE
+  PAST_DUE
+  CANCELED
+}

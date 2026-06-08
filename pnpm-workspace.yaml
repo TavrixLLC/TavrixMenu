@@ -1,0 +1,5 @@
+packages:
+  - apps/api
+  - apps/customer-web
+  - apps/admin-web
+  - packages/*

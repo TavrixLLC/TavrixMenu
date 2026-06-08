@@ -1,0 +1,10 @@
+{
+  "name": "@tavrix-menu/config",
+  "version": "0.1.0",
+  "private": true,
+  "description": "Placeholder shared configuration package for Tavrix Menu.",
+  "scripts": {
+    "build": "echo \"No shared config build needed yet\"",
+    "lint": "echo \"No shared config lint needed yet\""
+  }
+}
