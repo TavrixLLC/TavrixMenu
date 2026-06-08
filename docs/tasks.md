@@ -1,5 +1,7 @@
 # Initial Team Split
 
+For the detailed team workflow, see [01-team-workflow.md](01-team-workflow.md).
+
 ## Person 1 Backend
 
 - apps/api

@@ -1,5 +1,7 @@
 # Clerk Setup
 
+For the detailed auth guide, see [06-auth-clerk.md](06-auth-clerk.md).
+
 Clerk is planned for business owners, managers, staff, and Tavrix Menu admins only.
 
 Customers do not use Clerk. Customers browse public menu pages without authentication and will later be managed internally through name, phone, and loyalty card token records.

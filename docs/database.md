@@ -1,5 +1,7 @@
 # Database
 
+For the detailed current schema guide, see [04-database-schema.md](04-database-schema.md).
+
 The initial Tavrix Menu schema includes users, businesses, business memberships, menu categories, menu items, plans, subscriptions, and audit logs.
 
 ## Why business_id
