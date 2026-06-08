@@ -21,6 +21,10 @@ docs/             API, database, auth, billing, env, and team docs
 
 Customers do not need to download an app. The Flutter app is only for business owners, managers, and staff. Clerk is planned only for business users, staff, and admins. Public customer menu browsing does not require authentication.
 
+## Documentation
+
+Start with [docs/README.md](docs/README.md). The numbered docs are the project handoff source for team workflow, architecture, API contracts, database rules, auth, billing, security, roadmap, and reusable Codex prompts.
+
 ## Install Dependencies
 
 Enable pnpm through Corepack if pnpm is not already installed:

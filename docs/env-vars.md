@@ -1,5 +1,7 @@
 # Environment Variables
 
+For local setup instructions, see [02-local-development.md](02-local-development.md).
+
 Do not commit real secrets. Use local `.env` files copied from each app's `.env.example`.
 
 ## apps/api

@@ -1,5 +1,7 @@
 # Stripe Plans
 
+For the detailed billing guide, see [11-stripe-billing.md](11-stripe-billing.md).
+
 Stripe billing is planned for monthly and yearly Tavrix Menu subscriptions. Actual Stripe product IDs and price IDs will be configured later.
 
 ## Tavrix Menu Basic
