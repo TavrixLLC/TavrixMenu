@@ -26,6 +26,7 @@ async function bootstrap() {
     .setTitle('Tavrix Menu API')
     .setDescription('Initial API foundation for Tavrix Menu.')
     .setVersion('0.1.0')
+    .addBearerAuth()
     .build();
 
   const swaggerDocument = SwaggerModule.createDocument(app, swaggerConfig);
