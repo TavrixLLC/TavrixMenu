@@ -64,6 +64,10 @@ and defaults to `http://localhost:3001` for local development.
 
 - Categories belong to one business.
 - Categories are sorted by `sortOrder`.
+- Business management lists return only categories where `isActive = true` by
+  default.
+- Business management lists can pass `includeInactive=true` to include archived
+  categories.
 - Public menu shows only categories where `isActive = true`.
 - Arabic name is required.
 - English name is optional.
@@ -73,6 +77,10 @@ and defaults to `http://localhost:3001` for local development.
 
 - Items belong to one business and one category.
 - Items are sorted by `sortOrder`.
+- Business management lists return only items where `isAvailable = true` by
+  default.
+- Business management lists can pass `includeInactive=true` to include
+  unavailable or archived items.
 - Public menu shows only items where `isAvailable = true`.
 - Price is stored as a Decimal in the database.
 - `imageUrl` is optional.
