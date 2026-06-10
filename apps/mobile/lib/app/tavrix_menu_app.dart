@@ -6,6 +6,7 @@ import '../features/auth/presentation/bloc/auth_cubit.dart';
 import '../features/business_setup/presentation/bloc/business_setup_cubit.dart';
 import '../features/dashboard/presentation/bloc/dashboard_cubit.dart';
 import '../features/menu/presentation/bloc/menu_cubit.dart';
+import '../features/qr/presentation/bloc/qr_cubit.dart';
 import 'di/injection.dart';
 import 'router/app_router.dart';
 import 'router/route_names.dart';
@@ -39,6 +40,7 @@ class _TavrixMenuAppState extends State<TavrixMenuApp> {
         ),
         BlocProvider<DashboardCubit>.value(value: _dependencies.dashboardCubit),
         BlocProvider<MenuCubit>.value(value: _dependencies.menuCubit),
+        BlocProvider<QRCubit>.value(value: _dependencies.qrCubit),
       ],
       child: MaterialApp(
         title: 'Tavrix Menu',

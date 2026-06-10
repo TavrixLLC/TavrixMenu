@@ -1,6 +1,7 @@
 import 'package:dartz/dartz.dart';
 
 import '../../../../core/errors/failures.dart';
+import '../entities/menu_item.dart';
 import '../repositories/menu_repository.dart';
 
 class UpdateMenuItem {
@@ -8,19 +9,29 @@ class UpdateMenuItem {
 
   final MenuRepository _repository;
 
-  Future<Either<Failure, Unit>> call({
+  Future<Either<Failure, MenuItem>> call({
     required String id,
-    required String name,
-    required String description,
-    required int priceCents,
-    required bool isAvailable,
+    required String categoryId,
+    required String nameAr,
+    required String price,
+    String? nameEn,
+    String? descriptionAr,
+    String? descriptionEn,
+    String? imageUrl,
+    bool isAvailable = true,
+    int sortOrder = 0,
   }) {
     return _repository.updateItem(
       id: id,
-      name: name,
-      description: description,
-      priceCents: priceCents,
+      categoryId: categoryId,
+      nameAr: nameAr,
+      nameEn: nameEn,
+      descriptionAr: descriptionAr,
+      descriptionEn: descriptionEn,
+      price: price,
+      imageUrl: imageUrl,
       isAvailable: isAvailable,
+      sortOrder: sortOrder,
     );
   }
 }

@@ -5,7 +5,12 @@ class BusinessModel extends Business {
     required super.id,
     required super.name,
     required super.slug,
+    required super.type,
+    required super.role,
     required super.publicMenuUrl,
+    super.city,
+    super.currency,
+    super.language,
   });
 
   factory BusinessModel.fromJson(Map<String, dynamic> json) {
@@ -15,10 +20,15 @@ class BusinessModel extends Business {
       id: json['id'] as String? ?? '',
       name: json['name'] as String? ?? '',
       slug: slug,
+      type: json['type'] as String? ?? 'cafe',
+      role: json['role'] as String? ?? '',
       publicMenuUrl:
           json['public_menu_url'] as String? ??
           json['publicMenuUrl'] as String? ??
-          'https://menu.tavrix.com/$slug',
+          '',
+      city: json['city'] as String?,
+      currency: json['currency'] as String? ?? 'IQD',
+      language: json['language'] as String? ?? 'ar',
     );
   }
 
@@ -27,7 +37,12 @@ class BusinessModel extends Business {
       id: id,
       name: name,
       slug: slug,
+      type: type,
+      role: role,
       publicMenuUrl: publicMenuUrl,
+      city: city,
+      currency: currency,
+      language: language,
     );
   }
 }

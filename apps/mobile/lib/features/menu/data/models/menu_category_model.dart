@@ -4,8 +4,10 @@ class MenuCategoryModel extends MenuCategory {
   const MenuCategoryModel({
     required super.id,
     required super.businessId,
-    required super.name,
+    required super.nameAr,
     required super.sortOrder,
+    super.nameEn,
+    super.isActive,
   });
 
   factory MenuCategoryModel.fromJson(Map<String, dynamic> json) {
@@ -13,8 +15,14 @@ class MenuCategoryModel extends MenuCategory {
       id: json['id'] as String? ?? '',
       businessId:
           json['business_id'] as String? ?? json['businessId'] as String? ?? '',
-      name: json['name'] as String? ?? '',
-      sortOrder: json['sort_order'] as int? ?? json['sortOrder'] as int? ?? 0,
+      nameAr:
+          json['nameAr'] as String? ??
+          json['name_ar'] as String? ??
+          json['name'] as String? ??
+          '',
+      nameEn: json['nameEn'] as String? ?? json['name_en'] as String?,
+      sortOrder: json['sortOrder'] as int? ?? json['sort_order'] as int? ?? 0,
+      isActive: json['isActive'] as bool? ?? json['is_active'] as bool? ?? true,
     );
   }
 
@@ -22,8 +30,10 @@ class MenuCategoryModel extends MenuCategory {
     return MenuCategory(
       id: id,
       businessId: businessId,
-      name: name,
+      nameAr: nameAr,
+      nameEn: nameEn,
       sortOrder: sortOrder,
+      isActive: isActive,
     );
   }
 }

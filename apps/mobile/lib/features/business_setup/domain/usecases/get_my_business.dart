@@ -9,7 +9,7 @@ class GetMyBusiness {
 
   final BusinessRepository _repository;
 
-  Future<Either<Failure, Business>> call() {
+  Future<Either<Failure, Business?>> call() {
     return _repository.getMyBusiness();
   }
 }

@@ -9,25 +9,48 @@ abstract class MenuRepository {
 
   Future<Either<Failure, MenuCategory>> createCategory({
     required String businessId,
-    required String name,
+    required String nameAr,
+    String? nameEn,
+    int sortOrder = 0,
+    bool isActive = true,
   });
+
+  Future<Either<Failure, MenuCategory>> updateCategory({
+    required String id,
+    required String nameAr,
+    String? nameEn,
+    int sortOrder = 0,
+    bool isActive = true,
+  });
+
+  Future<Either<Failure, Unit>> deleteCategory(String id);
 
   Future<Either<Failure, List<MenuItem>>> getItems(String businessId);
 
   Future<Either<Failure, MenuItem>> createItem({
     required String businessId,
     required String categoryId,
-    required String name,
-    required String description,
-    required int priceCents,
+    required String nameAr,
+    required String price,
+    String? nameEn,
+    String? descriptionAr,
+    String? descriptionEn,
+    String? imageUrl,
+    bool isAvailable = true,
+    int sortOrder = 0,
   });
 
-  Future<Either<Failure, Unit>> updateItem({
+  Future<Either<Failure, MenuItem>> updateItem({
     required String id,
-    required String name,
-    required String description,
-    required int priceCents,
-    required bool isAvailable,
+    required String categoryId,
+    required String nameAr,
+    required String price,
+    String? nameEn,
+    String? descriptionAr,
+    String? descriptionEn,
+    String? imageUrl,
+    bool isAvailable = true,
+    int sortOrder = 0,
   });
 
   Future<Either<Failure, Unit>> deleteItem(String id);

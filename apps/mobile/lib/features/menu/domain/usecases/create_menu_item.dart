@@ -12,16 +12,26 @@ class CreateMenuItem {
   Future<Either<Failure, MenuItem>> call({
     required String businessId,
     required String categoryId,
-    required String name,
-    required String description,
-    required int priceCents,
+    required String nameAr,
+    required String price,
+    String? nameEn,
+    String? descriptionAr,
+    String? descriptionEn,
+    String? imageUrl,
+    bool isAvailable = true,
+    int sortOrder = 0,
   }) {
     return _repository.createItem(
       businessId: businessId,
       categoryId: categoryId,
-      name: name,
-      description: description,
-      priceCents: priceCents,
+      nameAr: nameAr,
+      nameEn: nameEn,
+      descriptionAr: descriptionAr,
+      descriptionEn: descriptionEn,
+      price: price,
+      imageUrl: imageUrl,
+      isAvailable: isAvailable,
+      sortOrder: sortOrder,
     );
   }
 }

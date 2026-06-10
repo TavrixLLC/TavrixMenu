@@ -5,10 +5,14 @@ class MenuItemModel extends MenuItem {
     required super.id,
     required super.businessId,
     required super.categoryId,
-    required super.name,
-    required super.description,
-    required super.priceCents,
+    required super.nameAr,
+    required super.price,
     required super.isAvailable,
+    super.nameEn,
+    super.descriptionAr,
+    super.descriptionEn,
+    super.imageUrl,
+    super.sortOrder,
   });
 
   factory MenuItemModel.fromJson(Map<String, dynamic> json) {
@@ -18,12 +22,27 @@ class MenuItemModel extends MenuItem {
           json['business_id'] as String? ?? json['businessId'] as String? ?? '',
       categoryId:
           json['category_id'] as String? ?? json['categoryId'] as String? ?? '',
-      name: json['name'] as String? ?? '',
-      description: json['description'] as String? ?? '',
-      priceCents:
-          json['price_cents'] as int? ?? json['priceCents'] as int? ?? 0,
+      nameAr:
+          json['nameAr'] as String? ??
+          json['name_ar'] as String? ??
+          json['name'] as String? ??
+          '',
+      nameEn: json['nameEn'] as String? ?? json['name_en'] as String?,
+      descriptionAr:
+          json['descriptionAr'] as String? ??
+          json['description_ar'] as String? ??
+          json['description'] as String?,
+      descriptionEn:
+          json['descriptionEn'] as String? ?? json['description_en'] as String?,
+      price:
+          json['price']?.toString() ??
+          json['price_cents']?.toString() ??
+          json['priceCents']?.toString() ??
+          '',
+      imageUrl: json['imageUrl'] as String? ?? json['image_url'] as String?,
       isAvailable:
-          json['is_available'] as bool? ?? json['isAvailable'] as bool? ?? true,
+          json['isAvailable'] as bool? ?? json['is_available'] as bool? ?? true,
+      sortOrder: json['sortOrder'] as int? ?? json['sort_order'] as int? ?? 0,
     );
   }
 
@@ -32,10 +51,14 @@ class MenuItemModel extends MenuItem {
       id: id,
       businessId: businessId,
       categoryId: categoryId,
-      name: name,
-      description: description,
-      priceCents: priceCents,
+      nameAr: nameAr,
+      nameEn: nameEn,
+      descriptionAr: descriptionAr,
+      descriptionEn: descriptionEn,
+      price: price,
+      imageUrl: imageUrl,
       isAvailable: isAvailable,
+      sortOrder: sortOrder,
     );
   }
 }

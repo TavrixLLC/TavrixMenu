@@ -86,9 +86,7 @@ class ApiClient {
         throw const NotFoundException();
       }
       if (statusCode == 422) {
-        throw ValidationException(
-          error.response?.data.toString() ?? 'Validation failed.',
-        );
+        throw ValidationException(_validationMessage(error.response?.data));
       }
 
       throw ServerException(
@@ -97,5 +95,19 @@ class ApiClient {
             'API request failed.',
       );
     }
+  }
+
+  String _validationMessage(dynamic data) {
+    if (data is Map) {
+      final message = data['message'] ?? data['error'];
+      if (message is String && message.trim().isNotEmpty) {
+        return message.trim();
+      }
+      if (message is List && message.isNotEmpty) {
+        return message.whereType<String>().join('\n');
+      }
+    }
+
+    return 'Please check the form values and try again.';
   }
 }

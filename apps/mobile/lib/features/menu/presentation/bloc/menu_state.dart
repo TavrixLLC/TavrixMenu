@@ -13,6 +13,8 @@ class MenuState extends Equatable {
     this.categories = const [],
     this.items = const [],
     this.errorMessage,
+    this.successMessage,
+    this.isSubmitting = false,
   });
 
   const MenuState.initial() : this(status: MenuStatus.initial);
@@ -22,6 +24,8 @@ class MenuState extends Equatable {
   final List<MenuCategory> categories;
   final List<MenuItem> items;
   final String? errorMessage;
+  final String? successMessage;
+  final bool isSubmitting;
 
   MenuState copyWith({
     MenuStatus? status,
@@ -29,7 +33,10 @@ class MenuState extends Equatable {
     List<MenuCategory>? categories,
     List<MenuItem>? items,
     String? errorMessage,
+    String? successMessage,
+    bool? isSubmitting,
     bool clearError = false,
+    bool clearSuccess = false,
   }) {
     return MenuState(
       status: status ?? this.status,
@@ -37,6 +44,10 @@ class MenuState extends Equatable {
       categories: categories ?? this.categories,
       items: items ?? this.items,
       errorMessage: clearError ? null : errorMessage ?? this.errorMessage,
+      successMessage: clearSuccess
+          ? null
+          : successMessage ?? this.successMessage,
+      isSubmitting: isSubmitting ?? this.isSubmitting,
     );
   }
 
@@ -47,5 +58,7 @@ class MenuState extends Equatable {
     categories,
     items,
     errorMessage,
+    successMessage,
+    isSubmitting,
   ];
 }

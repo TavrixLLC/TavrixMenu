@@ -12,8 +12,18 @@ class UpdateBusiness {
   Future<Either<Failure, Business>> call({
     required String id,
     required String name,
-    required String slug,
+    required String type,
+    required String currency,
+    required String language,
+    String? city,
   }) {
-    return _repository.updateBusiness(id: id, name: name, slug: slug);
+    return _repository.updateBusiness(
+      id: id,
+      name: name,
+      type: type,
+      city: city,
+      currency: currency,
+      language: language,
+    );
   }
 }

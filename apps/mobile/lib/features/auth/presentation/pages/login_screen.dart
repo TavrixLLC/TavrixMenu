@@ -1,6 +1,7 @@
 import 'package:flutter/material.dart';
 import 'package:flutter_bloc/flutter_bloc.dart';
 
+import '../../../../app/config/app_config.dart';
 import '../../../../app/router/route_names.dart';
 import '../../../../core/constants/app_colors.dart';
 import '../../../../core/constants/app_radius.dart';
@@ -13,10 +14,14 @@ import '../bloc/auth_cubit.dart';
 import '../bloc/auth_state.dart';
 
 class LoginScreen extends StatelessWidget {
-  const LoginScreen({super.key});
+  const LoginScreen({super.key, this.config});
+
+  final AppConfig? config;
 
   @override
   Widget build(BuildContext context) {
+    final appConfig = config ?? AppConfig.fromEnvironment();
+
     return BlocConsumer<AuthCubit, AuthState>(
       listener: (context, state) {
         if (state.status == AuthStatus.authenticated) {
@@ -77,15 +82,22 @@ class LoginScreen extends StatelessWidget {
                 ErrorView(message: state.errorMessage!),
               ],
               const SizedBox(height: AppSpacing.lg),
-              AppButton(
-                label: state.status == AuthStatus.loading
-                    ? 'Preparing'
-                    : 'Continue in dev mode',
-                icon: Icons.login,
-                onPressed: state.status == AuthStatus.loading
-                    ? null
-                    : () => context.read<AuthCubit>().signInDevMode(),
-              ),
+              if (appConfig.devAuthEnabled)
+                AppButton(
+                  label: state.status == AuthStatus.loading
+                      ? 'Preparing'
+                      : 'Continue in dev mode',
+                  icon: Icons.login,
+                  onPressed: state.status == AuthStatus.loading
+                      ? null
+                      : () => context.read<AuthCubit>().signInDevMode(),
+                )
+              else
+                const AppCard(
+                  child: Text(
+                    'Developer sign-in is unavailable for this build.',
+                  ),
+                ),
             ],
           ),
         );

@@ -35,12 +35,27 @@ class BusinessHeaderCard extends StatelessWidget {
             ),
             const SizedBox(height: AppSpacing.xs),
             Text(
-              business?.publicMenuUrl ??
-                  'Create your business profile before publishing a menu.',
+              business == null
+                  ? 'Create your business profile before publishing a menu.'
+                  : '/m/${business!.slug}',
               style: Theme.of(
                 context,
               ).textTheme.bodyMedium?.copyWith(color: AppColors.greenLight),
             ),
+            if (business != null) ...[
+              const SizedBox(height: AppSpacing.md),
+              Wrap(
+                spacing: AppSpacing.sm,
+                runSpacing: AppSpacing.sm,
+                children: [
+                  StatusBadge(label: business!.type),
+                  StatusBadge(
+                    label: business!.role.isEmpty ? 'OWNER' : business!.role,
+                  ),
+                  StatusBadge(label: business!.currency),
+                ],
+              ),
+            ],
           ],
         ),
       ),

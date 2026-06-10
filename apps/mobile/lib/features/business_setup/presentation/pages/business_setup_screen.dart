@@ -22,12 +22,15 @@ class BusinessSetupScreen extends StatefulWidget {
 
 class _BusinessSetupScreenState extends State<BusinessSetupScreen> {
   final _nameController = TextEditingController(text: 'Tavrix Demo Cafe');
-  final _slugController = TextEditingController(text: 'tavrix-demo-cafe');
+  final _cityController = TextEditingController();
+  String _type = 'cafe';
+  String _currency = 'IQD';
+  String _language = 'ar';
 
   @override
   void dispose() {
     _nameController.dispose();
-    _slugController.dispose();
+    _cityController.dispose();
     super.dispose();
   }
 
@@ -66,10 +69,61 @@ class _BusinessSetupScreenState extends State<BusinessSetupScreen> {
                       controller: _nameController,
                     ),
                     const SizedBox(height: AppSpacing.md),
+                    DropdownButtonFormField<String>(
+                      initialValue: _type,
+                      decoration: const InputDecoration(
+                        labelText: 'Business type',
+                      ),
+                      items: const [
+                        DropdownMenuItem(value: 'cafe', child: Text('Cafe')),
+                        DropdownMenuItem(
+                          value: 'restaurant',
+                          child: Text('Restaurant'),
+                        ),
+                        DropdownMenuItem(
+                          value: 'bakery',
+                          child: Text('Bakery'),
+                        ),
+                      ],
+                      onChanged: isLoading
+                          ? null
+                          : (value) => setState(() {
+                              _type = value ?? 'cafe';
+                            }),
+                    ),
+                    const SizedBox(height: AppSpacing.md),
                     AppTextField(
-                      label: 'Public slug',
-                      controller: _slugController,
-                      hint: 'my-cafe',
+                      label: 'City',
+                      controller: _cityController,
+                      hint: 'Baghdad',
+                    ),
+                    const SizedBox(height: AppSpacing.md),
+                    DropdownButtonFormField<String>(
+                      initialValue: _currency,
+                      decoration: const InputDecoration(labelText: 'Currency'),
+                      items: const [
+                        DropdownMenuItem(value: 'IQD', child: Text('IQD')),
+                        DropdownMenuItem(value: 'USD', child: Text('USD')),
+                      ],
+                      onChanged: isLoading
+                          ? null
+                          : (value) => setState(() {
+                              _currency = value ?? 'IQD';
+                            }),
+                    ),
+                    const SizedBox(height: AppSpacing.md),
+                    DropdownButtonFormField<String>(
+                      initialValue: _language,
+                      decoration: const InputDecoration(labelText: 'Language'),
+                      items: const [
+                        DropdownMenuItem(value: 'ar', child: Text('Arabic')),
+                        DropdownMenuItem(value: 'en', child: Text('English')),
+                      ],
+                      onChanged: isLoading
+                          ? null
+                          : (value) => setState(() {
+                              _language = value ?? 'ar';
+                            }),
                     ),
                   ],
                 ),
@@ -87,7 +141,10 @@ class _BusinessSetupScreenState extends State<BusinessSetupScreen> {
                     ? null
                     : () => context.read<BusinessSetupCubit>().submit(
                         name: _nameController.text,
-                        slug: _slugController.text,
+                        type: _type,
+                        city: _cityController.text,
+                        currency: _currency,
+                        language: _language,
                       ),
               ),
             ],

@@ -2,6 +2,7 @@ import 'package:flutter/material.dart';
 
 import '../constants/app_colors.dart';
 import '../constants/app_radius.dart';
+import 'app_transitions.dart';
 
 class AppTheme {
   const AppTheme._();
@@ -16,6 +17,13 @@ class AppTheme {
         surface: AppColors.white,
       ),
       useMaterial3: true,
+      pageTransitionsTheme: const PageTransitionsTheme(
+        builders: {
+          TargetPlatform.android: FadeThroughPageTransitionsBuilder(),
+          TargetPlatform.iOS: FadeThroughPageTransitionsBuilder(),
+          TargetPlatform.fuchsia: FadeThroughPageTransitionsBuilder(),
+        },
+      ),
       scaffoldBackgroundColor: AppColors.neutralWarm,
       fontFamilyFallback: const ['Arial'],
       appBarTheme: const AppBarTheme(
