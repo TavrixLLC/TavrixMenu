@@ -24,8 +24,16 @@ async function bootstrap() {
 
   const swaggerConfig = new DocumentBuilder()
     .setTitle('Tavrix Menu API')
-    .setDescription('Initial API foundation for Tavrix Menu.')
+    .setDescription(
+      [
+        'Tavrix Menu backend API.',
+        'Development auth header:',
+        'Authorization: Bearer dev:user_test123;email=flutter_tester@tavrix.com;name=Flutter%20Tester'
+      ].join('\n\n')
+    )
     .setVersion('0.1.0')
+    .addServer('http://localhost:3000')
+    .addBearerAuth()
     .build();
 
   const swaggerDocument = SwaggerModule.createDocument(app, swaggerConfig);

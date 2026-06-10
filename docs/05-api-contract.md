@@ -1,16 +1,29 @@
 # API Contract
 
-This file is the working API plan. The only implemented endpoint in the foundation is `GET /health`; the rest are planned for Sprint 1 and later.
+This file is the working API contract. Sprint 1 implements health, Clerk-backed business auth, business profile endpoints, menu management, and public menu reads.
 
 Once Flutter or customer web depends on an endpoint, keep it backward compatible. Add fields without removing or renaming existing fields. Breaking changes require coordination across the team.
 
 ## Conventions
 
 - Authenticated requests use `Authorization: Bearer <clerk-token>`.
+- Local development can use:
+  `Authorization: Bearer dev:user_tavrix_owner;email=owner@tavrix.local;name=Tavrix%20Owner`.
 - Customers do not authenticate.
 - Business routes require a valid Clerk token and internal business membership.
 - Owner-only routes require `BusinessUser.role = OWNER` unless documented otherwise.
 - All errors use a consistent JSON shape.
+
+Backend base URLs:
+
+- Desktop: `http://localhost:3000`
+- Android emulator: `http://10.0.2.2:3000`
+- Physical phone: `http://<LAN-IP>:3000`
+
+Swagger:
+
+- UI: `http://localhost:3000/docs`
+- JSON: `http://localhost:3000/docs-json`
 
 Example error:
 
@@ -56,15 +69,21 @@ Response:
 
 ```json
 {
-  "id": "usr_123",
-  "clerkUserId": "user_abc",
-  "name": "Owner Name",
-  "email": "owner@example.com",
+  "user": {
+    "id": "usr_123",
+    "clerkUserId": "user_abc",
+    "name": "Owner Name",
+    "email": "owner@example.com",
+    "phone": null,
+    "status": "ACTIVE"
+  },
   "businesses": [
     {
-      "businessId": "bus_123",
-      "role": "OWNER",
-      "status": "ACTIVE"
+      "id": "bus_123",
+      "name": "Tavrix Cafe",
+      "slug": "tavrix-cafe",
+      "type": "cafe",
+      "role": "OWNER"
     }
   ]
 }
@@ -87,7 +106,6 @@ Request:
 ```json
 {
   "name": "Tavrix Cafe",
-  "slug": "tavrix-cafe",
   "type": "cafe",
   "city": "Baghdad",
   "currency": "IQD",
@@ -103,6 +121,11 @@ Response:
   "name": "Tavrix Cafe",
   "slug": "tavrix-cafe",
   "type": "cafe",
+  "logoUrl": null,
+  "coverUrl": null,
+  "currency": "IQD",
+  "language": "ar",
+  "city": "Baghdad",
   "status": "ACTIVE"
 }
 ```
@@ -125,6 +148,12 @@ Response:
     "id": "bus_123",
     "name": "Tavrix Cafe",
     "slug": "tavrix-cafe",
+    "type": "cafe",
+    "logoUrl": null,
+    "coverUrl": null,
+    "currency": "IQD",
+    "language": "ar",
+    "city": "Baghdad",
     "role": "OWNER",
     "status": "ACTIVE"
   }
@@ -139,7 +168,7 @@ Errors:
 
 Auth: Clerk required.
 
-Role: `OWNER` or `MANAGER`.
+Role: `OWNER`.
 
 Request:
 
@@ -159,6 +188,12 @@ Response:
   "id": "bus_123",
   "name": "Tavrix Cafe",
   "slug": "tavrix-cafe",
+  "type": "cafe",
+  "logoUrl": "https://example.com/logo.png",
+  "coverUrl": "https://example.com/cover.png",
+  "currency": "IQD",
+  "language": "ar",
+  "city": "Baghdad",
   "status": "ACTIVE"
 }
 ```
@@ -168,6 +203,191 @@ Errors:
 - `401` unauthenticated.
 - `403` missing business role.
 - `404` business not found.
+
+### GET /businesses/:id/app-context
+
+Auth: Clerk required.
+
+Role: `OWNER`, `MANAGER`, or `STAFF`.
+
+Purpose: one Flutter business-app bootstrap payload with current business,
+membership, permissions, and public menu link.
+
+Response:
+
+```json
+{
+  "business": {
+    "id": "bus_123",
+    "name": "Tavrix Cafe",
+    "slug": "tavrix-cafe",
+    "type": "cafe",
+    "city": "Baghdad",
+    "currency": "IQD",
+    "language": "ar",
+    "logoUrl": null,
+    "coverUrl": null
+  },
+  "currentMembership": {
+    "id": "mem_123",
+    "role": "OWNER",
+    "isActive": true
+  },
+  "permissions": {
+    "canManageBusiness": true,
+    "canManageMenu": true,
+    "canManageMembers": true,
+    "canViewMembers": true,
+    "canViewPublicLink": true
+  },
+  "publicMenu": {
+    "slug": "tavrix-cafe",
+    "path": "/m/tavrix-cafe",
+    "url": "http://localhost:3001/m/tavrix-cafe",
+    "qrPayload": "http://localhost:3001/m/tavrix-cafe"
+  }
+}
+```
+
+Errors:
+
+- `401` unauthenticated.
+- `403` missing active business membership.
+- `404` business not found.
+
+### GET /businesses/:id/public-link
+
+Auth: Clerk required.
+
+Role: `OWNER`, `MANAGER`, or `STAFF`.
+
+Response:
+
+```json
+{
+  "businessId": "bus_123",
+  "slug": "tavrix-cafe",
+  "publicMenuPath": "/m/tavrix-cafe",
+  "publicMenuUrl": "http://localhost:3001/m/tavrix-cafe",
+  "qrPayload": "http://localhost:3001/m/tavrix-cafe"
+}
+```
+
+`CUSTOMER_WEB_BASE_URL` controls the URL base and defaults locally to
+`http://localhost:3001`. The QR payload is the URL string; the backend does not
+generate QR images.
+
+Errors:
+
+- `401` unauthenticated.
+- `403` missing active business membership.
+- `404` business not found.
+
+### GET /businesses/:id/members
+
+Auth: Clerk required.
+
+Role: `OWNER` or `MANAGER`.
+
+Response includes active and inactive memberships:
+
+```json
+[
+  {
+    "id": "mem_123",
+    "userId": "usr_123",
+    "clerkUserId": "user_tavrix_owner",
+    "email": "owner@tavrix.local",
+    "name": "Tavrix Owner",
+    "phone": null,
+    "role": "OWNER",
+    "isActive": true,
+    "createdAt": "2026-06-10T00:00:00.000Z",
+    "updatedAt": "2026-06-10T00:00:00.000Z"
+  }
+]
+```
+
+Errors:
+
+- `401` unauthenticated.
+- `403` missing owner or manager role.
+
+### POST /businesses/:id/members
+
+Auth: Clerk required.
+
+Role: `OWNER`.
+
+Request:
+
+```json
+{
+  "clerkUserId": "user_tavrix_staff",
+  "email": "staff@tavrix.local",
+  "name": "Tavrix Staff",
+  "role": "STAFF"
+}
+```
+
+Behavior:
+
+- Finds or creates the user by `clerkUserId`.
+- Creates a membership if none exists.
+- Reactivates an inactive membership and updates its role.
+- Returns `409` if the membership already exists and is active.
+- Does not send email, create invite tokens, or call the Clerk Admin API.
+
+Errors:
+
+- `400` invalid body.
+- `401` unauthenticated.
+- `403` missing owner role.
+- `409` business member already active.
+
+### PATCH /businesses/:id/members/:memberId
+
+Auth: Clerk required.
+
+Role: `OWNER`.
+
+Request:
+
+```json
+{
+  "role": "MANAGER",
+  "isActive": true
+}
+```
+
+Rules:
+
+- Cannot demote the last active `OWNER`.
+- Cannot deactivate the last active `OWNER`.
+- A business must always have at least one active `OWNER`.
+
+Errors:
+
+- `400` last active owner protection failed or invalid body.
+- `401` unauthenticated.
+- `403` missing owner role.
+- `404` member not found for this business.
+
+### DELETE /businesses/:id/members/:memberId
+
+Auth: Clerk required.
+
+Role: `OWNER`.
+
+Behavior: soft deactivates the membership by setting it inactive. It never hard
+deletes the row.
+
+Errors:
+
+- `400` last active owner protection failed.
+- `401` unauthenticated.
+- `403` missing owner role.
+- `404` member not found for this business.
 
 ## Menu
 
@@ -278,7 +498,9 @@ Response:
 Errors:
 
 - `403` missing role.
-- `409` category has items and cannot be deleted until moved or archived.
+- `404` category not found.
+
+Behavior: this endpoint archives the category by setting `isActive = false`; public menus hide archived categories.
 
 ### POST /businesses/:id/items
 
@@ -394,6 +616,8 @@ Errors:
 - `403` missing role.
 - `404` item not found.
 
+Behavior: this endpoint archives the item by setting `isAvailable = false`; public menus hide unavailable items.
+
 ## Public
 
 ### GET /public/m/:slug
@@ -420,14 +644,18 @@ Response:
       "id": "cat_123",
       "nameAr": "المشروبات الساخنة",
       "nameEn": "Hot Drinks",
+      "sortOrder": 0,
       "items": [
         {
           "id": "item_123",
           "nameAr": "قهوة تركية",
           "nameEn": "Turkish Coffee",
+          "descriptionAr": "Traditional strong coffee.",
+          "descriptionEn": null,
           "price": "4500.00",
           "imageUrl": null,
-          "isAvailable": true
+          "isAvailable": true,
+          "sortOrder": 0
         }
       ]
     }
@@ -454,7 +682,8 @@ Response:
   "descriptionEn": "Rich coffee served in a small cup.",
   "price": "4500.00",
   "imageUrl": null,
-  "isAvailable": true
+  "isAvailable": true,
+  "sortOrder": 0
 }
 ```
 
@@ -463,6 +692,8 @@ Errors:
 - `404` business or item not found.
 
 ### GET /public/m/:slug/items/:itemId/pairings
+
+Status: planned later; not implemented in Sprint 1.
 
 Auth: public.
 
