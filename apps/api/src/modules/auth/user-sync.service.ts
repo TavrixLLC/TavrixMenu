@@ -33,7 +33,9 @@ export class UserSyncService {
       name: user.name,
       email: user.email,
       phone: user.phone,
-      status: user.status
+      status: user.status,
+      createdAt: user.createdAt,
+      updatedAt: user.updatedAt
     };
   }
 }

@@ -31,7 +31,61 @@ export class BusinessesController {
   constructor(private readonly businessesService: BusinessesService) {}
 
   @Post()
-  @ApiCreatedResponse({ description: 'Business created.' })
+  @ApiCreatedResponse({
+    description: 'Business created and current user assigned OWNER membership.',
+    schema: {
+      example: {
+        business: {
+          id: 'bus_123',
+          name: 'Tavrix Cafe',
+          slug: 'tavrix-cafe',
+          type: 'cafe',
+          logoUrl: null,
+          coverUrl: null,
+          currency: 'IQD',
+          language: 'ar',
+          city: 'Baghdad',
+          status: 'ACTIVE'
+        },
+        currentMembership: {
+          id: 'mem_123',
+          role: 'OWNER',
+          isActive: true
+        },
+        appContext: {
+          business: {
+            id: 'bus_123',
+            name: 'Tavrix Cafe',
+            slug: 'tavrix-cafe',
+            type: 'cafe',
+            city: 'Baghdad',
+            currency: 'IQD',
+            language: 'ar',
+            logoUrl: null,
+            coverUrl: null
+          },
+          currentMembership: {
+            id: 'mem_123',
+            role: 'OWNER',
+            isActive: true
+          },
+          permissions: {
+            canManageBusiness: true,
+            canManageMenu: true,
+            canManageMembers: true,
+            canViewMembers: true,
+            canViewPublicLink: true
+          },
+          publicMenu: {
+            slug: 'tavrix-cafe',
+            path: '/m/tavrix-cafe',
+            url: 'http://localhost:3001/m/tavrix-cafe',
+            qrPayload: 'http://localhost:3001/m/tavrix-cafe'
+          }
+        }
+      }
+    }
+  })
   createBusiness(
     @CurrentUser() currentUser: AuthenticatedUser,
     @Body() dto: CreateBusinessDto
