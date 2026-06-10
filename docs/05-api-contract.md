@@ -1,6 +1,6 @@
 # API Contract
 
-This file is the working API plan. The only implemented endpoint in the foundation is `GET /health`; the rest are planned for Sprint 1 and later.
+This file is the working API contract. Sprint 1 implements health, Clerk-backed business auth, business profile endpoints, menu management, and public menu reads.
 
 Once Flutter or customer web depends on an endpoint, keep it backward compatible. Add fields without removing or renaming existing fields. Breaking changes require coordination across the team.
 
@@ -56,15 +56,21 @@ Response:
 
 ```json
 {
-  "id": "usr_123",
-  "clerkUserId": "user_abc",
-  "name": "Owner Name",
-  "email": "owner@example.com",
+  "user": {
+    "id": "usr_123",
+    "clerkUserId": "user_abc",
+    "name": "Owner Name",
+    "email": "owner@example.com",
+    "phone": null,
+    "status": "ACTIVE"
+  },
   "businesses": [
     {
-      "businessId": "bus_123",
-      "role": "OWNER",
-      "status": "ACTIVE"
+      "id": "bus_123",
+      "name": "Tavrix Cafe",
+      "slug": "tavrix-cafe",
+      "type": "cafe",
+      "role": "OWNER"
     }
   ]
 }
@@ -87,7 +93,6 @@ Request:
 ```json
 {
   "name": "Tavrix Cafe",
-  "slug": "tavrix-cafe",
   "type": "cafe",
   "city": "Baghdad",
   "currency": "IQD",
@@ -103,6 +108,11 @@ Response:
   "name": "Tavrix Cafe",
   "slug": "tavrix-cafe",
   "type": "cafe",
+  "logoUrl": null,
+  "coverUrl": null,
+  "currency": "IQD",
+  "language": "ar",
+  "city": "Baghdad",
   "status": "ACTIVE"
 }
 ```
@@ -125,6 +135,12 @@ Response:
     "id": "bus_123",
     "name": "Tavrix Cafe",
     "slug": "tavrix-cafe",
+    "type": "cafe",
+    "logoUrl": null,
+    "coverUrl": null,
+    "currency": "IQD",
+    "language": "ar",
+    "city": "Baghdad",
     "role": "OWNER",
     "status": "ACTIVE"
   }
@@ -159,6 +175,12 @@ Response:
   "id": "bus_123",
   "name": "Tavrix Cafe",
   "slug": "tavrix-cafe",
+  "type": "cafe",
+  "logoUrl": "https://example.com/logo.png",
+  "coverUrl": "https://example.com/cover.png",
+  "currency": "IQD",
+  "language": "ar",
+  "city": "Baghdad",
   "status": "ACTIVE"
 }
 ```
@@ -278,7 +300,9 @@ Response:
 Errors:
 
 - `403` missing role.
-- `409` category has items and cannot be deleted until moved or archived.
+- `404` category not found.
+
+Behavior: this endpoint archives the category by setting `isActive = false`; public menus hide archived categories.
 
 ### POST /businesses/:id/items
 
@@ -394,6 +418,8 @@ Errors:
 - `403` missing role.
 - `404` item not found.
 
+Behavior: this endpoint archives the item by setting `isAvailable = false`; public menus hide unavailable items.
+
 ## Public
 
 ### GET /public/m/:slug
@@ -420,14 +446,18 @@ Response:
       "id": "cat_123",
       "nameAr": "المشروبات الساخنة",
       "nameEn": "Hot Drinks",
+      "sortOrder": 0,
       "items": [
         {
           "id": "item_123",
           "nameAr": "قهوة تركية",
           "nameEn": "Turkish Coffee",
+          "descriptionAr": "Traditional strong coffee.",
+          "descriptionEn": null,
           "price": "4500.00",
           "imageUrl": null,
-          "isAvailable": true
+          "isAvailable": true,
+          "sortOrder": 0
         }
       ]
     }
@@ -454,7 +484,8 @@ Response:
   "descriptionEn": "Rich coffee served in a small cup.",
   "price": "4500.00",
   "imageUrl": null,
-  "isAvailable": true
+  "isAvailable": true,
+  "sortOrder": 0
 }
 ```
 
@@ -463,6 +494,8 @@ Errors:
 - `404` business or item not found.
 
 ### GET /public/m/:slug/items/:itemId/pairings
+
+Status: planned later; not implemented in Sprint 1.
 
 Auth: public.
 

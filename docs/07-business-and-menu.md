@@ -38,6 +38,7 @@ Staff cannot edit menu items or categories.
 - Public menu shows only categories where `isActive = true`.
 - Arabic name is required.
 - English name is optional.
+- Sprint 1 delete archives categories by setting `isActive = false`.
 
 ## Menu Items
 
@@ -48,6 +49,7 @@ Staff cannot edit menu items or categories.
 - `imageUrl` is optional.
 - Arabic name is required.
 - English name and descriptions are optional.
+- Sprint 1 delete archives items by setting `isAvailable = false`.
 
 ## Demo Seed
 
