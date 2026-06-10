@@ -6,9 +6,10 @@ type PlaceholderImageProps = {
 export function PlaceholderImage({ label, className = '' }: PlaceholderImageProps) {
   return (
     <div
-      className={`flex items-center justify-center rounded border border-dashed border-neutral-300 bg-white text-sm font-medium text-neutral-500 ${className}`}
+      className={`relative flex items-center justify-center overflow-hidden rounded border border-dashed border-[#d8cbb8] bg-[#f5efe5] text-sm font-semibold text-[#6f5a3f] ${className}`}
     >
-      {label}
+      <div className="absolute inset-0 bg-[linear-gradient(135deg,rgba(255,255,255,0.75),rgba(31,122,90,0.08))]" />
+      <span className="relative px-3 text-center">{label}</span>
     </div>
   );
 }
