@@ -37,10 +37,10 @@ export type PublicMenuResponse = {
   categories: PublicMenuCategory[];
 };
 
-export type PublicMenuResult =
+type PublicApiResult<TData> =
   | {
       status: 'ok';
-      data: PublicMenuResponse;
+      data: TData;
       apiUrl: string;
     }
   | {
@@ -53,13 +53,16 @@ export type PublicMenuResult =
       message: string;
     };
 
+export type PublicMenuResult = PublicApiResult<PublicMenuResponse>;
+export type PublicMenuItemResult = PublicApiResult<PublicMenuItem>;
+
 export function getApiBaseUrl() {
   return (process.env.API_BASE_URL || process.env.NEXT_PUBLIC_API_BASE_URL || DEFAULT_API_BASE_URL).replace(/\/+$/, '');
 }
 
-export async function fetchPublicMenu(slug: string): Promise<PublicMenuResult> {
+async function fetchPublicJson<TData>(path: string): Promise<PublicApiResult<TData>> {
   const apiBaseUrl = getApiBaseUrl();
-  const apiUrl = `${apiBaseUrl}/public/m/${encodeURIComponent(slug)}`;
+  const apiUrl = `${apiBaseUrl}${path}`;
 
   try {
     const response = await fetch(apiUrl, {
@@ -84,7 +87,7 @@ export async function fetchPublicMenu(slug: string): Promise<PublicMenuResult> {
       };
     }
 
-    const data = (await response.json()) as PublicMenuResponse;
+    const data = (await response.json()) as TData;
 
     return {
       status: 'ok',
@@ -98,4 +101,14 @@ export async function fetchPublicMenu(slug: string): Promise<PublicMenuResult> {
       message: error instanceof Error ? error.message : 'Unable to reach the public menu API'
     };
   }
+}
+
+export async function fetchPublicMenu(slug: string): Promise<PublicMenuResult> {
+  return fetchPublicJson<PublicMenuResponse>(`/public/m/${encodeURIComponent(slug)}`);
+}
+
+export async function fetchPublicMenuItem(slug: string, itemId: string): Promise<PublicMenuItemResult> {
+  return fetchPublicJson<PublicMenuItem>(
+    `/public/m/${encodeURIComponent(slug)}/items/${encodeURIComponent(itemId)}`
+  );
 }
