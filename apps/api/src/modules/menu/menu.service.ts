@@ -43,12 +43,17 @@ export class MenuService {
     return this.mapCategory(category);
   }
 
-  async getCategories(currentUser: AuthenticatedUser, businessId: string) {
+  async getCategories(
+    currentUser: AuthenticatedUser,
+    businessId: string,
+    includeInactive = false
+  ) {
     await this.businessAccessService.assertMembership(businessId, currentUser.id);
 
     const categories = await this.prisma.menuCategory.findMany({
       where: {
-        businessId
+        businessId,
+        ...(includeInactive ? {} : { isActive: true })
       },
       orderBy: [{ sortOrder: 'asc' }, { createdAt: 'asc' }]
     });
@@ -159,12 +164,17 @@ export class MenuService {
     return this.mapItem(item);
   }
 
-  async getItems(currentUser: AuthenticatedUser, businessId: string) {
+  async getItems(
+    currentUser: AuthenticatedUser,
+    businessId: string,
+    includeInactive = false
+  ) {
     await this.businessAccessService.assertMembership(businessId, currentUser.id);
 
     const items = await this.prisma.menuItem.findMany({
       where: {
-        businessId
+        businessId,
+        ...(includeInactive ? {} : { isAvailable: true })
       },
       orderBy: [{ sortOrder: 'asc' }, { createdAt: 'asc' }]
     });

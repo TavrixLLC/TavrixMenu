@@ -431,6 +431,11 @@ Auth: Clerk required.
 
 Role: `OWNER`, `MANAGER`, or `STAFF`.
 
+Query:
+
+- `includeInactive=true` optionally includes archived categories.
+- Default behavior hides archived categories and returns only `isActive = true`.
+
 Response:
 
 ```json
@@ -500,7 +505,10 @@ Errors:
 - `403` missing role.
 - `404` category not found.
 
-Behavior: this endpoint archives the category by setting `isActive = false`; public menus hide archived categories.
+Behavior: this endpoint archives the category by setting `isActive = false`.
+Normal business category lists hide archived categories unless
+`includeInactive=true` is provided. Public menus always hide archived
+categories.
 
 ### POST /businesses/:id/items
 
@@ -547,6 +555,12 @@ Errors:
 Auth: Clerk required.
 
 Role: `OWNER`, `MANAGER`, or `STAFF`.
+
+Query:
+
+- `includeInactive=true` optionally includes unavailable or archived items.
+- Default behavior hides unavailable or archived items and returns only
+  `isAvailable = true`.
 
 Response:
 
@@ -616,13 +630,19 @@ Errors:
 - `403` missing role.
 - `404` item not found.
 
-Behavior: this endpoint archives the item by setting `isAvailable = false`; public menus hide unavailable items.
+Behavior: this endpoint archives the item by setting `isAvailable = false`.
+Normal business item lists hide archived/unavailable items unless
+`includeInactive=true` is provided. Public menus always hide unavailable items.
 
 ## Public
 
 ### GET /public/m/:slug
 
 Auth: public.
+
+Behavior: always returns only active businesses, active categories, and
+available menu items. Query parameters cannot expose inactive or archived
+records.
 
 Response:
 
@@ -670,6 +690,9 @@ Errors:
 ### GET /public/m/:slug/items/:itemId
 
 Auth: public.
+
+Behavior: returns only available items under active categories for active
+businesses.
 
 Response:
 

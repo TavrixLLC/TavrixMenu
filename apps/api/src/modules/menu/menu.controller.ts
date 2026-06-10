@@ -6,12 +6,14 @@ import {
   Param,
   Patch,
   Post,
+  Query,
   UseGuards
 } from '@nestjs/common';
 import {
   ApiBearerAuth,
   ApiCreatedResponse,
   ApiOkResponse,
+  ApiQuery,
   ApiTags
 } from '@nestjs/swagger';
 import { CurrentUser } from '../auth/decorators/current-user.decorator';
@@ -41,12 +43,23 @@ export class MenuController {
   }
 
   @Get('businesses/:id/categories')
+  @ApiQuery({
+    name: 'includeInactive',
+    required: false,
+    type: Boolean,
+    description: 'Set true to include archived/inactive categories. Defaults to false.'
+  })
   @ApiOkResponse({ description: 'Categories for a business.' })
   getCategories(
     @CurrentUser() currentUser: AuthenticatedUser,
-    @Param('id') businessId: string
+    @Param('id') businessId: string,
+    @Query('includeInactive') includeInactive?: string
   ) {
-    return this.menuService.getCategories(currentUser, businessId);
+    return this.menuService.getCategories(
+      currentUser,
+      businessId,
+      includeInactive === 'true'
+    );
   }
 
   @Patch('categories/:id')
@@ -79,12 +92,23 @@ export class MenuController {
   }
 
   @Get('businesses/:id/items')
+  @ApiQuery({
+    name: 'includeInactive',
+    required: false,
+    type: Boolean,
+    description: 'Set true to include archived/unavailable items. Defaults to false.'
+  })
   @ApiOkResponse({ description: 'Items for a business.' })
   getItems(
     @CurrentUser() currentUser: AuthenticatedUser,
-    @Param('id') businessId: string
+    @Param('id') businessId: string,
+    @Query('includeInactive') includeInactive?: string
   ) {
-    return this.menuService.getItems(currentUser, businessId);
+    return this.menuService.getItems(
+      currentUser,
+      businessId,
+      includeInactive === 'true'
+    );
   }
 
   @Patch('items/:id')
