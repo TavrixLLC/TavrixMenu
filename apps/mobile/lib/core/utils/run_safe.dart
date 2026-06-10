@@ -12,6 +12,8 @@ Future<Either<Failure, T>> runSafe<T>(
     try {
       final result = await action();
       return Right(result);
+    } on ConfigurationException catch (error) {
+      return Left(ConfigurationFailure(error.message));
     } on ServerException {
       return const Left(ServerFailure());
     } on OfflineException {
@@ -23,11 +25,11 @@ Future<Either<Failure, T>> runSafe<T>(
     } on ValidationException catch (error) {
       return Left(ValidationFailure(error.message));
     } on UnauthorizedException {
-      return const Left(ServerFailure());
+      return const Left(UnauthorizedFailure());
     } on ForbiddenException {
-      return const Left(ServerFailure());
+      return const Left(ForbiddenFailure());
     } on NotFoundException {
-      return const Left(ServerFailure());
+      return const Left(NotFoundFailure());
     } catch (_) {
       return const Left(UnknownFailure());
     }

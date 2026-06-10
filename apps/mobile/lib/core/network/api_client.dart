@@ -46,7 +46,9 @@ class ApiClient {
     Map<String, dynamic>? body,
   }) async {
     if (!canCallBackend) {
-      throw const ServerException('API_BASE_URL is not configured.');
+      throw const ConfigurationException(
+        'API_BASE_URL is not configured. Start dev mode with --dart-define=API_BASE_URL=http://localhost:3000.',
+      );
     }
 
     final token = await _tokenProvider.getToken();

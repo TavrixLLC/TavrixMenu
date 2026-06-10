@@ -21,14 +21,14 @@ abstract class MenuRemoteDataSource {
     required String categoryId,
     required String name,
     required String description,
-    required int priceCents,
+    required String price,
   });
 
   Future<MenuItemModel> updateItem({
     required String id,
     required String name,
     required String description,
-    required int priceCents,
+    required String price,
     required bool isAvailable,
   });
 
@@ -56,7 +56,7 @@ class MenuRemoteDataSourceImpl implements MenuRemoteDataSource {
   }) async {
     final data = await apiClient.post(
       '/businesses/$businessId/categories',
-      body: {'name': name},
+      body: {'nameAr': name, 'sortOrder': 0, 'isActive': true},
     );
     return _parseCategory(data, context: 'create category response');
   }
@@ -73,15 +73,17 @@ class MenuRemoteDataSourceImpl implements MenuRemoteDataSource {
     required String categoryId,
     required String name,
     required String description,
-    required int priceCents,
+    required String price,
   }) async {
     final data = await apiClient.post(
       '/businesses/$businessId/items',
       body: {
-        'category_id': categoryId,
-        'name': name,
-        'description': description,
-        'price_cents': priceCents,
+        'categoryId': categoryId,
+        'nameAr': name,
+        if (description.trim().isNotEmpty) 'descriptionAr': description.trim(),
+        'price': price,
+        'isAvailable': true,
+        'sortOrder': 0,
       },
     );
     return _parseItem(data, context: 'create menu item response');
@@ -92,16 +94,16 @@ class MenuRemoteDataSourceImpl implements MenuRemoteDataSource {
     required String id,
     required String name,
     required String description,
-    required int priceCents,
+    required String price,
     required bool isAvailable,
   }) async {
     final data = await apiClient.patch(
       '/items/$id',
       body: {
-        'name': name,
-        'description': description,
-        'price_cents': priceCents,
-        'is_available': isAvailable,
+        'nameAr': name,
+        'descriptionAr': description.trim().isEmpty ? null : description.trim(),
+        'price': price,
+        'isAvailable': isAvailable,
       },
     );
     return _parseItem(data, context: 'update menu item response');
@@ -127,7 +129,11 @@ class MenuRemoteDataSourceImpl implements MenuRemoteDataSource {
   }
 
   MenuCategoryModel _parseCategory(dynamic data, {required String context}) {
-    final json = asJsonObject(data, context: context);
+    final json = asNestedJsonObject(
+      data,
+      context: context,
+      keys: const ['data', 'category'],
+    );
 
     try {
       return MenuCategoryModel.fromJson(json);
@@ -155,7 +161,11 @@ class MenuRemoteDataSourceImpl implements MenuRemoteDataSource {
   }
 
   MenuItemModel _parseItem(dynamic data, {required String context}) {
-    final json = asJsonObject(data, context: context);
+    final json = asNestedJsonObject(
+      data,
+      context: context,
+      keys: const ['data', 'item'],
+    );
 
     try {
       return MenuItemModel.fromJson(json);
@@ -174,7 +184,27 @@ class MenuRemoteDataSourceImpl implements MenuRemoteDataSource {
   }) {
     if (data is Map) {
       final json = asJsonObject(data, context: context);
-      final nestedList = json['data'] ?? json['items'];
+      final nestedList =
+          json['data'] ??
+          json['items'] ??
+          json['categories'] ??
+          json['menu_items'] ??
+          json['menuItems'];
+
+      if (nestedList is Map) {
+        final nestedJson = asJsonObject(nestedList, context: context);
+        final list =
+            nestedJson['items'] ??
+            nestedJson['categories'] ??
+            nestedJson['menu_items'] ??
+            nestedJson['menuItems'] ??
+            nestedJson['results'];
+        if (list != null) {
+          return asJsonObjectList(list, context: context);
+        }
+        return [nestedJson];
+      }
+
       return asJsonObjectList(nestedList, context: context);
     }
 

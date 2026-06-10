@@ -22,12 +22,13 @@ class BusinessSetupScreen extends StatefulWidget {
 
 class _BusinessSetupScreenState extends State<BusinessSetupScreen> {
   final _nameController = TextEditingController(text: 'Tavrix Demo Cafe');
-  final _slugController = TextEditingController(text: 'tavrix-demo-cafe');
+  final _cityController = TextEditingController();
+  String _selectedType = 'cafe';
 
   @override
   void dispose() {
     _nameController.dispose();
-    _slugController.dispose();
+    _cityController.dispose();
     super.dispose();
   }
 
@@ -66,10 +67,32 @@ class _BusinessSetupScreenState extends State<BusinessSetupScreen> {
                       controller: _nameController,
                     ),
                     const SizedBox(height: AppSpacing.md),
+                    DropdownButtonFormField<String>(
+                      initialValue: _selectedType,
+                      decoration: const InputDecoration(
+                        labelText: 'Business type',
+                      ),
+                      items: const [
+                        DropdownMenuItem(value: 'cafe', child: Text('Cafe')),
+                        DropdownMenuItem(
+                          value: 'restaurant',
+                          child: Text('Restaurant'),
+                        ),
+                      ],
+                      onChanged: (value) {
+                        if (value == null) {
+                          return;
+                        }
+                        setState(() {
+                          _selectedType = value;
+                        });
+                      },
+                    ),
+                    const SizedBox(height: AppSpacing.md),
                     AppTextField(
-                      label: 'Public slug',
-                      controller: _slugController,
-                      hint: 'my-cafe',
+                      label: 'City',
+                      controller: _cityController,
+                      hint: 'Baghdad',
                     ),
                   ],
                 ),
@@ -87,7 +110,8 @@ class _BusinessSetupScreenState extends State<BusinessSetupScreen> {
                     ? null
                     : () => context.read<BusinessSetupCubit>().submit(
                         name: _nameController.text,
-                        slug: _slugController.text,
+                        type: _selectedType,
+                        city: _cityController.text,
                       ),
               ),
             ],

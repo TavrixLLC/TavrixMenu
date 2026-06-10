@@ -14,14 +14,14 @@ class CreateMenuItem {
     required String categoryId,
     required String name,
     required String description,
-    required int priceCents,
+    required String price,
   }) {
     return _repository.createItem(
       businessId: businessId,
       categoryId: categoryId,
       name: name,
       description: description,
-      priceCents: priceCents,
+      price: price,
     );
   }
 }

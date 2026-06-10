@@ -26,6 +26,16 @@ class AuthCubit extends Cubit<AuthState> {
     );
   }
 
+  void showBusinessAppError(String message) {
+    emit(
+      AuthState(
+        status: AuthStatus.failure,
+        user: state.user,
+        errorMessage: message,
+      ),
+    );
+  }
+
   void signOut() {
     emit(const AuthState(status: AuthStatus.unauthenticated));
   }

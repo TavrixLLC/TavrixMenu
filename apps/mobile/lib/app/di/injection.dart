@@ -17,13 +17,15 @@ import '../../features/menu/data/datasources/menu_remote_data_source.dart';
 import '../../features/menu/data/repositories/menu_repository_impl.dart';
 import '../../features/menu/domain/usecases/create_menu_category.dart';
 import '../../features/menu/domain/usecases/create_menu_item.dart';
+import '../../features/menu/domain/usecases/delete_menu_item.dart';
 import '../../features/menu/domain/usecases/get_menu_categories.dart';
 import '../../features/menu/domain/usecases/get_menu_items.dart';
+import '../../features/menu/domain/usecases/update_menu_item.dart';
 import '../../features/menu/presentation/bloc/menu_cubit.dart';
 import '../config/app_config.dart';
 
 class AppDependencies {
-  AppDependencies._({
+  AppDependencies({
     required this.config,
     required this.authCubit,
     required this.businessSetupCubit,
@@ -43,7 +45,6 @@ class AppDependencies {
     final meRepository = MeRepositoryImpl(
       remoteDataSource: meRemoteDataSource,
       networkInfo: networkInfo,
-      devFallbackEnabled: config.devFallbackEnabled,
     );
     final getCurrentUser = GetCurrentUser(meRepository);
 
@@ -53,7 +54,7 @@ class AppDependencies {
       networkInfo: networkInfo,
       devFallbackEnabled: config.devFallbackEnabled,
     );
-    final getMyBusiness = GetMyBusiness(businessRepository);
+    final getMyBusinesses = GetMyBusinesses(businessRepository);
     final createBusiness = CreateBusiness(businessRepository);
 
     final menuRemoteDataSource = MenuRemoteDataSourceImpl(apiClient);
@@ -66,21 +67,25 @@ class AppDependencies {
     final getMenuItems = GetMenuItems(menuRepository);
     final createMenuCategory = CreateMenuCategory(menuRepository);
     final createMenuItem = CreateMenuItem(menuRepository);
+    final updateMenuItem = UpdateMenuItem(menuRepository);
+    final deleteMenuItem = DeleteMenuItem(menuRepository);
 
-    return AppDependencies._(
+    return AppDependencies(
       config: config,
       authCubit: AuthCubit(getCurrentUser: getCurrentUser),
       businessSetupCubit: BusinessSetupCubit(createBusiness: createBusiness),
       dashboardCubit: DashboardCubit(
         getCurrentUser: getCurrentUser,
-        getMyBusiness: getMyBusiness,
+        getMyBusinesses: getMyBusinesses,
       ),
       menuCubit: MenuCubit(
-        getMyBusiness: getMyBusiness,
+        getMyBusinesses: getMyBusinesses,
         getMenuCategories: getMenuCategories,
         getMenuItems: getMenuItems,
         createMenuCategory: createMenuCategory,
         createMenuItem: createMenuItem,
+        updateMenuItem: updateMenuItem,
+        deleteMenuItem: deleteMenuItem,
       ),
     );
   }

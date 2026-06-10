@@ -8,6 +8,12 @@ class ServerException implements Exception {
   final String? message;
 }
 
+class ConfigurationException implements Exception {
+  const ConfigurationException(this.message);
+
+  final String message;
+}
+
 class TimeoutException implements Exception {
   const TimeoutException();
 }

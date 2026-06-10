@@ -10,11 +10,18 @@ class MenuCategoryModel extends MenuCategory {
 
   factory MenuCategoryModel.fromJson(Map<String, dynamic> json) {
     return MenuCategoryModel(
-      id: json['id'] as String? ?? '',
+      id: _stringValue(json['id']) ?? '',
       businessId:
-          json['business_id'] as String? ?? json['businessId'] as String? ?? '',
-      name: json['name'] as String? ?? '',
-      sortOrder: json['sort_order'] as int? ?? json['sortOrder'] as int? ?? 0,
+          _stringValue(json['business_id']) ??
+          _stringValue(json['businessId']) ??
+          '',
+      name:
+          _stringValue(json['nameAr']) ??
+          _stringValue(json['name_ar']) ??
+          _stringValue(json['name']) ??
+          '',
+      sortOrder:
+          _intValue(json['sort_order']) ?? _intValue(json['sortOrder']) ?? 0,
     );
   }
 
@@ -25,5 +32,28 @@ class MenuCategoryModel extends MenuCategory {
       name: name,
       sortOrder: sortOrder,
     );
+  }
+
+  static String? _stringValue(dynamic value) {
+    if (value == null) {
+      return null;
+    }
+    if (value is String) {
+      return value;
+    }
+    return value.toString();
+  }
+
+  static int? _intValue(dynamic value) {
+    if (value is int) {
+      return value;
+    }
+    if (value is num) {
+      return value.toInt();
+    }
+    if (value is String) {
+      return int.tryParse(value);
+    }
+    return null;
   }
 }

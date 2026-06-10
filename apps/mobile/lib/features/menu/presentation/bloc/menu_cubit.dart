@@ -2,44 +2,59 @@ import 'package:flutter_bloc/flutter_bloc.dart';
 
 import '../../../../core/utils/failure_message.dart';
 import '../../../business_setup/domain/usecases/get_my_business.dart';
+import '../../domain/entities/menu_item.dart';
 import '../../domain/usecases/create_menu_category.dart';
 import '../../domain/usecases/create_menu_item.dart';
+import '../../domain/usecases/delete_menu_item.dart';
 import '../../domain/usecases/get_menu_categories.dart';
 import '../../domain/usecases/get_menu_items.dart';
+import '../../domain/usecases/update_menu_item.dart';
 import 'menu_state.dart';
 
 class MenuCubit extends Cubit<MenuState> {
   MenuCubit({
-    required GetMyBusiness getMyBusiness,
+    required GetMyBusinesses getMyBusinesses,
     required GetMenuCategories getMenuCategories,
     required GetMenuItems getMenuItems,
     required CreateMenuCategory createMenuCategory,
     required CreateMenuItem createMenuItem,
-  }) : _getMyBusiness = getMyBusiness,
+    required UpdateMenuItem updateMenuItem,
+    required DeleteMenuItem deleteMenuItem,
+  }) : _getMyBusinesses = getMyBusinesses,
        _getMenuCategories = getMenuCategories,
        _getMenuItems = getMenuItems,
        _createMenuCategory = createMenuCategory,
        _createMenuItem = createMenuItem,
+       _updateMenuItem = updateMenuItem,
+       _deleteMenuItem = deleteMenuItem,
        super(const MenuState.initial());
 
-  final GetMyBusiness _getMyBusiness;
+  final GetMyBusinesses _getMyBusinesses;
   final GetMenuCategories _getMenuCategories;
   final GetMenuItems _getMenuItems;
   final CreateMenuCategory _createMenuCategory;
   final CreateMenuItem _createMenuItem;
+  final UpdateMenuItem _updateMenuItem;
+  final DeleteMenuItem _deleteMenuItem;
 
   Future<void> load() async {
     emit(state.copyWith(status: MenuStatus.loading, clearError: true));
 
-    final businessResult = await _getMyBusiness();
-    await businessResult.fold(
+    final businessesResult = await _getMyBusinesses();
+    await businessesResult.fold(
       (failure) async => emit(
         MenuState(
           status: MenuStatus.failure,
           errorMessage: failureMessage(failure),
         ),
       ),
-      (business) async {
+      (businesses) async {
+        if (businesses.isEmpty) {
+          emit(const MenuState(status: MenuStatus.success));
+          return;
+        }
+
+        final business = businesses.first;
         final categoriesResult = await _getMenuCategories(business.id);
         await categoriesResult.fold(
           (failure) async => emit(
@@ -89,7 +104,7 @@ class MenuCubit extends Cubit<MenuState> {
     result.fold(
       (failure) => emit(
         state.copyWith(
-          status: MenuStatus.failure,
+          status: state.business == null ? MenuStatus.failure : state.status,
           errorMessage: failureMessage(failure),
         ),
       ),
@@ -97,32 +112,39 @@ class MenuCubit extends Cubit<MenuState> {
         state.copyWith(
           status: MenuStatus.success,
           categories: [...state.categories, category],
+          clearError: true,
         ),
       ),
     );
   }
 
   Future<void> addItem({
+    String? categoryId,
     required String name,
     required String description,
-    required int priceCents,
+    required String price,
   }) async {
     final business = state.business;
-    if (business == null || state.categories.isEmpty || name.trim().isEmpty) {
+    final cleanPrice = price.trim();
+    if (business == null ||
+        state.categories.isEmpty ||
+        name.trim().isEmpty ||
+        cleanPrice.isEmpty) {
       return;
     }
 
+    final cleanCategoryId = categoryId ?? state.categories.first.id;
     final result = await _createMenuItem(
       businessId: business.id,
-      categoryId: state.categories.first.id,
+      categoryId: cleanCategoryId,
       name: name.trim(),
       description: description.trim(),
-      priceCents: priceCents,
+      price: cleanPrice,
     );
     result.fold(
       (failure) => emit(
         state.copyWith(
-          status: MenuStatus.failure,
+          status: MenuStatus.success,
           errorMessage: failureMessage(failure),
         ),
       ),
@@ -130,6 +152,82 @@ class MenuCubit extends Cubit<MenuState> {
         state.copyWith(
           status: MenuStatus.success,
           items: [...state.items, item],
+          clearError: true,
+        ),
+      ),
+    );
+  }
+
+  Future<void> updateItem({
+    required MenuItem item,
+    required String name,
+    required String description,
+    required String price,
+    required bool isAvailable,
+  }) async {
+    final cleanName = name.trim();
+    if (cleanName.isEmpty) {
+      emit(
+        state.copyWith(
+          status: MenuStatus.success,
+          errorMessage: 'Item name is required.',
+        ),
+      );
+      return;
+    }
+
+    final result = await _updateMenuItem(
+      id: item.id,
+      name: cleanName,
+      description: description.trim(),
+      price: price.trim(),
+      isAvailable: isAvailable,
+    );
+    result.fold(
+      (failure) => emit(
+        state.copyWith(
+          status: MenuStatus.success,
+          errorMessage: failureMessage(failure),
+        ),
+      ),
+      (_) {
+        final updated = MenuItem(
+          id: item.id,
+          businessId: item.businessId,
+          categoryId: item.categoryId,
+          name: cleanName,
+          description: description.trim(),
+          price: price.trim(),
+          isAvailable: isAvailable,
+        );
+        emit(
+          state.copyWith(
+            status: MenuStatus.success,
+            items: [
+              for (final existing in state.items)
+                if (existing.id == item.id) updated else existing,
+            ],
+            clearError: true,
+          ),
+        );
+      },
+    );
+  }
+
+  Future<void> deleteItem(String id) async {
+    final result = await _deleteMenuItem(id);
+    result.fold(
+      (failure) => emit(
+        state.copyWith(
+          status: MenuStatus.success,
+          errorMessage: failureMessage(failure),
+        ),
+      ),
+      (_) => emit(
+        state.copyWith(
+          status: MenuStatus.success,
+          items: state.items.where((item) => item.id != id).toList(),
+          clearError: true,
         ),
       ),
     );

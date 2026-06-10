@@ -31,7 +31,7 @@ class MenuRepositoryImpl implements MenuRepository {
         categoryId: 'dev-category-drinks',
         name: 'House Latte',
         description: 'Warm espresso drink managed by staff.',
-        priceCents: 450,
+        price: '450',
         isAvailable: true,
       ),
     ];
@@ -101,7 +101,7 @@ class MenuRepositoryImpl implements MenuRepository {
     required String categoryId,
     required String name,
     required String description,
-    required int priceCents,
+    required String price,
   }) {
     return runSafe(() async {
       if (_useDevData) {
@@ -111,7 +111,7 @@ class MenuRepositoryImpl implements MenuRepository {
           categoryId: categoryId,
           name: name,
           description: description,
-          priceCents: priceCents,
+          price: price,
           isAvailable: true,
         );
         _items = [..._items, item];
@@ -123,7 +123,7 @@ class MenuRepositoryImpl implements MenuRepository {
         categoryId: categoryId,
         name: name,
         description: description,
-        priceCents: priceCents,
+        price: price,
       );
       return model.toEntity();
     }, _networkInfo);
@@ -134,7 +134,7 @@ class MenuRepositoryImpl implements MenuRepository {
     required String id,
     required String name,
     required String description,
-    required int priceCents,
+    required String price,
     required bool isAvailable,
   }) {
     return runSafe(() async {
@@ -147,7 +147,7 @@ class MenuRepositoryImpl implements MenuRepository {
           categoryId: existing.categoryId,
           name: name,
           description: description,
-          priceCents: priceCents,
+          price: price,
           isAvailable: isAvailable,
         );
         if (index == -1) {
@@ -162,7 +162,7 @@ class MenuRepositoryImpl implements MenuRepository {
         id: id,
         name: name,
         description: description,
-        priceCents: priceCents,
+        price: price,
         isAvailable: isAvailable,
       );
       return unit;

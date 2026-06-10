@@ -7,7 +7,7 @@ class MenuItem extends Equatable {
     required this.categoryId,
     required this.name,
     required this.description,
-    required this.priceCents,
+    required this.price,
     required this.isAvailable,
   });
 
@@ -16,7 +16,7 @@ class MenuItem extends Equatable {
   final String categoryId;
   final String name;
   final String description;
-  final int priceCents;
+  final String price;
   final bool isAvailable;
 
   @override
@@ -26,7 +26,7 @@ class MenuItem extends Equatable {
     categoryId,
     name,
     description,
-    priceCents,
+    price,
     isAvailable,
   ];
 }

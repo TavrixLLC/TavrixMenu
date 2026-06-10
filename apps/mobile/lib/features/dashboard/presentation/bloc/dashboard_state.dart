@@ -3,7 +3,7 @@ import 'package:equatable/equatable.dart';
 import '../../../auth/domain/entities/current_user.dart';
 import '../../../business_setup/domain/entities/business.dart';
 
-enum DashboardStatus { initial, loading, success, failure }
+enum DashboardStatus { initial, loading, success, needsBusinessSetup, failure }
 
 class DashboardState extends Equatable {
   const DashboardState({

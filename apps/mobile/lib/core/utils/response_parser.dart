@@ -16,6 +16,23 @@ Map<String, dynamic> asJsonObject(dynamic data, {String context = 'response'}) {
   throw ServerException('Invalid $context format.');
 }
 
+Map<String, dynamic> asNestedJsonObject(
+  dynamic data, {
+  required String context,
+  required List<String> keys,
+}) {
+  final json = asJsonObject(data, context: context);
+
+  for (final key in keys) {
+    final nested = json[key];
+    if (nested != null) {
+      return asJsonObject(nested, context: context);
+    }
+  }
+
+  return json;
+}
+
 List<dynamic> asJsonList(dynamic data, {String context = 'response'}) {
   try {
     if (data is List) {

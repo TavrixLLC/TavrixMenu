@@ -9,6 +9,9 @@ import '../../../../shared/widgets/app_button.dart';
 import '../../../../shared/widgets/app_card.dart';
 import '../../../../shared/widgets/app_scaffold.dart';
 import '../../../../shared/widgets/error_view.dart';
+import '../../../dashboard/presentation/bloc/dashboard_cubit.dart';
+import '../../../dashboard/presentation/bloc/dashboard_state.dart';
+import '../../domain/entities/current_user.dart';
 import '../bloc/auth_cubit.dart';
 import '../bloc/auth_state.dart';
 
@@ -19,11 +22,15 @@ class LoginScreen extends StatelessWidget {
   Widget build(BuildContext context) {
     return BlocConsumer<AuthCubit, AuthState>(
       listener: (context, state) {
-        if (state.status == AuthStatus.authenticated) {
-          Navigator.of(context).pushReplacementNamed(AppRouteNames.dashboard);
+        if (state.status == AuthStatus.authenticated && state.user != null) {
+          _completeBackendBoot(context, state.user!);
         }
       },
       builder: (context, state) {
+        final isBusy =
+            state.status == AuthStatus.loading ||
+            state.status == AuthStatus.authenticated;
+
         return AppScaffold(
           scrollable: true,
           child: Column(
@@ -78,11 +85,9 @@ class LoginScreen extends StatelessWidget {
               ],
               const SizedBox(height: AppSpacing.lg),
               AppButton(
-                label: state.status == AuthStatus.loading
-                    ? 'Preparing'
-                    : 'Continue in dev mode',
+                label: isBusy ? 'Loading workspace' : 'Continue in dev mode',
                 icon: Icons.login,
-                onPressed: state.status == AuthStatus.loading
+                onPressed: isBusy
                     ? null
                     : () => context.read<AuthCubit>().signInDevMode(),
               ),
@@ -91,5 +96,35 @@ class LoginScreen extends StatelessWidget {
         );
       },
     );
+  }
+
+  Future<void> _completeBackendBoot(
+    BuildContext context,
+    CurrentUser user,
+  ) async {
+    final dashboardCubit = context.read<DashboardCubit>();
+    await dashboardCubit.load(currentUser: user);
+
+    if (!context.mounted) {
+      return;
+    }
+
+    final dashboardState = dashboardCubit.state;
+    switch (dashboardState.status) {
+      case DashboardStatus.success:
+        Navigator.of(context).pushReplacementNamed(AppRouteNames.dashboard);
+        return;
+      case DashboardStatus.needsBusinessSetup:
+        Navigator.of(context).pushReplacementNamed(AppRouteNames.businessSetup);
+        return;
+      case DashboardStatus.failure:
+        context.read<AuthCubit>().showBusinessAppError(
+          dashboardState.errorMessage ?? 'Business workspace could not load.',
+        );
+        return;
+      case DashboardStatus.initial:
+      case DashboardStatus.loading:
+        break;
+    }
   }
 }

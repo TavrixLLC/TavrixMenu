@@ -6,19 +6,29 @@ class BusinessModel extends Business {
     required super.name,
     required super.slug,
     required super.publicMenuUrl,
+    super.type,
+    super.city,
+    super.currency,
+    super.language,
+    super.role,
   });
 
   factory BusinessModel.fromJson(Map<String, dynamic> json) {
-    final slug = json['slug'] as String? ?? '';
+    final slug = _stringValue(json['slug']) ?? '';
 
     return BusinessModel(
-      id: json['id'] as String? ?? '',
-      name: json['name'] as String? ?? '',
+      id: _stringValue(json['id']) ?? '',
+      name: _stringValue(json['name']) ?? '',
       slug: slug,
       publicMenuUrl:
-          json['public_menu_url'] as String? ??
-          json['publicMenuUrl'] as String? ??
-          'https://menu.tavrix.com/$slug',
+          _stringValue(json['public_menu_url']) ??
+          _stringValue(json['publicMenuUrl']) ??
+          (slug.isEmpty ? '' : 'https://menu.tavrix.com/$slug'),
+      type: _stringValue(json['type']) ?? 'cafe',
+      city: _stringValue(json['city']),
+      currency: _stringValue(json['currency']) ?? 'IQD',
+      language: _stringValue(json['language']) ?? 'ar',
+      role: _stringValue(json['role']),
     );
   }
 
@@ -28,6 +38,21 @@ class BusinessModel extends Business {
       name: name,
       slug: slug,
       publicMenuUrl: publicMenuUrl,
+      type: type,
+      city: city,
+      currency: currency,
+      language: language,
+      role: role,
     );
+  }
+
+  static String? _stringValue(dynamic value) {
+    if (value == null) {
+      return null;
+    }
+    if (value is String) {
+      return value;
+    }
+    return value.toString();
   }
 }

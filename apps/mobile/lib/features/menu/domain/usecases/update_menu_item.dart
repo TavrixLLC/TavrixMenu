@@ -12,14 +12,14 @@ class UpdateMenuItem {
     required String id,
     required String name,
     required String description,
-    required int priceCents,
+    required String price,
     required bool isAvailable,
   }) {
     return _repository.updateItem(
       id: id,
       name: name,
       description: description,
-      priceCents: priceCents,
+      price: price,
       isAvailable: isAvailable,
     );
   }

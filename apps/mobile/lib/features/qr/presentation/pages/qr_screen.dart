@@ -1,8 +1,11 @@
 import 'package:flutter/material.dart';
 import 'package:flutter_bloc/flutter_bloc.dart';
 
+import '../../../../app/config/app_config.dart';
 import '../../../../core/constants/app_spacing.dart';
 import '../../../../shared/widgets/app_scaffold.dart';
+import '../../../../shared/widgets/empty_state.dart';
+import '../../../../shared/widgets/error_view.dart';
 import '../../../../shared/widgets/loading_view.dart';
 import '../../../../shared/widgets/qr_preview_card.dart';
 import '../../../../shared/widgets/section_header.dart';
@@ -40,9 +43,25 @@ class _QRScreenState extends State<QRScreen> {
             return const LoadingView(message: 'Preparing QR preview');
           }
 
-          final publicUrl =
-              state.business?.publicMenuUrl ??
-              'https://menu.tavrix.com/your-business';
+          if (state.status == DashboardStatus.failure) {
+            return ErrorView(
+              message: state.errorMessage ?? 'QR preview could not load.',
+              onRetry: () => context.read<DashboardCubit>().load(),
+            );
+          }
+
+          final business = state.business;
+          if (business == null) {
+            return const EmptyState(
+              title: 'Business setup needed',
+              message: 'Create a business profile before preparing QR menus.',
+              icon: Icons.storefront,
+            );
+          }
+
+          final publicUrl = context.read<AppConfig>().publicMenuUrlForSlug(
+            business.slug,
+          );
 
           return Column(
             crossAxisAlignment: CrossAxisAlignment.start,

@@ -12,6 +12,8 @@ import '../../../../shared/widgets/loading_view.dart';
 import '../../../../shared/widgets/menu_item_card.dart';
 import '../../../../shared/widgets/section_header.dart';
 import '../../../../shared/widgets/status_badge.dart';
+import '../../domain/entities/menu_category.dart';
+import '../../domain/entities/menu_item.dart';
 import '../bloc/menu_cubit.dart';
 import '../bloc/menu_state.dart';
 
@@ -26,7 +28,8 @@ class _MenuScreenState extends State<MenuScreen> {
   final _categoryController = TextEditingController();
   final _itemNameController = TextEditingController();
   final _itemDescriptionController = TextEditingController();
-  final _itemPriceController = TextEditingController(text: '500');
+  final _itemPriceController = TextEditingController(text: '3000');
+  String? _selectedCategoryId;
 
   @override
   void initState() {
@@ -45,6 +48,107 @@ class _MenuScreenState extends State<MenuScreen> {
     super.dispose();
   }
 
+  String? _selectedCategoryIdFor(List<MenuCategory> categories) {
+    if (categories.isEmpty) {
+      return null;
+    }
+
+    final current = _selectedCategoryId;
+    if (current != null &&
+        categories.any((category) => category.id == current)) {
+      return current;
+    }
+
+    return categories.first.id;
+  }
+
+  Future<void> _showEditItemDialog(BuildContext context, MenuItem item) async {
+    final nameController = TextEditingController(text: item.name);
+    final descriptionController = TextEditingController(text: item.description);
+    final priceController = TextEditingController(text: item.price);
+    var isAvailable = item.isAvailable;
+
+    try {
+      final saved = await showDialog<bool>(
+        context: context,
+        builder: (dialogContext) {
+          return StatefulBuilder(
+            builder: (context, setDialogState) {
+              return AlertDialog(
+                title: const Text('Edit menu item'),
+                content: SingleChildScrollView(
+                  child: Column(
+                    mainAxisSize: MainAxisSize.min,
+                    children: [
+                      TextField(
+                        controller: nameController,
+                        decoration: const InputDecoration(
+                          labelText: 'Item name',
+                        ),
+                      ),
+                      const SizedBox(height: AppSpacing.md),
+                      TextField(
+                        controller: descriptionController,
+                        decoration: const InputDecoration(
+                          labelText: 'Description',
+                        ),
+                        maxLines: 2,
+                      ),
+                      const SizedBox(height: AppSpacing.md),
+                      TextField(
+                        controller: priceController,
+                        decoration: const InputDecoration(labelText: 'Price'),
+                        keyboardType: TextInputType.number,
+                      ),
+                      const SizedBox(height: AppSpacing.sm),
+                      CheckboxListTile(
+                        contentPadding: EdgeInsets.zero,
+                        value: isAvailable,
+                        title: const Text('Available'),
+                        onChanged: (value) {
+                          setDialogState(() {
+                            isAvailable = value ?? true;
+                          });
+                        },
+                      ),
+                    ],
+                  ),
+                ),
+                actions: [
+                  TextButton(
+                    onPressed: () => Navigator.of(dialogContext).pop(false),
+                    child: const Text('Cancel'),
+                  ),
+                  FilledButton.icon(
+                    onPressed: () => Navigator.of(dialogContext).pop(true),
+                    icon: const Icon(Icons.save_outlined),
+                    label: const Text('Save'),
+                  ),
+                ],
+              );
+            },
+          );
+        },
+      );
+
+      if (!context.mounted || saved != true) {
+        return;
+      }
+
+      await context.read<MenuCubit>().updateItem(
+        item: item,
+        name: nameController.text,
+        description: descriptionController.text,
+        price: priceController.text,
+        isAvailable: isAvailable,
+      );
+    } finally {
+      nameController.dispose();
+      descriptionController.dispose();
+      priceController.dispose();
+    }
+  }
+
   @override
   Widget build(BuildContext context) {
     return AppScaffold(
@@ -57,7 +161,7 @@ class _MenuScreenState extends State<MenuScreen> {
             return const LoadingView(message: 'Loading menu');
           }
 
-          if (state.status == MenuStatus.failure) {
+          if (state.status == MenuStatus.failure && state.business == null) {
             return ErrorView(
               message: state.errorMessage ?? 'Menu could not load.',
               onRetry: () => context.read<MenuCubit>().load(),
@@ -73,6 +177,8 @@ class _MenuScreenState extends State<MenuScreen> {
             );
           }
 
+          final selectedCategoryId = _selectedCategoryIdFor(state.categories);
+
           return Column(
             crossAxisAlignment: CrossAxisAlignment.start,
             children: [
@@ -81,6 +187,10 @@ class _MenuScreenState extends State<MenuScreen> {
                 subtitle:
                     'Manage categories and menu items for staff operations.',
               ),
+              if (state.errorMessage != null) ...[
+                const SizedBox(height: AppSpacing.md),
+                ErrorView(message: state.errorMessage!),
+              ],
               const SizedBox(height: AppSpacing.lg),
               AppCard(
                 child: Column(
@@ -120,6 +230,25 @@ class _MenuScreenState extends State<MenuScreen> {
                       style: Theme.of(context).textTheme.titleMedium,
                     ),
                     const SizedBox(height: AppSpacing.md),
+                    DropdownButtonFormField<String>(
+                      initialValue: selectedCategoryId,
+                      decoration: const InputDecoration(labelText: 'Category'),
+                      items: [
+                        for (final category in state.categories)
+                          DropdownMenuItem<String>(
+                            value: category.id,
+                            child: Text(category.name),
+                          ),
+                      ],
+                      onChanged: state.categories.isEmpty
+                          ? null
+                          : (value) {
+                              setState(() {
+                                _selectedCategoryId = value;
+                              });
+                            },
+                    ),
+                    const SizedBox(height: AppSpacing.md),
                     AppTextField(
                       label: 'Item name',
                       controller: _itemNameController,
@@ -133,7 +262,7 @@ class _MenuScreenState extends State<MenuScreen> {
                     ),
                     const SizedBox(height: AppSpacing.md),
                     AppTextField(
-                      label: 'Price in cents',
+                      label: 'Price',
                       controller: _itemPriceController,
                       keyboardType: TextInputType.number,
                     ),
@@ -144,12 +273,11 @@ class _MenuScreenState extends State<MenuScreen> {
                       onPressed: state.categories.isEmpty
                           ? null
                           : () async {
-                              final priceCents =
-                                  int.tryParse(_itemPriceController.text) ?? 0;
                               await context.read<MenuCubit>().addItem(
+                                categoryId: selectedCategoryId,
                                 name: _itemNameController.text,
                                 description: _itemDescriptionController.text,
-                                priceCents: priceCents,
+                                price: _itemPriceController.text,
                               );
                               _itemNameController.clear();
                               _itemDescriptionController.clear();
@@ -188,7 +316,12 @@ class _MenuScreenState extends State<MenuScreen> {
                 Column(
                   children: [
                     for (final item in state.items) ...[
-                      MenuItemCard(item: item),
+                      MenuItemCard(
+                        item: item,
+                        onEdit: () => _showEditItemDialog(context, item),
+                        onDelete: () =>
+                            context.read<MenuCubit>().deleteItem(item.id),
+                      ),
                       const SizedBox(height: AppSpacing.sm),
                     ],
                   ],

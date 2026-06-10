@@ -15,6 +15,15 @@ class ServerFailure extends Failure {
   const ServerFailure();
 }
 
+class ConfigurationFailure extends Failure {
+  const ConfigurationFailure([this.message]);
+
+  final String? message;
+
+  @override
+  List<Object?> get props => [message];
+}
+
 class TimeoutFailure extends Failure {
   const TimeoutFailure();
 }
@@ -30,6 +39,18 @@ class ValidationFailure extends Failure {
 
   @override
   List<Object?> get props => [message];
+}
+
+class UnauthorizedFailure extends Failure {
+  const UnauthorizedFailure();
+}
+
+class ForbiddenFailure extends Failure {
+  const ForbiddenFailure();
+}
+
+class NotFoundFailure extends Failure {
+  const NotFoundFailure();
 }
 
 class UnknownFailure extends Failure {

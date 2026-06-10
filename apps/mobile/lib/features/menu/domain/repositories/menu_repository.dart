@@ -19,14 +19,14 @@ abstract class MenuRepository {
     required String categoryId,
     required String name,
     required String description,
-    required int priceCents,
+    required String price,
   });
 
   Future<Either<Failure, Unit>> updateItem({
     required String id,
     required String name,
     required String description,
-    required int priceCents,
+    required String price,
     required bool isAvailable,
   });
 

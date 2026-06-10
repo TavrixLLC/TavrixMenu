@@ -3,6 +3,7 @@ import 'package:flutter/foundation.dart';
 class AppConfig {
   const AppConfig({
     required this.apiBaseUrl,
+    required this.customerWebBaseUrl,
     required this.clerkPublishableKey,
     required this.devFallbackEnabled,
   });
@@ -10,6 +11,10 @@ class AppConfig {
   factory AppConfig.fromEnvironment() {
     return const AppConfig(
       apiBaseUrl: String.fromEnvironment('API_BASE_URL'),
+      customerWebBaseUrl: String.fromEnvironment(
+        'CUSTOMER_WEB_BASE_URL',
+        defaultValue: kReleaseMode ? '' : 'http://localhost:3000',
+      ),
       clerkPublishableKey: String.fromEnvironment('CLERK_PUBLISHABLE_KEY'),
       devFallbackEnabled:
           !kReleaseMode &&
@@ -21,6 +26,7 @@ class AppConfig {
   }
 
   final String apiBaseUrl;
+  final String customerWebBaseUrl;
   final String clerkPublishableKey;
   final bool devFallbackEnabled;
 
@@ -32,5 +38,23 @@ class AppConfig {
       return trimmed.substring(0, trimmed.length - 1);
     }
     return trimmed;
+  }
+
+  String get normalizedCustomerWebBaseUrl {
+    final trimmed = customerWebBaseUrl.trim();
+    if (trimmed.endsWith('/')) {
+      return trimmed.substring(0, trimmed.length - 1);
+    }
+    return trimmed;
+  }
+
+  String publicMenuUrlForSlug(String slug) {
+    final cleanSlug = slug.trim();
+    final baseUrl = normalizedCustomerWebBaseUrl;
+    if (baseUrl.isEmpty) {
+      return '/m/$cleanSlug';
+    }
+
+    return '$baseUrl/m/$cleanSlug';
   }
 }

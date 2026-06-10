@@ -7,21 +7,36 @@ class MenuItemModel extends MenuItem {
     required super.categoryId,
     required super.name,
     required super.description,
-    required super.priceCents,
+    required super.price,
     required super.isAvailable,
   });
 
   factory MenuItemModel.fromJson(Map<String, dynamic> json) {
     return MenuItemModel(
-      id: json['id'] as String? ?? '',
+      id: _stringValue(json['id']) ?? '',
       businessId:
-          json['business_id'] as String? ?? json['businessId'] as String? ?? '',
+          _stringValue(json['business_id']) ??
+          _stringValue(json['businessId']) ??
+          '',
       categoryId:
-          json['category_id'] as String? ?? json['categoryId'] as String? ?? '',
-      name: json['name'] as String? ?? '',
-      description: json['description'] as String? ?? '',
-      priceCents:
-          json['price_cents'] as int? ?? json['priceCents'] as int? ?? 0,
+          _stringValue(json['category_id']) ??
+          _stringValue(json['categoryId']) ??
+          '',
+      name:
+          _stringValue(json['nameAr']) ??
+          _stringValue(json['name_ar']) ??
+          _stringValue(json['name']) ??
+          '',
+      description:
+          _stringValue(json['descriptionAr']) ??
+          _stringValue(json['description_ar']) ??
+          _stringValue(json['description']) ??
+          '',
+      price:
+          _stringValue(json['price']) ??
+          _stringValue(json['price_cents']) ??
+          _stringValue(json['priceCents']) ??
+          '0',
       isAvailable:
           json['is_available'] as bool? ?? json['isAvailable'] as bool? ?? true,
     );
@@ -34,8 +49,18 @@ class MenuItemModel extends MenuItem {
       categoryId: categoryId,
       name: name,
       description: description,
-      priceCents: priceCents,
+      price: price,
       isAvailable: isAvailable,
     );
+  }
+
+  static String? _stringValue(dynamic value) {
+    if (value == null) {
+      return null;
+    }
+    if (value is String) {
+      return value;
+    }
+    return value.toString();
   }
 }

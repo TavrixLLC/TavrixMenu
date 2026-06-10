@@ -2,6 +2,7 @@ import 'package:flutter/material.dart';
 import 'package:flutter_bloc/flutter_bloc.dart';
 
 import '../core/theme/app_theme.dart';
+import 'config/app_config.dart';
 import '../features/auth/presentation/bloc/auth_cubit.dart';
 import '../features/business_setup/presentation/bloc/business_setup_cubit.dart';
 import '../features/dashboard/presentation/bloc/dashboard_cubit.dart';
@@ -31,21 +32,26 @@ class _TavrixMenuAppState extends State<TavrixMenuApp> {
 
   @override
   Widget build(BuildContext context) {
-    return MultiBlocProvider(
-      providers: [
-        BlocProvider<AuthCubit>.value(value: _dependencies.authCubit),
-        BlocProvider<BusinessSetupCubit>.value(
-          value: _dependencies.businessSetupCubit,
+    return RepositoryProvider<AppConfig>.value(
+      value: _dependencies.config,
+      child: MultiBlocProvider(
+        providers: [
+          BlocProvider<AuthCubit>.value(value: _dependencies.authCubit),
+          BlocProvider<BusinessSetupCubit>.value(
+            value: _dependencies.businessSetupCubit,
+          ),
+          BlocProvider<DashboardCubit>.value(
+            value: _dependencies.dashboardCubit,
+          ),
+          BlocProvider<MenuCubit>.value(value: _dependencies.menuCubit),
+        ],
+        child: MaterialApp(
+          title: 'Tavrix Menu',
+          debugShowCheckedModeBanner: false,
+          theme: AppTheme.light,
+          initialRoute: AppRouteNames.splash,
+          routes: AppRouter.routes,
         ),
-        BlocProvider<DashboardCubit>.value(value: _dependencies.dashboardCubit),
-        BlocProvider<MenuCubit>.value(value: _dependencies.menuCubit),
-      ],
-      child: MaterialApp(
-        title: 'Tavrix Menu',
-        debugShowCheckedModeBanner: false,
-        theme: AppTheme.light,
-        initialRoute: AppRouteNames.splash,
-        routes: AppRouter.routes,
       ),
     );
   }

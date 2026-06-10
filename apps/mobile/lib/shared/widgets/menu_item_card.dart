@@ -7,9 +7,16 @@ import 'app_card.dart';
 import 'status_badge.dart';
 
 class MenuItemCard extends StatelessWidget {
-  const MenuItemCard({required this.item, super.key});
+  const MenuItemCard({
+    required this.item,
+    this.onEdit,
+    this.onDelete,
+    super.key,
+  });
 
   final MenuItem item;
+  final VoidCallback? onEdit;
+  final VoidCallback? onDelete;
 
   @override
   Widget build(BuildContext context) {
@@ -27,11 +34,36 @@ class MenuItemCard extends StatelessWidget {
                   Text(item.description),
                 ],
                 const SizedBox(height: AppSpacing.sm),
-                Text(MoneyFormatter.formatCents(item.priceCents)),
+                Text(MoneyFormatter.formatPrice(item.price)),
               ],
             ),
           ),
-          StatusBadge(label: item.isAvailable ? 'Active' : 'Hidden'),
+          Column(
+            crossAxisAlignment: CrossAxisAlignment.end,
+            children: [
+              StatusBadge(label: item.isAvailable ? 'Active' : 'Hidden'),
+              if (onEdit != null || onDelete != null) ...[
+                const SizedBox(height: AppSpacing.xs),
+                Row(
+                  mainAxisSize: MainAxisSize.min,
+                  children: [
+                    if (onEdit != null)
+                      IconButton(
+                        tooltip: 'Edit item',
+                        onPressed: onEdit,
+                        icon: const Icon(Icons.edit_outlined),
+                      ),
+                    if (onDelete != null)
+                      IconButton(
+                        tooltip: 'Delete item',
+                        onPressed: onDelete,
+                        icon: const Icon(Icons.delete_outline),
+                      ),
+                  ],
+                ),
+              ],
+            ],
+          ),
         ],
       ),
     );

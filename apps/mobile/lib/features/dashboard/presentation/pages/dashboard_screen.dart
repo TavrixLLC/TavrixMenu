@@ -25,7 +25,11 @@ class _DashboardScreenState extends State<DashboardScreen> {
   void initState() {
     super.initState();
     WidgetsBinding.instance.addPostFrameCallback((_) {
-      context.read<DashboardCubit>().load();
+      final cubit = context.read<DashboardCubit>();
+      if (cubit.state.status == DashboardStatus.initial ||
+          cubit.state.status == DashboardStatus.failure) {
+        cubit.load();
+      }
     });
   }
 
@@ -34,11 +38,22 @@ class _DashboardScreenState extends State<DashboardScreen> {
     return AppScaffold(
       title: 'Dashboard',
       scrollable: true,
-      child: BlocBuilder<DashboardCubit, DashboardState>(
+      child: BlocConsumer<DashboardCubit, DashboardState>(
+        listener: (context, state) {
+          if (state.status == DashboardStatus.needsBusinessSetup) {
+            Navigator.of(
+              context,
+            ).pushReplacementNamed(AppRouteNames.businessSetup);
+          }
+        },
         builder: (context, state) {
           if (state.status == DashboardStatus.loading ||
               state.status == DashboardStatus.initial) {
             return const LoadingView(message: 'Loading dashboard');
+          }
+
+          if (state.status == DashboardStatus.needsBusinessSetup) {
+            return const LoadingView(message: 'Opening business setup');
           }
 
           if (state.status == DashboardStatus.failure) {
