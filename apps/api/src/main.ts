@@ -27,8 +27,10 @@ async function bootstrap() {
     .setDescription(
       [
         'Tavrix Menu backend API.',
-        'Development auth header:',
-        'Authorization: Bearer dev:user_test123;email=flutter_tester@tavrix.com;name=Flutter%20Tester'
+        'Production and staging clients must send real Clerk JWTs with Authorization: Bearer <clerk-jwt>.',
+        'Development can use dev tokens only when NODE_ENV=development.',
+        'Development auth header example:',
+        'Authorization: Bearer dev:user_tavrix_owner;email=owner@tavrix.local;name=Tavrix%20Owner'
       ].join('\n\n')
     )
     .setVersion('0.1.0')

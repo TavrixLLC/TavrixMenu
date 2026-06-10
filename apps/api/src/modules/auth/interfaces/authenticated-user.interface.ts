@@ -7,4 +7,6 @@ export interface AuthenticatedUser {
   email: string | null;
   phone: string | null;
   status: UserStatus;
+  createdAt: Date;
+  updatedAt: Date;
 }

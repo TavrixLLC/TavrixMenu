@@ -15,8 +15,10 @@ export function validateEnvironment(config: Environment) {
     throw new Error('API_PORT must be a positive integer');
   }
 
-  if (nodeEnv === 'production' && !config.CLERK_JWT_ISSUER) {
-    throw new Error('CLERK_JWT_ISSUER is required in production');
+  if (nodeEnv !== 'development' && !config.CLERK_JWT_ISSUER) {
+    throw new Error(
+      'CLERK_JWT_ISSUER is required when NODE_ENV is test or production'
+    );
   }
 
   return {

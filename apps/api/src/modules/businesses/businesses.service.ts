@@ -25,6 +25,19 @@ type BusinessMemberRecord = Prisma.BusinessUserGetPayload<{
   };
 }>;
 
+type AppContextBusiness = Pick<
+  Business,
+  | 'id'
+  | 'name'
+  | 'slug'
+  | 'type'
+  | 'city'
+  | 'currency'
+  | 'language'
+  | 'logoUrl'
+  | 'coverUrl'
+>;
+
 @Injectable()
 export class BusinessesService {
   constructor(
@@ -35,7 +48,7 @@ export class BusinessesService {
 
   async createBusiness(currentUser: AuthenticatedUser, dto: CreateBusinessDto) {
     try {
-      const business = await this.prisma.$transaction(async (transaction) => {
+      const result = await this.prisma.$transaction(async (transaction) => {
         const slug = await this.generateUniqueSlug(dto.name, transaction);
         const createdBusiness = await transaction.business.create({
           data: {
@@ -49,7 +62,7 @@ export class BusinessesService {
           }
         });
 
-        await transaction.businessUser.create({
+        const membership = await transaction.businessUser.create({
           data: {
             businessId: createdBusiness.id,
             userId: currentUser.id,
@@ -57,10 +70,20 @@ export class BusinessesService {
           }
         });
 
-        return createdBusiness;
+        return {
+          business: createdBusiness,
+          membership
+        };
       });
 
-      return this.mapBusiness(business);
+      const business = this.mapBusiness(result.business);
+      const currentMembership = this.mapCurrentMembership(result.membership);
+
+      return {
+        business,
+        currentMembership,
+        appContext: this.mapAppContext(result.business, result.membership)
+      };
     } catch (error) {
       if (this.isUniqueConstraintError(error)) {
         throw new ConflictException('Business slug already exists');
@@ -148,16 +171,7 @@ export class BusinessesService {
       throw new NotFoundException('Business not found');
     }
 
-    return {
-      business,
-      currentMembership: {
-        id: membership.id,
-        role: membership.role,
-        isActive: membership.status === BusinessUserStatus.ACTIVE
-      },
-      permissions: this.businessAccessService.getPermissions(membership.role),
-      publicMenu: this.mapPublicMenu(business.slug)
-    };
+    return this.mapAppContext(business, membership);
   }
 
   async getPublicLink(currentUser: AuthenticatedUser, businessId: string) {
@@ -449,6 +463,44 @@ export class BusinessesService {
       language: business.language,
       city: business.city,
       status: business.status
+    };
+  }
+
+  private mapCurrentMembership(membership: {
+    id: string;
+    role: BusinessUserRole;
+    status: BusinessUserStatus;
+  }) {
+    return {
+      id: membership.id,
+      role: membership.role,
+      isActive: membership.status === BusinessUserStatus.ACTIVE
+    };
+  }
+
+  private mapAppContext(
+    business: AppContextBusiness,
+    membership: {
+      id: string;
+      role: BusinessUserRole;
+      status: BusinessUserStatus;
+    }
+  ) {
+    return {
+      business: {
+        id: business.id,
+        name: business.name,
+        slug: business.slug,
+        type: business.type,
+        city: business.city,
+        currency: business.currency,
+        language: business.language,
+        logoUrl: business.logoUrl,
+        coverUrl: business.coverUrl
+      },
+      currentMembership: this.mapCurrentMembership(membership),
+      permissions: this.businessAccessService.getPermissions(membership.role),
+      publicMenu: this.mapPublicMenu(business.slug)
     };
   }
 

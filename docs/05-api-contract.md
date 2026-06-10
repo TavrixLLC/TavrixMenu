@@ -6,9 +6,11 @@ Once Flutter or customer web depends on an endpoint, keep it backward compatible
 
 ## Conventions
 
-- Authenticated requests use `Authorization: Bearer <clerk-token>`.
-- Local development can use:
+- Production and staging authenticated requests use
+  `Authorization: Bearer <clerk-jwt>`.
+- Local development can use dev auth only when `NODE_ENV=development`:
   `Authorization: Bearer dev:user_tavrix_owner;email=owner@tavrix.local;name=Tavrix%20Owner`.
+- Non-development environments reject `dev:` tokens.
 - Customers do not authenticate.
 - Business routes require a valid Clerk token and internal business membership.
 - Owner-only routes require `BusinessUser.role = OWNER` unless documented otherwise.
@@ -24,6 +26,17 @@ Swagger:
 
 - UI: `http://localhost:3000/docs`
 - JSON: `http://localhost:3000/docs-json`
+
+API CORS currently allows local Flutter and web development clients with
+credentials. Tighten allowed origins before production deployment.
+
+Clerk environment:
+
+- `CLERK_JWT_ISSUER` is required when `NODE_ENV` is `test` or `production`.
+- `CLERK_JWKS_URL` is optional; if omitted the API uses
+  `<CLERK_JWT_ISSUER>/.well-known/jwks.json`.
+- `CLERK_SECRET_KEY` is not required by Sprint 3 because the backend does not
+  call the Clerk Admin API.
 
 Example error:
 
@@ -62,6 +75,7 @@ Errors:
 Auth: Clerk required.
 
 Purpose: return or create/sync the internal user linked to the Clerk user ID.
+This is the first authenticated startup endpoint for Flutter and dashboards.
 
 Request: none.
 
@@ -75,7 +89,32 @@ Response:
     "name": "Owner Name",
     "email": "owner@example.com",
     "phone": null,
-    "status": "ACTIVE"
+    "status": "ACTIVE",
+    "createdAt": "2026-06-10T00:00:00.000Z",
+    "updatedAt": "2026-06-10T00:00:00.000Z"
+  },
+  "memberships": [
+    {
+      "id": "mem_123",
+      "role": "OWNER",
+      "isActive": true,
+      "business": {
+        "id": "bus_123",
+        "name": "Tavrix Cafe",
+        "slug": "tavrix-cafe",
+        "type": "cafe",
+        "city": "Baghdad",
+        "currency": "IQD",
+        "language": "ar",
+        "logoUrl": null,
+        "coverUrl": null
+      }
+    }
+  ],
+  "onboarding": {
+    "hasBusiness": true,
+    "activeBusinessCount": 1,
+    "recommendedNextStep": "OPEN_DASHBOARD"
   },
   "businesses": [
     {
@@ -88,6 +127,15 @@ Response:
   ]
 }
 ```
+
+`onboarding.recommendedNextStep` values:
+
+- `CREATE_BUSINESS`: zero active memberships.
+- `OPEN_DASHBOARD`: one active membership.
+- `SELECT_BUSINESS`: more than one active membership.
+
+The `businesses` array remains for backward compatibility. New clients should
+prefer `memberships` and `onboarding`.
 
 Errors:
 
@@ -117,18 +165,60 @@ Response:
 
 ```json
 {
-  "id": "bus_123",
-  "name": "Tavrix Cafe",
-  "slug": "tavrix-cafe",
-  "type": "cafe",
-  "logoUrl": null,
-  "coverUrl": null,
-  "currency": "IQD",
-  "language": "ar",
-  "city": "Baghdad",
-  "status": "ACTIVE"
+  "business": {
+    "id": "bus_123",
+    "name": "Tavrix Cafe",
+    "slug": "tavrix-cafe",
+    "type": "cafe",
+    "logoUrl": null,
+    "coverUrl": null,
+    "currency": "IQD",
+    "language": "ar",
+    "city": "Baghdad",
+    "status": "ACTIVE"
+  },
+  "currentMembership": {
+    "id": "mem_123",
+    "role": "OWNER",
+    "isActive": true
+  },
+  "appContext": {
+    "business": {
+      "id": "bus_123",
+      "name": "Tavrix Cafe",
+      "slug": "tavrix-cafe",
+      "type": "cafe",
+      "city": "Baghdad",
+      "currency": "IQD",
+      "language": "ar",
+      "logoUrl": null,
+      "coverUrl": null
+    },
+    "currentMembership": {
+      "id": "mem_123",
+      "role": "OWNER",
+      "isActive": true
+    },
+    "permissions": {
+      "canManageBusiness": true,
+      "canManageMenu": true,
+      "canManageMembers": true,
+      "canViewMembers": true,
+      "canViewPublicLink": true
+    },
+    "publicMenu": {
+      "slug": "tavrix-cafe",
+      "path": "/m/tavrix-cafe",
+      "url": "http://localhost:3001/m/tavrix-cafe",
+      "qrPayload": "http://localhost:3001/m/tavrix-cafe"
+    }
+  }
 }
 ```
+
+Behavior: creates the business, creates an active `OWNER` membership for the
+current user, and returns enough app context for Flutter to continue without a
+separate bootstrap call.
 
 Errors:
 

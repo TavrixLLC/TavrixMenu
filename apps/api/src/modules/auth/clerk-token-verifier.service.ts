@@ -92,10 +92,8 @@ export class ClerkTokenVerifierService {
     const issuer = this.configService.get<string>('CLERK_JWT_ISSUER');
 
     if (!issuer) {
-      // TODO: Configure CLERK_JWT_ISSUER from the Clerk instance before using
-      // real Clerk JWTs in staging or production.
       throw new UnauthorizedException(
-        'Clerk JWT verification is not configured'
+        'Clerk JWT verification is not configured: set CLERK_JWT_ISSUER'
       );
     }
 
@@ -188,7 +186,7 @@ export class ClerkTokenVerifierService {
 
     if (!issuer) {
       throw new UnauthorizedException(
-        'Clerk JWT verification is not configured'
+        'Clerk JWT verification is not configured: set CLERK_JWT_ISSUER'
       );
     }
 
@@ -198,7 +196,9 @@ export class ClerkTokenVerifierService {
     const response = await fetch(jwksUrl);
 
     if (!response.ok) {
-      throw new UnauthorizedException('Unable to fetch Clerk signing keys');
+      throw new UnauthorizedException(
+        'Unable to fetch Clerk signing keys from JWKS endpoint'
+      );
     }
 
     const jwks = (await response.json()) as JwksResponse;
