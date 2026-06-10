@@ -27,13 +27,14 @@ export class UpdateItemDto {
   @MaxLength(160)
   nameAr?: string;
 
-  @ApiPropertyOptional({ example: 'Turkish Coffee', nullable: true })
+  @ApiPropertyOptional({ type: String, example: 'Turkish Coffee', nullable: true })
   @ValidateIf((_, value) => value !== undefined && value !== null)
   @IsString()
   @MaxLength(160)
   nameEn?: string | null;
 
   @ApiPropertyOptional({
+    type: String,
     example: 'Traditional strong coffee.',
     nullable: true
   })
@@ -43,6 +44,7 @@ export class UpdateItemDto {
   descriptionAr?: string | null;
 
   @ApiPropertyOptional({
+    type: String,
     example: 'Traditional strong coffee.',
     nullable: true
   })
@@ -59,7 +61,11 @@ export class UpdateItemDto {
   })
   price?: string;
 
-  @ApiPropertyOptional({ example: 'https://example.com/item.png', nullable: true })
+  @ApiPropertyOptional({
+    type: String,
+    example: 'https://example.com/item.png',
+    nullable: true
+  })
   @ValidateIf((_, value) => value !== undefined && value !== null)
   @IsString()
   @MaxLength(500)

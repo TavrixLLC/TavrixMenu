@@ -18,7 +18,7 @@ export class UpdateCategoryDto {
   @MaxLength(120)
   nameAr?: string;
 
-  @ApiPropertyOptional({ example: 'Desserts', nullable: true })
+  @ApiPropertyOptional({ type: String, example: 'Desserts', nullable: true })
   @ValidateIf((_, value) => value !== undefined && value !== null)
   @IsString()
   @MaxLength(120)

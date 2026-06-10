@@ -3,23 +3,34 @@ import {
   Injectable,
   NotFoundException
 } from '@nestjs/common';
+import { ConfigService } from '@nestjs/config';
 import {
   Business,
   BusinessUserRole,
   BusinessUserStatus,
-  Prisma
+  Prisma,
+  UserStatus
 } from '../../generated/prisma';
 import { PrismaService } from '../../prisma/prisma.service';
 import { AuthenticatedUser } from '../auth/interfaces/authenticated-user.interface';
 import { BusinessAccessService } from './business-access.service';
 import { CreateBusinessDto } from './dto/create-business.dto';
+import { CreateMemberDto } from './dto/create-member.dto';
 import { UpdateBusinessDto } from './dto/update-business.dto';
+import { UpdateMemberDto } from './dto/update-member.dto';
+
+type BusinessMemberRecord = Prisma.BusinessUserGetPayload<{
+  include: {
+    user: true;
+  };
+}>;
 
 @Injectable()
 export class BusinessesService {
   constructor(
     private readonly prisma: PrismaService,
-    private readonly businessAccessService: BusinessAccessService
+    private readonly businessAccessService: BusinessAccessService,
+    private readonly configService: ConfigService
   ) {}
 
   async createBusiness(currentUser: AuthenticatedUser, dto: CreateBusinessDto) {
@@ -84,10 +95,7 @@ export class BusinessesService {
     businessId: string,
     dto: UpdateBusinessDto
   ) {
-    await this.businessAccessService.assertRole(businessId, currentUser.id, [
-      BusinessUserRole.OWNER,
-      BusinessUserRole.MANAGER
-    ]);
+    await this.businessAccessService.assertOwner(businessId, currentUser.id);
 
     try {
       const business = await this.prisma.business.update({
@@ -111,6 +119,286 @@ export class BusinessesService {
 
       throw error;
     }
+  }
+
+  async getAppContext(currentUser: AuthenticatedUser, businessId: string) {
+    const membership = await this.businessAccessService.assertRole(
+      businessId,
+      currentUser.id,
+      this.businessAccessService.appContextRoles
+    );
+    const business = await this.prisma.business.findUnique({
+      where: {
+        id: businessId
+      },
+      select: {
+        id: true,
+        name: true,
+        slug: true,
+        type: true,
+        city: true,
+        currency: true,
+        language: true,
+        logoUrl: true,
+        coverUrl: true
+      }
+    });
+
+    if (!business) {
+      throw new NotFoundException('Business not found');
+    }
+
+    return {
+      business,
+      currentMembership: {
+        id: membership.id,
+        role: membership.role,
+        isActive: membership.status === BusinessUserStatus.ACTIVE
+      },
+      permissions: this.businessAccessService.getPermissions(membership.role),
+      publicMenu: this.mapPublicMenu(business.slug)
+    };
+  }
+
+  async getPublicLink(currentUser: AuthenticatedUser, businessId: string) {
+    await this.businessAccessService.assertRole(
+      businessId,
+      currentUser.id,
+      this.businessAccessService.appContextRoles
+    );
+    const business = await this.prisma.business.findUnique({
+      where: {
+        id: businessId
+      },
+      select: {
+        id: true,
+        slug: true
+      }
+    });
+
+    if (!business) {
+      throw new NotFoundException('Business not found');
+    }
+
+    const publicMenu = this.mapPublicMenu(business.slug);
+
+    return {
+      businessId: business.id,
+      slug: business.slug,
+      publicMenuPath: publicMenu.path,
+      publicMenuUrl: publicMenu.url,
+      qrPayload: publicMenu.qrPayload
+    };
+  }
+
+  async getMembers(currentUser: AuthenticatedUser, businessId: string) {
+    await this.businessAccessService.assertRole(
+      businessId,
+      currentUser.id,
+      this.businessAccessService.memberViewerRoles
+    );
+
+    const memberships = await this.prisma.businessUser.findMany({
+      where: {
+        businessId
+      },
+      include: {
+        user: true
+      },
+      orderBy: {
+        createdAt: 'asc'
+      }
+    });
+
+    return memberships.map((membership) => this.mapMember(membership));
+  }
+
+  async createMember(
+    currentUser: AuthenticatedUser,
+    businessId: string,
+    dto: CreateMemberDto
+  ) {
+    await this.businessAccessService.assertOwner(businessId, currentUser.id);
+
+    return this.prisma.$transaction(async (transaction) => {
+      const user = await transaction.user.upsert({
+        where: {
+          clerkUserId: dto.clerkUserId
+        },
+        create: {
+          clerkUserId: dto.clerkUserId,
+          email: dto.email,
+          name: dto.name,
+          phone: dto.phone,
+          status: UserStatus.ACTIVE
+        },
+        update: {
+          email: dto.email,
+          name: dto.name,
+          phone: dto.phone
+        }
+      });
+
+      const existingMembership = await transaction.businessUser.findUnique({
+        where: {
+          businessId_userId: {
+            businessId,
+            userId: user.id
+          }
+        },
+        include: {
+          user: true
+        }
+      });
+
+      if (existingMembership?.status === BusinessUserStatus.ACTIVE) {
+        throw new ConflictException('Business member already active');
+      }
+
+      if (existingMembership) {
+        const reactivatedMembership = await transaction.businessUser.update({
+          where: {
+            id: existingMembership.id
+          },
+          data: {
+            role: dto.role,
+            status: BusinessUserStatus.ACTIVE
+          },
+          include: {
+            user: true
+          }
+        });
+
+        return this.mapMember(reactivatedMembership);
+      }
+
+      const membership = await transaction.businessUser.create({
+        data: {
+          businessId,
+          userId: user.id,
+          role: dto.role,
+          status: BusinessUserStatus.ACTIVE
+        },
+        include: {
+          user: true
+        }
+      });
+
+      return this.mapMember(membership);
+    });
+  }
+
+  async updateMember(
+    currentUser: AuthenticatedUser,
+    businessId: string,
+    memberId: string,
+    dto: UpdateMemberDto
+  ) {
+    await this.businessAccessService.assertOwner(businessId, currentUser.id);
+
+    return this.prisma.$transaction(async (transaction) => {
+      const existingMembership = await transaction.businessUser.findFirst({
+        where: {
+          id: memberId,
+          businessId
+        },
+        include: {
+          user: true
+        }
+      });
+
+      if (!existingMembership) {
+        throw new NotFoundException('Business member not found');
+      }
+
+      const nextRole = dto.role ?? existingMembership.role;
+      const nextStatus =
+        dto.isActive === undefined
+          ? existingMembership.status
+          : dto.isActive
+            ? BusinessUserStatus.ACTIVE
+            : BusinessUserStatus.DISABLED;
+      const removesActiveOwner =
+        existingMembership.role === BusinessUserRole.OWNER &&
+        existingMembership.status === BusinessUserStatus.ACTIVE &&
+        (nextRole !== BusinessUserRole.OWNER ||
+          nextStatus !== BusinessUserStatus.ACTIVE);
+
+      if (removesActiveOwner) {
+        await this.businessAccessService.assertAnotherActiveOwnerExists(
+          businessId,
+          existingMembership.id,
+          transaction
+        );
+      }
+
+      const updatedMembership = await transaction.businessUser.update({
+        where: {
+          id: memberId
+        },
+        data: {
+          role: dto.role,
+          status: dto.isActive === undefined ? undefined : nextStatus
+        },
+        include: {
+          user: true
+        }
+      });
+
+      return this.mapMember(updatedMembership);
+    });
+  }
+
+  async deleteMember(
+    currentUser: AuthenticatedUser,
+    businessId: string,
+    memberId: string
+  ) {
+    await this.businessAccessService.assertOwner(businessId, currentUser.id);
+
+    return this.prisma.$transaction(async (transaction) => {
+      const existingMembership = await transaction.businessUser.findFirst({
+        where: {
+          id: memberId,
+          businessId
+        },
+        include: {
+          user: true
+        }
+      });
+
+      if (!existingMembership) {
+        throw new NotFoundException('Business member not found');
+      }
+
+      if (
+        existingMembership.role === BusinessUserRole.OWNER &&
+        existingMembership.status === BusinessUserStatus.ACTIVE
+      ) {
+        await this.businessAccessService.assertAnotherActiveOwnerExists(
+          businessId,
+          existingMembership.id,
+          transaction
+        );
+      }
+
+      const updatedMembership = await transaction.businessUser.update({
+        where: {
+          id: memberId
+        },
+        data: {
+          status: BusinessUserStatus.DISABLED
+        },
+        include: {
+          user: true
+        }
+      });
+
+      return {
+        deleted: true,
+        member: this.mapMember(updatedMembership)
+      };
+    });
   }
 
   private async generateUniqueSlug(
@@ -161,6 +449,42 @@ export class BusinessesService {
       language: business.language,
       city: business.city,
       status: business.status
+    };
+  }
+
+  private mapPublicMenu(slug: string) {
+    const path = `/m/${slug}`;
+    const url = `${this.getCustomerWebBaseUrl()}${path}`;
+
+    return {
+      slug,
+      path,
+      url,
+      qrPayload: url
+    };
+  }
+
+  private getCustomerWebBaseUrl() {
+    const configuredBaseUrl = this.configService.get<string>(
+      'CUSTOMER_WEB_BASE_URL',
+      'http://localhost:3001'
+    );
+
+    return configuredBaseUrl.replace(/\/+$/, '');
+  }
+
+  private mapMember(membership: BusinessMemberRecord) {
+    return {
+      id: membership.id,
+      userId: membership.userId,
+      clerkUserId: membership.user.clerkUserId,
+      email: membership.user.email,
+      name: membership.user.name,
+      phone: membership.user.phone,
+      role: membership.role,
+      isActive: membership.status === BusinessUserStatus.ACTIVE,
+      createdAt: membership.createdAt,
+      updatedAt: membership.updatedAt
     };
   }
 

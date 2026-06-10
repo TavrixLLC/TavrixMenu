@@ -1,4 +1,5 @@
 import {
+  BadRequestException,
   ForbiddenException,
   Injectable,
   NotFoundException
@@ -6,12 +7,30 @@ import {
 import {
   BusinessUser,
   BusinessUserRole,
-  BusinessUserStatus
+  BusinessUserStatus,
+  Prisma
 } from '../../generated/prisma';
 import { PrismaService } from '../../prisma/prisma.service';
 
+type BusinessPermissionSet = {
+  canManageBusiness: boolean;
+  canManageMenu: boolean;
+  canManageMembers: boolean;
+  canViewMembers: boolean;
+  canViewPublicLink: boolean;
+};
+
 @Injectable()
 export class BusinessAccessService {
+  readonly appContextRoles = [
+    BusinessUserRole.OWNER,
+    BusinessUserRole.MANAGER,
+    BusinessUserRole.STAFF
+  ];
+  readonly ownerRoles = [BusinessUserRole.OWNER];
+  readonly menuManagerRoles = [BusinessUserRole.OWNER, BusinessUserRole.MANAGER];
+  readonly memberViewerRoles = [BusinessUserRole.OWNER, BusinessUserRole.MANAGER];
+
   constructor(private readonly prisma: PrismaService) {}
 
   async assertMembership(
@@ -55,5 +74,42 @@ export class BusinessAccessService {
     }
 
     return membership;
+  }
+
+  assertOwner(businessId: string, userId: string): Promise<BusinessUser> {
+    return this.assertRole(businessId, userId, this.ownerRoles);
+  }
+
+  getPermissions(role: BusinessUserRole): BusinessPermissionSet {
+    return {
+      canManageBusiness: role === BusinessUserRole.OWNER,
+      canManageMenu:
+        role === BusinessUserRole.OWNER || role === BusinessUserRole.MANAGER,
+      canManageMembers: role === BusinessUserRole.OWNER,
+      canViewMembers:
+        role === BusinessUserRole.OWNER || role === BusinessUserRole.MANAGER,
+      canViewPublicLink: true
+    };
+  }
+
+  async assertAnotherActiveOwnerExists(
+    businessId: string,
+    excludedMembershipId: string,
+    prisma: Prisma.TransactionClient | PrismaService = this.prisma
+  ) {
+    const remainingActiveOwnerCount = await prisma.businessUser.count({
+      where: {
+        businessId,
+        role: BusinessUserRole.OWNER,
+        status: BusinessUserStatus.ACTIVE,
+        NOT: {
+          id: excludedMembershipId
+        }
+      }
+    });
+
+    if (remainingActiveOwnerCount === 0) {
+      throw new BadRequestException('Cannot remove the last active OWNER');
+    }
   }
 }

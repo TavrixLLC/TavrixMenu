@@ -1,4 +1,13 @@
-import { Body, Controller, Get, Param, Patch, Post, UseGuards } from '@nestjs/common';
+import {
+  Body,
+  Controller,
+  Delete,
+  Get,
+  Param,
+  Patch,
+  Post,
+  UseGuards
+} from '@nestjs/common';
 import {
   ApiBearerAuth,
   ApiCreatedResponse,
@@ -10,7 +19,9 @@ import { ClerkAuthGuard } from '../auth/guards/clerk-auth.guard';
 import { AuthenticatedUser } from '../auth/interfaces/authenticated-user.interface';
 import { BusinessesService } from './businesses.service';
 import { CreateBusinessDto } from './dto/create-business.dto';
+import { CreateMemberDto } from './dto/create-member.dto';
 import { UpdateBusinessDto } from './dto/update-business.dto';
+import { UpdateMemberDto } from './dto/update-member.dto';
 
 @ApiTags('businesses')
 @ApiBearerAuth()
@@ -29,9 +40,155 @@ export class BusinessesController {
   }
 
   @Get('me')
-  @ApiOkResponse({ description: 'Businesses for the current user.' })
+  @ApiOkResponse({
+    description: 'Businesses for the current user.',
+    schema: {
+      example: [
+        {
+          id: 'bus_123',
+          name: 'Tavrix Cafe',
+          slug: 'tavrix-cafe',
+          type: 'cafe',
+          logoUrl: null,
+          coverUrl: null,
+          currency: 'IQD',
+          language: 'ar',
+          city: 'Baghdad',
+          status: 'ACTIVE',
+          role: 'OWNER'
+        }
+      ]
+    }
+  })
   getMyBusinesses(@CurrentUser() currentUser: AuthenticatedUser) {
     return this.businessesService.getMyBusinesses(currentUser);
+  }
+
+  @Get(':id/app-context')
+  @ApiOkResponse({
+    description: 'Business app context for the Flutter business app.',
+    schema: {
+      example: {
+        business: {
+          id: 'bus_123',
+          name: 'Tavrix Cafe',
+          slug: 'tavrix-cafe',
+          type: 'cafe',
+          city: 'Baghdad',
+          currency: 'IQD',
+          language: 'ar',
+          logoUrl: null,
+          coverUrl: null
+        },
+        currentMembership: {
+          id: 'mem_123',
+          role: 'OWNER',
+          isActive: true
+        },
+        permissions: {
+          canManageBusiness: true,
+          canManageMenu: true,
+          canManageMembers: true,
+          canViewMembers: true,
+          canViewPublicLink: true
+        },
+        publicMenu: {
+          slug: 'tavrix-cafe',
+          path: '/m/tavrix-cafe',
+          url: 'http://localhost:3001/m/tavrix-cafe',
+          qrPayload: 'http://localhost:3001/m/tavrix-cafe'
+        }
+      }
+    }
+  })
+  getAppContext(
+    @CurrentUser() currentUser: AuthenticatedUser,
+    @Param('id') businessId: string
+  ) {
+    return this.businessesService.getAppContext(currentUser, businessId);
+  }
+
+  @Get(':id/public-link')
+  @ApiOkResponse({
+    description: 'Public menu link and QR payload for a business.',
+    schema: {
+      example: {
+        businessId: 'bus_123',
+        slug: 'tavrix-cafe',
+        publicMenuPath: '/m/tavrix-cafe',
+        publicMenuUrl: 'http://localhost:3001/m/tavrix-cafe',
+        qrPayload: 'http://localhost:3001/m/tavrix-cafe'
+      }
+    }
+  })
+  getPublicLink(
+    @CurrentUser() currentUser: AuthenticatedUser,
+    @Param('id') businessId: string
+  ) {
+    return this.businessesService.getPublicLink(currentUser, businessId);
+  }
+
+  @Get(':id/members')
+  @ApiOkResponse({
+    description: 'Active and inactive business members.',
+    schema: {
+      example: [
+        {
+          id: 'mem_123',
+          userId: 'usr_123',
+          clerkUserId: 'user_tavrix_owner',
+          email: 'owner@tavrix.local',
+          name: 'Tavrix Owner',
+          phone: null,
+          role: 'OWNER',
+          isActive: true,
+          createdAt: '2026-06-10T00:00:00.000Z',
+          updatedAt: '2026-06-10T00:00:00.000Z'
+        }
+      ]
+    }
+  })
+  getMembers(
+    @CurrentUser() currentUser: AuthenticatedUser,
+    @Param('id') businessId: string
+  ) {
+    return this.businessesService.getMembers(currentUser, businessId);
+  }
+
+  @Post(':id/members')
+  @ApiCreatedResponse({ description: 'Business member created or reactivated.' })
+  createMember(
+    @CurrentUser() currentUser: AuthenticatedUser,
+    @Param('id') businessId: string,
+    @Body() dto: CreateMemberDto
+  ) {
+    return this.businessesService.createMember(currentUser, businessId, dto);
+  }
+
+  @Patch(':id/members/:memberId')
+  @ApiOkResponse({ description: 'Business member updated.' })
+  updateMember(
+    @CurrentUser() currentUser: AuthenticatedUser,
+    @Param('id') businessId: string,
+    @Param('memberId') memberId: string,
+    @Body() dto: UpdateMemberDto
+  ) {
+    return this.businessesService.updateMember(
+      currentUser,
+      businessId,
+      memberId,
+      dto
+    );
+  }
+
+  @Delete(':id/members/:memberId')
+  @ApiOkResponse({ description: 'Business member deactivated.' })
+  deleteMember(
+    @CurrentUser() currentUser: AuthenticatedUser,
+    @Param('id') businessId: string,
+    @Param('memberId') memberId: string
+  ) {
+    return this.businessesService.deleteMember(currentUser, businessId, memberId);
   }
 
   @Patch(':id')

@@ -17,7 +17,7 @@ export class CreateCategoryDto {
   @MaxLength(120)
   nameAr: string;
 
-  @ApiPropertyOptional({ example: 'Hot Drinks', nullable: true })
+  @ApiPropertyOptional({ type: String, example: 'Hot Drinks', nullable: true })
   @IsOptional()
   @IsString()
   @MaxLength(120)
