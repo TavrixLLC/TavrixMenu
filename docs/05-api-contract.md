@@ -7,10 +7,23 @@ Once Flutter or customer web depends on an endpoint, keep it backward compatible
 ## Conventions
 
 - Authenticated requests use `Authorization: Bearer <clerk-token>`.
+- Local development can use:
+  `Authorization: Bearer dev:user_tavrix_owner;email=owner@tavrix.local;name=Tavrix%20Owner`.
 - Customers do not authenticate.
 - Business routes require a valid Clerk token and internal business membership.
 - Owner-only routes require `BusinessUser.role = OWNER` unless documented otherwise.
 - All errors use a consistent JSON shape.
+
+Backend base URLs:
+
+- Desktop: `http://localhost:3000`
+- Android emulator: `http://10.0.2.2:3000`
+- Physical phone: `http://<LAN-IP>:3000`
+
+Swagger:
+
+- UI: `http://localhost:3000/docs`
+- JSON: `http://localhost:3000/docs-json`
 
 Example error:
 
@@ -155,7 +168,7 @@ Errors:
 
 Auth: Clerk required.
 
-Role: `OWNER` or `MANAGER`.
+Role: `OWNER`.
 
 Request:
 
@@ -190,6 +203,191 @@ Errors:
 - `401` unauthenticated.
 - `403` missing business role.
 - `404` business not found.
+
+### GET /businesses/:id/app-context
+
+Auth: Clerk required.
+
+Role: `OWNER`, `MANAGER`, or `STAFF`.
+
+Purpose: one Flutter business-app bootstrap payload with current business,
+membership, permissions, and public menu link.
+
+Response:
+
+```json
+{
+  "business": {
+    "id": "bus_123",
+    "name": "Tavrix Cafe",
+    "slug": "tavrix-cafe",
+    "type": "cafe",
+    "city": "Baghdad",
+    "currency": "IQD",
+    "language": "ar",
+    "logoUrl": null,
+    "coverUrl": null
+  },
+  "currentMembership": {
+    "id": "mem_123",
+    "role": "OWNER",
+    "isActive": true
+  },
+  "permissions": {
+    "canManageBusiness": true,
+    "canManageMenu": true,
+    "canManageMembers": true,
+    "canViewMembers": true,
+    "canViewPublicLink": true
+  },
+  "publicMenu": {
+    "slug": "tavrix-cafe",
+    "path": "/m/tavrix-cafe",
+    "url": "http://localhost:3001/m/tavrix-cafe",
+    "qrPayload": "http://localhost:3001/m/tavrix-cafe"
+  }
+}
+```
+
+Errors:
+
+- `401` unauthenticated.
+- `403` missing active business membership.
+- `404` business not found.
+
+### GET /businesses/:id/public-link
+
+Auth: Clerk required.
+
+Role: `OWNER`, `MANAGER`, or `STAFF`.
+
+Response:
+
+```json
+{
+  "businessId": "bus_123",
+  "slug": "tavrix-cafe",
+  "publicMenuPath": "/m/tavrix-cafe",
+  "publicMenuUrl": "http://localhost:3001/m/tavrix-cafe",
+  "qrPayload": "http://localhost:3001/m/tavrix-cafe"
+}
+```
+
+`CUSTOMER_WEB_BASE_URL` controls the URL base and defaults locally to
+`http://localhost:3001`. The QR payload is the URL string; the backend does not
+generate QR images.
+
+Errors:
+
+- `401` unauthenticated.
+- `403` missing active business membership.
+- `404` business not found.
+
+### GET /businesses/:id/members
+
+Auth: Clerk required.
+
+Role: `OWNER` or `MANAGER`.
+
+Response includes active and inactive memberships:
+
+```json
+[
+  {
+    "id": "mem_123",
+    "userId": "usr_123",
+    "clerkUserId": "user_tavrix_owner",
+    "email": "owner@tavrix.local",
+    "name": "Tavrix Owner",
+    "phone": null,
+    "role": "OWNER",
+    "isActive": true,
+    "createdAt": "2026-06-10T00:00:00.000Z",
+    "updatedAt": "2026-06-10T00:00:00.000Z"
+  }
+]
+```
+
+Errors:
+
+- `401` unauthenticated.
+- `403` missing owner or manager role.
+
+### POST /businesses/:id/members
+
+Auth: Clerk required.
+
+Role: `OWNER`.
+
+Request:
+
+```json
+{
+  "clerkUserId": "user_tavrix_staff",
+  "email": "staff@tavrix.local",
+  "name": "Tavrix Staff",
+  "role": "STAFF"
+}
+```
+
+Behavior:
+
+- Finds or creates the user by `clerkUserId`.
+- Creates a membership if none exists.
+- Reactivates an inactive membership and updates its role.
+- Returns `409` if the membership already exists and is active.
+- Does not send email, create invite tokens, or call the Clerk Admin API.
+
+Errors:
+
+- `400` invalid body.
+- `401` unauthenticated.
+- `403` missing owner role.
+- `409` business member already active.
+
+### PATCH /businesses/:id/members/:memberId
+
+Auth: Clerk required.
+
+Role: `OWNER`.
+
+Request:
+
+```json
+{
+  "role": "MANAGER",
+  "isActive": true
+}
+```
+
+Rules:
+
+- Cannot demote the last active `OWNER`.
+- Cannot deactivate the last active `OWNER`.
+- A business must always have at least one active `OWNER`.
+
+Errors:
+
+- `400` last active owner protection failed or invalid body.
+- `401` unauthenticated.
+- `403` missing owner role.
+- `404` member not found for this business.
+
+### DELETE /businesses/:id/members/:memberId
+
+Auth: Clerk required.
+
+Role: `OWNER`.
+
+Behavior: soft deactivates the membership by setting it inactive. It never hard
+deletes the row.
+
+Errors:
+
+- `400` last active owner protection failed.
+- `401` unauthenticated.
+- `403` missing owner role.
+- `404` member not found for this business.
 
 ## Menu
 

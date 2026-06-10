@@ -22,7 +22,7 @@ export class UpdateBusinessDto {
   @MaxLength(40)
   type?: string;
 
-  @ApiPropertyOptional({ example: 'Baghdad', nullable: true })
+  @ApiPropertyOptional({ type: String, example: 'Baghdad', nullable: true })
   @ValidateIf((_, value) => value !== undefined && value !== null)
   @IsString()
   @MaxLength(80)
@@ -40,13 +40,21 @@ export class UpdateBusinessDto {
   @MaxLength(10)
   language?: string;
 
-  @ApiPropertyOptional({ example: 'https://example.com/logo.png', nullable: true })
+  @ApiPropertyOptional({
+    type: String,
+    example: 'https://example.com/logo.png',
+    nullable: true
+  })
   @ValidateIf((_, value) => value !== undefined && value !== null)
   @IsString()
   @MaxLength(500)
   logoUrl?: string | null;
 
-  @ApiPropertyOptional({ example: 'https://example.com/cover.png', nullable: true })
+  @ApiPropertyOptional({
+    type: String,
+    example: 'https://example.com/cover.png',
+    nullable: true
+  })
   @ValidateIf((_, value) => value !== undefined && value !== null)
   @IsString()
   @MaxLength(500)

@@ -14,7 +14,30 @@ export class AuthController {
 
   @Get('me')
   @UseGuards(ClerkAuthGuard)
-  @ApiOkResponse({ description: 'Current user and business memberships.' })
+  @ApiOkResponse({
+    description: 'Current user and business memberships.',
+    schema: {
+      example: {
+        user: {
+          id: 'usr_123',
+          clerkUserId: 'user_tavrix_owner',
+          name: 'Tavrix Owner',
+          email: 'owner@tavrix.local',
+          phone: null,
+          status: 'ACTIVE'
+        },
+        businesses: [
+          {
+            id: 'bus_123',
+            name: 'Tavrix Cafe',
+            slug: 'tavrix-cafe',
+            type: 'cafe',
+            role: 'OWNER'
+          }
+        ]
+      }
+    }
+  })
   async getMe(@CurrentUser() currentUser: AuthenticatedUser) {
     const memberships = await this.prisma.businessUser.findMany({
       where: {

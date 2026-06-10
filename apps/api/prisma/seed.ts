@@ -1,6 +1,7 @@
 import {
   Business,
   BusinessUserRole,
+  BusinessUserStatus,
   PrismaClient,
   UserStatus
 } from '../src/generated/prisma';
@@ -10,16 +11,16 @@ const prisma = new PrismaClient();
 async function main() {
   const owner = await prisma.user.upsert({
     where: {
-      clerkUserId: 'dev_tavrix_owner'
+      clerkUserId: 'user_tavrix_owner'
     },
     create: {
-      clerkUserId: 'dev_tavrix_owner',
-      name: 'Tavrix Demo Owner',
+      clerkUserId: 'user_tavrix_owner',
+      name: 'Tavrix Owner',
       email: 'owner@tavrix.local',
       status: UserStatus.ACTIVE
     },
     update: {
-      name: 'Tavrix Demo Owner',
+      name: 'Tavrix Owner',
       email: 'owner@tavrix.local',
       status: UserStatus.ACTIVE
     }
@@ -61,7 +62,24 @@ async function main() {
       role: BusinessUserRole.OWNER
     },
     update: {
-      role: BusinessUserRole.OWNER
+      role: BusinessUserRole.OWNER,
+      status: BusinessUserStatus.ACTIVE
+    }
+  });
+
+  await prisma.businessUser.updateMany({
+    where: {
+      businessId: business.id,
+      userId: {
+        not: owner.id
+      },
+      role: BusinessUserRole.OWNER,
+      user: {
+        clerkUserId: 'dev_tavrix_owner'
+      }
+    },
+    data: {
+      status: BusinessUserStatus.DISABLED
     }
   });
 
@@ -102,7 +120,9 @@ async function main() {
   });
 
   console.log('Seeded Tavrix Cafe demo data.');
-  console.log('Development auth token: Bearer dev:dev_tavrix_owner');
+  console.log(
+    'Development auth token: Bearer dev:user_tavrix_owner;email=owner@tavrix.local;name=Tavrix%20Owner'
+  );
 }
 
 async function upsertCategory(

@@ -1,7 +1,6 @@
 import { Injectable, NotFoundException } from '@nestjs/common';
 import {
   BusinessStatus,
-  BusinessUserRole,
   MenuCategory,
   MenuItem
 } from '../../generated/prisma';
@@ -15,11 +14,6 @@ import { UpdateItemDto } from './dto/update-item.dto';
 
 @Injectable()
 export class MenuService {
-  private readonly managerRoles = [
-    BusinessUserRole.OWNER,
-    BusinessUserRole.MANAGER
-  ];
-
   constructor(
     private readonly prisma: PrismaService,
     private readonly businessAccessService: BusinessAccessService
@@ -33,7 +27,7 @@ export class MenuService {
     await this.businessAccessService.assertRole(
       businessId,
       currentUser.id,
-      this.managerRoles
+      this.businessAccessService.menuManagerRoles
     );
 
     const category = await this.prisma.menuCategory.create({
@@ -83,7 +77,7 @@ export class MenuService {
     await this.businessAccessService.assertRole(
       existingCategory.businessId,
       currentUser.id,
-      this.managerRoles
+      this.businessAccessService.menuManagerRoles
     );
 
     const category = await this.prisma.menuCategory.update({
@@ -118,7 +112,7 @@ export class MenuService {
     await this.businessAccessService.assertRole(
       existingCategory.businessId,
       currentUser.id,
-      this.managerRoles
+      this.businessAccessService.menuManagerRoles
     );
 
     await this.prisma.menuCategory.update({
@@ -143,7 +137,7 @@ export class MenuService {
     await this.businessAccessService.assertRole(
       businessId,
       currentUser.id,
-      this.managerRoles
+      this.businessAccessService.menuManagerRoles
     );
     await this.assertCategoryInBusiness(dto.categoryId, businessId);
 
@@ -199,7 +193,7 @@ export class MenuService {
     await this.businessAccessService.assertRole(
       existingItem.businessId,
       currentUser.id,
-      this.managerRoles
+      this.businessAccessService.menuManagerRoles
     );
 
     if (dto.categoryId) {
@@ -243,7 +237,7 @@ export class MenuService {
     await this.businessAccessService.assertRole(
       existingItem.businessId,
       currentUser.id,
-      this.managerRoles
+      this.businessAccessService.menuManagerRoles
     );
 
     await this.prisma.menuItem.update({

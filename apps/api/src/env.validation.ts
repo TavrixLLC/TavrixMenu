@@ -22,6 +22,8 @@ export function validateEnvironment(config: Environment) {
   return {
     ...config,
     NODE_ENV: nodeEnv,
-    API_PORT: apiPort
+    API_PORT: apiPort,
+    CUSTOMER_WEB_BASE_URL:
+      config.CUSTOMER_WEB_BASE_URL ?? 'http://localhost:3001'
   };
 }
