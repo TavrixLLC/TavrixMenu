@@ -56,8 +56,71 @@ void main() {
     expect(model.updatedAt, '2026-06-10T00:00:00.000Z');
     expect(model.memberships.single.business.city, 'Baghdad');
     expect(model.businesses.single.slug, 'tavrix-cafe');
+    expect(model.onboarding.recommendedNextStep, 'OPEN_DASHBOARD');
     expect(model.hasBusiness, isTrue);
     expect(model.primaryBusinessId, 'bus_123');
+  });
+
+  test('represents onboarding transition from create business to dashboard', () {
+    final createBusinessUser = CurrentUserModel.fromJson({
+      'user': {
+        'id': 'usr_new',
+        'name': 'New Owner',
+        'email': 'new-owner@tavrix.local',
+      },
+      'memberships': <Map<String, dynamic>>[],
+      'businesses': <Map<String, dynamic>>[],
+      'onboarding': {
+        'hasBusiness': false,
+        'activeBusinessCount': 0,
+        'recommendedNextStep': 'CREATE_BUSINESS',
+      },
+    });
+    final openDashboardUser = CurrentUserModel.fromJson({
+      'user': {
+        'id': 'usr_new',
+        'name': 'New Owner',
+        'email': 'new-owner@tavrix.local',
+      },
+      'memberships': [
+        {
+          'id': 'mem_456',
+          'role': 'OWNER',
+          'isActive': true,
+          'business': {
+            'id': 'bus_456',
+            'name': 'Tavrix Tea',
+            'slug': 'tavrix-tea',
+            'type': 'cafe',
+          },
+        },
+      ],
+      'businesses': [
+        {
+          'id': 'bus_456',
+          'name': 'Tavrix Tea',
+          'slug': 'tavrix-tea',
+          'type': 'cafe',
+          'role': 'OWNER',
+        },
+      ],
+      'onboarding': {
+        'hasBusiness': true,
+        'activeBusinessCount': 1,
+        'recommendedNextStep': 'OPEN_DASHBOARD',
+      },
+    });
+
+    expect(createBusinessUser.hasBusiness, isFalse);
+    expect(
+      createBusinessUser.onboarding.recommendedNextStep,
+      'CREATE_BUSINESS',
+    );
+    expect(openDashboardUser.hasBusiness, isTrue);
+    expect(
+      openDashboardUser.onboarding.recommendedNextStep,
+      'OPEN_DASHBOARD',
+    );
   });
 
   test('parses backwards-compatible top-level /me response safely', () {

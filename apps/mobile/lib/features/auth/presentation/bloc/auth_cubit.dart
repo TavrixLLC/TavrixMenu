@@ -56,6 +56,10 @@ class AuthCubit extends Cubit<AuthState> {
     await _loadCurrentUser();
   }
 
+  Future<void> refreshCurrentUser() async {
+    await _loadCurrentUser();
+  }
+
   Future<void> _loadCurrentUser() async {
     emit(state.copyWith(status: AuthStatus.loading, clearError: true));
 
