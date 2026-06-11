@@ -1,6 +1,6 @@
-import type { PublicMenuCategory, PublicMenuItem } from './public-menu';
+import type { PublicMenuCategorySummary, PublicMenuItem } from './public-menu';
 
-export function getCategoryName(category: PublicMenuCategory) {
+export function getCategoryName(category: PublicMenuCategorySummary) {
   return category.nameEn || category.nameAr || 'Untitled category';
 }
 
