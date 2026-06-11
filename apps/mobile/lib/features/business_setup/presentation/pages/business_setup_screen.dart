@@ -21,13 +21,18 @@ class BusinessSetupScreen extends StatefulWidget {
 }
 
 class _BusinessSetupScreenState extends State<BusinessSetupScreen> {
-  final _nameController = TextEditingController(text: 'Tavrix Demo Cafe');
-  final _slugController = TextEditingController(text: 'tavrix-demo-cafe');
+  final _nameController = TextEditingController();
+  final _cityController = TextEditingController();
+  final _currencyController = TextEditingController(text: 'IQD');
+  final _languageController = TextEditingController(text: 'ar');
+  String _type = 'cafe';
 
   @override
   void dispose() {
     _nameController.dispose();
-    _slugController.dispose();
+    _cityController.dispose();
+    _currencyController.dispose();
+    _languageController.dispose();
     super.dispose();
   }
 
@@ -36,7 +41,10 @@ class _BusinessSetupScreenState extends State<BusinessSetupScreen> {
     return BlocConsumer<BusinessSetupCubit, BusinessSetupState>(
       listener: (context, state) {
         if (state.status == BusinessSetupStatus.success) {
-          context.read<DashboardCubit>().load();
+          final business = state.business;
+          if (business != null) {
+            context.read<DashboardCubit>().primeBusiness(business);
+          }
           ScaffoldMessenger.of(
             context,
           ).showSnackBar(const SnackBar(content: Text('Business setup saved')));
@@ -64,12 +72,43 @@ class _BusinessSetupScreenState extends State<BusinessSetupScreen> {
                     AppTextField(
                       label: 'Business name',
                       controller: _nameController,
+                      hint: 'Royal Cup',
+                    ),
+                    const SizedBox(height: AppSpacing.md),
+                    DropdownButtonFormField<String>(
+                      initialValue: _type,
+                      decoration: const InputDecoration(
+                        labelText: 'Business type',
+                      ),
+                      items: const [
+                        DropdownMenuItem(value: 'cafe', child: Text('Cafe')),
+                        DropdownMenuItem(
+                          value: 'restaurant',
+                          child: Text('Restaurant'),
+                        ),
+                        DropdownMenuItem(value: 'shop', child: Text('Shop')),
+                      ],
+                      onChanged: isLoading
+                          ? null
+                          : (value) => setState(() {
+                              _type = value ?? 'cafe';
+                            }),
                     ),
                     const SizedBox(height: AppSpacing.md),
                     AppTextField(
-                      label: 'Public slug',
-                      controller: _slugController,
-                      hint: 'my-cafe',
+                      label: 'City',
+                      controller: _cityController,
+                      hint: 'Baghdad',
+                    ),
+                    const SizedBox(height: AppSpacing.md),
+                    AppTextField(
+                      label: 'Currency',
+                      controller: _currencyController,
+                    ),
+                    const SizedBox(height: AppSpacing.md),
+                    AppTextField(
+                      label: 'Language',
+                      controller: _languageController,
                     ),
                   ],
                 ),
@@ -87,7 +126,10 @@ class _BusinessSetupScreenState extends State<BusinessSetupScreen> {
                     ? null
                     : () => context.read<BusinessSetupCubit>().submit(
                         name: _nameController.text,
-                        slug: _slugController.text,
+                        type: _type,
+                        city: _cityController.text,
+                        currency: _currencyController.text,
+                        language: _languageController.text,
                       ),
               ),
             ],

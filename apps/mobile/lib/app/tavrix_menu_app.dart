@@ -1,6 +1,8 @@
+import 'package:clerk_flutter/clerk_flutter.dart';
 import 'package:flutter/material.dart';
 import 'package:flutter_bloc/flutter_bloc.dart';
 
+import '../core/auth/auth_session_controller.dart';
 import '../core/theme/app_theme.dart';
 import '../features/auth/presentation/bloc/auth_cubit.dart';
 import '../features/business_setup/presentation/bloc/business_setup_cubit.dart';
@@ -31,7 +33,7 @@ class _TavrixMenuAppState extends State<TavrixMenuApp> {
 
   @override
   Widget build(BuildContext context) {
-    return MultiBlocProvider(
+    final app = MultiBlocProvider(
       providers: [
         BlocProvider<AuthCubit>.value(value: _dependencies.authCubit),
         BlocProvider<BusinessSetupCubit>.value(
@@ -45,8 +47,58 @@ class _TavrixMenuAppState extends State<TavrixMenuApp> {
         debugShowCheckedModeBanner: false,
         theme: AppTheme.light,
         initialRoute: AppRouteNames.splash,
-        routes: AppRouter.routes,
+        routes: AppRouter.routes(config: _dependencies.config),
+        builder: (context, child) {
+          final page = child ?? const SizedBox.shrink();
+          if (!_dependencies.config.hasClerkPublishableKey) {
+            return page;
+          }
+
+          return _ClerkAuthStateBinder(
+            authSessionController: _dependencies.authSessionController,
+            child: page,
+          );
+        },
       ),
+    );
+
+    if (!_dependencies.config.hasClerkPublishableKey) {
+      return app;
+    }
+
+    return ClerkAuth(
+      config: ClerkAuthConfig(
+        publishableKey: _dependencies.config.clerkPublishableKey,
+      ),
+      child: app,
+    );
+  }
+}
+
+class _ClerkAuthStateBinder extends StatelessWidget {
+  const _ClerkAuthStateBinder({
+    required this.authSessionController,
+    required this.child,
+  });
+
+  final AuthSessionController authSessionController;
+  final Widget child;
+
+  @override
+  Widget build(BuildContext context) {
+    return ClerkAuthBuilder(
+      builder: (context, authState) {
+        authSessionController.bindClerkAuthState(authState);
+        return child;
+      },
+      signedInBuilder: (context, authState) {
+        authSessionController.bindClerkAuthState(authState);
+        return child;
+      },
+      signedOutBuilder: (context, authState) {
+        authSessionController.bindClerkAuthState(authState);
+        return child;
+      },
     );
   }
 }

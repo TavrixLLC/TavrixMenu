@@ -10,6 +10,7 @@ import '../../../../shared/widgets/error_view.dart';
 import '../../../../shared/widgets/loading_view.dart';
 import '../../../../shared/widgets/role_badge.dart';
 import '../../../../shared/widgets/section_header.dart';
+import '../../../auth/presentation/bloc/auth_cubit.dart';
 import '../bloc/dashboard_cubit.dart';
 import '../bloc/dashboard_state.dart';
 
@@ -25,7 +26,10 @@ class _DashboardScreenState extends State<DashboardScreen> {
   void initState() {
     super.initState();
     WidgetsBinding.instance.addPostFrameCallback((_) {
-      context.read<DashboardCubit>().load();
+      final cubit = context.read<DashboardCubit>();
+      if (cubit.state.status != DashboardStatus.success) {
+        cubit.load();
+      }
     });
   }
 
@@ -33,6 +37,20 @@ class _DashboardScreenState extends State<DashboardScreen> {
   Widget build(BuildContext context) {
     return AppScaffold(
       title: 'Dashboard',
+      actions: [
+        IconButton(
+          tooltip: 'Sign out',
+          icon: const Icon(Icons.logout),
+          onPressed: () async {
+            await context.read<AuthCubit>().signOut();
+            if (context.mounted) {
+              Navigator.of(
+                context,
+              ).pushNamedAndRemoveUntil(AppRouteNames.login, (_) => false);
+            }
+          },
+        ),
+      ],
       scrollable: true,
       child: BlocBuilder<DashboardCubit, DashboardState>(
         builder: (context, state) {

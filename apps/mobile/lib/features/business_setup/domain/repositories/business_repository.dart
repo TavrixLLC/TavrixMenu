@@ -8,12 +8,18 @@ abstract class BusinessRepository {
 
   Future<Either<Failure, Business>> createBusiness({
     required String name,
-    required String slug,
+    required String type,
+    String? city,
+    required String currency,
+    required String language,
   });
 
   Future<Either<Failure, Business>> updateBusiness({
     required String id,
     required String name,
-    required String slug,
+    required String type,
+    String? city,
+    required String currency,
+    required String language,
   });
 }

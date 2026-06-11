@@ -1,11 +1,13 @@
 import 'token_provider.dart';
 
 class DevTokenProvider implements TokenProvider {
-  const DevTokenProvider();
+  const DevTokenProvider(this.token);
+
+  final String token;
 
   @override
   Future<String?> getToken() async {
-    const token = String.fromEnvironment('DEV_AUTH_TOKEN');
-    return token.isEmpty ? null : token;
+    final cleanToken = token.trim();
+    return cleanToken.isEmpty ? null : cleanToken;
   }
 }

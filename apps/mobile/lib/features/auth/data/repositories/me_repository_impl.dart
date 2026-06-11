@@ -26,9 +26,25 @@ class MeRepositoryImpl implements MeRepository {
       if (!_remoteDataSource.canCallBackend && _devFallbackEnabled) {
         return const CurrentUser(
           id: 'dev-owner',
+          clerkUserId: 'user_tavrix_owner',
           email: 'owner@tavrix.local',
           fullName: 'Tavrix Owner',
-          role: 'Owner',
+          role: 'OWNER',
+          status: 'ACTIVE',
+          onboarding: CurrentUserOnboarding(
+            hasBusiness: true,
+            activeBusinessCount: 1,
+            recommendedNextStep: 'OPEN_DASHBOARD',
+          ),
+          businesses: [
+            CurrentUserBusiness(
+              id: 'dev-business',
+              name: 'Tavrix Demo Cafe',
+              slug: 'tavrix-demo-cafe',
+              type: 'cafe',
+              role: 'OWNER',
+            ),
+          ],
         );
       }
 

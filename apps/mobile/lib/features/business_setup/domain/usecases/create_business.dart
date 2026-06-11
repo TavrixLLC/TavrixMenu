@@ -11,8 +11,17 @@ class CreateBusiness {
 
   Future<Either<Failure, Business>> call({
     required String name,
-    required String slug,
+    required String type,
+    String? city,
+    String currency = 'IQD',
+    String language = 'ar',
   }) {
-    return _repository.createBusiness(name: name, slug: slug);
+    return _repository.createBusiness(
+      name: name,
+      type: type,
+      city: city,
+      currency: currency,
+      language: language,
+    );
   }
 }

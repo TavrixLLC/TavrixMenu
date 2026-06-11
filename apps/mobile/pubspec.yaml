@@ -16,6 +16,8 @@ dependencies:
   dio: ^5.8.0+1
   equatable: ^2.0.7
   flutter_bloc: ^9.1.1
+  clerk_flutter: 0.0.14-beta
+  clerk_auth: 0.0.14-beta
 
 dev_dependencies:
   flutter_test:

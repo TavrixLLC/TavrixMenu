@@ -1,6 +1,6 @@
+import '../../core/auth/auth_session_controller.dart';
 import '../../core/auth/clerk_token_provider.dart';
 import '../../core/auth/dev_token_provider.dart';
-import '../../core/auth/token_provider.dart';
 import '../../core/network/api_client.dart';
 import '../../core/network/network_info.dart';
 import '../../features/auth/data/datasources/me_remote_data_source.dart';
@@ -25,25 +25,33 @@ import '../config/app_config.dart';
 class AppDependencies {
   AppDependencies._({
     required this.config,
+    required this.authSessionController,
     required this.authCubit,
     required this.businessSetupCubit,
     required this.dashboardCubit,
     required this.menuCubit,
   });
 
-  factory AppDependencies.create() {
-    final config = AppConfig.fromEnvironment();
-    final TokenProvider tokenProvider = config.clerkPublishableKey.isEmpty
-        ? const DevTokenProvider()
-        : const ClerkTokenProvider();
-    final apiClient = ApiClient(config: config, tokenProvider: tokenProvider);
+  factory AppDependencies.create({AppConfig? config}) {
+    final resolvedConfig = config ?? AppConfig.fromEnvironment();
+    final clerkTokenProvider = ClerkTokenProvider();
+    final devTokenProvider = DevTokenProvider(resolvedConfig.devAuthToken);
+    final authSessionController = AuthSessionController(
+      config: resolvedConfig,
+      clerkTokenProvider: clerkTokenProvider,
+      devTokenProvider: devTokenProvider,
+    );
+    final apiClient = ApiClient(
+      config: resolvedConfig,
+      tokenProvider: authSessionController,
+    );
     const networkInfo = NetworkInfoImpl();
 
     final meRemoteDataSource = AuthRemoteDataSourceImpl(apiClient);
     final meRepository = MeRepositoryImpl(
       remoteDataSource: meRemoteDataSource,
       networkInfo: networkInfo,
-      devFallbackEnabled: config.devFallbackEnabled,
+      devFallbackEnabled: resolvedConfig.isDevAuthEnabled,
     );
     final getCurrentUser = GetCurrentUser(meRepository);
 
@@ -51,7 +59,7 @@ class AppDependencies {
     final businessRepository = BusinessRepositoryImpl(
       remoteDataSource: businessRemoteDataSource,
       networkInfo: networkInfo,
-      devFallbackEnabled: config.devFallbackEnabled,
+      devFallbackEnabled: resolvedConfig.isDevAuthEnabled,
     );
     final getMyBusiness = GetMyBusiness(businessRepository);
     final createBusiness = CreateBusiness(businessRepository);
@@ -60,7 +68,7 @@ class AppDependencies {
     final menuRepository = MenuRepositoryImpl(
       remoteDataSource: menuRemoteDataSource,
       networkInfo: networkInfo,
-      devFallbackEnabled: config.devFallbackEnabled,
+      devFallbackEnabled: resolvedConfig.isDevAuthEnabled,
     );
     final getMenuCategories = GetMenuCategories(menuRepository);
     final getMenuItems = GetMenuItems(menuRepository);
@@ -68,8 +76,12 @@ class AppDependencies {
     final createMenuItem = CreateMenuItem(menuRepository);
 
     return AppDependencies._(
-      config: config,
-      authCubit: AuthCubit(getCurrentUser: getCurrentUser),
+      config: resolvedConfig,
+      authSessionController: authSessionController,
+      authCubit: AuthCubit(
+        getCurrentUser: getCurrentUser,
+        authSessionController: authSessionController,
+      ),
       businessSetupCubit: BusinessSetupCubit(createBusiness: createBusiness),
       dashboardCubit: DashboardCubit(
         getCurrentUser: getCurrentUser,
@@ -86,6 +98,7 @@ class AppDependencies {
   }
 
   final AppConfig config;
+  final AuthSessionController authSessionController;
   final AuthCubit authCubit;
   final BusinessSetupCubit businessSetupCubit;
   final DashboardCubit dashboardCubit;

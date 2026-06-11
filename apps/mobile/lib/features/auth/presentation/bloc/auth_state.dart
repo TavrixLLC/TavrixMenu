@@ -13,6 +13,8 @@ class AuthState extends Equatable {
   final CurrentUser? user;
   final String? errorMessage;
 
+  bool get shouldOpenDashboard => user?.hasBusiness ?? false;
+
   AuthState copyWith({
     AuthStatus? status,
     CurrentUser? user,

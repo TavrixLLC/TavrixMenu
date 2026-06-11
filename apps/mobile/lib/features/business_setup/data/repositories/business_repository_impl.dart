@@ -24,6 +24,11 @@ class BusinessRepositoryImpl implements BusinessRepository {
     name: 'Tavrix Demo Cafe',
     slug: 'tavrix-demo-cafe',
     publicMenuUrl: 'https://menu.tavrix.com/tavrix-demo-cafe',
+    type: 'cafe',
+    city: 'Baghdad',
+    currency: 'IQD',
+    language: 'ar',
+    status: 'ACTIVE',
   );
 
   @override
@@ -41,22 +46,34 @@ class BusinessRepositoryImpl implements BusinessRepository {
   @override
   Future<Either<Failure, Business>> createBusiness({
     required String name,
-    required String slug,
+    required String type,
+    String? city,
+    required String currency,
+    required String language,
   }) async {
     return runSafe(() async {
       if (!_remoteDataSource.canCallBackend && _devFallbackEnabled) {
+        final slug = _slugFromName(name);
         _devBusiness = Business(
           id: 'dev-business',
           name: name,
           slug: slug,
           publicMenuUrl: 'https://menu.tavrix.com/$slug',
+          type: type,
+          city: city,
+          currency: currency,
+          language: language,
+          status: 'ACTIVE',
         );
         return _devBusiness;
       }
 
       final model = await _remoteDataSource.createBusiness(
         name: name,
-        slug: slug,
+        type: type,
+        city: city,
+        currency: currency,
+        language: language,
       );
       return model.toEntity();
     }, _networkInfo);
@@ -66,15 +83,23 @@ class BusinessRepositoryImpl implements BusinessRepository {
   Future<Either<Failure, Business>> updateBusiness({
     required String id,
     required String name,
-    required String slug,
+    required String type,
+    String? city,
+    required String currency,
+    required String language,
   }) async {
     return runSafe(() async {
       if (!_remoteDataSource.canCallBackend && _devFallbackEnabled) {
         _devBusiness = Business(
           id: id,
           name: name,
-          slug: slug,
-          publicMenuUrl: 'https://menu.tavrix.com/$slug',
+          slug: _devBusiness.slug,
+          publicMenuUrl: _devBusiness.publicMenuUrl,
+          type: type,
+          city: city,
+          currency: currency,
+          language: language,
+          status: _devBusiness.status,
         );
         return _devBusiness;
       }
@@ -82,9 +107,21 @@ class BusinessRepositoryImpl implements BusinessRepository {
       final model = await _remoteDataSource.updateBusiness(
         id: id,
         name: name,
-        slug: slug,
+        type: type,
+        city: city,
+        currency: currency,
+        language: language,
       );
       return model.toEntity();
     }, _networkInfo);
+  }
+
+  String _slugFromName(String name) {
+    final slug = name
+        .trim()
+        .toLowerCase()
+        .replaceAll(RegExp(r'[^a-z0-9]+'), '-')
+        .replaceAll(RegExp(r'^-+|-+$'), '');
+    return slug.isEmpty ? 'dev-business' : slug;
   }
 }

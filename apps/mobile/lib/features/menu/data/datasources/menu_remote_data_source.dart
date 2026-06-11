@@ -56,7 +56,7 @@ class MenuRemoteDataSourceImpl implements MenuRemoteDataSource {
   }) async {
     final data = await apiClient.post(
       '/businesses/$businessId/categories',
-      body: {'name': name},
+      body: {'nameAr': name, 'sortOrder': 0, 'isActive': true},
     );
     return _parseCategory(data, context: 'create category response');
   }
@@ -78,10 +78,12 @@ class MenuRemoteDataSourceImpl implements MenuRemoteDataSource {
     final data = await apiClient.post(
       '/businesses/$businessId/items',
       body: {
-        'category_id': categoryId,
-        'name': name,
-        'description': description,
-        'price_cents': priceCents,
+        'categoryId': categoryId,
+        'nameAr': name,
+        if (description.trim().isNotEmpty) 'descriptionAr': description,
+        'price': priceCents.toString(),
+        'isAvailable': true,
+        'sortOrder': 0,
       },
     );
     return _parseItem(data, context: 'create menu item response');
@@ -98,10 +100,10 @@ class MenuRemoteDataSourceImpl implements MenuRemoteDataSource {
     final data = await apiClient.patch(
       '/items/$id',
       body: {
-        'name': name,
-        'description': description,
-        'price_cents': priceCents,
-        'is_available': isAvailable,
+        'nameAr': name,
+        'descriptionAr': description,
+        'price': priceCents.toString(),
+        'isAvailable': isAvailable,
       },
     );
     return _parseItem(data, context: 'update menu item response');
