@@ -1,5 +1,7 @@
+import { ClerkProvider } from '@clerk/nextjs';
 import type { Metadata } from 'next';
 import './globals.css';
+import { isClerkConfigured } from './lib/config';
 
 export const metadata: Metadata = {
   title: 'Tavrix Menu Admin',
@@ -11,10 +13,15 @@ export default function RootLayout({
 }: Readonly<{
   children: React.ReactNode;
 }>) {
-  // ClerkProvider will wrap this layout when service-owner auth is enabled.
-  return (
+  const document = (
     <html lang="en">
       <body>{children}</body>
     </html>
   );
+
+  if (!isClerkConfigured()) {
+    return document;
+  }
+
+  return <ClerkProvider>{document}</ClerkProvider>;
 }

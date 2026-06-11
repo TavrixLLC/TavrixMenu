@@ -24,8 +24,18 @@ async function bootstrap() {
 
   const swaggerConfig = new DocumentBuilder()
     .setTitle('Tavrix Menu API')
-    .setDescription('Initial API foundation for Tavrix Menu.')
+    .setDescription(
+      [
+        'Tavrix Menu backend API.',
+        'Production and staging clients must send real Clerk JWTs with Authorization: Bearer <clerk-jwt>.',
+        'Development can use dev tokens only when NODE_ENV=development.',
+        'Development auth header example:',
+        'Authorization: Bearer dev:user_tavrix_owner;email=owner@tavrix.local;name=Tavrix%20Owner'
+      ].join('\n\n')
+    )
     .setVersion('0.1.0')
+    .addServer('http://localhost:3000')
+    .addBearerAuth()
     .build();
 
   const swaggerDocument = SwaggerModule.createDocument(app, swaggerConfig);
