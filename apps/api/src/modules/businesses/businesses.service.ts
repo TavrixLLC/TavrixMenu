@@ -19,6 +19,12 @@ import { CreateMemberDto } from './dto/create-member.dto';
 import { UpdateBusinessDto } from './dto/update-business.dto';
 import { UpdateMemberDto } from './dto/update-member.dto';
 
+type DashboardSummaryRecommendedNextStep =
+  | 'ADD_CATEGORY'
+  | 'ADD_ITEM'
+  | 'SHARE_PUBLIC_MENU'
+  | 'READY';
+
 type BusinessMemberRecord = Prisma.BusinessUserGetPayload<{
   include: {
     user: true;
@@ -172,6 +178,131 @@ export class BusinessesService {
     }
 
     return this.mapAppContext(business, membership);
+  }
+
+  async getDashboardSummary(
+    currentUser: AuthenticatedUser,
+    businessId: string
+  ) {
+    const membership = await this.businessAccessService.assertRole(
+      businessId,
+      currentUser.id,
+      this.businessAccessService.appContextRoles
+    );
+    const business = await this.prisma.business.findUnique({
+      where: {
+        id: businessId
+      },
+      select: {
+        id: true,
+        name: true,
+        slug: true,
+        type: true,
+        city: true,
+        currency: true,
+        language: true,
+        logoUrl: true,
+        coverUrl: true
+      }
+    });
+
+    if (!business) {
+      throw new NotFoundException('Business not found');
+    }
+
+    const [
+      activeCategories,
+      inactiveCategories,
+      activeItems,
+      inactiveItems,
+      availableItems,
+      unavailableItems,
+      activeMembers
+    ] = await Promise.all([
+      this.prisma.menuCategory.count({
+        where: {
+          businessId,
+          isActive: true
+        }
+      }),
+      this.prisma.menuCategory.count({
+        where: {
+          businessId,
+          isActive: false
+        }
+      }),
+      this.prisma.menuItem.count({
+        where: {
+          businessId,
+          isAvailable: true
+        }
+      }),
+      this.prisma.menuItem.count({
+        where: {
+          businessId,
+          isAvailable: false
+        }
+      }),
+      this.prisma.menuItem.count({
+        where: {
+          businessId,
+          isAvailable: true,
+          category: {
+            isActive: true
+          }
+        }
+      }),
+      this.prisma.menuItem.count({
+        where: {
+          businessId,
+          isAvailable: false
+        }
+      }),
+      this.prisma.businessUser.count({
+        where: {
+          businessId,
+          status: BusinessUserStatus.ACTIVE
+        }
+      })
+    ]);
+
+    const publicMenu = this.mapPublicMenu(business.slug);
+    const hasCategories = activeCategories > 0;
+    const hasItems = availableItems > 0;
+    const hasPublicMenuReady =
+      hasCategories && hasItems && publicMenu.url.trim().length > 0;
+
+    return {
+      business,
+      currentUser: {
+        role: membership.role,
+        permissions: this.businessAccessService.getPermissions(membership.role)
+      },
+      counts: {
+        activeCategories,
+        inactiveCategories,
+        activeItems,
+        inactiveItems,
+        availableItems,
+        unavailableItems,
+        activeMembers
+      },
+      publicMenu: {
+        path: publicMenu.path,
+        url: publicMenu.url,
+        qrPayload: publicMenu.qrPayload
+      },
+      onboardingHints: {
+        hasCategories,
+        hasItems,
+        hasPublicMenuReady,
+        recommendedNextStep: this.getDashboardRecommendedNextStep({
+          activeCategories,
+          availableItems,
+          publicMenuUrl: publicMenu.url
+        })
+      }
+    };
   }
 
   async getPublicLink(currentUser: AuthenticatedUser, businessId: string) {
@@ -514,6 +645,30 @@ export class BusinessesService {
       url,
       qrPayload: url
     };
+  }
+
+  private getDashboardRecommendedNextStep({
+    activeCategories,
+    availableItems,
+    publicMenuUrl
+  }: {
+    activeCategories: number;
+    availableItems: number;
+    publicMenuUrl: string;
+  }): DashboardSummaryRecommendedNextStep {
+    if (activeCategories === 0) {
+      return 'ADD_CATEGORY';
+    }
+
+    if (availableItems === 0) {
+      return 'ADD_ITEM';
+    }
+
+    if (publicMenuUrl.trim().length > 0) {
+      return 'SHARE_PUBLIC_MENU';
+    }
+
+    return 'READY';
   }
 
   private getCustomerWebBaseUrl() {

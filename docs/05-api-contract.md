@@ -260,6 +260,19 @@ Auth: Clerk required.
 
 Role: `OWNER`.
 
+Allowed settings fields:
+
+- `name`
+- `type`
+- `city`
+- `currency`
+- `language`
+- `logoUrl`
+- `coverUrl`
+
+No subscription, payment, custom domain, upload, or generated media fields are
+accepted here.
+
 Request:
 
 ```json
@@ -338,6 +351,85 @@ Response:
   }
 }
 ```
+
+Errors:
+
+- `401` unauthenticated.
+- `403` missing active business membership.
+- `404` business not found.
+
+### GET /businesses/:id/dashboard-summary
+
+Auth: Clerk required.
+
+Role: `OWNER`, `MANAGER`, or `STAFF`.
+
+Purpose: compact owner workflow summary for Flutter/Admin-Web dashboards. Access
+is limited to active members of the requested business; cross-business access is
+forbidden.
+
+Response:
+
+```json
+{
+  "business": {
+    "id": "bus_123",
+    "name": "Tavrix Cafe",
+    "slug": "tavrix-cafe",
+    "type": "cafe",
+    "city": "Baghdad",
+    "currency": "IQD",
+    "language": "ar",
+    "logoUrl": null,
+    "coverUrl": null
+  },
+  "currentUser": {
+    "role": "OWNER",
+    "permissions": {
+      "canManageBusiness": true,
+      "canManageMenu": true,
+      "canManageMembers": true,
+      "canViewMembers": true,
+      "canViewPublicLink": true
+    }
+  },
+  "counts": {
+    "activeCategories": 2,
+    "inactiveCategories": 0,
+    "activeItems": 3,
+    "inactiveItems": 0,
+    "availableItems": 3,
+    "unavailableItems": 0,
+    "activeMembers": 1
+  },
+  "publicMenu": {
+    "path": "/m/tavrix-cafe",
+    "url": "http://localhost:3001/m/tavrix-cafe",
+    "qrPayload": "http://localhost:3001/m/tavrix-cafe"
+  },
+  "onboardingHints": {
+    "hasCategories": true,
+    "hasItems": true,
+    "hasPublicMenuReady": true,
+    "recommendedNextStep": "SHARE_PUBLIC_MENU"
+  }
+}
+```
+
+`counts.availableItems` counts available items under active categories and is
+the public-menu-ready item count. `activeItems` counts available item records for
+the business, including records under inactive categories.
+
+`onboardingHints.recommendedNextStep` values:
+
+- `ADD_CATEGORY`: no active categories.
+- `ADD_ITEM`: active categories exist but no available item under an active
+  category exists.
+- `SHARE_PUBLIC_MENU`: active categories, public items, and a public URL exist.
+- `READY`: fallback when no setup action is recommended.
+
+The `publicMenu.qrPayload` is the URL string. The backend does not generate QR
+images.
 
 Errors:
 
@@ -550,6 +642,9 @@ Auth: Clerk required.
 
 Role: `OWNER` or `MANAGER`.
 
+Use `{ "isActive": true }` to restore an archived category through the existing
+update endpoint.
+
 Request:
 
 ```json
@@ -599,6 +694,54 @@ Behavior: this endpoint archives the category by setting `isActive = false`.
 Normal business category lists hide archived categories unless
 `includeInactive=true` is provided. Public menus always hide archived
 categories.
+
+### PATCH /businesses/:id/categories/reorder
+
+Auth: Clerk required.
+
+Role: `OWNER` or `MANAGER`. `STAFF` is forbidden.
+
+Request:
+
+```json
+{
+  "orders": [
+    { "id": "cat_123", "sortOrder": 0 },
+    { "id": "cat_456", "sortOrder": 1 }
+  ]
+}
+```
+
+Rules:
+
+- All category IDs must belong to the requested business.
+- IDs from another business are rejected.
+- Duplicate IDs are rejected.
+- `sortOrder` must be an integer greater than or equal to zero.
+- Active and inactive categories are supported.
+
+Response returns the updated categories ordered by `sortOrder`, then
+`createdAt`, then `id`:
+
+```json
+[
+  {
+    "id": "cat_123",
+    "businessId": "bus_123",
+    "nameAr": "Hot Drinks",
+    "nameEn": null,
+    "sortOrder": 0,
+    "isActive": true
+  }
+]
+```
+
+Errors:
+
+- `400` invalid body, duplicate IDs, or IDs outside the business.
+- `401` unauthenticated.
+- `403` missing owner or manager role.
+- `404` business not found.
 
 ### POST /businesses/:id/items
 
@@ -677,6 +820,9 @@ Auth: Clerk required.
 
 Role: `OWNER` or `MANAGER`.
 
+Use `{ "isAvailable": true }` to restore an archived/unavailable item through
+the existing update endpoint.
+
 Request:
 
 ```json
@@ -723,6 +869,61 @@ Errors:
 Behavior: this endpoint archives the item by setting `isAvailable = false`.
 Normal business item lists hide archived/unavailable items unless
 `includeInactive=true` is provided. Public menus always hide unavailable items.
+
+### PATCH /businesses/:id/items/reorder
+
+Auth: Clerk required.
+
+Role: `OWNER` or `MANAGER`. `STAFF` is forbidden.
+
+Implemented because the current Prisma `MenuItem` model supports `sortOrder`.
+
+Request:
+
+```json
+{
+  "orders": [
+    { "id": "item_123", "sortOrder": 0 },
+    { "id": "item_456", "sortOrder": 1 }
+  ]
+}
+```
+
+Rules:
+
+- All item IDs must belong to the requested business.
+- IDs from another business are rejected.
+- Duplicate IDs are rejected.
+- `sortOrder` must be an integer greater than or equal to zero.
+- Available and unavailable items are supported.
+
+Response returns the updated items ordered by `sortOrder`, then `createdAt`,
+then `id`:
+
+```json
+[
+  {
+    "id": "item_123",
+    "businessId": "bus_123",
+    "categoryId": "cat_123",
+    "nameAr": "Turkish Coffee",
+    "nameEn": null,
+    "descriptionAr": "Traditional strong coffee.",
+    "descriptionEn": null,
+    "price": "3000",
+    "imageUrl": null,
+    "isAvailable": true,
+    "sortOrder": 0
+  }
+]
+```
+
+Errors:
+
+- `400` invalid body, duplicate IDs, or IDs outside the business.
+- `401` unauthenticated.
+- `403` missing owner or manager role.
+- `404` business not found.
 
 ## Public
 
