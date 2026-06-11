@@ -1,7 +1,7 @@
 import Link from 'next/link';
 import { PlaceholderImage } from '../../../../components/PlaceholderImage';
 import { formatPrice, getCategoryName, getItemDescription, getItemName } from '../../../../lib/menu-format';
-import { fetchPublicMenu } from '../../../../lib/public-menu';
+import { fetchPublicItem, fetchPublicMenu } from '../../../../lib/public-menu';
 
 type ProductDetailPageProps = {
   params: Promise<{
@@ -38,35 +38,41 @@ function DetailState({
 
 export default async function ProductDetailPage({ params }: ProductDetailPageProps) {
   const { slug, itemId } = await params;
-  const result = await fetchPublicMenu(slug);
+  const itemResult = await fetchPublicItem(slug, itemId);
 
-  if (result.status === 'not-found') {
+  if (itemResult.status === 'not-found') {
     return (
       <DetailState
         slug={slug}
-        title="Menu not found"
-        message="This business menu could not be found. Check the menu link and try again."
-        detail={result.apiUrl}
+        title="Item not found"
+        message="This menu item is unavailable or does not exist on the public menu."
+        detail={itemResult.apiUrl}
       />
     );
   }
 
-  if (result.status === 'error') {
+  if (itemResult.status === 'error') {
     return (
       <DetailState
         slug={slug}
         title="Menu unavailable"
         message="The menu item could not be loaded right now because the public API is unreachable or returned an error."
-        detail={`${result.apiUrl} - ${result.message}`}
+        detail={`${itemResult.apiUrl} - ${itemResult.message}`}
       />
     );
   }
 
-  const menu = result.data;
-  const category = menu.categories.find((menuCategory) => menuCategory.items.some((item) => item.id === itemId));
-  const item = category?.items.find((menuItem) => menuItem.id === itemId);
+  const menuContext =
+    !itemResult.data.business || !itemResult.data.category ? await fetchPublicMenu(slug) : null;
+  const menu = menuContext?.status === 'ok' ? menuContext.data : null;
+  const item = itemResult.data.item;
+  const business = itemResult.data.business || menu?.business || null;
+  const category =
+    itemResult.data.category ||
+    menu?.categories.find((menuCategory) => menuCategory.items.some((menuItem) => menuItem.id === item.id)) ||
+    null;
 
-  if (!category || !item) {
+  if (!item.isAvailable) {
     return (
       <DetailState
         slug={slug}
@@ -78,11 +84,14 @@ export default async function ProductDetailPage({ params }: ProductDetailPagePro
 
   const itemName = getItemName(item);
   const description = getItemDescription(item);
+  const businessName = business?.name || 'menu';
+  const businessSlug = business?.slug || slug;
+  const currency = business?.currency || '';
 
   return (
     <main className="mx-auto min-h-screen w-full max-w-3xl bg-[#fafaf7] px-4 py-5">
       <Link href={`/m/${slug}`} className="text-sm font-semibold text-neutral-600">
-        Back to {menu.business.name}
+        Back to {businessName}
       </Link>
 
       <section className="mt-5">
@@ -93,18 +102,14 @@ export default async function ProductDetailPage({ params }: ProductDetailPagePro
         )}
         <div className="mt-5 flex items-start justify-between gap-4">
           <div>
-            <p className="text-sm font-semibold text-mint">{getCategoryName(category)}</p>
+            <p className="text-sm font-semibold text-mint">{category ? getCategoryName(category) : 'Menu item'}</p>
             <h1 className="mt-1 text-3xl font-bold text-ink">{itemName}</h1>
-            <p className="mt-2 text-sm text-neutral-500">/m/{menu.business.slug}</p>
+            <p className="mt-2 text-sm text-neutral-500">/m/{businessSlug}</p>
           </div>
           <div className="shrink-0 text-right">
-            <p className="text-base font-bold text-ink">{formatPrice(item.price, menu.business.currency)}</p>
-            <span
-              className={`mt-2 inline-flex rounded-full px-2 py-1 text-xs font-semibold ${
-                item.isAvailable ? 'bg-emerald-50 text-emerald-700' : 'bg-neutral-100 text-neutral-500'
-              }`}
-            >
-              {item.isAvailable ? 'Available' : 'Unavailable'}
+            <p className="text-base font-bold text-ink">{formatPrice(item.price, currency)}</p>
+            <span className="mt-2 inline-flex rounded-full bg-emerald-50 px-2 py-1 text-xs font-semibold text-emerald-700">
+              Available
             </span>
           </div>
         </div>

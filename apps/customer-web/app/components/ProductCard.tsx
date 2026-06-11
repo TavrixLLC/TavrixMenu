@@ -10,6 +10,10 @@ type ProductCardProps = {
 };
 
 export function ProductCard({ item, currency, href }: ProductCardProps) {
+  if (!item.isAvailable) {
+    return null;
+  }
+
   const name = getItemName(item);
   const description = getItemDescription(item);
   const cardContent = (
@@ -22,12 +26,8 @@ export function ProductCard({ item, currency, href }: ProductCardProps) {
       <div className="min-w-0">
         <div className="flex items-start justify-between gap-3">
           <h3 className="text-base font-semibold text-ink">{name}</h3>
-          <span
-            className={`shrink-0 rounded-full px-2 py-1 text-xs font-semibold ${
-              item.isAvailable ? 'bg-emerald-50 text-emerald-700' : 'bg-neutral-100 text-neutral-500'
-            }`}
-          >
-            {item.isAvailable ? 'Available' : 'Unavailable'}
+          <span className="shrink-0 rounded-full bg-emerald-50 px-2 py-1 text-xs font-semibold text-emerald-700">
+            Available
           </span>
         </div>
         {description ? <p className="mt-1 text-sm text-neutral-600">{description}</p> : null}
