@@ -162,6 +162,63 @@ export class BusinessesController {
     return this.businessesService.getAppContext(currentUser, businessId);
   }
 
+  @Get(':id/dashboard-summary')
+  @ApiOkResponse({
+    description:
+      'Owner workflow dashboard summary. OWNER, MANAGER, and STAFF can view when actively assigned to this business.',
+    schema: {
+      example: {
+        business: {
+          id: 'bus_123',
+          name: 'Tavrix Cafe',
+          slug: 'tavrix-cafe',
+          type: 'cafe',
+          city: 'Baghdad',
+          currency: 'IQD',
+          language: 'ar',
+          logoUrl: null,
+          coverUrl: null
+        },
+        currentUser: {
+          role: 'OWNER',
+          permissions: {
+            canManageBusiness: true,
+            canManageMenu: true,
+            canManageMembers: true,
+            canViewMembers: true,
+            canViewPublicLink: true
+          }
+        },
+        counts: {
+          activeCategories: 2,
+          inactiveCategories: 0,
+          activeItems: 3,
+          inactiveItems: 0,
+          availableItems: 3,
+          unavailableItems: 0,
+          activeMembers: 1
+        },
+        publicMenu: {
+          path: '/m/tavrix-cafe',
+          url: 'http://localhost:3001/m/tavrix-cafe',
+          qrPayload: 'http://localhost:3001/m/tavrix-cafe'
+        },
+        onboardingHints: {
+          hasCategories: true,
+          hasItems: true,
+          hasPublicMenuReady: true,
+          recommendedNextStep: 'SHARE_PUBLIC_MENU'
+        }
+      }
+    }
+  })
+  getDashboardSummary(
+    @CurrentUser() currentUser: AuthenticatedUser,
+    @Param('id') businessId: string
+  ) {
+    return this.businessesService.getDashboardSummary(currentUser, businessId);
+  }
+
   @Get(':id/public-link')
   @ApiOkResponse({
     description: 'Public menu link and QR payload for a business.',
@@ -246,7 +303,10 @@ export class BusinessesController {
   }
 
   @Patch(':id')
-  @ApiOkResponse({ description: 'Business updated.' })
+  @ApiOkResponse({
+    description:
+      'Business profile updated. OWNER only. Supported fields: name, type, city, currency, language, logoUrl, coverUrl.'
+  })
   updateBusiness(
     @CurrentUser() currentUser: AuthenticatedUser,
     @Param('id') businessId: string,

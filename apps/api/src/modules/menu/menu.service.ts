@@ -1,4 +1,8 @@
-import { Injectable, NotFoundException } from '@nestjs/common';
+import {
+  BadRequestException,
+  Injectable,
+  NotFoundException
+} from '@nestjs/common';
 import {
   BusinessStatus,
   MenuCategory,
@@ -9,6 +13,7 @@ import { AuthenticatedUser } from '../auth/interfaces/authenticated-user.interfa
 import { BusinessAccessService } from '../businesses/business-access.service';
 import { CreateCategoryDto } from './dto/create-category.dto';
 import { CreateItemDto } from './dto/create-item.dto';
+import { ReorderMenuRecordsDto } from './dto/reorder-menu-records.dto';
 import { UpdateCategoryDto } from './dto/update-category.dto';
 import { UpdateItemDto } from './dto/update-item.dto';
 
@@ -55,10 +60,70 @@ export class MenuService {
         businessId,
         ...(includeInactive ? {} : { isActive: true })
       },
-      orderBy: [{ sortOrder: 'asc' }, { createdAt: 'asc' }]
+      orderBy: [{ sortOrder: 'asc' }, { createdAt: 'asc' }, { id: 'asc' }]
     });
 
     return categories.map((category) => this.mapCategory(category));
+  }
+
+  async reorderCategories(
+    currentUser: AuthenticatedUser,
+    businessId: string,
+    dto: ReorderMenuRecordsDto
+  ) {
+    await this.businessAccessService.assertRole(
+      businessId,
+      currentUser.id,
+      this.businessAccessService.menuManagerRoles
+    );
+    this.assertUniqueOrderIds(dto.orders, 'category');
+
+    const ids = dto.orders.map((order) => order.id);
+    const categories = await this.prisma.menuCategory.findMany({
+      where: {
+        id: {
+          in: ids
+        }
+      },
+      select: {
+        id: true,
+        businessId: true
+      }
+    });
+
+    if (
+      categories.length !== ids.length ||
+      categories.some((category) => category.businessId !== businessId)
+    ) {
+      throw new BadRequestException(
+        'All category IDs must belong to the business'
+      );
+    }
+
+    await this.prisma.$transaction(
+      dto.orders.map((order) =>
+        this.prisma.menuCategory.update({
+          where: {
+            id: order.id
+          },
+          data: {
+            sortOrder: order.sortOrder
+          }
+        })
+      )
+    );
+
+    const updatedCategories = await this.prisma.menuCategory.findMany({
+      where: {
+        id: {
+          in: ids
+        },
+        businessId
+      },
+      orderBy: [{ sortOrder: 'asc' }, { createdAt: 'asc' }, { id: 'asc' }]
+    });
+
+    return updatedCategories.map((category) => this.mapCategory(category));
   }
 
   async updateCategory(
@@ -176,10 +241,68 @@ export class MenuService {
         businessId,
         ...(includeInactive ? {} : { isAvailable: true })
       },
-      orderBy: [{ sortOrder: 'asc' }, { createdAt: 'asc' }]
+      orderBy: [{ sortOrder: 'asc' }, { createdAt: 'asc' }, { id: 'asc' }]
     });
 
     return items.map((item) => this.mapItem(item));
+  }
+
+  async reorderItems(
+    currentUser: AuthenticatedUser,
+    businessId: string,
+    dto: ReorderMenuRecordsDto
+  ) {
+    await this.businessAccessService.assertRole(
+      businessId,
+      currentUser.id,
+      this.businessAccessService.menuManagerRoles
+    );
+    this.assertUniqueOrderIds(dto.orders, 'item');
+
+    const ids = dto.orders.map((order) => order.id);
+    const items = await this.prisma.menuItem.findMany({
+      where: {
+        id: {
+          in: ids
+        }
+      },
+      select: {
+        id: true,
+        businessId: true
+      }
+    });
+
+    if (
+      items.length !== ids.length ||
+      items.some((item) => item.businessId !== businessId)
+    ) {
+      throw new BadRequestException('All item IDs must belong to the business');
+    }
+
+    await this.prisma.$transaction(
+      dto.orders.map((order) =>
+        this.prisma.menuItem.update({
+          where: {
+            id: order.id
+          },
+          data: {
+            sortOrder: order.sortOrder
+          }
+        })
+      )
+    );
+
+    const updatedItems = await this.prisma.menuItem.findMany({
+      where: {
+        id: {
+          in: ids
+        },
+        businessId
+      },
+      orderBy: [{ sortOrder: 'asc' }, { createdAt: 'asc' }, { id: 'asc' }]
+    });
+
+    return updatedItems.map((item) => this.mapItem(item));
   }
 
   async updateItem(
@@ -284,7 +407,7 @@ export class MenuService {
           where: {
             isActive: true
           },
-          orderBy: [{ sortOrder: 'asc' }, { createdAt: 'asc' }],
+          orderBy: [{ sortOrder: 'asc' }, { createdAt: 'asc' }, { id: 'asc' }],
           select: {
             id: true,
             nameAr: true,
@@ -294,7 +417,11 @@ export class MenuService {
               where: {
                 isAvailable: true
               },
-              orderBy: [{ sortOrder: 'asc' }, { createdAt: 'asc' }],
+              orderBy: [
+                { sortOrder: 'asc' },
+                { createdAt: 'asc' },
+                { id: 'asc' }
+              ],
               select: {
                 id: true,
                 nameAr: true,
@@ -407,6 +534,21 @@ export class MenuService {
 
     if (!category) {
       throw new NotFoundException('Category not found for business');
+    }
+  }
+
+  private assertUniqueOrderIds(
+    orders: ReorderMenuRecordsDto['orders'],
+    recordLabel: string
+  ) {
+    const seenIds = new Set<string>();
+
+    for (const order of orders) {
+      if (seenIds.has(order.id)) {
+        throw new BadRequestException(`Duplicate ${recordLabel} ID in orders`);
+      }
+
+      seenIds.add(order.id);
     }
   }
 

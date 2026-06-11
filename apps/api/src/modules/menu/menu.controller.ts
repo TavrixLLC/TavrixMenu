@@ -21,6 +21,7 @@ import { ClerkAuthGuard } from '../auth/guards/clerk-auth.guard';
 import { AuthenticatedUser } from '../auth/interfaces/authenticated-user.interface';
 import { CreateCategoryDto } from './dto/create-category.dto';
 import { CreateItemDto } from './dto/create-item.dto';
+import { ReorderMenuRecordsDto } from './dto/reorder-menu-records.dto';
 import { UpdateCategoryDto } from './dto/update-category.dto';
 import { UpdateItemDto } from './dto/update-item.dto';
 import { MenuService } from './menu.service';
@@ -62,8 +63,54 @@ export class MenuController {
     );
   }
 
+  @Patch('businesses/:id/categories/reorder')
+  @ApiOkResponse({
+    description:
+      'Categories reordered. OWNER and MANAGER only; supports active and inactive categories.',
+    schema: {
+      example: [
+        {
+          id: 'cat_123',
+          businessId: 'bus_123',
+          nameAr: 'Hot Drinks',
+          nameEn: null,
+          sortOrder: 0,
+          isActive: true
+        },
+        {
+          id: 'cat_456',
+          businessId: 'bus_123',
+          nameAr: 'Desserts',
+          nameEn: null,
+          sortOrder: 1,
+          isActive: false
+        }
+      ]
+    }
+  })
+  reorderCategories(
+    @CurrentUser() currentUser: AuthenticatedUser,
+    @Param('id') businessId: string,
+    @Body() dto: ReorderMenuRecordsDto
+  ) {
+    return this.menuService.reorderCategories(currentUser, businessId, dto);
+  }
+
   @Patch('categories/:id')
-  @ApiOkResponse({ description: 'Category updated.' })
+  @ApiOkResponse({
+    description:
+      'Category updated. OWNER and MANAGER only. Restore an archived category by setting isActive to true.',
+    schema: {
+      example: {
+        id: 'cat_123',
+        businessId: 'bus_123',
+        nameAr: 'Hot Drinks',
+        nameEn: null,
+        sortOrder: 0,
+        isActive: true
+      }
+    }
+  })
   updateCategory(
     @CurrentUser() currentUser: AuthenticatedUser,
     @Param('id') categoryId: string,
@@ -111,8 +158,69 @@ export class MenuController {
     );
   }
 
+  @Patch('businesses/:id/items/reorder')
+  @ApiOkResponse({
+    description:
+      'Items reordered. OWNER and MANAGER only; supports available and unavailable items.',
+    schema: {
+      example: [
+        {
+          id: 'item_123',
+          businessId: 'bus_123',
+          categoryId: 'cat_123',
+          nameAr: 'Turkish Coffee',
+          nameEn: null,
+          descriptionAr: 'Traditional strong coffee.',
+          descriptionEn: null,
+          price: '3000',
+          imageUrl: null,
+          isAvailable: true,
+          sortOrder: 0
+        },
+        {
+          id: 'item_456',
+          businessId: 'bus_123',
+          categoryId: 'cat_123',
+          nameAr: 'Tamriya',
+          nameEn: null,
+          descriptionAr: null,
+          descriptionEn: null,
+          price: '2500',
+          imageUrl: null,
+          isAvailable: false,
+          sortOrder: 1
+        }
+      ]
+    }
+  })
+  reorderItems(
+    @CurrentUser() currentUser: AuthenticatedUser,
+    @Param('id') businessId: string,
+    @Body() dto: ReorderMenuRecordsDto
+  ) {
+    return this.menuService.reorderItems(currentUser, businessId, dto);
+  }
+
   @Patch('items/:id')
-  @ApiOkResponse({ description: 'Item updated.' })
+  @ApiOkResponse({
+    description:
+      'Item updated. OWNER and MANAGER only. Restore an archived/unavailable item by setting isAvailable to true.',
+    schema: {
+      example: {
+        id: 'item_123',
+        businessId: 'bus_123',
+        categoryId: 'cat_123',
+        nameAr: 'Turkish Coffee',
+        nameEn: null,
+        descriptionAr: 'Traditional strong coffee.',
+        descriptionEn: null,
+        price: '3000',
+        imageUrl: null,
+        isAvailable: true,
+        sortOrder: 0
+      }
+    }
+  })
   updateItem(
     @CurrentUser() currentUser: AuthenticatedUser,
     @Param('id') itemId: string,
