@@ -18,10 +18,21 @@ class MenuItemModel extends MenuItem {
           json['business_id'] as String? ?? json['businessId'] as String? ?? '',
       categoryId:
           json['category_id'] as String? ?? json['categoryId'] as String? ?? '',
-      name: json['name'] as String? ?? '',
-      description: json['description'] as String? ?? '',
+      name:
+          json['nameAr'] as String? ??
+          json['name_ar'] as String? ??
+          json['name'] as String? ??
+          '',
+      description:
+          json['descriptionAr'] as String? ??
+          json['description_ar'] as String? ??
+          json['description'] as String? ??
+          '',
       priceCents:
-          json['price_cents'] as int? ?? json['priceCents'] as int? ?? 0,
+          _priceToInt(json['price']) ??
+          (json['price_cents'] as num?)?.toInt() ??
+          (json['priceCents'] as num?)?.toInt() ??
+          0,
       isAvailable:
           json['is_available'] as bool? ?? json['isAvailable'] as bool? ?? true,
     );
@@ -38,4 +49,17 @@ class MenuItemModel extends MenuItem {
       isAvailable: isAvailable,
     );
   }
+}
+
+int? _priceToInt(Object? value) {
+  if (value is int) {
+    return value;
+  }
+  if (value is num) {
+    return value.toInt();
+  }
+  if (value is String) {
+    return int.tryParse(value);
+  }
+  return null;
 }

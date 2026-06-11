@@ -26,7 +26,7 @@ class _MenuScreenState extends State<MenuScreen> {
   final _categoryController = TextEditingController();
   final _itemNameController = TextEditingController();
   final _itemDescriptionController = TextEditingController();
-  final _itemPriceController = TextEditingController(text: '500');
+  final _itemPriceController = TextEditingController(text: '3000');
 
   @override
   void initState() {
@@ -133,7 +133,7 @@ class _MenuScreenState extends State<MenuScreen> {
                     ),
                     const SizedBox(height: AppSpacing.md),
                     AppTextField(
-                      label: 'Price in cents',
+                      label: 'Price',
                       controller: _itemPriceController,
                       keyboardType: TextInputType.number,
                     ),

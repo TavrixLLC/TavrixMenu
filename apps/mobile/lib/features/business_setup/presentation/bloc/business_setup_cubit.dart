@@ -11,15 +11,23 @@ class BusinessSetupCubit extends Cubit<BusinessSetupState> {
 
   final CreateBusiness _createBusiness;
 
-  Future<void> submit({required String name, required String slug}) async {
+  Future<void> submit({
+    required String name,
+    required String type,
+    String? city,
+    String currency = 'IQD',
+    String language = 'ar',
+  }) async {
     final cleanName = name.trim();
-    final cleanSlug = slug.trim().toLowerCase();
+    final cleanType = type.trim().isEmpty ? 'cafe' : type.trim();
+    final cleanCurrency = currency.trim().isEmpty ? 'IQD' : currency.trim();
+    final cleanLanguage = language.trim().isEmpty ? 'ar' : language.trim();
 
-    if (cleanName.isEmpty || cleanSlug.isEmpty) {
+    if (cleanName.isEmpty) {
       emit(
         state.copyWith(
           status: BusinessSetupStatus.failure,
-          errorMessage: 'Business name and slug are required.',
+          errorMessage: 'Business name is required.',
         ),
       );
       return;
@@ -27,7 +35,13 @@ class BusinessSetupCubit extends Cubit<BusinessSetupState> {
 
     emit(state.copyWith(status: BusinessSetupStatus.loading, clearError: true));
 
-    final result = await _createBusiness(name: cleanName, slug: cleanSlug);
+    final result = await _createBusiness(
+      name: cleanName,
+      type: cleanType,
+      city: city,
+      currency: cleanCurrency,
+      language: cleanLanguage,
+    );
     result.fold(
       (failure) => emit(
         BusinessSetupState(

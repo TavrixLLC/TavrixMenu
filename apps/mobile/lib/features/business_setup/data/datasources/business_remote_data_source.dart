@@ -10,13 +10,19 @@ abstract class BusinessRemoteDataSource {
 
   Future<BusinessModel> createBusiness({
     required String name,
-    required String slug,
+    required String type,
+    String? city,
+    required String currency,
+    required String language,
   });
 
   Future<BusinessModel> updateBusiness({
     required String id,
     required String name,
-    required String slug,
+    required String type,
+    String? city,
+    required String currency,
+    required String language,
   });
 }
 
@@ -31,30 +37,71 @@ class BusinessRemoteDataSourceImpl implements BusinessRemoteDataSource {
   @override
   Future<BusinessModel> getMyBusiness() async {
     final data = await apiClient.get('/businesses/me');
-    return _parseBusiness(data, context: 'current business response');
+    final businesses = _parseBusinesses(
+      data,
+      context: 'current businesses response',
+    );
+    if (businesses.isEmpty) {
+      throw const ServerException('No active business found.');
+    }
+
+    final business = businesses.first;
+    if (business.id.trim().isEmpty) {
+      return business;
+    }
+
+    return getAppContext(business.id);
+  }
+
+  Future<BusinessModel> getAppContext(String businessId) async {
+    final data = await apiClient.get('/businesses/$businessId/app-context');
+    return _parseBusiness(data, context: 'business app context response');
   }
 
   @override
   Future<BusinessModel> createBusiness({
     required String name,
-    required String slug,
+    required String type,
+    String? city,
+    required String currency,
+    required String language,
   }) async {
     final data = await apiClient.post(
       '/businesses',
-      body: {'name': name, 'slug': slug},
+      body: {
+        'name': name,
+        'type': type,
+        if (city != null && city.trim().isNotEmpty) 'city': city.trim(),
+        'currency': currency,
+        'language': language,
+      },
     );
-    return _parseBusiness(data, context: 'create business response');
+    final business = _parseBusiness(data, context: 'create business response');
+    if (_hasAppContext(data) || business.id.trim().isEmpty) {
+      return business;
+    }
+
+    return getAppContext(business.id);
   }
 
   @override
   Future<BusinessModel> updateBusiness({
     required String id,
     required String name,
-    required String slug,
+    required String type,
+    String? city,
+    required String currency,
+    required String language,
   }) async {
     final data = await apiClient.patch(
       '/businesses/$id',
-      body: {'name': name, 'slug': slug},
+      body: {
+        'name': name,
+        'type': type,
+        'city': city,
+        'currency': currency,
+        'language': language,
+      },
     );
     return _parseBusiness(data, context: 'update business response');
   }
@@ -71,5 +118,44 @@ class BusinessRemoteDataSourceImpl implements BusinessRemoteDataSource {
     } catch (_) {
       throw ServerException('Invalid $context.');
     }
+  }
+
+  List<BusinessModel> _parseBusinesses(
+    dynamic data, {
+    required String context,
+  }) {
+    final list = _toObjectList(data, context: context);
+
+    try {
+      return list.map(BusinessModel.fromJson).toList();
+    } on ServerException {
+      rethrow;
+    } on ValidationException {
+      rethrow;
+    } catch (_) {
+      throw ServerException('Invalid $context.');
+    }
+  }
+
+  List<Map<String, dynamic>> _toObjectList(
+    dynamic data, {
+    required String context,
+  }) {
+    if (data is Map) {
+      final json = asJsonObject(data, context: context);
+      final nestedList = json['data'] ?? json['businesses'];
+      return asJsonObjectList(nestedList, context: context);
+    }
+
+    return asJsonObjectList(data, context: context);
+  }
+
+  bool _hasAppContext(dynamic data) {
+    if (data is! Map) {
+      return false;
+    }
+
+    final json = asJsonObject(data, context: 'create business response');
+    return json['appContext'] != null || json['app_context'] != null;
   }
 }

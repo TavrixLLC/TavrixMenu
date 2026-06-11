@@ -9,6 +9,8 @@ import '../../../../shared/widgets/app_scaffold.dart';
 import '../../../../shared/widgets/app_text_field.dart';
 import '../../../../shared/widgets/error_view.dart';
 import '../../../../shared/widgets/section_header.dart';
+import '../../../auth/presentation/bloc/auth_cubit.dart';
+import '../../../auth/presentation/bloc/auth_state.dart';
 import '../../../dashboard/presentation/bloc/dashboard_cubit.dart';
 import '../bloc/business_setup_cubit.dart';
 import '../bloc/business_setup_state.dart';
@@ -21,13 +23,19 @@ class BusinessSetupScreen extends StatefulWidget {
 }
 
 class _BusinessSetupScreenState extends State<BusinessSetupScreen> {
-  final _nameController = TextEditingController(text: 'Tavrix Demo Cafe');
-  final _slugController = TextEditingController(text: 'tavrix-demo-cafe');
+  final _nameController = TextEditingController();
+  final _cityController = TextEditingController();
+  final _currencyController = TextEditingController(text: 'IQD');
+  final _languageController = TextEditingController(text: 'ar');
+  String _type = 'cafe';
+  bool _isCompletingSetup = false;
 
   @override
   void dispose() {
     _nameController.dispose();
-    _slugController.dispose();
+    _cityController.dispose();
+    _currencyController.dispose();
+    _languageController.dispose();
     super.dispose();
   }
 
@@ -36,15 +44,12 @@ class _BusinessSetupScreenState extends State<BusinessSetupScreen> {
     return BlocConsumer<BusinessSetupCubit, BusinessSetupState>(
       listener: (context, state) {
         if (state.status == BusinessSetupStatus.success) {
-          context.read<DashboardCubit>().load();
-          ScaffoldMessenger.of(
-            context,
-          ).showSnackBar(const SnackBar(content: Text('Business setup saved')));
-          Navigator.of(context).pushReplacementNamed(AppRouteNames.dashboard);
+          _completeBusinessSetup(state);
         }
       },
       builder: (context, state) {
-        final isLoading = state.status == BusinessSetupStatus.loading;
+        final isLoading =
+            state.status == BusinessSetupStatus.loading || _isCompletingSetup;
 
         return AppScaffold(
           title: 'Business setup',
@@ -64,12 +69,43 @@ class _BusinessSetupScreenState extends State<BusinessSetupScreen> {
                     AppTextField(
                       label: 'Business name',
                       controller: _nameController,
+                      hint: 'Royal Cup',
+                    ),
+                    const SizedBox(height: AppSpacing.md),
+                    DropdownButtonFormField<String>(
+                      initialValue: _type,
+                      decoration: const InputDecoration(
+                        labelText: 'Business type',
+                      ),
+                      items: const [
+                        DropdownMenuItem(value: 'cafe', child: Text('Cafe')),
+                        DropdownMenuItem(
+                          value: 'restaurant',
+                          child: Text('Restaurant'),
+                        ),
+                        DropdownMenuItem(value: 'shop', child: Text('Shop')),
+                      ],
+                      onChanged: isLoading
+                          ? null
+                          : (value) => setState(() {
+                              _type = value ?? 'cafe';
+                            }),
                     ),
                     const SizedBox(height: AppSpacing.md),
                     AppTextField(
-                      label: 'Public slug',
-                      controller: _slugController,
-                      hint: 'my-cafe',
+                      label: 'City',
+                      controller: _cityController,
+                      hint: 'Baghdad',
+                    ),
+                    const SizedBox(height: AppSpacing.md),
+                    AppTextField(
+                      label: 'Currency',
+                      controller: _currencyController,
+                    ),
+                    const SizedBox(height: AppSpacing.md),
+                    AppTextField(
+                      label: 'Language',
+                      controller: _languageController,
                     ),
                   ],
                 ),
@@ -87,7 +123,10 @@ class _BusinessSetupScreenState extends State<BusinessSetupScreen> {
                     ? null
                     : () => context.read<BusinessSetupCubit>().submit(
                         name: _nameController.text,
-                        slug: _slugController.text,
+                        type: _type,
+                        city: _cityController.text,
+                        currency: _currencyController.text,
+                        language: _languageController.text,
                       ),
               ),
             ],
@@ -95,5 +134,48 @@ class _BusinessSetupScreenState extends State<BusinessSetupScreen> {
         );
       },
     );
+  }
+
+  Future<void> _completeBusinessSetup(BusinessSetupState state) async {
+    if (_isCompletingSetup) {
+      return;
+    }
+
+    setState(() {
+      _isCompletingSetup = true;
+    });
+
+    final business = state.business;
+    if (business != null) {
+      context.read<DashboardCubit>().primeBusiness(business);
+    }
+
+    final authCubit = context.read<AuthCubit>();
+    await authCubit.refreshCurrentUser();
+
+    if (!mounted) {
+      return;
+    }
+
+    final authState = authCubit.state;
+    if (authState.status == AuthStatus.authenticated &&
+        authState.shouldOpenDashboard) {
+      ScaffoldMessenger.of(
+        context,
+      ).showSnackBar(const SnackBar(content: Text('Business setup saved')));
+      Navigator.of(context).pushReplacementNamed(AppRouteNames.dashboard);
+      return;
+    }
+
+    setState(() {
+      _isCompletingSetup = false;
+    });
+
+    final message = authState.status == AuthStatus.failure
+        ? authState.errorMessage ?? 'Workspace refresh failed.'
+        : 'Business saved, but your workspace is not ready yet.';
+    ScaffoldMessenger.of(
+      context,
+    ).showSnackBar(SnackBar(content: Text(message)));
   }
 }

@@ -2,6 +2,7 @@ import 'package:flutter_bloc/flutter_bloc.dart';
 
 import '../../../../core/utils/failure_message.dart';
 import '../../../auth/domain/usecases/get_current_user.dart';
+import '../../../business_setup/domain/entities/business.dart';
 import '../../../business_setup/domain/usecases/get_my_business.dart';
 import 'dashboard_state.dart';
 
@@ -15,6 +16,10 @@ class DashboardCubit extends Cubit<DashboardState> {
 
   final GetCurrentUser _getCurrentUser;
   final GetMyBusiness _getMyBusiness;
+
+  void primeBusiness(Business business) {
+    emit(DashboardState(status: DashboardStatus.success, business: business));
+  }
 
   Future<void> load() async {
     emit(state.copyWith(status: DashboardStatus.loading, clearError: true));

@@ -1,5 +1,6 @@
 import 'package:flutter/material.dart';
 
+import '../../app/config/app_config.dart';
 import '../../features/auth/presentation/pages/login_screen.dart';
 import '../../features/business_setup/presentation/pages/business_setup_screen.dart';
 import '../../features/dashboard/presentation/pages/dashboard_screen.dart';
@@ -13,10 +14,10 @@ import 'route_names.dart';
 class AppRouter {
   const AppRouter._();
 
-  static Map<String, WidgetBuilder> get routes {
+  static Map<String, WidgetBuilder> routes({required AppConfig config}) {
     return {
       AppRouteNames.splash: (_) => const SplashScreen(),
-      AppRouteNames.login: (_) => const LoginScreen(),
+      AppRouteNames.login: (_) => LoginScreen(config: config),
       AppRouteNames.dashboard: (_) => const DashboardScreen(),
       AppRouteNames.businessSetup: (_) => const BusinessSetupScreen(),
       AppRouteNames.menu: (_) => const MenuScreen(),

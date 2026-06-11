@@ -13,8 +13,15 @@ class MenuCategoryModel extends MenuCategory {
       id: json['id'] as String? ?? '',
       businessId:
           json['business_id'] as String? ?? json['businessId'] as String? ?? '',
-      name: json['name'] as String? ?? '',
-      sortOrder: json['sort_order'] as int? ?? json['sortOrder'] as int? ?? 0,
+      name:
+          json['nameAr'] as String? ??
+          json['name_ar'] as String? ??
+          json['name'] as String? ??
+          '',
+      sortOrder:
+          (json['sort_order'] as num?)?.toInt() ??
+          (json['sortOrder'] as num?)?.toInt() ??
+          0,
     );
   }
 
