@@ -23,6 +23,8 @@ abstract class BusinessRemoteDataSource {
     String? city,
     required String currency,
     required String language,
+    String? logoUrl,
+    String? coverUrl,
   });
 }
 
@@ -92,18 +94,22 @@ class BusinessRemoteDataSourceImpl implements BusinessRemoteDataSource {
     String? city,
     required String currency,
     required String language,
+    String? logoUrl,
+    String? coverUrl,
   }) async {
-    final data = await apiClient.patch(
+    await apiClient.patch(
       '/businesses/$id',
       body: {
         'name': name,
         'type': type,
-        'city': city,
+        'city': _nullableTrim(city),
         'currency': currency,
         'language': language,
+        'logoUrl': _nullableTrim(logoUrl),
+        'coverUrl': _nullableTrim(coverUrl),
       },
     );
-    return _parseBusiness(data, context: 'update business response');
+    return getAppContext(id);
   }
 
   BusinessModel _parseBusiness(dynamic data, {required String context}) {
@@ -158,4 +164,13 @@ class BusinessRemoteDataSourceImpl implements BusinessRemoteDataSource {
     final json = asJsonObject(data, context: 'create business response');
     return json['appContext'] != null || json['app_context'] != null;
   }
+}
+
+String? _nullableTrim(String? value) {
+  if (value == null) {
+    return null;
+  }
+
+  final trimmed = value.trim();
+  return trimmed.isEmpty ? null : trimmed;
 }

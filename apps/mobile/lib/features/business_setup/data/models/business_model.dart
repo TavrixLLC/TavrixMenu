@@ -13,6 +13,7 @@ class BusinessModel extends Business {
     super.logoUrl,
     super.coverUrl,
     super.status,
+    super.permissions,
   });
 
   factory BusinessModel.fromJson(Map<String, dynamic> json) {
@@ -41,6 +42,7 @@ class BusinessModel extends Business {
       logoUrl: _string(business['logoUrl']) ?? _string(business['logo_url']),
       coverUrl: _string(business['coverUrl']) ?? _string(business['cover_url']),
       status: _string(business['status']),
+      permissions: _permissionsFromJson(_asObject(json['permissions'])),
     );
   }
 
@@ -69,6 +71,7 @@ class BusinessModel extends Business {
       logoUrl: _string(business['logoUrl']) ?? _string(business['logo_url']),
       coverUrl: _string(business['coverUrl']) ?? _string(business['cover_url']),
       status: _string(business['status']),
+      permissions: _permissionsFromJson(_asObject(json['permissions'])),
     );
   }
 
@@ -85,8 +88,36 @@ class BusinessModel extends Business {
       logoUrl: logoUrl,
       coverUrl: coverUrl,
       status: status,
+      permissions: permissions,
     );
   }
+}
+
+BusinessPermissions? _permissionsFromJson(Map<String, dynamic>? json) {
+  if (json == null) {
+    return null;
+  }
+
+  return BusinessPermissions(
+    canManageBusiness:
+        _bool(json['canManageBusiness']) ??
+        _bool(json['can_manage_business']) ??
+        false,
+    canManageMenu:
+        _bool(json['canManageMenu']) ?? _bool(json['can_manage_menu']) ?? false,
+    canManageMembers:
+        _bool(json['canManageMembers']) ??
+        _bool(json['can_manage_members']) ??
+        false,
+    canViewMembers:
+        _bool(json['canViewMembers']) ??
+        _bool(json['can_view_members']) ??
+        false,
+    canViewPublicLink:
+        _bool(json['canViewPublicLink']) ??
+        _bool(json['can_view_public_link']) ??
+        false,
+  );
 }
 
 Map<String, dynamic>? _asObject(Object? value) {
@@ -107,4 +138,14 @@ String? _string(Object? value) {
     return value;
   }
   return value.toString();
+}
+
+bool? _bool(Object? value) {
+  if (value is bool) {
+    return value;
+  }
+  if (value is String) {
+    return bool.tryParse(value);
+  }
+  return null;
 }

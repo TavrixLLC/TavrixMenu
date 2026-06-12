@@ -2,6 +2,7 @@ import 'package:flutter/material.dart';
 
 import '../../app/config/app_config.dart';
 import '../../features/auth/presentation/pages/login_screen.dart';
+import '../../features/business_setup/presentation/pages/business_profile_screen.dart';
 import '../../features/business_setup/presentation/pages/business_setup_screen.dart';
 import '../../features/dashboard/presentation/pages/dashboard_screen.dart';
 import '../../features/menu/presentation/pages/menu_screen.dart';
@@ -20,6 +21,7 @@ class AppRouter {
       AppRouteNames.login: (_) => LoginScreen(config: config),
       AppRouteNames.dashboard: (_) => const DashboardScreen(),
       AppRouteNames.businessSetup: (_) => const BusinessSetupScreen(),
+      AppRouteNames.businessProfile: (_) => const BusinessProfileScreen(),
       AppRouteNames.menu: (_) => const MenuScreen(),
       AppRouteNames.qr: (_) => const QRScreen(),
       AppRouteNames.subscription: (_) => const SubscriptionScreen(),

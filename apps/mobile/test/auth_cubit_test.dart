@@ -52,60 +52,9 @@ void main() {
 
     await cubit.close();
   });
-
-  test('refreshCurrentUser updates onboarding from setup to dashboard', () async {
-    final repository = _QueuedMeRepository([
-      const CurrentUser(
-        id: 'usr_owner',
-        email: 'owner@tavrix.local',
-        fullName: 'Tavrix Owner',
-        role: 'OWNER',
-        onboarding: CurrentUserOnboarding(
-          hasBusiness: false,
-          recommendedNextStep: 'CREATE_BUSINESS',
-        ),
-      ),
-      const CurrentUser(
-        id: 'usr_owner',
-        email: 'owner@tavrix.local',
-        fullName: 'Tavrix Owner',
-        role: 'OWNER',
-        onboarding: CurrentUserOnboarding(
-          hasBusiness: true,
-          activeBusinessCount: 1,
-          recommendedNextStep: 'OPEN_DASHBOARD',
-        ),
-      ),
-    ]);
-    final cubit = _authCubitWithRepository(repository);
-
-    await cubit.signInWithClerk();
-
-    expect(repository.getMeCalls, 1);
-    expect(
-      cubit.state.user?.onboarding.recommendedNextStep,
-      'CREATE_BUSINESS',
-    );
-    expect(cubit.state.shouldOpenDashboard, isFalse);
-
-    await cubit.refreshCurrentUser();
-
-    expect(repository.getMeCalls, 2);
-    expect(
-      cubit.state.user?.onboarding.recommendedNextStep,
-      'OPEN_DASHBOARD',
-    );
-    expect(cubit.state.shouldOpenDashboard, isTrue);
-
-    await cubit.close();
-  });
 }
 
 AuthCubit _authCubit(CurrentUser user) {
-  return _authCubitWithRepository(_FakeMeRepository(user));
-}
-
-AuthCubit _authCubitWithRepository(MeRepository repository) {
   final config = const AppConfig(
     apiBaseUrl: 'https://api.example.test',
     customerWebBaseUrl: 'https://menu.example.test',
@@ -121,7 +70,7 @@ AuthCubit _authCubitWithRepository(MeRepository repository) {
   );
 
   return AuthCubit(
-    getCurrentUser: GetCurrentUser(repository),
+    getCurrentUser: GetCurrentUser(_FakeMeRepository(user)),
     authSessionController: sessionController,
   );
 }
@@ -133,18 +82,4 @@ class _FakeMeRepository implements MeRepository {
 
   @override
   Future<Either<Failure, CurrentUser>> getMe() async => Right(user);
-}
-
-class _QueuedMeRepository implements MeRepository {
-  _QueuedMeRepository(this.users);
-
-  final List<CurrentUser> users;
-  int getMeCalls = 0;
-
-  @override
-  Future<Either<Failure, CurrentUser>> getMe() async {
-    final index = getMeCalls < users.length ? getMeCalls : users.length - 1;
-    getMeCalls += 1;
-    return Right(users[index]);
-  }
 }

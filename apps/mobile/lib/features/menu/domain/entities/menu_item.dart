@@ -9,6 +9,7 @@ class MenuItem extends Equatable {
     required this.description,
     required this.priceCents,
     required this.isAvailable,
+    required this.sortOrder,
   });
 
   final String id;
@@ -18,6 +19,29 @@ class MenuItem extends Equatable {
   final String description;
   final int priceCents;
   final bool isAvailable;
+  final int sortOrder;
+
+  MenuItem copyWith({
+    String? id,
+    String? businessId,
+    String? categoryId,
+    String? name,
+    String? description,
+    int? priceCents,
+    bool? isAvailable,
+    int? sortOrder,
+  }) {
+    return MenuItem(
+      id: id ?? this.id,
+      businessId: businessId ?? this.businessId,
+      categoryId: categoryId ?? this.categoryId,
+      name: name ?? this.name,
+      description: description ?? this.description,
+      priceCents: priceCents ?? this.priceCents,
+      isAvailable: isAvailable ?? this.isAvailable,
+      sortOrder: sortOrder ?? this.sortOrder,
+    );
+  }
 
   @override
   List<Object?> get props => [
@@ -28,5 +52,6 @@ class MenuItem extends Equatable {
     description,
     priceCents,
     isAvailable,
+    sortOrder,
   ];
 }

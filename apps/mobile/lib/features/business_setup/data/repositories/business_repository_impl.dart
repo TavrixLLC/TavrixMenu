@@ -29,6 +29,7 @@ class BusinessRepositoryImpl implements BusinessRepository {
     currency: 'IQD',
     language: 'ar',
     status: 'ACTIVE',
+    permissions: BusinessPermissions.owner(),
   );
 
   @override
@@ -64,6 +65,7 @@ class BusinessRepositoryImpl implements BusinessRepository {
           currency: currency,
           language: language,
           status: 'ACTIVE',
+          permissions: BusinessPermissions.owner(),
         );
         return _devBusiness;
       }
@@ -87,6 +89,8 @@ class BusinessRepositoryImpl implements BusinessRepository {
     String? city,
     required String currency,
     required String language,
+    String? logoUrl,
+    String? coverUrl,
   }) async {
     return runSafe(() async {
       if (!_remoteDataSource.canCallBackend && _devFallbackEnabled) {
@@ -99,7 +103,10 @@ class BusinessRepositoryImpl implements BusinessRepository {
           city: city,
           currency: currency,
           language: language,
+          logoUrl: logoUrl,
+          coverUrl: coverUrl,
           status: _devBusiness.status,
+          permissions: _devBusiness.permissions,
         );
         return _devBusiness;
       }
@@ -111,6 +118,8 @@ class BusinessRepositoryImpl implements BusinessRepository {
         city: city,
         currency: currency,
         language: language,
+        logoUrl: logoUrl,
+        coverUrl: coverUrl,
       );
       return model.toEntity();
     }, _networkInfo);

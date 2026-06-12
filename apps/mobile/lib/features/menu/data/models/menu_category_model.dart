@@ -6,6 +6,7 @@ class MenuCategoryModel extends MenuCategory {
     required super.businessId,
     required super.name,
     required super.sortOrder,
+    super.isActive,
   });
 
   factory MenuCategoryModel.fromJson(Map<String, dynamic> json) {
@@ -22,6 +23,7 @@ class MenuCategoryModel extends MenuCategory {
           (json['sort_order'] as num?)?.toInt() ??
           (json['sortOrder'] as num?)?.toInt() ??
           0,
+      isActive: json['is_active'] as bool? ?? json['isActive'] as bool? ?? true,
     );
   }
 
@@ -31,6 +33,7 @@ class MenuCategoryModel extends MenuCategory {
       businessId: businessId,
       name: name,
       sortOrder: sortOrder,
+      isActive: isActive,
     );
   }
 }

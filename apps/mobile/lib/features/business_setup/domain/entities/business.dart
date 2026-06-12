@@ -13,6 +13,7 @@ class Business extends Equatable {
     this.logoUrl,
     this.coverUrl,
     this.status,
+    this.permissions,
   });
 
   final String id;
@@ -26,6 +27,7 @@ class Business extends Equatable {
   final String? logoUrl;
   final String? coverUrl;
   final String? status;
+  final BusinessPermissions? permissions;
 
   @override
   List<Object?> get props => [
@@ -40,5 +42,40 @@ class Business extends Equatable {
     logoUrl,
     coverUrl,
     status,
+    permissions,
+  ];
+}
+
+class BusinessPermissions extends Equatable {
+  const BusinessPermissions({
+    this.canManageBusiness = false,
+    this.canManageMenu = false,
+    this.canManageMembers = false,
+    this.canViewMembers = false,
+    this.canViewPublicLink = false,
+  });
+
+  const BusinessPermissions.owner()
+    : this(
+        canManageBusiness: true,
+        canManageMenu: true,
+        canManageMembers: true,
+        canViewMembers: true,
+        canViewPublicLink: true,
+      );
+
+  final bool canManageBusiness;
+  final bool canManageMenu;
+  final bool canManageMembers;
+  final bool canViewMembers;
+  final bool canViewPublicLink;
+
+  @override
+  List<Object?> get props => [
+    canManageBusiness,
+    canManageMenu,
+    canManageMembers,
+    canViewMembers,
+    canViewPublicLink,
   ];
 }
