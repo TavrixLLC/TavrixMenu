@@ -21,5 +21,7 @@ abstract class BusinessRepository {
     String? city,
     required String currency,
     required String language,
+    String? logoUrl,
+    String? coverUrl,
   });
 }

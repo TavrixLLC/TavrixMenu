@@ -13,20 +13,7 @@ class AuthState extends Equatable {
   final CurrentUser? user;
   final String? errorMessage;
 
-  bool get shouldOpenDashboard {
-    final currentUser = user;
-    if (currentUser == null) {
-      return false;
-    }
-
-    final recommendedNextStep =
-        currentUser.onboarding.recommendedNextStep?.trim().toUpperCase();
-    if (recommendedNextStep != null && recommendedNextStep.isNotEmpty) {
-      return recommendedNextStep == 'OPEN_DASHBOARD';
-    }
-
-    return currentUser.hasBusiness;
-  }
+  bool get shouldOpenDashboard => user?.hasBusiness ?? false;
 
   AuthState copyWith({
     AuthStatus? status,

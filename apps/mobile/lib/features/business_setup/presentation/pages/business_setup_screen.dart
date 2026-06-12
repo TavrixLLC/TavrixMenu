@@ -9,8 +9,6 @@ import '../../../../shared/widgets/app_scaffold.dart';
 import '../../../../shared/widgets/app_text_field.dart';
 import '../../../../shared/widgets/error_view.dart';
 import '../../../../shared/widgets/section_header.dart';
-import '../../../auth/presentation/bloc/auth_cubit.dart';
-import '../../../auth/presentation/bloc/auth_state.dart';
 import '../../../dashboard/presentation/bloc/dashboard_cubit.dart';
 import '../bloc/business_setup_cubit.dart';
 import '../bloc/business_setup_state.dart';
@@ -28,7 +26,6 @@ class _BusinessSetupScreenState extends State<BusinessSetupScreen> {
   final _currencyController = TextEditingController(text: 'IQD');
   final _languageController = TextEditingController(text: 'ar');
   String _type = 'cafe';
-  bool _isCompletingSetup = false;
 
   @override
   void dispose() {
@@ -44,12 +41,18 @@ class _BusinessSetupScreenState extends State<BusinessSetupScreen> {
     return BlocConsumer<BusinessSetupCubit, BusinessSetupState>(
       listener: (context, state) {
         if (state.status == BusinessSetupStatus.success) {
-          _completeBusinessSetup(state);
+          final business = state.business;
+          if (business != null) {
+            context.read<DashboardCubit>().primeBusiness(business);
+          }
+          ScaffoldMessenger.of(
+            context,
+          ).showSnackBar(const SnackBar(content: Text('Business setup saved')));
+          Navigator.of(context).pushReplacementNamed(AppRouteNames.dashboard);
         }
       },
       builder: (context, state) {
-        final isLoading =
-            state.status == BusinessSetupStatus.loading || _isCompletingSetup;
+        final isLoading = state.status == BusinessSetupStatus.loading;
 
         return AppScaffold(
           title: 'Business setup',
@@ -134,48 +137,5 @@ class _BusinessSetupScreenState extends State<BusinessSetupScreen> {
         );
       },
     );
-  }
-
-  Future<void> _completeBusinessSetup(BusinessSetupState state) async {
-    if (_isCompletingSetup) {
-      return;
-    }
-
-    setState(() {
-      _isCompletingSetup = true;
-    });
-
-    final business = state.business;
-    if (business != null) {
-      context.read<DashboardCubit>().primeBusiness(business);
-    }
-
-    final authCubit = context.read<AuthCubit>();
-    await authCubit.refreshCurrentUser();
-
-    if (!mounted) {
-      return;
-    }
-
-    final authState = authCubit.state;
-    if (authState.status == AuthStatus.authenticated &&
-        authState.shouldOpenDashboard) {
-      ScaffoldMessenger.of(
-        context,
-      ).showSnackBar(const SnackBar(content: Text('Business setup saved')));
-      Navigator.of(context).pushReplacementNamed(AppRouteNames.dashboard);
-      return;
-    }
-
-    setState(() {
-      _isCompletingSetup = false;
-    });
-
-    final message = authState.status == AuthStatus.failure
-        ? authState.errorMessage ?? 'Workspace refresh failed.'
-        : 'Business saved, but your workspace is not ready yet.';
-    ScaffoldMessenger.of(
-      context,
-    ).showSnackBar(SnackBar(content: Text(message)));
   }
 }

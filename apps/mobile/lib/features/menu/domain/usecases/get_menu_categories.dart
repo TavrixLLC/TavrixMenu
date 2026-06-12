@@ -9,7 +9,13 @@ class GetMenuCategories {
 
   final MenuRepository _repository;
 
-  Future<Either<Failure, List<MenuCategory>>> call(String businessId) {
-    return _repository.getCategories(businessId);
+  Future<Either<Failure, List<MenuCategory>>> call(
+    String businessId, {
+    bool includeInactive = false,
+  }) {
+    return _repository.getCategories(
+      businessId,
+      includeInactive: includeInactive,
+    );
   }
 }
