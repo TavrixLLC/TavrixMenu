@@ -16,6 +16,8 @@ class UpdateBusiness {
     String? city,
     String currency = 'IQD',
     String language = 'ar',
+    String? logoUrl,
+    String? coverUrl,
   }) {
     return _repository.updateBusiness(
       id: id,
@@ -24,6 +26,8 @@ class UpdateBusiness {
       city: city,
       currency: currency,
       language: language,
+      logoUrl: logoUrl,
+      coverUrl: coverUrl,
     );
   }
 }

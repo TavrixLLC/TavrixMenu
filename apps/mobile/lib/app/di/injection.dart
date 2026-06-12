@@ -11,14 +11,24 @@ import '../../features/business_setup/data/datasources/business_remote_data_sour
 import '../../features/business_setup/data/repositories/business_repository_impl.dart';
 import '../../features/business_setup/domain/usecases/create_business.dart';
 import '../../features/business_setup/domain/usecases/get_my_business.dart';
+import '../../features/business_setup/domain/usecases/update_business.dart';
 import '../../features/business_setup/presentation/bloc/business_setup_cubit.dart';
+import '../../features/dashboard/data/datasources/dashboard_remote_data_source.dart';
+import '../../features/dashboard/data/repositories/dashboard_repository_impl.dart';
+import '../../features/dashboard/domain/usecases/get_dashboard_summary.dart';
 import '../../features/dashboard/presentation/bloc/dashboard_cubit.dart';
 import '../../features/menu/data/datasources/menu_remote_data_source.dart';
 import '../../features/menu/data/repositories/menu_repository_impl.dart';
 import '../../features/menu/domain/usecases/create_menu_category.dart';
 import '../../features/menu/domain/usecases/create_menu_item.dart';
+import '../../features/menu/domain/usecases/delete_menu_category.dart';
+import '../../features/menu/domain/usecases/delete_menu_item.dart';
 import '../../features/menu/domain/usecases/get_menu_categories.dart';
 import '../../features/menu/domain/usecases/get_menu_items.dart';
+import '../../features/menu/domain/usecases/reorder_menu_categories.dart';
+import '../../features/menu/domain/usecases/reorder_menu_items.dart';
+import '../../features/menu/domain/usecases/restore_menu_category.dart';
+import '../../features/menu/domain/usecases/restore_menu_item.dart';
 import '../../features/menu/presentation/bloc/menu_cubit.dart';
 import '../config/app_config.dart';
 
@@ -63,6 +73,15 @@ class AppDependencies {
     );
     final getMyBusiness = GetMyBusiness(businessRepository);
     final createBusiness = CreateBusiness(businessRepository);
+    final updateBusiness = UpdateBusiness(businessRepository);
+
+    final dashboardRemoteDataSource = DashboardRemoteDataSourceImpl(apiClient);
+    final dashboardRepository = DashboardRepositoryImpl(
+      remoteDataSource: dashboardRemoteDataSource,
+      networkInfo: networkInfo,
+      devFallbackEnabled: resolvedConfig.isDevAuthEnabled,
+    );
+    final getDashboardSummary = GetDashboardSummary(dashboardRepository);
 
     final menuRemoteDataSource = MenuRemoteDataSourceImpl(apiClient);
     final menuRepository = MenuRepositoryImpl(
@@ -74,6 +93,12 @@ class AppDependencies {
     final getMenuItems = GetMenuItems(menuRepository);
     final createMenuCategory = CreateMenuCategory(menuRepository);
     final createMenuItem = CreateMenuItem(menuRepository);
+    final deleteMenuCategory = DeleteMenuCategory(menuRepository);
+    final restoreMenuCategory = RestoreMenuCategory(menuRepository);
+    final deleteMenuItem = DeleteMenuItem(menuRepository);
+    final restoreMenuItem = RestoreMenuItem(menuRepository);
+    final reorderMenuCategories = ReorderMenuCategories(menuRepository);
+    final reorderMenuItems = ReorderMenuItems(menuRepository);
 
     return AppDependencies._(
       config: resolvedConfig,
@@ -82,10 +107,14 @@ class AppDependencies {
         getCurrentUser: getCurrentUser,
         authSessionController: authSessionController,
       ),
-      businessSetupCubit: BusinessSetupCubit(createBusiness: createBusiness),
+      businessSetupCubit: BusinessSetupCubit(
+        createBusiness: createBusiness,
+        updateBusiness: updateBusiness,
+      ),
       dashboardCubit: DashboardCubit(
         getCurrentUser: getCurrentUser,
         getMyBusiness: getMyBusiness,
+        getDashboardSummary: getDashboardSummary,
       ),
       menuCubit: MenuCubit(
         getMyBusiness: getMyBusiness,
@@ -93,6 +122,13 @@ class AppDependencies {
         getMenuItems: getMenuItems,
         createMenuCategory: createMenuCategory,
         createMenuItem: createMenuItem,
+        deleteMenuCategory: deleteMenuCategory,
+        restoreMenuCategory: restoreMenuCategory,
+        deleteMenuItem: deleteMenuItem,
+        restoreMenuItem: restoreMenuItem,
+        reorderMenuCategories: reorderMenuCategories,
+        reorderMenuItems: reorderMenuItems,
+        getDashboardSummary: getDashboardSummary,
       ),
     );
   }

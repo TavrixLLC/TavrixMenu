@@ -9,6 +9,7 @@ class MenuItemModel extends MenuItem {
     required super.description,
     required super.priceCents,
     required super.isAvailable,
+    required super.sortOrder,
   });
 
   factory MenuItemModel.fromJson(Map<String, dynamic> json) {
@@ -35,6 +36,10 @@ class MenuItemModel extends MenuItem {
           0,
       isAvailable:
           json['is_available'] as bool? ?? json['isAvailable'] as bool? ?? true,
+      sortOrder:
+          (json['sort_order'] as num?)?.toInt() ??
+          (json['sortOrder'] as num?)?.toInt() ??
+          0,
     );
   }
 
@@ -47,6 +52,7 @@ class MenuItemModel extends MenuItem {
       description: description,
       priceCents: priceCents,
       isAvailable: isAvailable,
+      sortOrder: sortOrder,
     );
   }
 }

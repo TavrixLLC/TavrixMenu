@@ -28,7 +28,9 @@ class ApiClient {
 
   bool get canCallBackend => _config.hasApiBaseUrl;
 
-  Future<dynamic> get(String path) => _send('GET', path);
+  Future<dynamic> get(String path, {Map<String, dynamic>? queryParameters}) {
+    return _send('GET', path, queryParameters: queryParameters);
+  }
 
   Future<dynamic> post(String path, {Map<String, dynamic>? body}) {
     return _send('POST', path, body: body);
@@ -44,6 +46,7 @@ class ApiClient {
     String method,
     String path, {
     Map<String, dynamic>? body,
+    Map<String, dynamic>? queryParameters,
   }) async {
     if (!canCallBackend) {
       throw const ServerException('API_BASE_URL is not configured.');
@@ -61,6 +64,7 @@ class ApiClient {
       final response = await _dio.request<dynamic>(
         path,
         data: body,
+        queryParameters: queryParameters,
         options: options,
       );
       return response.data;

@@ -1,28 +1,39 @@
 import 'package:flutter_bloc/flutter_bloc.dart';
 
 import '../../../../core/utils/failure_message.dart';
+import '../../../auth/domain/entities/current_user.dart';
 import '../../../auth/domain/usecases/get_current_user.dart';
 import '../../../business_setup/domain/entities/business.dart';
 import '../../../business_setup/domain/usecases/get_my_business.dart';
+import '../../domain/usecases/get_dashboard_summary.dart';
 import 'dashboard_state.dart';
 
 class DashboardCubit extends Cubit<DashboardState> {
   DashboardCubit({
     required GetCurrentUser getCurrentUser,
     required GetMyBusiness getMyBusiness,
+    required GetDashboardSummary getDashboardSummary,
   }) : _getCurrentUser = getCurrentUser,
        _getMyBusiness = getMyBusiness,
+       _getDashboardSummary = getDashboardSummary,
        super(const DashboardState.initial());
 
   final GetCurrentUser _getCurrentUser;
   final GetMyBusiness _getMyBusiness;
+  final GetDashboardSummary _getDashboardSummary;
 
   void primeBusiness(Business business) {
     emit(DashboardState(status: DashboardStatus.success, business: business));
   }
 
   Future<void> load() async {
-    emit(state.copyWith(status: DashboardStatus.loading, clearError: true));
+    emit(
+      state.copyWith(
+        status: DashboardStatus.loading,
+        clearError: true,
+        clearSummaryError: true,
+      ),
+    );
 
     final userResult = await _getCurrentUser();
     await userResult.fold(
@@ -42,15 +53,69 @@ class DashboardCubit extends Cubit<DashboardState> {
               errorMessage: failureMessage(failure),
             ),
           ),
-          (business) => emit(
-            DashboardState(
-              status: DashboardStatus.success,
-              user: user,
-              business: business,
-            ),
-          ),
+          (business) async => _loadSummary(user: user, business: business),
         );
       },
+    );
+  }
+
+  Future<void> refreshSummary(String businessId) async {
+    if (businessId.trim().isEmpty) {
+      return;
+    }
+
+    final result = await _getDashboardSummary(businessId);
+    result.fold(
+      (failure) => emit(
+        state.copyWith(
+          status: DashboardStatus.success,
+          summaryErrorMessage: failureMessage(failure),
+        ),
+      ),
+      (summary) => emit(
+        state.copyWith(
+          status: DashboardStatus.success,
+          business: summary.business,
+          summary: summary,
+          clearSummaryError: true,
+        ),
+      ),
+    );
+  }
+
+  Future<void> _loadSummary({
+    required CurrentUser user,
+    required Business business,
+  }) async {
+    if (business.id.trim().isEmpty) {
+      emit(
+        DashboardState(
+          status: DashboardStatus.success,
+          user: user,
+          business: business,
+        ),
+      );
+      return;
+    }
+
+    final summaryResult = await _getDashboardSummary(business.id);
+    summaryResult.fold(
+      (failure) => emit(
+        DashboardState(
+          status: DashboardStatus.success,
+          user: user,
+          business: business,
+          summaryErrorMessage: failureMessage(failure),
+        ),
+      ),
+      (summary) => emit(
+        DashboardState(
+          status: DashboardStatus.success,
+          user: user,
+          business: summary.business,
+          summary: summary,
+        ),
+      ),
     );
   }
 }

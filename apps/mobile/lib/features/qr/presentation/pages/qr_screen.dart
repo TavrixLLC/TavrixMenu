@@ -3,6 +3,7 @@ import 'package:flutter_bloc/flutter_bloc.dart';
 
 import '../../../../core/constants/app_spacing.dart';
 import '../../../../shared/widgets/app_scaffold.dart';
+import '../../../../shared/widgets/empty_state.dart';
 import '../../../../shared/widgets/loading_view.dart';
 import '../../../../shared/widgets/qr_preview_card.dart';
 import '../../../../shared/widgets/section_header.dart';
@@ -40,9 +41,22 @@ class _QRScreenState extends State<QRScreen> {
             return const LoadingView(message: 'Preparing QR preview');
           }
 
+          final canViewPublicLink =
+              state.permissions?.canViewPublicLink ?? true;
+          if (!canViewPublicLink) {
+            return const EmptyState(
+              title: 'Restricted access',
+              message:
+                  'Your business permissions do not allow public link access.',
+              icon: Icons.lock_outline,
+            );
+          }
+
           final publicUrl =
+              state.summary?.publicMenu.url ??
               state.business?.publicMenuUrl ??
               'https://menu.tavrix.com/your-business';
+          final qrPayload = state.summary?.publicMenu.qrPayload ?? publicUrl;
 
           return Column(
             crossAxisAlignment: CrossAxisAlignment.start,
@@ -50,10 +64,10 @@ class _QRScreenState extends State<QRScreen> {
               const SectionHeader(
                 title: 'Public menu preview',
                 subtitle:
-                    'QR generation is a later integration. Sprint 1 shows the URL concept only.',
+                    'Copy the public menu link or QR payload for sharing.',
               ),
               const SizedBox(height: AppSpacing.lg),
-              QRPreviewCard(publicUrl: publicUrl),
+              QRPreviewCard(publicUrl: publicUrl, qrPayload: qrPayload),
             ],
           );
         },
