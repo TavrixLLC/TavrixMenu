@@ -2,6 +2,7 @@ import {
   Business,
   BusinessUserRole,
   BusinessUserStatus,
+  LoyaltyTransactionType,
   PrismaClient,
   UserStatus
 } from '../src/generated/prisma';
@@ -119,6 +120,8 @@ async function main() {
     sortOrder: 1
   });
 
+  await seedLoyaltyDemo(business, owner.id);
+
   console.log('Seeded Tavrix Cafe demo data.');
   console.log(
     'Development auth token: Bearer dev:user_tavrix_owner;email=owner@tavrix.local;name=Tavrix%20Owner'
@@ -212,6 +215,140 @@ async function upsertItem(
       sortOrder: item.sortOrder,
       isAvailable: true
     }
+  });
+}
+
+async function seedLoyaltyDemo(business: Business, ownerUserId: string) {
+  const existingProgram = await prisma.loyaltyProgram.findFirst({
+    where: {
+      businessId: business.id,
+      name: 'Tavrix Cafe Stamp Card'
+    }
+  });
+  const program = existingProgram
+    ? await prisma.loyaltyProgram.update({
+        where: {
+          id: existingProgram.id
+        },
+        data: {
+          description: 'Collect 5 coffee stamps and earn a free coffee.',
+          stampGoal: 5,
+          rewardName: 'Free coffee',
+          rewardDescription: 'One free Turkish Coffee after 5 stamps.',
+          isActive: true,
+          cardColor: '#111827',
+          accentColor: '#f59e0b',
+          logoUrl: null,
+          terms: 'Reward is valid for one free Turkish Coffee.'
+        }
+      })
+    : await prisma.loyaltyProgram.create({
+        data: {
+          businessId: business.id,
+          name: 'Tavrix Cafe Stamp Card',
+          description: 'Collect 5 coffee stamps and earn a free coffee.',
+          stampGoal: 5,
+          rewardName: 'Free coffee',
+          rewardDescription: 'One free Turkish Coffee after 5 stamps.',
+          isActive: true,
+          cardColor: '#111827',
+          accentColor: '#f59e0b',
+          terms: 'Reward is valid for one free Turkish Coffee.'
+        }
+      });
+
+  await prisma.loyaltyProgram.updateMany({
+    where: {
+      businessId: business.id,
+      id: {
+        not: program.id
+      },
+      isActive: true
+    },
+    data: {
+      isActive: false
+    }
+  });
+
+  const customer = await prisma.customer.upsert({
+    where: {
+      phone: '+9647700000000'
+    },
+    create: {
+      phone: '+9647700000000',
+      email: 'coffee.customer@example.com',
+      name: 'Coffee Customer'
+    },
+    update: {
+      email: 'coffee.customer@example.com',
+      name: 'Coffee Customer'
+    }
+  });
+
+  const membership = await prisma.loyaltyMembership.upsert({
+    where: {
+      customerId_loyaltyProgramId: {
+        customerId: customer.id,
+        loyaltyProgramId: program.id
+      }
+    },
+    create: {
+      businessId: business.id,
+      loyaltyProgramId: program.id,
+      customerId: customer.id,
+      stampCount: 3,
+      rewardReady: false,
+      totalStampsEarned: 3,
+      totalRewardsRedeemed: 0
+    },
+    update: {
+      stampCount: 3,
+      rewardReady: false,
+      totalStampsEarned: 3,
+      totalRewardsRedeemed: 0,
+      status: 'ACTIVE'
+    }
+  });
+
+  await prisma.loyaltyTransaction.deleteMany({
+    where: {
+      membershipId: membership.id
+    }
+  });
+
+  await prisma.loyaltyTransaction.createMany({
+    data: [
+      {
+        businessId: business.id,
+        loyaltyProgramId: program.id,
+        membershipId: membership.id,
+        customerId: customer.id,
+        actorUserId: ownerUserId,
+        type: LoyaltyTransactionType.STAMP_ADDED,
+        stampsDelta: 1,
+        reason: 'Demo coffee purchase'
+      },
+      {
+        businessId: business.id,
+        loyaltyProgramId: program.id,
+        membershipId: membership.id,
+        customerId: customer.id,
+        actorUserId: ownerUserId,
+        type: LoyaltyTransactionType.STAMP_ADDED,
+        stampsDelta: 1,
+        reason: 'Demo pastry purchase'
+      },
+      {
+        businessId: business.id,
+        loyaltyProgramId: program.id,
+        membershipId: membership.id,
+        customerId: customer.id,
+        actorUserId: ownerUserId,
+        type: LoyaltyTransactionType.STAMP_ADDED,
+        stampsDelta: 1,
+        reason: 'Demo repeat visit'
+      }
+    ]
   });
 }
 
