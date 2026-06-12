@@ -15,9 +15,17 @@ export function validateEnvironment(config: Environment) {
     throw new Error('API_PORT must be a positive integer');
   }
 
+  if (nodeEnv !== 'development' && !config.CLERK_JWT_ISSUER) {
+    throw new Error(
+      'CLERK_JWT_ISSUER is required when NODE_ENV is test or production'
+    );
+  }
+
   return {
     ...config,
     NODE_ENV: nodeEnv,
-    API_PORT: apiPort
+    API_PORT: apiPort,
+    CUSTOMER_WEB_BASE_URL:
+      config.CUSTOMER_WEB_BASE_URL ?? 'http://localhost:3001'
   };
 }

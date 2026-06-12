@@ -1,8 +1,8 @@
 export const stats = [
-  { label: 'Total businesses', value: '128' },
-  { label: 'Active subscriptions', value: '86' },
-  { label: 'AI usage placeholder', value: '0' },
-  { label: 'Loyalty cards placeholder', value: '0' }
+  { label: 'Auth foundation', value: 'Clerk' },
+  { label: 'Owner context', value: '/me' },
+  { label: 'Admin APIs', value: 'Pending' },
+  { label: 'Customer menus', value: 'Public' }
 ];
 
 export const businesses = [
@@ -12,13 +12,13 @@ export const businesses = [
 ];
 
 export const subscriptions = [
-  { business: 'Tavrix Cafe', plan: 'Pro', status: 'ACTIVE', periodEnd: '2026-07-01' },
-  { business: 'North Bakery', plan: 'Basic', status: 'TRIALING', periodEnd: '2026-06-20' },
-  { business: 'River Tea', plan: 'Basic', status: 'PAST_DUE', periodEnd: '2026-06-03' }
+  { business: 'Tavrix Cafe', plan: 'Plan display pending', status: 'Sprint 6 backend pending', periodEnd: 'Not connected' },
+  { business: 'North Bakery', plan: 'Plan display pending', status: 'Sprint 6 backend pending', periodEnd: 'Not connected' },
+  { business: 'River Tea', plan: 'Plan display pending', status: 'Sprint 6 backend pending', periodEnd: 'Not connected' }
 ];
 
 export const logs = [
-  { action: 'business.created', user: 'admin@example.com', business: 'North Bakery' },
-  { action: 'subscription.updated', user: 'billing@example.com', business: 'Tavrix Cafe' },
-  { action: 'business.suspended', user: 'admin@example.com', business: 'River Tea' }
+  { action: 'owner.context.loaded', user: 'admin-dev@example.com', business: 'Tavrix Cafe' },
+  { action: 'business.shell.opened', user: 'admin-dev@example.com', business: 'North Bakery' },
+  { action: 'logs.shell.viewed', user: 'admin-dev@example.com', business: 'River Tea' }
 ];
