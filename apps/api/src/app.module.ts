@@ -5,6 +5,7 @@ import { AuthModule } from './modules/auth/auth.module';
 import { BillingModule } from './modules/billing/billing.module';
 import { BusinessesModule } from './modules/businesses/businesses.module';
 import { HealthModule } from './modules/health/health.module';
+import { LoyaltyModule } from './modules/loyalty/loyalty.module';
 import { MenuModule } from './modules/menu/menu.module';
 import { UsersModule } from './modules/users/users.module';
 import { PrismaModule } from './prisma/prisma.module';
@@ -22,6 +23,7 @@ import { validateEnvironment } from './env.validation';
     UsersModule,
     BusinessesModule,
     MenuModule,
+    LoyaltyModule,
     BillingModule,
     AdminModule
   ]

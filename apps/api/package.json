@@ -17,7 +17,8 @@
     "preprisma:seed": "prisma generate",
     "prisma:seed": "ts-node prisma/seed.ts",
     "preseed:dev": "prisma generate",
-    "seed:dev": "ts-node prisma/seed.ts"
+    "seed:dev": "ts-node prisma/seed.ts",
+    "verify:loyalty-concurrency": "ts-node scripts/verify-loyalty-concurrency.ts"
   },
   "dependencies": {
     "@nestjs/common": "^11.1.3",

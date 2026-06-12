@@ -9,41 +9,45 @@ datasource db {
 }
 
 model User {
-  id              String         @id @default(cuid())
-  clerkUserId     String?        @unique @map("clerk_user_id")
-  name            String?
-  email           String?
-  phone           String?
-  status          UserStatus     @default(ACTIVE)
-  createdAt       DateTime       @default(now()) @map("created_at")
-  updatedAt       DateTime       @updatedAt @map("updated_at")
-  ownedBusinesses Business[]     @relation("BusinessOwner")
-  businessUsers   BusinessUser[]
-  auditLogs       AuditLog[]
+  id                       String               @id @default(cuid())
+  clerkUserId              String?              @unique @map("clerk_user_id")
+  name                     String?
+  email                    String?
+  phone                    String?
+  status                   UserStatus           @default(ACTIVE)
+  createdAt                DateTime             @default(now()) @map("created_at")
+  updatedAt                DateTime             @updatedAt @map("updated_at")
+  ownedBusinesses          Business[]           @relation("BusinessOwner")
+  businessUsers            BusinessUser[]
+  auditLogs                AuditLog[]
+  actorLoyaltyTransactions LoyaltyTransaction[] @relation("LoyaltyTransactionActor")
 
   @@map("users")
 }
 
 model Business {
-  id             String         @id @default(cuid())
-  ownerId        String         @map("owner_id")
-  name           String
-  slug           String         @unique
-  type           String
-  logoUrl        String?        @map("logo_url")
-  coverUrl       String?        @map("cover_url")
-  currency       String         @default("IQD")
-  language       String         @default("ar")
-  city           String?
-  status         BusinessStatus @default(ACTIVE)
-  createdAt      DateTime       @default(now()) @map("created_at")
-  updatedAt      DateTime       @updatedAt @map("updated_at")
-  owner          User           @relation("BusinessOwner", fields: [ownerId], references: [id], onDelete: Restrict)
-  businessUsers  BusinessUser[]
-  menuCategories MenuCategory[]
-  menuItems      MenuItem[]
-  subscriptions  Subscription[]
-  auditLogs      AuditLog[]
+  id                  String               @id @default(cuid())
+  ownerId             String               @map("owner_id")
+  name                String
+  slug                String               @unique
+  type                String
+  logoUrl             String?              @map("logo_url")
+  coverUrl            String?              @map("cover_url")
+  currency            String               @default("IQD")
+  language            String               @default("ar")
+  city                String?
+  status              BusinessStatus       @default(ACTIVE)
+  createdAt           DateTime             @default(now()) @map("created_at")
+  updatedAt           DateTime             @updatedAt @map("updated_at")
+  owner               User                 @relation("BusinessOwner", fields: [ownerId], references: [id], onDelete: Restrict)
+  businessUsers       BusinessUser[]
+  menuCategories      MenuCategory[]
+  menuItems           MenuItem[]
+  loyaltyPrograms     LoyaltyProgram[]
+  loyaltyMemberships  LoyaltyMembership[]
+  loyaltyTransactions LoyaltyTransaction[]
+  subscriptions       Subscription[]
+  auditLogs           AuditLog[]
 
   @@index([ownerId])
   @@map("businesses")
@@ -149,6 +153,91 @@ model AuditLog {
   @@map("audit_logs")
 }
 
+model LoyaltyProgram {
+  id                  String               @id @default(cuid())
+  businessId          String               @map("business_id")
+  name                String
+  description         String?
+  stampGoal           Int                  @map("stamp_goal")
+  rewardName          String               @map("reward_name")
+  rewardDescription   String?              @map("reward_description")
+  isActive            Boolean              @default(true) @map("is_active")
+  cardColor           String?              @map("card_color")
+  accentColor         String?              @map("accent_color")
+  logoUrl             String?              @map("logo_url")
+  terms               String?
+  createdAt           DateTime             @default(now()) @map("created_at")
+  updatedAt           DateTime             @updatedAt @map("updated_at")
+  business            Business             @relation(fields: [businessId], references: [id], onDelete: Cascade)
+  memberships         LoyaltyMembership[]
+  transactions        LoyaltyTransaction[]
+
+  @@index([businessId])
+  @@map("loyalty_programs")
+}
+
+model Customer {
+  id                  String               @id @default(cuid())
+  phone               String?              @unique
+  email               String?              @unique
+  name                String?
+  createdAt           DateTime             @default(now()) @map("created_at")
+  updatedAt           DateTime             @updatedAt @map("updated_at")
+  loyaltyMemberships  LoyaltyMembership[]
+  loyaltyTransactions LoyaltyTransaction[]
+
+  @@map("customers")
+}
+
+model LoyaltyMembership {
+  id                    String                  @id @default(cuid())
+  businessId            String                  @map("business_id")
+  loyaltyProgramId      String                  @map("loyalty_program_id")
+  customerId            String                  @map("customer_id")
+  stampCount            Int                     @default(0) @map("stamp_count")
+  rewardReady           Boolean                 @default(false) @map("reward_ready")
+  totalStampsEarned     Int                     @default(0) @map("total_stamps_earned")
+  totalRewardsRedeemed  Int                     @default(0) @map("total_rewards_redeemed")
+  status                LoyaltyMembershipStatus @default(ACTIVE)
+  createdAt             DateTime                @default(now()) @map("created_at")
+  updatedAt             DateTime                @updatedAt @map("updated_at")
+  business              Business                @relation(fields: [businessId], references: [id], onDelete: Cascade)
+  loyaltyProgram        LoyaltyProgram          @relation(fields: [loyaltyProgramId], references: [id], onDelete: Cascade)
+  customer              Customer                @relation(fields: [customerId], references: [id], onDelete: Cascade)
+  transactions          LoyaltyTransaction[]
+
+  @@unique([customerId, loyaltyProgramId])
+  @@index([businessId])
+  @@index([loyaltyProgramId])
+  @@index([customerId])
+  @@map("loyalty_memberships")
+}
+
+model LoyaltyTransaction {
+  id                String                 @id @default(cuid())
+  businessId        String                 @map("business_id")
+  loyaltyProgramId  String                 @map("loyalty_program_id")
+  membershipId      String                 @map("membership_id")
+  customerId        String                 @map("customer_id")
+  actorUserId       String?                @map("actor_user_id")
+  type              LoyaltyTransactionType
+  stampsDelta       Int                    @map("stamps_delta")
+  reason            String?
+  createdAt         DateTime               @default(now()) @map("created_at")
+  business          Business               @relation(fields: [businessId], references: [id], onDelete: Cascade)
+  loyaltyProgram    LoyaltyProgram         @relation(fields: [loyaltyProgramId], references: [id], onDelete: Cascade)
+  membership        LoyaltyMembership      @relation(fields: [membershipId], references: [id], onDelete: Cascade)
+  customer          Customer               @relation(fields: [customerId], references: [id], onDelete: Cascade)
+  actorUser         User?                  @relation("LoyaltyTransactionActor", fields: [actorUserId], references: [id], onDelete: SetNull)
+
+  @@index([businessId])
+  @@index([loyaltyProgramId])
+  @@index([membershipId])
+  @@index([customerId])
+  @@index([actorUserId])
+  @@map("loyalty_transactions")
+}
+
 enum UserStatus {
   ACTIVE
   SUSPENDED
@@ -178,4 +267,16 @@ enum SubscriptionStatus {
   ACTIVE
   PAST_DUE
   CANCELED
+}
+
+enum LoyaltyMembershipStatus {
+  ACTIVE
+  INACTIVE
+}
+
+enum LoyaltyTransactionType {
+  STAMP_ADDED
+  REWARD_REDEEMED
+  ADJUSTMENT
+  VOID
 }

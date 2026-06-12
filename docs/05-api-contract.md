@@ -1030,6 +1030,302 @@ Errors:
 
 - `404` business or item not found.
 
+## Loyalty
+
+Sprint 5 implements backend loyalty core only. Loyalty is a simple stamp-card
+system for cashier-led/offline purchases. It does not create Google Wallet
+passes, Apple Wallet passes, QR images, payment flows, cashback, tiers,
+campaigns, notifications, or amount-based points.
+
+All loyalty routes require Clerk auth and active business membership. `OWNER`
+and `MANAGER` can configure the program. `OWNER`, `MANAGER`, and `STAFF` can
+view memberships, enroll customers, add stamps, redeem rewards, and view
+transactions.
+
+Card state is returned as:
+
+```json
+{
+  "stampCount": 3,
+  "stampGoal": 7,
+  "rewardReady": false,
+  "progressPercent": 42,
+  "rewardName": "Free meal",
+  "programName": "Abdullah Grill Rewards"
+}
+```
+
+`progressPercent` is `Math.floor((stampCount / stampGoal) * 100)` capped at
+100.
+
+### GET /businesses/:id/loyalty/program
+
+Auth: Clerk required.
+
+Role: `OWNER`, `MANAGER`, or `STAFF`.
+
+Response: active loyalty program or `null`.
+
+```json
+{
+  "id": "program_123",
+  "businessId": "bus_123",
+  "name": "Tavrix Cafe Stamp Card",
+  "description": "Collect 5 coffee stamps and earn a free coffee.",
+  "stampGoal": 5,
+  "rewardName": "Free coffee",
+  "rewardDescription": "One free Turkish Coffee after 5 stamps.",
+  "isActive": true,
+  "cardColor": "#111827",
+  "accentColor": "#f59e0b",
+  "logoUrl": null,
+  "terms": "Reward is valid for one free Turkish Coffee.",
+  "createdAt": "2026-06-13T00:00:00.000Z",
+  "updatedAt": "2026-06-13T00:00:00.000Z"
+}
+```
+
+Errors:
+
+- `401` unauthenticated.
+- `403` missing active business membership.
+- `404` business not found.
+
+### POST /businesses/:id/loyalty/program
+
+Auth: Clerk required.
+
+Role: `OWNER` or `MANAGER`.
+
+Request:
+
+```json
+{
+  "name": "Tavrix Cafe Stamp Card",
+  "description": "Collect stamps on coffee visits.",
+  "stampGoal": 5,
+  "rewardName": "Free coffee",
+  "rewardDescription": "One free Turkish Coffee after 5 stamps.",
+  "isActive": true,
+  "cardColor": "#111827",
+  "accentColor": "#f59e0b",
+  "logoUrl": null,
+  "terms": "Reward is valid for dine-in orders only."
+}
+```
+
+Rules:
+
+- `name`, `stampGoal`, and `rewardName` are required.
+- `stampGoal` must be an integer from 1 to 50.
+- Sprint 5 allows one active loyalty program per business. Creating another
+  active program returns `409`.
+- This endpoint does not create wallet passes.
+
+Errors:
+
+- `400` invalid body.
+- `401` unauthenticated.
+- `403` missing owner or manager role.
+- `409` duplicate active loyalty program.
+
+### PATCH /businesses/:id/loyalty/program/:programId
+
+Auth: Clerk required.
+
+Role: `OWNER` or `MANAGER`.
+
+Behavior: updates editable program fields. The program must belong to the
+business. Reactivating a program is rejected if another active program already
+exists for the business.
+
+Errors:
+
+- `400` invalid body.
+- `401` unauthenticated.
+- `403` missing owner or manager role.
+- `404` loyalty program not found for this business.
+- `409` duplicate active loyalty program.
+
+### POST /businesses/:id/loyalty/enroll
+
+Auth: Clerk required.
+
+Role: `OWNER`, `MANAGER`, or `STAFF`.
+
+Request:
+
+```json
+{
+  "phone": "+9647700000000",
+  "email": "customer@example.com",
+  "name": "Demo Customer",
+  "programId": "program_123"
+}
+```
+
+Rules:
+
+- At least one of `phone` or `email` is required.
+- `programId` is optional when the business has exactly one active program.
+- Existing customers are reused by phone or email.
+- Existing customer/program memberships are returned and reactivated.
+- No online payment or wallet pass is created.
+
+Response:
+
+```json
+{
+  "customer": {
+    "id": "customer_123",
+    "phone": "+9647700000000",
+    "email": "customer@example.com",
+    "name": "Demo Customer"
+  },
+  "membership": {
+    "id": "membership_123",
+    "businessId": "bus_123",
+    "loyaltyProgramId": "program_123",
+    "customerId": "customer_123",
+    "stampCount": 0,
+    "rewardReady": false,
+    "totalStampsEarned": 0,
+    "totalRewardsRedeemed": 0,
+    "status": "ACTIVE"
+  },
+  "program": {
+    "id": "program_123",
+    "name": "Tavrix Cafe Stamp Card",
+    "stampGoal": 5,
+    "rewardName": "Free coffee"
+  },
+  "cardState": {
+    "stampCount": 0,
+    "stampGoal": 5,
+    "rewardReady": false,
+    "progressPercent": 0,
+    "rewardName": "Free coffee",
+    "programName": "Tavrix Cafe Stamp Card"
+  }
+}
+```
+
+Errors:
+
+- `400` missing phone/email or ambiguous active program.
+- `401` unauthenticated.
+- `403` missing active business membership.
+- `404` no active program or program not found.
+- `409` phone and email belong to different customers.
+
+### GET /businesses/:id/loyalty/memberships
+
+Auth: Clerk required.
+
+Role: `OWNER`, `MANAGER`, or `STAFF`.
+
+Query:
+
+- `search`: optional customer name, email, or phone contains search.
+- `status`: optional `ACTIVE` or `INACTIVE`.
+- `rewardReady`: optional boolean string.
+
+Response: array of memberships with customer, program summary, and `cardState`.
+
+Errors:
+
+- `401` unauthenticated.
+- `403` missing active business membership.
+
+### GET /businesses/:id/loyalty/memberships/:membershipId
+
+Auth: Clerk required.
+
+Role: `OWNER`, `MANAGER`, or `STAFF`.
+
+Behavior: returns a single business-owned membership, customer, program summary,
+card state, and recent transactions.
+
+Errors:
+
+- `401` unauthenticated.
+- `403` missing active business membership.
+- `404` membership not found for this business.
+
+### POST /businesses/:id/loyalty/memberships/:membershipId/stamps
+
+Auth: Clerk required.
+
+Role: `OWNER`, `MANAGER`, or `STAFF`.
+
+Request:
+
+```json
+{
+  "count": 1,
+  "reason": "Coffee purchase"
+}
+```
+
+Rules:
+
+- `count` defaults to 1.
+- `count` must be an integer from 1 to 10.
+- Membership must belong to the business.
+- Membership and program must be active.
+- When `stampCount` reaches `stampGoal`, `rewardReady` becomes true.
+- A `STAMP_ADDED` transaction is recorded.
+
+Errors:
+
+- `400` invalid count, inactive membership/program, or reward already ready.
+- `401` unauthenticated.
+- `403` missing active business membership.
+- `404` membership not found for this business.
+
+### POST /businesses/:id/loyalty/memberships/:membershipId/redeem
+
+Auth: Clerk required.
+
+Role: `OWNER`, `MANAGER`, or `STAFF`.
+
+Request:
+
+```json
+{
+  "reason": "Free coffee redeemed"
+}
+```
+
+Rules:
+
+- Only allowed when `rewardReady` is true.
+- Increments `totalRewardsRedeemed`.
+- Resets `stampCount` to 0 and `rewardReady` to false.
+- Records a `REWARD_REDEEMED` transaction.
+
+Errors:
+
+- `400` reward is not ready.
+- `401` unauthenticated.
+- `403` missing active business membership.
+- `404` membership not found for this business.
+
+### GET /businesses/:id/loyalty/memberships/:membershipId/transactions
+
+Auth: Clerk required.
+
+Role: `OWNER`, `MANAGER`, or `STAFF`.
+
+Behavior: returns loyalty transactions newest first. Membership must belong to
+the requested business.
+
+Errors:
+
+- `401` unauthenticated.
+- `403` missing active business membership.
+- `404` membership not found for this business.
+
 ## Billing
 
 ### GET /billing/plans
