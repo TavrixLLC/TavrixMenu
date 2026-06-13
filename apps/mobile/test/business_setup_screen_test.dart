@@ -16,8 +16,12 @@ import 'package:tavrix_menu_mobile/features/business_setup/domain/entities/busin
 import 'package:tavrix_menu_mobile/features/business_setup/domain/repositories/business_repository.dart';
 import 'package:tavrix_menu_mobile/features/business_setup/domain/usecases/create_business.dart';
 import 'package:tavrix_menu_mobile/features/business_setup/domain/usecases/get_my_business.dart';
+import 'package:tavrix_menu_mobile/features/business_setup/domain/usecases/update_business.dart';
 import 'package:tavrix_menu_mobile/features/business_setup/presentation/bloc/business_setup_cubit.dart';
 import 'package:tavrix_menu_mobile/features/business_setup/presentation/pages/business_setup_screen.dart';
+import 'package:tavrix_menu_mobile/features/dashboard/domain/entities/dashboard_summary.dart';
+import 'package:tavrix_menu_mobile/features/dashboard/domain/repositories/dashboard_repository.dart';
+import 'package:tavrix_menu_mobile/features/dashboard/domain/usecases/get_dashboard_summary.dart';
 import 'package:tavrix_menu_mobile/features/dashboard/presentation/bloc/dashboard_cubit.dart';
 import 'package:tavrix_menu_mobile/features/dashboard/presentation/bloc/dashboard_state.dart';
 
@@ -39,12 +43,15 @@ void main() {
     ]);
     final businessRepository = _FakeBusinessRepository();
     final authCubit = _authCubit(meRepository);
+    final dashboardRepository = _FakeDashboardRepository();
     final businessSetupCubit = BusinessSetupCubit(
       createBusiness: CreateBusiness(businessRepository),
+      updateBusiness: UpdateBusiness(businessRepository),
     );
     final dashboardCubit = DashboardCubit(
       getCurrentUser: GetCurrentUser(meRepository),
       getMyBusiness: GetMyBusiness(businessRepository),
+      getDashboardSummary: GetDashboardSummary(dashboardRepository),
     );
 
     await authCubit.signInWithClerk();
@@ -59,11 +66,17 @@ void main() {
     );
 
     await tester.enterText(find.byType(TextField).first, 'Tavrix Cafe');
+
+    final meCallsBeforeSubmit = meRepository.getMeCalls;
     await tester.tap(find.text('Save business'));
     await tester.pumpAndSettle();
 
     expect(businessRepository.createBusinessCalls, 1);
-    expect(meRepository.getMeCalls, 2);
+    expect(
+      meRepository.getMeCalls,
+      meCallsBeforeSubmit + 1,
+      reason: 'POST /businesses must trigger exactly one GET /me refresh',
+    );
     expect(
       authCubit.state.user?.onboarding.recommendedNextStep,
       'OPEN_DASHBOARD',
@@ -209,7 +222,33 @@ class _FakeBusinessRepository implements BusinessRepository {
     String? city,
     required String currency,
     required String language,
+    String? logoUrl,
+    String? coverUrl,
   }) async {
     return const Right(_createdBusiness);
+  }
+}
+
+class _FakeDashboardRepository implements DashboardRepository {
+  @override
+  Future<Either<Failure, DashboardSummary>> getDashboardSummary(
+    String businessId,
+  ) async {
+    return Right(
+      DashboardSummary(
+        business: _createdBusiness,
+        currentUser: const DashboardCurrentUser(
+          role: 'OWNER',
+          permissions: BusinessPermissions.owner(),
+        ),
+        counts: const DashboardCounts(),
+        publicMenu: const DashboardPublicMenu(
+          path: '/m/tavrix-cafe',
+          url: 'https://menu.example.test/m/tavrix-cafe',
+          qrPayload: 'https://menu.example.test/m/tavrix-cafe',
+        ),
+        onboardingHints: const DashboardOnboardingHints(),
+      ),
+    );
   }
 }
