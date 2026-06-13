@@ -1,3 +1,4 @@
+import Link from 'next/link';
 import { PlaceholderImage } from '../../components/PlaceholderImage';
 import { ProductCard } from '../../components/ProductCard';
 import { getCategoryName } from '../../lib/menu-format';
@@ -44,24 +45,32 @@ function MenuHeader({ menu }: { menu: PublicMenuResponse }) {
       ) : (
         <PlaceholderImage label="Cover" className="h-40 w-full rounded-lg sm:h-56" />
       )}
-      <div className="-mt-8 flex items-end gap-4 px-3">
-        {business.logoUrl ? (
-          <img
-            src={business.logoUrl}
-            alt={`${business.name} logo`}
-            className="h-20 w-20 shrink-0 rounded-lg bg-white object-cover shadow-sm"
-          />
-        ) : (
-          <PlaceholderImage label="Logo" className="h-20 w-20 shrink-0 rounded-lg bg-white shadow-sm" />
-        )}
-        <div className="pb-1">
-          <p className="text-sm font-semibold capitalize text-mint">{business.type || 'Menu'}</p>
-          <h1 className="text-3xl font-bold text-ink">{business.name}</h1>
-          <div className="mt-1 flex flex-wrap items-center gap-2 text-sm text-neutral-500">
-            {business.city ? <span>{business.city}</span> : null}
-            <span>/m/{business.slug}</span>
+      <div className="-mt-8 flex flex-col gap-4 px-3 sm:flex-row sm:items-end">
+        <div className="flex items-end gap-4">
+          {business.logoUrl ? (
+            <img
+              src={business.logoUrl}
+              alt={`${business.name} logo`}
+              className="h-20 w-20 shrink-0 rounded-lg bg-white object-cover shadow-sm"
+            />
+          ) : (
+            <PlaceholderImage label="Logo" className="h-20 w-20 shrink-0 rounded-lg bg-white shadow-sm" />
+          )}
+          <div className="pb-1">
+            <p className="text-sm font-semibold capitalize text-mint">{business.type || 'Menu'}</p>
+            <h1 className="text-3xl font-bold text-ink">{business.name}</h1>
+            <div className="mt-1 flex flex-wrap items-center gap-2 text-sm text-neutral-500">
+              {business.city ? <span>{business.city}</span> : null}
+              <span>/m/{business.slug}</span>
+            </div>
           </div>
         </div>
+        <Link
+          href={`/m/${business.slug}/loyalty`}
+          className="mb-1 inline-flex w-fit rounded-md border border-neutral-200 bg-white px-4 py-2 text-sm font-semibold text-ink shadow-sm transition hover:border-neutral-300 sm:ml-auto"
+        >
+          Join Loyalty / Loyalty Card
+        </Link>
       </div>
     </section>
   );
