@@ -23,11 +23,11 @@ Future<Either<Failure, T>> runSafe<T>(
     } on ValidationException catch (error) {
       return Left(ValidationFailure(error.message));
     } on UnauthorizedException {
-      return const Left(ServerFailure());
+      return const Left(UnauthorizedFailure());
     } on ForbiddenException {
-      return const Left(ServerFailure());
+      return const Left(ForbiddenFailure());
     } on NotFoundException {
-      return const Left(ServerFailure());
+      return const Left(NotFoundFailure());
     } catch (_) {
       return const Left(UnknownFailure());
     }

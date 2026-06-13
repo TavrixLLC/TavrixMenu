@@ -16,13 +16,17 @@ import 'package:tavrix_menu_mobile/features/business_setup/domain/entities/busin
 import 'package:tavrix_menu_mobile/features/business_setup/domain/repositories/business_repository.dart';
 import 'package:tavrix_menu_mobile/features/business_setup/domain/usecases/create_business.dart';
 import 'package:tavrix_menu_mobile/features/business_setup/domain/usecases/get_my_business.dart';
+import 'package:tavrix_menu_mobile/features/business_setup/domain/usecases/update_business.dart';
 import 'package:tavrix_menu_mobile/features/business_setup/presentation/bloc/business_setup_cubit.dart';
 import 'package:tavrix_menu_mobile/features/business_setup/presentation/pages/business_setup_screen.dart';
+import 'package:tavrix_menu_mobile/features/dashboard/domain/entities/dashboard_summary.dart';
+import 'package:tavrix_menu_mobile/features/dashboard/domain/repositories/dashboard_repository.dart';
+import 'package:tavrix_menu_mobile/features/dashboard/domain/usecases/get_dashboard_summary.dart';
 import 'package:tavrix_menu_mobile/features/dashboard/presentation/bloc/dashboard_cubit.dart';
 import 'package:tavrix_menu_mobile/features/dashboard/presentation/bloc/dashboard_state.dart';
 
 void main() {
-  testWidgets('business creation refreshes auth before opening dashboard', (
+  testWidgets('business creation primes dashboard before opening dashboard', (
     tester,
   ) async {
     final meRepository = _QueuedMeRepository([
@@ -41,10 +45,12 @@ void main() {
     final authCubit = _authCubit(meRepository);
     final businessSetupCubit = BusinessSetupCubit(
       createBusiness: CreateBusiness(businessRepository),
+      updateBusiness: UpdateBusiness(businessRepository),
     );
     final dashboardCubit = DashboardCubit(
       getCurrentUser: GetCurrentUser(meRepository),
       getMyBusiness: GetMyBusiness(businessRepository),
+      getDashboardSummary: GetDashboardSummary(_FakeDashboardRepository()),
     );
 
     await authCubit.signInWithClerk();
@@ -63,12 +69,7 @@ void main() {
     await tester.pumpAndSettle();
 
     expect(businessRepository.createBusinessCalls, 1);
-    expect(meRepository.getMeCalls, 2);
-    expect(
-      authCubit.state.user?.onboarding.recommendedNextStep,
-      'OPEN_DASHBOARD',
-    );
-    expect(authCubit.state.shouldOpenDashboard, isTrue);
+    expect(meRepository.getMeCalls, 1);
     expect(dashboardCubit.state.status, DashboardStatus.success);
     expect(dashboardCubit.state.business?.id, _createdBusiness.id);
     expect(find.text('Dashboard ready'), findsOneWidget);
@@ -209,7 +210,38 @@ class _FakeBusinessRepository implements BusinessRepository {
     String? city,
     required String currency,
     required String language,
+    String? logoUrl,
+    String? coverUrl,
   }) async {
     return const Right(_createdBusiness);
+  }
+}
+
+class _FakeDashboardRepository implements DashboardRepository {
+  @override
+  Future<Either<Failure, DashboardSummary>> getDashboardSummary(
+    String businessId,
+  ) async {
+    return Right(
+      DashboardSummary(
+        business: _createdBusiness,
+        currentUser: const DashboardCurrentUser(
+          role: 'OWNER',
+          permissions: BusinessPermissions.owner(),
+        ),
+        counts: const DashboardCounts(activeMembers: 1),
+        publicMenu: const DashboardPublicMenu(
+          path: '/m/tavrix-cafe',
+          url: 'https://menu.example.test/m/tavrix-cafe',
+          qrPayload: 'https://menu.example.test/m/tavrix-cafe',
+        ),
+        onboardingHints: const DashboardOnboardingHints(
+          hasCategories: true,
+          hasItems: true,
+          hasPublicMenuReady: true,
+          recommendedNextStep: 'OPEN_DASHBOARD',
+        ),
+      ),
+    );
   }
 }

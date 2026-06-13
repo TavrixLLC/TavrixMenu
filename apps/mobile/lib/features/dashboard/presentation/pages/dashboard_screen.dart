@@ -2,6 +2,8 @@ import 'package:flutter/material.dart';
 import 'package:flutter_bloc/flutter_bloc.dart';
 
 import '../../../../app/router/route_names.dart';
+import '../../../../core/constants/app_colors.dart';
+import '../../../../core/constants/app_radius.dart';
 import '../../../../core/constants/app_spacing.dart';
 import '../../../../shared/widgets/app_card.dart';
 import '../../../../shared/widgets/app_scaffold.dart';
@@ -98,6 +100,13 @@ class _DashboardScreenState extends State<DashboardScreen> {
                     : 'Restricted by your business permissions.',
                 icon: Icons.restaurant_menu,
                 routeName: AppRouteNames.menu,
+              ),
+              const SizedBox(height: AppSpacing.sm),
+              _DashboardActionCard(
+                title: 'Loyalty',
+                subtitle: 'Enroll customers, add stamps, and redeem rewards.',
+                icon: Icons.loyalty_outlined,
+                routeName: AppRouteNames.loyalty,
               ),
               const SizedBox(height: AppSpacing.sm),
               _DashboardActionCard(
@@ -205,41 +214,79 @@ class _DashboardSummarySection extends StatelessWidget {
     return Column(
       crossAxisAlignment: CrossAxisAlignment.start,
       children: [
-        const SectionHeader(
-          title: 'Owner workflow',
-          subtitle: 'Live menu status from the Sprint 4 dashboard summary.',
-        ),
-        const SizedBox(height: AppSpacing.md),
-        Wrap(
-          spacing: AppSpacing.sm,
-          runSpacing: AppSpacing.sm,
-          children: [
-            _CountCard(
-              label: 'Active categories',
-              value: summary.counts.activeCategories,
-            ),
-            _CountCard(
-              label: 'Archived categories',
-              value: summary.counts.inactiveCategories,
-            ),
-            _CountCard(
-              label: 'Available items',
-              value: summary.counts.availableItems,
-            ),
-            _CountCard(
-              label: 'Unavailable items',
-              value: summary.counts.unavailableItems,
-            ),
-            if (summary.permissions.canViewMembers ||
-                summary.permissions.canManageMembers)
-              _CountCard(
-                label: 'Active members',
-                value: summary.counts.activeMembers,
+        AppCard(
+          child: Column(
+            crossAxisAlignment: CrossAxisAlignment.start,
+            children: [
+              Row(
+                children: [
+                  const Icon(Icons.dashboard_customize_outlined),
+                  const SizedBox(width: AppSpacing.sm),
+                  Expanded(
+                    child: Column(
+                      crossAxisAlignment: CrossAxisAlignment.start,
+                      children: [
+                        Text(
+                          'Owner workflow',
+                          style: Theme.of(context).textTheme.titleLarge,
+                        ),
+                        const SizedBox(height: AppSpacing.xxs),
+                        Text(
+                          'Live menu readiness at a glance.',
+                          style: Theme.of(context).textTheme.bodyMedium,
+                        ),
+                      ],
+                    ),
+                  ),
+                ],
               ),
-          ],
+              const SizedBox(height: AppSpacing.md),
+              LayoutBuilder(
+                builder: (context, constraints) {
+                  const gap = AppSpacing.sm;
+                  final tileWidth = (constraints.maxWidth - gap) / 2;
+                  return Wrap(
+                    spacing: gap,
+                    runSpacing: gap,
+                    children: [
+                      _WorkflowMetricTile(
+                        width: tileWidth,
+                        label: 'Active categories',
+                        value: summary.counts.activeCategories,
+                        icon: Icons.category_outlined,
+                      ),
+                      _WorkflowMetricTile(
+                        width: tileWidth,
+                        label: 'Available items',
+                        value: summary.counts.availableItems,
+                        icon: Icons.restaurant_menu,
+                      ),
+                      _WorkflowMetricTile(
+                        width: tileWidth,
+                        label: 'Archived categories',
+                        value: summary.counts.inactiveCategories,
+                        icon: Icons.archive_outlined,
+                      ),
+                      _WorkflowMetricTile(
+                        width: tileWidth,
+                        label: 'Unavailable items',
+                        value: summary.counts.unavailableItems,
+                        icon: Icons.visibility_off_outlined,
+                      ),
+                    ],
+                  );
+                },
+              ),
+              if (summary.permissions.canViewMembers ||
+                  summary.permissions.canManageMembers) ...[
+                const SizedBox(height: AppSpacing.sm),
+                _WorkflowMemberRow(value: summary.counts.activeMembers),
+              ],
+              const SizedBox(height: AppSpacing.md),
+              _WorkflowNextStep(message: hint),
+            ],
+          ),
         ),
-        const SizedBox(height: AppSpacing.md),
-        _InlineNotice(title: 'Recommended next step', message: hint),
       ],
     );
   }
@@ -257,23 +304,122 @@ class _DashboardSummarySection extends StatelessWidget {
   }
 }
 
-class _CountCard extends StatelessWidget {
-  const _CountCard({required this.label, required this.value});
+class _WorkflowMetricTile extends StatelessWidget {
+  const _WorkflowMetricTile({
+    required this.width,
+    required this.label,
+    required this.value,
+    required this.icon,
+  });
 
+  final double width;
   final String label;
   final int value;
+  final IconData icon;
 
   @override
   Widget build(BuildContext context) {
     return SizedBox(
-      width: 156,
-      child: AppCard(
-        child: Column(
+      width: width,
+      child: DecoratedBox(
+        decoration: BoxDecoration(
+          color: AppColors.neutralWarm,
+          borderRadius: BorderRadius.circular(AppRadius.md),
+        ),
+        child: Padding(
+          padding: const EdgeInsets.all(AppSpacing.md),
+          child: Column(
+            crossAxisAlignment: CrossAxisAlignment.start,
+            children: [
+              Icon(icon, size: 20, color: AppColors.houseGreen),
+              const SizedBox(height: AppSpacing.sm),
+              Text(
+                '$value',
+                style: Theme.of(context).textTheme.headlineSmall?.copyWith(
+                  color: AppColors.textBlack,
+                  fontWeight: FontWeight.w800,
+                ),
+              ),
+              const SizedBox(height: AppSpacing.xxs),
+              Text(label, maxLines: 2, overflow: TextOverflow.ellipsis),
+            ],
+          ),
+        ),
+      ),
+    );
+  }
+}
+
+class _WorkflowMemberRow extends StatelessWidget {
+  const _WorkflowMemberRow({required this.value});
+
+  final int value;
+
+  @override
+  Widget build(BuildContext context) {
+    return DecoratedBox(
+      decoration: BoxDecoration(
+        color: AppColors.greenLight,
+        borderRadius: BorderRadius.circular(AppRadius.md),
+      ),
+      child: Padding(
+        padding: const EdgeInsets.all(AppSpacing.md),
+        child: Row(
+          children: [
+            const Icon(Icons.groups_outlined, color: AppColors.houseGreen),
+            const SizedBox(width: AppSpacing.md),
+            Expanded(
+              child: Text(
+                'Active members',
+                style: Theme.of(context).textTheme.titleMedium,
+              ),
+            ),
+            Text(
+              '$value',
+              style: Theme.of(context).textTheme.titleLarge?.copyWith(
+                color: AppColors.houseGreen,
+                fontWeight: FontWeight.w800,
+              ),
+            ),
+          ],
+        ),
+      ),
+    );
+  }
+}
+
+class _WorkflowNextStep extends StatelessWidget {
+  const _WorkflowNextStep({required this.message});
+
+  final String message;
+
+  @override
+  Widget build(BuildContext context) {
+    return DecoratedBox(
+      decoration: BoxDecoration(
+        border: Border.all(color: AppColors.ceramic),
+        borderRadius: BorderRadius.circular(AppRadius.md),
+      ),
+      child: Padding(
+        padding: const EdgeInsets.all(AppSpacing.md),
+        child: Row(
           crossAxisAlignment: CrossAxisAlignment.start,
           children: [
-            Text('$value', style: Theme.of(context).textTheme.headlineSmall),
-            const SizedBox(height: AppSpacing.xxs),
-            Text(label),
+            const Icon(Icons.info_outline),
+            const SizedBox(width: AppSpacing.md),
+            Expanded(
+              child: Column(
+                crossAxisAlignment: CrossAxisAlignment.start,
+                children: [
+                  Text(
+                    'Recommended next step',
+                    style: Theme.of(context).textTheme.titleMedium,
+                  ),
+                  const SizedBox(height: AppSpacing.xs),
+                  Text(message),
+                ],
+              ),
+            ),
           ],
         ),
       ),
