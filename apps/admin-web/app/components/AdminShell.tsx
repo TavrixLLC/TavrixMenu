@@ -4,6 +4,7 @@ import { AdminAuthControls } from './AuthState';
 
 const navItems = [
   { href: '/', label: 'Dashboard' },
+  { href: '/loyalty', label: 'Loyalty' },
   { href: '/businesses', label: 'Businesses' },
   { href: '/subscriptions', label: 'Subscriptions' },
   { href: '/logs', label: 'Logs' }

@@ -129,6 +129,109 @@ export type AdminBusinessAppContext = {
   publicMenu: AdminPublicMenuLink;
 };
 
+export type AdminLoyaltyProgram = {
+  id: string;
+  businessId: string | null;
+  name: string;
+  description: string | null;
+  stampGoal: number;
+  rewardName: string;
+  rewardDescription: string | null;
+  isActive: boolean;
+  cardColor: string | null;
+  accentColor: string | null;
+  logoUrl: string | null;
+  terms: string | null;
+  createdAt: string | null;
+  updatedAt: string | null;
+};
+
+export type AdminLoyaltyCustomer = {
+  id: string;
+  phone: string | null;
+  email: string | null;
+  name: string | null;
+};
+
+export type AdminLoyaltyCardState = {
+  stampCount: number;
+  stampGoal: number;
+  rewardReady: boolean;
+  progressPercent: number;
+  rewardName: string;
+  programName: string;
+};
+
+export type AdminLoyaltyTransaction = {
+  id: string;
+  businessId: string | null;
+  loyaltyProgramId: string | null;
+  membershipId: string | null;
+  customerId: string | null;
+  actorUserId: string | null;
+  type: string;
+  stampsDelta: number;
+  reason: string | null;
+  createdAt: string | null;
+};
+
+export type AdminLoyaltyMembership = {
+  id: string;
+  businessId: string | null;
+  loyaltyProgramId: string | null;
+  customerId: string | null;
+  stampCount: number;
+  rewardReady: boolean;
+  totalStampsEarned: number | null;
+  totalRewardsRedeemed: number | null;
+  status: string;
+  customer: AdminLoyaltyCustomer | null;
+  program: AdminLoyaltyProgram | null;
+  cardState: AdminLoyaltyCardState | null;
+  transactions: AdminLoyaltyTransaction[];
+};
+
+export type AdminLoyaltyEnrollResult = {
+  customer: AdminLoyaltyCustomer;
+  membership: AdminLoyaltyMembership;
+  program: AdminLoyaltyProgram;
+  cardState: AdminLoyaltyCardState;
+};
+
+export type AdminLoyaltyActionResult = {
+  membership: AdminLoyaltyMembership;
+  cardState: AdminLoyaltyCardState;
+};
+
+export type AdminLoyaltyProgramInput = {
+  name: string;
+  description?: string | null;
+  stampGoal: number;
+  rewardName: string;
+  rewardDescription?: string | null;
+  isActive: boolean;
+  cardColor?: string | null;
+  accentColor?: string | null;
+  logoUrl?: string | null;
+  terms?: string | null;
+};
+
+export type AdminEnrollLoyaltyCustomerInput = {
+  phone?: string | null;
+  email?: string | null;
+  name?: string | null;
+  programId?: string | null;
+};
+
+export type AdminAddStampsInput = {
+  count: number;
+  reason?: string | null;
+};
+
+export type AdminRedeemRewardInput = {
+  reason?: string | null;
+};
+
 export type AdminMeResponse = {
   user: AdminUser;
   memberships: AdminMembership[];
@@ -178,6 +281,10 @@ function readBoolean(value: unknown): boolean {
 
 function readNumber(value: unknown): number {
   return typeof value === 'number' && Number.isFinite(value) ? value : 0;
+}
+
+function readOptionalNumber(value: unknown): number | null {
+  return typeof value === 'number' && Number.isFinite(value) ? value : null;
 }
 
 function compact<T>(items: Array<T | null>): T[] {
@@ -503,6 +610,216 @@ function parsePublicLink(value: unknown): AdminBusinessPublicLink | null {
   };
 }
 
+function parseLoyaltyProgram(value: unknown): AdminLoyaltyProgram | null {
+  const record = asRecord(value);
+
+  if (!record) {
+    return null;
+  }
+
+  const id = readString(record.id);
+  const name = readString(record.name);
+  const rewardName = readString(record.rewardName);
+
+  if (!id || !name || !rewardName) {
+    return null;
+  }
+
+  return {
+    id,
+    businessId: readNullableString(record.businessId),
+    name,
+    description: readNullableString(record.description),
+    stampGoal: readNumber(record.stampGoal),
+    rewardName,
+    rewardDescription: readNullableString(record.rewardDescription),
+    isActive: typeof record.isActive === 'boolean' ? record.isActive : true,
+    cardColor: readNullableString(record.cardColor),
+    accentColor: readNullableString(record.accentColor),
+    logoUrl: readNullableString(record.logoUrl),
+    terms: readNullableString(record.terms),
+    createdAt: readNullableString(record.createdAt),
+    updatedAt: readNullableString(record.updatedAt)
+  };
+}
+
+function parseNullableLoyaltyProgram(value: unknown): { program: AdminLoyaltyProgram | null } | null {
+  if (value === null) {
+    return { program: null };
+  }
+
+  const program = parseLoyaltyProgram(value);
+
+  if (!program) {
+    return null;
+  }
+
+  return { program };
+}
+
+function parseLoyaltyCustomer(value: unknown): AdminLoyaltyCustomer | null {
+  const record = asRecord(value);
+
+  if (!record) {
+    return null;
+  }
+
+  const id = readString(record.id);
+
+  if (!id) {
+    return null;
+  }
+
+  return {
+    id,
+    phone: readNullableString(record.phone),
+    email: readNullableString(record.email),
+    name: readNullableString(record.name)
+  };
+}
+
+function parseLoyaltyCardState(value: unknown): AdminLoyaltyCardState | null {
+  const record = asRecord(value);
+
+  if (!record) {
+    return null;
+  }
+
+  return {
+    stampCount: readNumber(record.stampCount),
+    stampGoal: readNumber(record.stampGoal),
+    rewardReady: readBoolean(record.rewardReady),
+    progressPercent: readNumber(record.progressPercent),
+    rewardName: readString(record.rewardName) || 'Reward',
+    programName: readString(record.programName) || 'Loyalty program'
+  };
+}
+
+function parseLoyaltyTransaction(value: unknown): AdminLoyaltyTransaction | null {
+  const record = asRecord(value);
+
+  if (!record) {
+    return null;
+  }
+
+  const id = readString(record.id);
+
+  if (!id) {
+    return null;
+  }
+
+  return {
+    id,
+    businessId: readNullableString(record.businessId),
+    loyaltyProgramId: readNullableString(record.loyaltyProgramId),
+    membershipId: readNullableString(record.membershipId),
+    customerId: readNullableString(record.customerId),
+    actorUserId: readNullableString(record.actorUserId),
+    type: readString(record.type) || 'UNKNOWN',
+    stampsDelta: readNumber(record.stampsDelta),
+    reason: readNullableString(record.reason),
+    createdAt: readNullableString(record.createdAt)
+  };
+}
+
+function parseLoyaltyTransactions(value: unknown): AdminLoyaltyTransaction[] | null {
+  if (!Array.isArray(value)) {
+    return null;
+  }
+
+  return compact(value.map(parseLoyaltyTransaction));
+}
+
+function parseLoyaltyMembership(value: unknown): AdminLoyaltyMembership | null {
+  const record = asRecord(value);
+
+  if (!record) {
+    return null;
+  }
+
+  const id = readString(record.id);
+
+  if (!id) {
+    return null;
+  }
+
+  return {
+    id,
+    businessId: readNullableString(record.businessId),
+    loyaltyProgramId: readNullableString(record.loyaltyProgramId),
+    customerId: readNullableString(record.customerId),
+    stampCount: readNumber(record.stampCount),
+    rewardReady: readBoolean(record.rewardReady),
+    totalStampsEarned: readOptionalNumber(record.totalStampsEarned),
+    totalRewardsRedeemed: readOptionalNumber(record.totalRewardsRedeemed),
+    status: readString(record.status) || 'ACTIVE',
+    customer: parseLoyaltyCustomer(record.customer),
+    program: parseLoyaltyProgram(record.program),
+    cardState: parseLoyaltyCardState(record.cardState),
+    transactions: Array.isArray(record.transactions) ? compact(record.transactions.map(parseLoyaltyTransaction)) : []
+  };
+}
+
+function parseLoyaltyMemberships(value: unknown): AdminLoyaltyMembership[] | null {
+  if (!Array.isArray(value)) {
+    return null;
+  }
+
+  return compact(value.map(parseLoyaltyMembership));
+}
+
+function parseLoyaltyEnrollResult(value: unknown): AdminLoyaltyEnrollResult | null {
+  const record = asRecord(value);
+
+  if (!record) {
+    return null;
+  }
+
+  const customer = parseLoyaltyCustomer(record.customer);
+  const membership = parseLoyaltyMembership(record.membership);
+  const program = parseLoyaltyProgram(record.program);
+  const cardState = parseLoyaltyCardState(record.cardState);
+
+  if (!customer || !membership || !program || !cardState) {
+    return null;
+  }
+
+  return {
+    customer,
+    membership: {
+      ...membership,
+      customer,
+      program,
+      cardState
+    },
+    program,
+    cardState
+  };
+}
+
+function parseLoyaltyActionResult(value: unknown): AdminLoyaltyActionResult | null {
+  const record = asRecord(value);
+
+  if (!record) {
+    return null;
+  }
+
+  const membership = parseLoyaltyMembership(record.membership);
+  const cardState = parseLoyaltyCardState(record.cardState);
+
+  if (!membership || !cardState) {
+    return null;
+  }
+
+  return {
+    membership: {
+      ...membership,
+      cardState
+    },
+    cardState
+  };
+}
+
 export function parseAdminMeResponse(value: unknown): AdminMeResponse | null {
   const record = asRecord(value);
 
@@ -559,16 +876,18 @@ async function requestAdminJson<T>({
   body,
   signal,
   parse,
-  contractName
+  contractName,
+  notFoundValue
 }: {
   apiBaseUrl: string;
   token: string | null;
   path: string;
-  method?: 'GET' | 'PATCH';
+  method?: 'GET' | 'POST' | 'PATCH';
   body?: unknown;
   signal?: AbortSignal;
   parse: (value: unknown) => T | null;
   contractName: string;
+  notFoundValue?: T;
 }): Promise<AdminApiResult<T>> {
   const apiUrl = buildApiUrl(apiBaseUrl, path);
 
@@ -620,7 +939,15 @@ async function requestAdminJson<T>({
       };
     }
 
-    if (response.status === 400) {
+    if (response.status === 404 && notFoundValue !== undefined) {
+      return {
+        status: 'ok',
+        data: notFoundValue,
+        apiUrl
+      };
+    }
+
+    if (response.status === 400 || response.status === 422) {
       return {
         status: 'validation-error',
         apiUrl,
@@ -931,4 +1258,291 @@ export function getPublicLink({
     parse: parsePublicLink,
     contractName: 'GET /businesses/{id}/public-link'
   });
+}
+
+export async function getActiveLoyaltyProgram({
+  apiBaseUrl,
+  token,
+  businessId,
+  signal
+}: {
+  apiBaseUrl: string;
+  token: string | null;
+  businessId: string;
+  signal?: AbortSignal;
+}): Promise<AdminApiResult<AdminLoyaltyProgram | null>> {
+  const result = await requestAdminJson({
+    apiBaseUrl,
+    token,
+    path: `/businesses/${encodeURIComponent(businessId)}/loyalty/program`,
+    signal,
+    parse: parseNullableLoyaltyProgram,
+    notFoundValue: { program: null },
+    contractName: 'GET /businesses/{id}/loyalty/program'
+  });
+
+  return result.status === 'ok'
+    ? {
+        ...result,
+        data: result.data.program
+      }
+    : result;
+}
+
+export function createLoyaltyProgram({
+  apiBaseUrl,
+  token,
+  businessId,
+  input,
+  signal
+}: {
+  apiBaseUrl: string;
+  token: string | null;
+  businessId: string;
+  input: AdminLoyaltyProgramInput;
+  signal?: AbortSignal;
+}) {
+  return requestAdminJson({
+    apiBaseUrl,
+    token,
+    path: `/businesses/${encodeURIComponent(businessId)}/loyalty/program`,
+    method: 'POST',
+    body: compactLoyaltyBody(input),
+    signal,
+    parse: parseLoyaltyProgram,
+    contractName: 'POST /businesses/{id}/loyalty/program'
+  });
+}
+
+export function updateLoyaltyProgram({
+  apiBaseUrl,
+  token,
+  businessId,
+  programId,
+  input,
+  signal
+}: {
+  apiBaseUrl: string;
+  token: string | null;
+  businessId: string;
+  programId: string;
+  input: AdminLoyaltyProgramInput;
+  signal?: AbortSignal;
+}) {
+  return requestAdminJson({
+    apiBaseUrl,
+    token,
+    path: `/businesses/${encodeURIComponent(businessId)}/loyalty/program/${encodeURIComponent(programId)}`,
+    method: 'PATCH',
+    body: compactLoyaltyUpdateBody(input),
+    signal,
+    parse: parseLoyaltyProgram,
+    contractName: 'PATCH /businesses/{id}/loyalty/program/{programId}'
+  });
+}
+
+export function enrollLoyaltyCustomer({
+  apiBaseUrl,
+  token,
+  businessId,
+  input,
+  signal
+}: {
+  apiBaseUrl: string;
+  token: string | null;
+  businessId: string;
+  input: AdminEnrollLoyaltyCustomerInput;
+  signal?: AbortSignal;
+}) {
+  return requestAdminJson({
+    apiBaseUrl,
+    token,
+    path: `/businesses/${encodeURIComponent(businessId)}/loyalty/enroll`,
+    method: 'POST',
+    body: compactLoyaltyBody(input),
+    signal,
+    parse: parseLoyaltyEnrollResult,
+    contractName: 'POST /businesses/{id}/loyalty/enroll'
+  });
+}
+
+export function listLoyaltyMemberships({
+  apiBaseUrl,
+  token,
+  businessId,
+  search,
+  status,
+  rewardReady,
+  signal
+}: {
+  apiBaseUrl: string;
+  token: string | null;
+  businessId: string;
+  search?: string;
+  status?: 'ACTIVE' | 'INACTIVE' | '';
+  rewardReady?: boolean | null;
+  signal?: AbortSignal;
+}) {
+  const params = new URLSearchParams();
+  const cleanSearch = search?.trim();
+
+  if (cleanSearch) {
+    params.set('search', cleanSearch);
+  }
+
+  if (status) {
+    params.set('status', status);
+  }
+
+  if (rewardReady !== undefined && rewardReady !== null) {
+    params.set('rewardReady', String(rewardReady));
+  }
+
+  const query = params.toString();
+
+  return requestAdminJson({
+    apiBaseUrl,
+    token,
+    path: `/businesses/${encodeURIComponent(businessId)}/loyalty/memberships${query ? `?${query}` : ''}`,
+    signal,
+    parse: parseLoyaltyMemberships,
+    contractName: 'GET /businesses/{id}/loyalty/memberships'
+  });
+}
+
+export function getLoyaltyMembership({
+  apiBaseUrl,
+  token,
+  businessId,
+  membershipId,
+  signal
+}: {
+  apiBaseUrl: string;
+  token: string | null;
+  businessId: string;
+  membershipId: string;
+  signal?: AbortSignal;
+}) {
+  return requestAdminJson({
+    apiBaseUrl,
+    token,
+    path: `/businesses/${encodeURIComponent(businessId)}/loyalty/memberships/${encodeURIComponent(membershipId)}`,
+    signal,
+    parse: parseLoyaltyMembership,
+    contractName: 'GET /businesses/{id}/loyalty/memberships/{membershipId}'
+  });
+}
+
+export function addLoyaltyStamps({
+  apiBaseUrl,
+  token,
+  businessId,
+  membershipId,
+  input,
+  signal
+}: {
+  apiBaseUrl: string;
+  token: string | null;
+  businessId: string;
+  membershipId: string;
+  input: AdminAddStampsInput;
+  signal?: AbortSignal;
+}) {
+  return requestAdminJson({
+    apiBaseUrl,
+    token,
+    path: `/businesses/${encodeURIComponent(businessId)}/loyalty/memberships/${encodeURIComponent(membershipId)}/stamps`,
+    method: 'POST',
+    body: compactLoyaltyBody(input),
+    signal,
+    parse: parseLoyaltyActionResult,
+    contractName: 'POST /businesses/{id}/loyalty/memberships/{membershipId}/stamps'
+  });
+}
+
+export function redeemLoyaltyReward({
+  apiBaseUrl,
+  token,
+  businessId,
+  membershipId,
+  input,
+  signal
+}: {
+  apiBaseUrl: string;
+  token: string | null;
+  businessId: string;
+  membershipId: string;
+  input: AdminRedeemRewardInput;
+  signal?: AbortSignal;
+}) {
+  return requestAdminJson({
+    apiBaseUrl,
+    token,
+    path: `/businesses/${encodeURIComponent(businessId)}/loyalty/memberships/${encodeURIComponent(membershipId)}/redeem`,
+    method: 'POST',
+    body: compactLoyaltyBody(input),
+    signal,
+    parse: parseLoyaltyActionResult,
+    contractName: 'POST /businesses/{id}/loyalty/memberships/{membershipId}/redeem'
+  });
+}
+
+export function listLoyaltyTransactions({
+  apiBaseUrl,
+  token,
+  businessId,
+  membershipId,
+  signal
+}: {
+  apiBaseUrl: string;
+  token: string | null;
+  businessId: string;
+  membershipId: string;
+  signal?: AbortSignal;
+}) {
+  return requestAdminJson({
+    apiBaseUrl,
+    token,
+    path: `/businesses/${encodeURIComponent(businessId)}/loyalty/memberships/${encodeURIComponent(membershipId)}/transactions`,
+    signal,
+    parse: parseLoyaltyTransactions,
+    contractName: 'GET /businesses/{id}/loyalty/memberships/{membershipId}/transactions'
+  });
+}
+
+const nullableLoyaltyProgramFields = new Set(['description', 'rewardDescription', 'cardColor', 'accentColor', 'logoUrl', 'terms']);
+
+function compactLoyaltyBody<T extends Record<string, unknown>>(input: T) {
+  return Object.fromEntries(
+    Object.entries(input).filter(([, value]) => {
+      if (value === undefined || value === null) {
+        return false;
+      }
+
+      return typeof value !== 'string' || value.trim().length > 0;
+    })
+  );
+}
+
+function compactLoyaltyUpdateBody(input: AdminLoyaltyProgramInput) {
+  const entries: Array<[string, unknown]> = [];
+
+  for (const [key, value] of Object.entries(input)) {
+    if (value === undefined) {
+      continue;
+    }
+
+    if (nullableLoyaltyProgramFields.has(key)) {
+      entries.push([key, value === null || (typeof value === 'string' && value.trim().length === 0) ? null : value]);
+      continue;
+    }
+
+    if (value === null || (typeof value === 'string' && value.trim().length === 0)) {
+      continue;
+    }
+
+    entries.push([key, value]);
+  }
+
+  return Object.fromEntries(entries);
 }
