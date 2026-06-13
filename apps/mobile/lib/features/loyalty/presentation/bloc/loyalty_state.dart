@@ -54,6 +54,11 @@ class LoyaltyState extends Equatable {
     return role == 'OWNER' || role == 'MANAGER';
   }
 
+  bool get canViewEnrollmentLink {
+    final role = currentRole.toUpperCase();
+    return role == 'OWNER' || role == 'MANAGER' || role == 'STAFF';
+  }
+
   LoyaltyState copyWith({
     LoyaltyStatus? status,
     Business? business,
