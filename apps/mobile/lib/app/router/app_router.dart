@@ -24,7 +24,9 @@ class AppRouter {
       AppRouteNames.businessSetup: (_) => const BusinessSetupScreen(),
       AppRouteNames.businessProfile: (_) => const BusinessProfileScreen(),
       AppRouteNames.menu: (_) => const MenuScreen(),
-      AppRouteNames.loyalty: (_) => const LoyaltyScreen(),
+      AppRouteNames.loyalty: (_) => LoyaltyScreen(
+        customerWebBaseUrl: config.normalizedCustomerWebBaseUrl,
+      ),
       AppRouteNames.qr: (_) => const QRScreen(),
       AppRouteNames.subscription: (_) => const SubscriptionScreen(),
       AppRouteNames.staffScanner: (_) => const StaffScannerScreen(),

@@ -22,6 +22,18 @@ void main() {
       expect(manager.canConfigureProgram, isTrue);
       expect(staff.canConfigureProgram, isFalse);
       expect(staff.canUseDailyOperations, isTrue);
+      expect(owner.canViewEnrollmentLink, isTrue);
+      expect(manager.canViewEnrollmentLink, isTrue);
+      expect(staff.canViewEnrollmentLink, isTrue);
     },
   );
+
+  test('unknown roles cannot view the enrollment link', () {
+    const state = LoyaltyState(
+      status: LoyaltyStatus.success,
+      currentRole: 'CUSTOMER',
+    );
+
+    expect(state.canViewEnrollmentLink, isFalse);
+  });
 }

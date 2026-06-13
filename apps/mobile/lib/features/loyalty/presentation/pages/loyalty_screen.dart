@@ -19,9 +19,12 @@ import '../../domain/entities/loyalty_requests.dart';
 import '../../domain/entities/loyalty_transaction.dart';
 import '../bloc/loyalty_cubit.dart';
 import '../bloc/loyalty_state.dart';
+import '../widgets/loyalty_enrollment_card.dart';
 
 class LoyaltyScreen extends StatefulWidget {
-  const LoyaltyScreen({super.key});
+  const LoyaltyScreen({super.key, this.customerWebBaseUrl = ''});
+
+  final String customerWebBaseUrl;
 
   @override
   State<LoyaltyScreen> createState() => _LoyaltyScreenState();
@@ -114,6 +117,19 @@ class _LoyaltyScreenState extends State<LoyaltyScreen> {
                 onEdit: (program) =>
                     _showProgramDialog(context, program: program),
               ),
+              const SizedBox(height: AppSpacing.lg),
+              if (state.canViewEnrollmentLink)
+                LoyaltyEnrollmentCard(
+                  businessSlug: business.slug,
+                  customerWebBaseUrl: widget.customerWebBaseUrl,
+                  publicMenuUrl: business.publicMenuUrl,
+                )
+              else
+                const _LoyaltyNotice(
+                  title: 'Enrollment link unavailable',
+                  message:
+                      'Your role cannot share the public loyalty enrollment link for this business.',
+                ),
               if (state.program != null) ...[
                 const SizedBox(height: AppSpacing.lg),
                 _SearchEnrollSection(
