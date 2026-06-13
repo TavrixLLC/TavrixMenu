@@ -32,6 +32,18 @@ class ValidationFailure extends Failure {
   List<Object?> get props => [message];
 }
 
+class UnauthorizedFailure extends Failure {
+  const UnauthorizedFailure();
+}
+
+class ForbiddenFailure extends Failure {
+  const ForbiddenFailure();
+}
+
+class NotFoundFailure extends Failure {
+  const NotFoundFailure();
+}
+
 class UnknownFailure extends Failure {
   const UnknownFailure();
 }

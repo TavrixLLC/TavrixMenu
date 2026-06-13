@@ -17,6 +17,18 @@ import '../../features/dashboard/data/datasources/dashboard_remote_data_source.d
 import '../../features/dashboard/data/repositories/dashboard_repository_impl.dart';
 import '../../features/dashboard/domain/usecases/get_dashboard_summary.dart';
 import '../../features/dashboard/presentation/bloc/dashboard_cubit.dart';
+import '../../features/loyalty/data/datasources/loyalty_remote_data_source.dart';
+import '../../features/loyalty/data/repositories/loyalty_repository_impl.dart';
+import '../../features/loyalty/domain/usecases/add_loyalty_stamps.dart';
+import '../../features/loyalty/domain/usecases/create_loyalty_program.dart';
+import '../../features/loyalty/domain/usecases/enroll_loyalty_customer.dart';
+import '../../features/loyalty/domain/usecases/get_active_loyalty_program.dart';
+import '../../features/loyalty/domain/usecases/get_loyalty_membership.dart';
+import '../../features/loyalty/domain/usecases/list_loyalty_memberships.dart';
+import '../../features/loyalty/domain/usecases/list_loyalty_transactions.dart';
+import '../../features/loyalty/domain/usecases/redeem_loyalty_reward.dart';
+import '../../features/loyalty/domain/usecases/update_loyalty_program.dart';
+import '../../features/loyalty/presentation/bloc/loyalty_cubit.dart';
 import '../../features/menu/data/datasources/menu_remote_data_source.dart';
 import '../../features/menu/data/repositories/menu_repository_impl.dart';
 import '../../features/menu/domain/usecases/create_menu_category.dart';
@@ -40,6 +52,7 @@ class AppDependencies {
     required this.businessSetupCubit,
     required this.dashboardCubit,
     required this.menuCubit,
+    required this.loyaltyCubit,
   });
 
   factory AppDependencies.create({AppConfig? config}) {
@@ -100,6 +113,22 @@ class AppDependencies {
     final reorderMenuCategories = ReorderMenuCategories(menuRepository);
     final reorderMenuItems = ReorderMenuItems(menuRepository);
 
+    final loyaltyRemoteDataSource = LoyaltyRemoteDataSourceImpl(apiClient);
+    final loyaltyRepository = LoyaltyRepositoryImpl(
+      remoteDataSource: loyaltyRemoteDataSource,
+      networkInfo: networkInfo,
+      devFallbackEnabled: resolvedConfig.isDevAuthEnabled,
+    );
+    final getActiveLoyaltyProgram = GetActiveLoyaltyProgram(loyaltyRepository);
+    final createLoyaltyProgram = CreateLoyaltyProgram(loyaltyRepository);
+    final updateLoyaltyProgram = UpdateLoyaltyProgram(loyaltyRepository);
+    final enrollLoyaltyCustomer = EnrollLoyaltyCustomer(loyaltyRepository);
+    final listLoyaltyMemberships = ListLoyaltyMemberships(loyaltyRepository);
+    final getLoyaltyMembership = GetLoyaltyMembership(loyaltyRepository);
+    final addLoyaltyStamps = AddLoyaltyStamps(loyaltyRepository);
+    final redeemLoyaltyReward = RedeemLoyaltyReward(loyaltyRepository);
+    final listLoyaltyTransactions = ListLoyaltyTransactions(loyaltyRepository);
+
     return AppDependencies._(
       config: resolvedConfig,
       authSessionController: authSessionController,
@@ -130,6 +159,19 @@ class AppDependencies {
         reorderMenuItems: reorderMenuItems,
         getDashboardSummary: getDashboardSummary,
       ),
+      loyaltyCubit: LoyaltyCubit(
+        getMyBusiness: getMyBusiness,
+        getDashboardSummary: getDashboardSummary,
+        getActiveProgram: getActiveLoyaltyProgram,
+        createProgram: createLoyaltyProgram,
+        updateProgram: updateLoyaltyProgram,
+        enrollCustomer: enrollLoyaltyCustomer,
+        listMemberships: listLoyaltyMemberships,
+        getMembership: getLoyaltyMembership,
+        addStamps: addLoyaltyStamps,
+        redeemReward: redeemLoyaltyReward,
+        listTransactions: listLoyaltyTransactions,
+      ),
     );
   }
 
@@ -139,11 +181,13 @@ class AppDependencies {
   final BusinessSetupCubit businessSetupCubit;
   final DashboardCubit dashboardCubit;
   final MenuCubit menuCubit;
+  final LoyaltyCubit loyaltyCubit;
 
   Future<void> dispose() async {
     await authCubit.close();
     await businessSetupCubit.close();
     await dashboardCubit.close();
     await menuCubit.close();
+    await loyaltyCubit.close();
   }
 }

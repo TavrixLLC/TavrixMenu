@@ -8,6 +8,10 @@ String failureMessage(Failure failure) {
     CacheFailure() => 'Cached data is not available.',
     ValidationFailure(:final message) =>
       message ?? 'Please check the form values.',
+    UnauthorizedFailure() => 'Please sign in again to continue.',
+    ForbiddenFailure() =>
+      'Your role does not allow this action for this business.',
+    NotFoundFailure() => 'The requested record could not be found.',
     UnknownFailure() => 'Something unexpected happened.',
     Failure() => 'Something unexpected happened.',
   };

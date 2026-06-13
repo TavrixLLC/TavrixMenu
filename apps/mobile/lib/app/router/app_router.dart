@@ -5,6 +5,7 @@ import '../../features/auth/presentation/pages/login_screen.dart';
 import '../../features/business_setup/presentation/pages/business_profile_screen.dart';
 import '../../features/business_setup/presentation/pages/business_setup_screen.dart';
 import '../../features/dashboard/presentation/pages/dashboard_screen.dart';
+import '../../features/loyalty/presentation/pages/loyalty_screen.dart';
 import '../../features/menu/presentation/pages/menu_screen.dart';
 import '../../features/qr/presentation/pages/qr_screen.dart';
 import '../../features/splash/presentation/pages/splash_screen.dart';
@@ -23,6 +24,7 @@ class AppRouter {
       AppRouteNames.businessSetup: (_) => const BusinessSetupScreen(),
       AppRouteNames.businessProfile: (_) => const BusinessProfileScreen(),
       AppRouteNames.menu: (_) => const MenuScreen(),
+      AppRouteNames.loyalty: (_) => const LoyaltyScreen(),
       AppRouteNames.qr: (_) => const QRScreen(),
       AppRouteNames.subscription: (_) => const SubscriptionScreen(),
       AppRouteNames.staffScanner: (_) => const StaffScannerScreen(),
