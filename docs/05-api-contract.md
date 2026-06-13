@@ -1005,6 +1005,197 @@ Errors:
 
 - `404` business or item not found.
 
+### GET /public/m/:slug/loyalty
+
+Auth: public.
+
+Purpose: return the public customer enrollment context for an active business
+with an active stamp-card loyalty program. This is Sprint 7A customer-web
+support only; it does not create wallet passes, QR scanner flows, payments, OTP,
+points, cashback, tiers, campaigns, or notifications.
+
+Response:
+
+```json
+{
+  "business": {
+    "id": "bus_123",
+    "name": "Tavrix Cafe",
+    "slug": "tavrix-cafe",
+    "type": "cafe",
+    "city": "Baghdad",
+    "logoUrl": null,
+    "coverUrl": null,
+    "currency": "IQD",
+    "language": "ar"
+  },
+  "loyaltyProgram": {
+    "id": "loyalty_program_id",
+    "name": "Tavrix Cafe Stamp Card",
+    "description": "Collect stamps on coffee visits.",
+    "stampGoal": 5,
+    "rewardName": "Free coffee",
+    "rewardDescription": "One free Turkish Coffee after 5 stamps.",
+    "cardColor": "#111827",
+    "accentColor": "#f59e0b",
+    "logoUrl": null,
+    "terms": "Reward is valid for dine-in orders only."
+  },
+  "enrollment": {
+    "acceptsPhone": true,
+    "acceptsEmail": true,
+    "requiresOtp": false
+  }
+}
+```
+
+Rules:
+
+- Business must be `ACTIVE`.
+- Loyalty program must be active.
+- Returns `404` when the slug is invalid, the business is inactive, or no active
+  loyalty program exists.
+
+### POST /public/m/:slug/loyalty/enroll
+
+Auth: public.
+
+Purpose: allow customer-web to enroll a customer into the active loyalty program
+for the public business slug. This is a no-OTP pilot flow and is not
+production-secure until OTP and abuse/rate limits are added.
+
+Request:
+
+```json
+{
+  "phone": "+9647700000000",
+  "email": "customer@example.com",
+  "name": "Demo Customer"
+}
+```
+
+Rules:
+
+- At least one of `phone` or `email` is required.
+- Phone is trimmed. Email is trimmed and lowercased.
+- Existing customers are reused by phone or email.
+- If phone and email match different customers, the API returns `409`.
+- Existing loyalty memberships are reactivated for the active program.
+- A new public card access token is issued or rotated on every successful
+  enrollment.
+- The plaintext token is returned only in this response. Only a SHA-256 hash is
+  stored in the database.
+- No stamps are added. No reward is redeemed. No payment, wallet pass, QR
+  scanner, or OTP flow is created.
+
+Response:
+
+```json
+{
+  "customer": {
+    "name": "Demo Customer"
+  },
+  "business": {
+    "name": "Tavrix Cafe",
+    "slug": "tavrix-cafe",
+    "logoUrl": null,
+    "coverUrl": null
+  },
+  "program": {
+    "name": "Tavrix Cafe Stamp Card",
+    "stampGoal": 5,
+    "rewardName": "Free coffee",
+    "rewardDescription": "One free Turkish Coffee after 5 stamps."
+  },
+  "cardState": {
+    "stampCount": 0,
+    "stampGoal": 5,
+    "rewardReady": false,
+    "progressPercent": 0,
+    "rewardName": "Free coffee",
+    "programName": "Tavrix Cafe Stamp Card",
+    "totalStampsEarned": 0,
+    "totalRewardsRedeemed": 0
+  },
+  "cardAccess": {
+    "token": "public_card_token",
+    "cardUrlPath": "/public/loyalty/cards/public_card_token"
+  }
+}
+```
+
+Privacy:
+
+- Public enrollment responses do not return raw phone or email.
+- Public enrollment responses do not return internal `customerId` or
+  `membershipId`.
+
+Errors:
+
+- `400` invalid body or missing phone/email.
+- `404` active business or active loyalty program not found.
+- `409` phone and email belong to different customers.
+
+### GET /public/loyalty/cards/:token
+
+Auth: public.
+
+Purpose: return a limited web fallback loyalty card by public access token.
+
+Rules:
+
+- The token is required and length checked.
+- The API hashes the token and looks up an active membership by stored hash.
+- Business must be active and the loyalty program must be active.
+- `publicAccessTokenLastViewedAt` is updated on successful view.
+- Staff-only transaction data is not returned.
+- Public card routes cannot add stamps or redeem rewards.
+
+Response:
+
+```json
+{
+  "business": {
+    "name": "Tavrix Cafe",
+    "slug": "tavrix-cafe",
+    "logoUrl": null,
+    "coverUrl": null
+  },
+  "program": {
+    "name": "Tavrix Cafe Stamp Card",
+    "stampGoal": 5,
+    "rewardName": "Free coffee",
+    "rewardDescription": "One free Turkish Coffee after 5 stamps.",
+    "terms": "Reward is valid for dine-in orders only."
+  },
+  "customer": {
+    "name": "Demo Customer"
+  },
+  "cardState": {
+    "stampCount": 3,
+    "stampGoal": 5,
+    "rewardReady": false,
+    "progressPercent": 60,
+    "rewardName": "Free coffee",
+    "programName": "Tavrix Cafe Stamp Card",
+    "totalStampsEarned": 3,
+    "totalRewardsRedeemed": 0
+  }
+}
+```
+
+Privacy:
+
+- Public card responses do not return raw phone or email.
+- Public card responses do not return internal business, program, customer, or
+  membership IDs.
+
+Errors:
+
+- `400` token parameter validation failed.
+- `404` invalid token, inactive membership, inactive business, or inactive
+  loyalty program.
+
 ### GET /public/m/:slug/items/:itemId/pairings
 
 Status: planned later; not implemented in Sprint 1.
