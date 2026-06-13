@@ -9,6 +9,7 @@ import '../../../../shared/widgets/app_scaffold.dart';
 import '../../../../shared/widgets/app_text_field.dart';
 import '../../../../shared/widgets/error_view.dart';
 import '../../../../shared/widgets/section_header.dart';
+import '../../../auth/presentation/bloc/auth_cubit.dart';
 import '../../../dashboard/presentation/bloc/dashboard_cubit.dart';
 import '../bloc/business_setup_cubit.dart';
 import '../bloc/business_setup_state.dart';
@@ -39,8 +40,10 @@ class _BusinessSetupScreenState extends State<BusinessSetupScreen> {
   @override
   Widget build(BuildContext context) {
     return BlocConsumer<BusinessSetupCubit, BusinessSetupState>(
-      listener: (context, state) {
+      listener: (context, state) async {
         if (state.status == BusinessSetupStatus.success) {
+          await context.read<AuthCubit>().refreshCurrentUser();
+          if (!context.mounted) return;
           final business = state.business;
           if (business != null) {
             context.read<DashboardCubit>().primeBusiness(business);
