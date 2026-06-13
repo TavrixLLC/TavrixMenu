@@ -26,7 +26,7 @@ import 'package:tavrix_menu_mobile/features/dashboard/presentation/bloc/dashboar
 import 'package:tavrix_menu_mobile/features/dashboard/presentation/bloc/dashboard_state.dart';
 
 void main() {
-  testWidgets('business creation primes dashboard before opening dashboard', (
+  testWidgets('business creation refreshes auth before opening dashboard', (
     tester,
   ) async {
     final meRepository = _QueuedMeRepository([
@@ -43,6 +43,7 @@ void main() {
     ]);
     final businessRepository = _FakeBusinessRepository();
     final authCubit = _authCubit(meRepository);
+    final dashboardRepository = _FakeDashboardRepository();
     final businessSetupCubit = BusinessSetupCubit(
       createBusiness: CreateBusiness(businessRepository),
       updateBusiness: UpdateBusiness(businessRepository),
@@ -50,7 +51,7 @@ void main() {
     final dashboardCubit = DashboardCubit(
       getCurrentUser: GetCurrentUser(meRepository),
       getMyBusiness: GetMyBusiness(businessRepository),
-      getDashboardSummary: GetDashboardSummary(_FakeDashboardRepository()),
+      getDashboardSummary: GetDashboardSummary(dashboardRepository),
     );
 
     await authCubit.signInWithClerk();
@@ -65,11 +66,22 @@ void main() {
     );
 
     await tester.enterText(find.byType(TextField).first, 'Tavrix Cafe');
+
+    final meCallsBeforeSubmit = meRepository.getMeCalls;
     await tester.tap(find.text('Save business'));
     await tester.pumpAndSettle();
 
     expect(businessRepository.createBusinessCalls, 1);
-    expect(meRepository.getMeCalls, 1);
+    expect(
+      meRepository.getMeCalls,
+      meCallsBeforeSubmit + 1,
+      reason: 'POST /businesses must trigger exactly one GET /me refresh',
+    );
+    expect(
+      authCubit.state.user?.onboarding.recommendedNextStep,
+      'OPEN_DASHBOARD',
+    );
+    expect(authCubit.state.shouldOpenDashboard, isTrue);
     expect(dashboardCubit.state.status, DashboardStatus.success);
     expect(dashboardCubit.state.business?.id, _createdBusiness.id);
     expect(find.text('Dashboard ready'), findsOneWidget);
@@ -229,18 +241,13 @@ class _FakeDashboardRepository implements DashboardRepository {
           role: 'OWNER',
           permissions: BusinessPermissions.owner(),
         ),
-        counts: const DashboardCounts(activeMembers: 1),
+        counts: const DashboardCounts(),
         publicMenu: const DashboardPublicMenu(
           path: '/m/tavrix-cafe',
           url: 'https://menu.example.test/m/tavrix-cafe',
           qrPayload: 'https://menu.example.test/m/tavrix-cafe',
         ),
-        onboardingHints: const DashboardOnboardingHints(
-          hasCategories: true,
-          hasItems: true,
-          hasPublicMenuReady: true,
-          recommendedNextStep: 'OPEN_DASHBOARD',
-        ),
+        onboardingHints: const DashboardOnboardingHints(),
       ),
     );
   }
