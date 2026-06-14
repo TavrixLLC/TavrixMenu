@@ -1,4 +1,4 @@
-import { PlaceholderImage } from '../../components/PlaceholderImage';
+import { PlaceholderImage } from '../../../components/PlaceholderImage';
 
 export default function LoadingMenuPage() {
   return (

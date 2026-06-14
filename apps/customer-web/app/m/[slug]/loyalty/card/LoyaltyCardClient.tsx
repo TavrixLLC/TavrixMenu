@@ -6,7 +6,7 @@ import { fetchPublicLoyaltyCard, type PublicLoyaltyCard } from '../../../../lib/
 
 type CardStatus =
   | {
-      state: 'loading';
+      state: 'bootstrapping' | 'loading-card';
     }
   | {
       state: 'missing-token' | 'storage-unavailable';
@@ -176,7 +176,8 @@ function CardView({ slug, card }: { slug: string; card: PublicLoyaltyCard }) {
 }
 
 export function LoyaltyCardClient({ slug, initialToken, apiBaseUrl }: LoyaltyCardClientProps) {
-  const [status, setStatus] = useState<CardStatus>({ state: 'loading' });
+  const [status, setStatus] = useState<CardStatus>({ state: 'bootstrapping' });
+  const [retryNonce, setRetryNonce] = useState(0);
 
   useEffect(() => {
     let isActive = true;
@@ -206,7 +207,7 @@ export function LoyaltyCardClient({ slug, initialToken, apiBaseUrl }: LoyaltyCar
         return;
       }
 
-      setStatus({ state: 'loading' });
+      setStatus({ state: 'loading-card' });
       const result = await fetchPublicLoyaltyCard(token, apiBaseUrl);
 
       if (!isActive) {
@@ -232,29 +233,45 @@ export function LoyaltyCardClient({ slug, initialToken, apiBaseUrl }: LoyaltyCar
     return () => {
       isActive = false;
     };
-  }, [apiBaseUrl, initialToken, slug]);
+  }, [apiBaseUrl, initialToken, retryNonce, slug]);
 
-  if (status.state === 'loading') {
-    return (
-      <LoyaltyCardShell slug={slug} title="Loading card">
-        <p className="mt-3 text-base leading-7 text-neutral-600">Loading your web loyalty card...</p>
-      </LoyaltyCardShell>
-    );
+  switch (status.state) {
+    case 'bootstrapping':
+      return (
+        <LoyaltyCardShell slug={slug} title="Opening card">
+          <p className="mt-3 text-base leading-7 text-neutral-600">Checking this browser for a saved loyalty card...</p>
+        </LoyaltyCardShell>
+      );
+    case 'loading-card':
+      return (
+        <LoyaltyCardShell slug={slug} title="Loading card">
+          <p className="mt-3 text-base leading-7 text-neutral-600">Loading your web loyalty card...</p>
+        </LoyaltyCardShell>
+      );
+    case 'missing-token':
+    case 'storage-unavailable':
+    case 'error':
+      return (
+        <LoyaltyCardShell slug={slug} title="Card unavailable">
+          <p className="mt-3 text-base leading-7 text-neutral-600">{status.message}</p>
+          <Link
+            href={`/m/${slug}/loyalty`}
+            className="mt-5 inline-flex rounded-md bg-ink px-5 py-3 text-sm font-semibold text-white"
+          >
+            Join loyalty
+          </Link>
+          {status.state === 'error' ? (
+            <button
+              type="button"
+              onClick={() => setRetryNonce((value) => value + 1)}
+              className="ml-3 mt-5 inline-flex rounded-md border border-neutral-200 bg-white px-5 py-3 text-sm font-semibold text-ink"
+            >
+              Try again
+            </button>
+          ) : null}
+        </LoyaltyCardShell>
+      );
+    case 'ok':
+      return <CardView slug={slug} card={status.card} />;
   }
-
-  if (status.state !== 'ok') {
-    return (
-      <LoyaltyCardShell slug={slug} title="Card unavailable">
-        <p className="mt-3 text-base leading-7 text-neutral-600">{status.message}</p>
-        <Link
-          href={`/m/${slug}/loyalty`}
-          className="mt-5 inline-flex rounded-md bg-ink px-5 py-3 text-sm font-semibold text-white"
-        >
-          Join loyalty
-        </Link>
-      </LoyaltyCardShell>
-    );
-  }
-
-  return <CardView slug={slug} card={status.card} />;
 }

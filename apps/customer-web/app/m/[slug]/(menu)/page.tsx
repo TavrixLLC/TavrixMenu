@@ -1,8 +1,8 @@
 import Link from 'next/link';
-import { PlaceholderImage } from '../../components/PlaceholderImage';
-import { ProductCard } from '../../components/ProductCard';
-import { getCategoryName } from '../../lib/menu-format';
-import { fetchPublicMenu, type PublicMenuResponse } from '../../lib/public-menu';
+import { PlaceholderImage } from '../../../components/PlaceholderImage';
+import { ProductCard } from '../../../components/ProductCard';
+import { getCategoryName } from '../../../lib/menu-format';
+import { fetchPublicMenu, type PublicMenuResponse } from '../../../lib/public-menu';
 
 type MenuPageProps = {
   params: Promise<{
