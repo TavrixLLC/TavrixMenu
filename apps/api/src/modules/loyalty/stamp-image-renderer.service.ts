@@ -182,6 +182,7 @@ export class StampImageRendererService {
 
   private renderSvg(input: NormalizedStampImageRenderInput) {
     const layout = this.getLayout(input.layoutVariant);
+    const progressBadge = this.getProgressBadge(layout);
     const subtitle =
       input.layoutVariant === 'COMPACT' ? input.programName : input.businessName;
     const headline =
@@ -194,12 +195,12 @@ export class StampImageRendererService {
       '<filter id="shadow" x="-20%" y="-20%" width="140%" height="140%"><feDropShadow dx="0" dy="10" stdDeviation="12" flood-color="#000000" flood-opacity="0.24"/></filter>',
       '</defs>',
       `<rect width="100%" height="100%" rx="${layout.radius}" fill="url(#bg)"/>`,
-      `<circle cx="${layout.width - 118}" cy="84" r="158" fill="${this.hexToRgba(input.imageAccentColor, 0.14)}"/>`,
+      `<circle cx="${progressBadge.cx}" cy="${progressBadge.cy}" r="${progressBadge.radius}" fill="${this.hexToRgba(input.imageAccentColor, 0.18)}"/>`,
       `<circle cx="76" cy="${layout.height - 40}" r="154" fill="${this.hexToRgba(input.imageTextColor, 0.08)}"/>`,
       `<text x="${layout.padding}" y="${layout.subtitleY}" fill="${this.hexToRgba(input.imageTextColor, 0.78)}" font-family="Inter, Arial, sans-serif" font-size="${layout.subtitleSize}" font-weight="700">${this.escapeXml(subtitle)}</text>`,
       `<text x="${layout.padding}" y="${layout.titleY}" fill="${input.imageTextColor}" font-family="Inter, Arial, sans-serif" font-size="${layout.titleSize}" font-weight="800">${this.escapeXml(headline)}</text>`,
-      `<text x="${layout.width - layout.padding}" y="${layout.titleY}" fill="${input.imageTextColor}" text-anchor="end" font-family="Inter, Arial, sans-serif" font-size="${layout.progressSize}" font-weight="800">${input.stampCount} / ${input.stampGoal}</text>`,
-      `<text x="${layout.width - layout.padding}" y="${layout.subtitleY}" fill="${this.hexToRgba(input.imageTextColor, 0.78)}" text-anchor="end" font-family="Inter, Arial, sans-serif" font-size="${layout.subtitleSize}" font-weight="700">stamps</text>`,
+      `<text x="${progressBadge.cx}" y="${progressBadge.labelY}" fill="${this.hexToRgba(input.imageTextColor, 0.78)}" text-anchor="middle" font-family="Inter, Arial, sans-serif" font-size="${layout.subtitleSize}" font-weight="700">stamps</text>`,
+      `<text x="${progressBadge.cx}" y="${progressBadge.valueY}" fill="${input.imageTextColor}" text-anchor="middle" font-family="Inter, Arial, sans-serif" font-size="${layout.progressSize}" font-weight="800">${input.stampCount} / ${input.stampGoal}</text>`,
       this.renderIconCells(input, layout),
       `<rect x="${layout.padding}" y="${layout.rewardY}" width="${layout.width - layout.padding * 2}" height="${layout.rewardHeight}" rx="${layout.rewardHeight / 2}" fill="${this.hexToRgba(input.rewardBannerColor, 0.86)}"/>`,
       `<text x="${layout.padding + 28}" y="${layout.rewardTextY}" fill="${input.imageTextColor}" font-family="Inter, Arial, sans-serif" font-size="${layout.rewardSize}" font-weight="750">${this.escapeXml(`Reward: ${input.rewardName}`)}</text>`,
@@ -383,6 +384,11 @@ export class StampImageRendererService {
         subtitleSize: 22,
         titleSize: 40,
         progressSize: 40,
+        badgeRadius: 80,
+        badgeTopSafePadding: 18,
+        badgeRightSafePadding: 24,
+        badgeLabelOffset: -26,
+        badgeValueOffset: 28,
         iconsY: 128,
         iconBoxHeight: 116,
         cellSize: 88,
@@ -404,6 +410,11 @@ export class StampImageRendererService {
       subtitleSize: 28,
       titleSize: 56,
       progressSize: 56,
+      badgeRadius: 124,
+      badgeTopSafePadding: 32,
+      badgeRightSafePadding: 40,
+      badgeLabelOffset: -48,
+      badgeValueOffset: 28,
       iconsY: 206,
       iconBoxHeight: 260,
       cellSize: 112,
@@ -412,6 +423,20 @@ export class StampImageRendererService {
       rewardHeight: 58,
       rewardTextY: 558,
       rewardSize: 28
+    };
+  }
+
+  private getProgressBadge(layout: ReturnType<typeof this.getLayout>) {
+    const cx =
+      layout.width - layout.badgeRightSafePadding - layout.badgeRadius;
+    const cy = layout.badgeTopSafePadding + layout.badgeRadius;
+
+    return {
+      cx,
+      cy,
+      radius: layout.badgeRadius,
+      labelY: cy + layout.badgeLabelOffset,
+      valueY: cy + layout.badgeValueOffset
     };
   }
 

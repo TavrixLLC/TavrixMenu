@@ -99,6 +99,45 @@ describe('StampImageRendererService', () => {
     assert.match(svg, /#123456/);
   });
 
+  it('keeps the progress badge inside the hero image safe area', () => {
+    const renderer = new StampImageRendererService() as unknown as {
+      getLayout(variant: 'MODERN' | 'COMPACT'): {
+        width: number;
+        height: number;
+        badgeRadius: number;
+        badgeTopSafePadding: number;
+        badgeRightSafePadding: number;
+      };
+      getProgressBadge(layout: {
+        width: number;
+        height: number;
+        badgeRadius: number;
+        badgeTopSafePadding: number;
+        badgeRightSafePadding: number;
+      }): {
+        cx: number;
+        cy: number;
+        radius: number;
+        labelY: number;
+        valueY: number;
+      };
+    };
+
+    for (const variant of ['MODERN', 'COMPACT'] as const) {
+      const layout = renderer.getLayout(variant);
+      const badge = renderer.getProgressBadge(layout);
+
+      assert.ok(badge.cx - badge.radius >= 0);
+      assert.ok(badge.cy - badge.radius >= layout.badgeTopSafePadding);
+      assert.ok(
+        layout.width - (badge.cx + badge.radius) >=
+          layout.badgeRightSafePadding
+      );
+      assert.ok(badge.labelY > badge.cy - badge.radius);
+      assert.ok(badge.valueY < badge.cy + badge.radius);
+    }
+  });
+
   it('rejects invalid preset, colors, and stamp goals above 10', async () => {
     const renderer = new StampImageRendererService();
 
@@ -197,6 +236,12 @@ describe('StampImageRendererService', () => {
     for (const themeHash of themeColorHashes) {
       assert.notEqual(baseHash, themeHash);
     }
+  });
+
+  it('keeps safe-area badge placement out of the deterministic style hash', () => {
+    const renderer = new StampImageRendererService();
+
+    assert.equal(renderer.buildStyleHash(baseInput()), 'b8bb83b189cbaaee');
   });
 
   it('keeps generated stamp images in an ignored directory', () => {
