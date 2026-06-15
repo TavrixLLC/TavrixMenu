@@ -7,6 +7,8 @@ import { LoyaltyStampStyleService } from './loyalty-stamp-style.service';
 import { LoyaltyService } from './loyalty.service';
 import { PublicLoyaltyController } from './public-loyalty.controller';
 import { PublicLoyaltyService } from './public-loyalty.service';
+import { StampImageRendererService } from './stamp-image-renderer.service';
+import { StampImageStorageService } from './stamp-image-storage.service';
 
 @Module({
   imports: [AuthModule, BusinessesModule],
@@ -15,6 +17,13 @@ import { PublicLoyaltyService } from './public-loyalty.service';
     LoyaltyStampPresetsController,
     PublicLoyaltyController
   ],
-  providers: [LoyaltyService, LoyaltyStampStyleService, PublicLoyaltyService]
+  providers: [
+    LoyaltyService,
+    LoyaltyStampStyleService,
+    PublicLoyaltyService,
+    StampImageRendererService,
+    StampImageStorageService
+  ],
+  exports: [StampImageRendererService, StampImageStorageService]
 })
 export class LoyaltyModule {}
