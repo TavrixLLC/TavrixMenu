@@ -38,6 +38,10 @@ export function validateEnvironment(config: Environment) {
   const googleWalletIssuerId = config.GOOGLE_WALLET_ISSUER_ID?.trim() ?? '';
   const googleWalletCredentialsPath =
     config.GOOGLE_WALLET_CREDENTIALS_PATH?.trim() ?? '';
+  const walletImagePublicBaseUrl = normalizeOptionalHttpsUrl(
+    config.WALLET_IMAGE_PUBLIC_BASE_URL,
+    'WALLET_IMAGE_PUBLIC_BASE_URL'
+  );
 
   if (googleWalletEnabled) {
     if (!googleWalletIssuerId) {
@@ -72,7 +76,8 @@ export function validateEnvironment(config: Environment) {
     GOOGLE_WALLET_ENABLED: googleWalletEnabled,
     GOOGLE_WALLET_ISSUER_ID: googleWalletIssuerId,
     GOOGLE_WALLET_CREDENTIALS_PATH: googleWalletCredentialsPath,
-    GOOGLE_WALLET_ORIGINS: googleWalletOrigins
+    GOOGLE_WALLET_ORIGINS: googleWalletOrigins,
+    WALLET_IMAGE_PUBLIC_BASE_URL: walletImagePublicBaseUrl
   };
 }
 
@@ -120,4 +125,26 @@ function parseOrigins(value: string | undefined) {
     });
 
   return [...new Set(origins)];
+}
+
+function normalizeOptionalHttpsUrl(value: string | undefined, fieldName: string) {
+  const normalized = value?.trim();
+
+  if (!normalized) {
+    return '';
+  }
+
+  let parsed: URL;
+
+  try {
+    parsed = new URL(normalized);
+  } catch {
+    throw new Error(`${fieldName} must be a valid HTTPS URL`);
+  }
+
+  if (parsed.protocol !== 'https:') {
+    throw new Error(`${fieldName} must start with https://`);
+  }
+
+  return parsed.toString().replace(/\/$/, '');
 }

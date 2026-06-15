@@ -48,6 +48,7 @@ export type GoogleWalletLoyaltyObjectPayload = {
     value: string;
     alternateText?: string;
   };
+  heroImage?: GoogleWalletImage;
   textModulesData?: Array<{
     id: string;
     header: string;
@@ -82,6 +83,9 @@ export type BuildLoyaltyObjectPayloadInput = {
   stampGoal: number;
   rewardName: string;
   barcodeValue?: string;
+  heroImageUrl?: string;
+  heroImageDescription?: string;
+  progressText?: string;
 };
 
 export type GenerateSaveJwtInput = {

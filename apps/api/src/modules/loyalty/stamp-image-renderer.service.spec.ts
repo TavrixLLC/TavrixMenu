@@ -38,9 +38,29 @@ describe('StampImageRendererService', () => {
       stored.relativePath,
       /^wallet-stamps\/membership-test-[a-f0-9]{16}-3-10\.png$/
     );
-    assert.equal(stored.publicUrl, `/generated/${stored.relativePath}`);
+    assert.equal(stored.localPublicPath, `/generated/${stored.relativePath}`);
+    assert.equal(stored.publicUrl, null);
     assert.equal(existsSync(stored.absolutePath), true);
     assert.ok(statSync(stored.absolutePath).size > 1000);
+  });
+
+  it('builds an HTTPS public URL when a wallet image base URL is configured', async () => {
+    const renderer = new StampImageRendererService();
+    const storage = new StampImageStorageService(renderer);
+    const stored = await storage.renderAndStore(
+      {
+        ...baseInput(),
+        membershipId: 'membership-url'
+      },
+      {
+        publicBaseUrl: 'https://api.waflo.app/generated/'
+      }
+    );
+
+    assert.equal(
+      stored.publicUrl,
+      `https://api.waflo.app/generated/${stored.relativePath}`
+    );
   });
 
   it('handles 0 stamps and full stamps', async () => {

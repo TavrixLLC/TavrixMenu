@@ -51,12 +51,28 @@ describe('validateEnvironment Google Wallet config', () => {
       GOOGLE_WALLET_ISSUER_ID: '3388000000023161301',
       GOOGLE_WALLET_CREDENTIALS_PATH: 'service-account.json',
       GOOGLE_WALLET_ORIGINS:
-        'https://menu.example.test/, http://localhost:3001/path'
+        'https://menu.example.test/, http://localhost:3001/path',
+      WALLET_IMAGE_PUBLIC_BASE_URL: 'https://api.waflo.app/generated/'
     });
 
     assert.deepEqual(config.GOOGLE_WALLET_ORIGINS, [
       'https://menu.example.test',
       'http://localhost:3001'
     ]);
+    assert.equal(
+      config.WALLET_IMAGE_PUBLIC_BASE_URL,
+      'https://api.waflo.app/generated'
+    );
+  });
+
+  it('rejects a non-HTTPS Wallet image public base URL', () => {
+    assert.throws(
+      () =>
+        validateEnvironment({
+          NODE_ENV: 'development',
+          WALLET_IMAGE_PUBLIC_BASE_URL: 'http://api.example.test/generated'
+        }),
+      /WALLET_IMAGE_PUBLIC_BASE_URL must start with https:\/\//
+    );
   });
 });

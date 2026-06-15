@@ -4,6 +4,8 @@ import { resolve } from 'path';
 import { validateEnvironment } from '../src/env.validation';
 import { GoogleWalletRestClient } from '../src/modules/google-wallet/google-wallet-api.client';
 import { GoogleWalletService } from '../src/modules/google-wallet/google-wallet.service';
+import { StampImageRendererService } from '../src/modules/loyalty/stamp-image-renderer.service';
+import { StampImageStorageService } from '../src/modules/loyalty/stamp-image-storage.service';
 
 loadEnvFile();
 
@@ -17,9 +19,15 @@ async function main() {
   }
 
   const configService = new ConfigService(validatedConfig);
+  const stampImageRendererService = new StampImageRendererService();
+  const stampImageStorageService = new StampImageStorageService(
+    stampImageRendererService,
+    configService
+  );
   const walletService = new GoogleWalletService(
     configService,
-    new GoogleWalletRestClient(configService)
+    new GoogleWalletRestClient(configService),
+    stampImageStorageService
   );
 
   const classSuffix =
@@ -37,16 +45,11 @@ async function main() {
     rewardDescription: 'Smoke test card for Waflo loyalty rewards.',
     hexBackgroundColor: '#2463eb'
   });
-  const objectPayload = walletService.buildLoyaltyObjectPayload({
-    classSuffix,
-    objectSuffix,
-    accountName: 'Waflo Test Account',
-    accountId: 'WAFLO-SMOKE-001',
-    stampCount: 3,
-    stampGoal: 5,
-    rewardName: 'Test reward',
-    barcodeValue: 'WAFLO-SMOKE-001'
-  });
+  const objectPayload =
+    await walletService.buildSmokeLoyaltyObjectPayloadWithStampImage({
+      classSuffix,
+      objectSuffix
+    });
 
   await walletService.upsertLoyaltyClass(classPayload);
   await walletService.upsertLoyaltyObject(objectPayload);

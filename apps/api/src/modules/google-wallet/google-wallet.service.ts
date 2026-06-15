@@ -1,8 +1,9 @@
-import { Inject, Injectable } from '@nestjs/common';
+import { Inject, Injectable, Optional } from '@nestjs/common';
 import { ConfigService } from '@nestjs/config';
 import { createSign } from 'crypto';
 import { readFileSync } from 'fs';
 import { isAbsolute, resolve } from 'path';
+import { StampImageStorageService } from '../loyalty/stamp-image-storage.service';
 import {
   GOOGLE_WALLET_API_CLIENT,
   GoogleWalletApiClient,
@@ -35,7 +36,9 @@ export class GoogleWalletService {
   constructor(
     private readonly configService: ConfigService,
     @Inject(GOOGLE_WALLET_API_CLIENT)
-    private readonly apiClient: GoogleWalletApiClient
+    private readonly apiClient: GoogleWalletApiClient,
+    @Optional()
+    private readonly stampImageStorageService?: StampImageStorageService
   ) {}
 
   buildLoyaltyClassPayload(
@@ -85,17 +88,20 @@ export class GoogleWalletService {
     const accountId = this.requireTrimmed(input.accountId, 'accountId');
     const rewardName = this.requireTrimmed(input.rewardName, 'rewardName');
     const stampCount = Math.min(input.stampCount, input.stampGoal);
+    const progressText =
+      input.progressText?.trim() ||
+      `${stampCount} of ${input.stampGoal} stamps collected`;
 
-    return {
+    const payload: GoogleWalletLoyaltyObjectPayload = {
       id: this.buildResourceId(input.objectSuffix),
       classId: this.buildResourceId(input.classSuffix),
       state: 'ACTIVE',
       accountName,
       accountId,
       loyaltyPoints: {
-        label: 'Stamps',
+        label: 'Progress',
         balance: {
-          int: stampCount
+          string: `${stampCount}/${input.stampGoal}`
         }
       },
       barcode: {
@@ -105,17 +111,73 @@ export class GoogleWalletService {
       },
       textModulesData: [
         {
-          id: 'progress',
-          header: 'Progress',
-          body: `${stampCount} of ${input.stampGoal} stamps`
-        },
-        {
           id: 'reward',
           header: 'Reward',
           body: rewardName
+        },
+        {
+          id: 'progress',
+          header: 'Progress',
+          body: progressText
         }
       ]
     };
+
+    if (input.heroImageUrl) {
+      payload.heroImage = this.buildImage(
+        input.heroImageUrl,
+        input.heroImageDescription?.trim() ||
+          `Stamp progress ${stampCount} of ${input.stampGoal}`,
+        'heroImageUrl'
+      );
+    }
+
+    return payload;
+  }
+
+  async buildSmokeLoyaltyObjectPayloadWithStampImage(input: {
+    classSuffix: string;
+    objectSuffix: string;
+  }) {
+    this.assertEnabled();
+
+    const stampCount = 3;
+    const stampGoal = 10;
+    const stampImageStorageService = this.requireStampImageStorageService();
+    const publicBaseUrl = this.getWalletImagePublicBaseUrl();
+    const storedImage = await stampImageStorageService.renderAndStore(
+      {
+        membershipId: input.objectSuffix,
+        businessName: 'Waflo',
+        programName: 'Waflo Loyalty',
+        rewardName: 'Free reward after 10 stamps',
+        stampCount,
+        stampGoal,
+        presetKey: 'COOKIE',
+        backgroundColor: '#7c2d12',
+        accentColor: '#facc15',
+        textColor: '#fff7ed',
+        layoutVariant: 'MODERN'
+      },
+      {
+        publicBaseUrl
+      }
+    );
+    const heroImageUrl = stampImageStorageService.requirePublicUrl(storedImage);
+
+    return this.buildLoyaltyObjectPayload({
+      classSuffix: input.classSuffix,
+      objectSuffix: input.objectSuffix,
+      accountName: 'Waflo Member',
+      accountId: 'WFLO-SMOKE-01',
+      stampCount,
+      stampGoal,
+      rewardName: 'Free reward after 10 stamps',
+      barcodeValue: 'WFLO-SMOKE-01',
+      heroImageUrl,
+      heroImageDescription: 'Waflo loyalty stamp progress image',
+      progressText: '3 of 10 stamps collected'
+    });
   }
 
   generateSaveJwt(input: GenerateSaveJwtInput) {
@@ -200,8 +262,12 @@ export class GoogleWalletService {
     return `${this.getIssuerId()}.${normalizedSuffix}`;
   }
 
-  private buildImage(uri: string, description: string): GoogleWalletImage {
-    const normalizedUri = this.requireHttpsUrl(uri, 'logoUrl');
+  private buildImage(
+    uri: string,
+    description: string,
+    fieldName = 'imageUrl'
+  ): GoogleWalletImage {
+    const normalizedUri = this.requireHttpsUrl(uri, fieldName);
 
     return {
       sourceUri: {
@@ -285,6 +351,32 @@ export class GoogleWalletService {
     }
 
     throw new Error('GOOGLE_WALLET_ORIGINS is required');
+  }
+
+  private getWalletImagePublicBaseUrl() {
+    const value =
+      this.configService.get<string>('WALLET_IMAGE_PUBLIC_BASE_URL')?.trim() ??
+      '';
+
+    if (!value) {
+      throw new Error(
+        'WALLET_IMAGE_PUBLIC_BASE_URL is required to attach generated Wallet images'
+      );
+    }
+
+    if (!value.startsWith('https://')) {
+      throw new Error('WALLET_IMAGE_PUBLIC_BASE_URL must start with https://');
+    }
+
+    return value;
+  }
+
+  private requireStampImageStorageService() {
+    if (!this.stampImageStorageService) {
+      throw new Error('StampImageStorageService is required for Wallet images');
+    }
+
+    return this.stampImageStorageService;
   }
 
   private getRequiredConfigString(key: string) {
