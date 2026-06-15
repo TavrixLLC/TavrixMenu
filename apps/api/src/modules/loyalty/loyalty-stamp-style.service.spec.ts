@@ -8,7 +8,10 @@ import { AuthenticatedUser } from '../auth/interfaces/authenticated-user.interfa
 import { UpdateLoyaltyStampStyleDto } from './dto/update-loyalty-stamp-style.dto';
 import {
   LOYALTY_STAMP_PRESET_KEYS,
-  LoyaltyStampPresetKeyValue
+  LOYALTY_WALLET_THEME_PRESETS,
+  LoyaltyStampPresetKeyValue,
+  LoyaltyWalletColorModeValue,
+  LoyaltyWalletThemePresetValue
 } from './loyalty-stamp-style.constants';
 import { LoyaltyStampStyleService } from './loyalty-stamp-style.service';
 
@@ -25,6 +28,15 @@ describe('LoyaltyStampStyleService', () => {
       [...LOYALTY_STAMP_PRESET_KEYS]
     );
     assert.deepEqual(catalog.styleTypes, ['PRESET']);
+    assert.deepEqual(
+      catalog.themePresets.map((preset) => preset.key),
+      [...LOYALTY_WALLET_THEME_PRESETS]
+    );
+    assert.equal(
+      catalog.themePresets[0]?.recommendedPalette.walletBackgroundColor,
+      '#2563eb'
+    );
+    assert.deepEqual(catalog.colorModes, ['PRESET', 'CUSTOM']);
     assert.deepEqual(catalog.layoutVariants, ['MODERN', 'COMPACT']);
   });
 
@@ -55,6 +67,16 @@ describe('LoyaltyStampStyleService', () => {
     assert.equal(response.backgroundColor, '#123abc');
     assert.equal(response.accentColor, '#f59e0b');
     assert.equal(response.textColor, '#ffffff');
+    assert.equal(response.walletBackgroundColor, '#123abc');
+    assert.equal(response.imageBackgroundColor, '#123abc');
+    assert.equal(response.imageSurfaceColor, '#92400e');
+    assert.equal(response.imageAccentColor, '#f59e0b');
+    assert.equal(response.imageTextColor, '#ffffff');
+    assert.equal(response.stampFilledColor, '#f59e0b');
+    assert.equal(response.stampEmptyColor, '#d6d3d1');
+    assert.equal(response.rewardBannerColor, '#a16207');
+    assert.equal(response.themePreset, 'DEFAULT');
+    assert.equal(response.colorMode, 'PRESET');
     assert.equal(response.layoutVariant, 'MODERN');
     assert.equal(response.isDefault, true);
   });
@@ -69,6 +91,16 @@ describe('LoyaltyStampStyleService', () => {
       backgroundColor: '#222222',
       accentColor: '#ffcc00',
       textColor: '#ffffff',
+      walletBackgroundColor: '#1d4ed8',
+      imageBackgroundColor: '#111827',
+      imageSurfaceColor: '#1f2937',
+      imageAccentColor: '#22c55e',
+      imageTextColor: '#f9fafb',
+      stampFilledColor: '#22c55e',
+      stampEmptyColor: '#9ca3af',
+      rewardBannerColor: '#14532d',
+      themePreset: 'MINIMAL',
+      colorMode: 'CUSTOM',
       layoutVariant: 'COMPACT'
     });
     const { service, prisma } = createService({
@@ -81,11 +113,24 @@ describe('LoyaltyStampStyleService', () => {
       backgroundColor: '#222222',
       accentColor: '#ffcc00',
       textColor: '#ffffff',
+      walletBackgroundColor: '#1d4ed8',
+      imageBackgroundColor: '#111827',
+      imageSurfaceColor: '#1f2937',
+      imageAccentColor: '#22c55e',
+      imageTextColor: '#f9fafb',
+      stampFilledColor: '#22c55e',
+      stampEmptyColor: '#9ca3af',
+      rewardBannerColor: '#14532d',
+      themePreset: 'MINIMAL',
+      colorMode: 'CUSTOM',
       layoutVariant: 'COMPACT'
     });
 
     assert.equal(response.isDefault, false);
     assert.equal(response.presetKey, 'COFFEE');
+    assert.equal(response.walletBackgroundColor, '#1d4ed8');
+    assert.equal(response.themePreset, 'MINIMAL');
+    assert.equal(response.colorMode, 'CUSTOM');
     assert.equal(response.layoutVariant, 'COMPACT');
     assert.deepEqual(prisma.upsertArgs?.where, {
       loyaltyProgramId: 'program_1'
@@ -97,6 +142,16 @@ describe('LoyaltyStampStyleService', () => {
       backgroundColor: '#222222',
       accentColor: '#ffcc00',
       textColor: '#ffffff',
+      walletBackgroundColor: '#1d4ed8',
+      imageBackgroundColor: '#111827',
+      imageSurfaceColor: '#1f2937',
+      imageAccentColor: '#22c55e',
+      imageTextColor: '#f9fafb',
+      stampFilledColor: '#22c55e',
+      stampEmptyColor: '#9ca3af',
+      rewardBannerColor: '#14532d',
+      themePreset: 'MINIMAL',
+      colorMode: 'CUSTOM',
       layoutVariant: 'COMPACT'
     });
   });
@@ -138,6 +193,15 @@ describe('LoyaltyStampStyleService', () => {
     assertValidationError({ backgroundColor: 'blue' }, 'backgroundColor');
     assertValidationError({ accentColor: '#12345z' }, 'accentColor');
     assertValidationError({ textColor: 'ffffff' }, 'textColor');
+    assertValidationError(
+      { walletBackgroundColor: 'blue' },
+      'walletBackgroundColor'
+    );
+    assertValidationError({ imageBackgroundColor: '#12345z' }, 'imageBackgroundColor');
+    assertValidationError({ stampFilledColor: 'gold' }, 'stampFilledColor');
+    assertValidationError({ rewardBannerColor: '#12' }, 'rewardBannerColor');
+    assertValidationError({ themePreset: 'NEON' }, 'themePreset');
+    assertValidationError({ colorMode: 'AUTO' }, 'colorMode');
     assertValidationError({ layoutVariant: 'CLASSIC' }, 'layoutVariant');
     assertValidationError({ styleType: 'CUSTOM' }, 'styleType');
   });
@@ -266,6 +330,16 @@ function buildStampStyle(
     backgroundColor: string;
     accentColor: string;
     textColor: string;
+    walletBackgroundColor: string;
+    imageBackgroundColor: string;
+    imageSurfaceColor: string;
+    imageAccentColor: string;
+    imageTextColor: string;
+    stampFilledColor: string;
+    stampEmptyColor: string;
+    rewardBannerColor: string;
+    themePreset: LoyaltyWalletThemePresetValue;
+    colorMode: LoyaltyWalletColorModeValue;
     layoutVariant: 'MODERN' | 'COMPACT';
     createdAt: Date;
     updatedAt: Date;
@@ -281,6 +355,16 @@ function buildStampStyle(
     backgroundColor: '#111827',
     accentColor: '#f59e0b',
     textColor: '#ffffff',
+    walletBackgroundColor: '#111827',
+    imageBackgroundColor: '#111827',
+    imageSurfaceColor: '#1f2937',
+    imageAccentColor: '#f59e0b',
+    imageTextColor: '#ffffff',
+    stampFilledColor: '#f59e0b',
+    stampEmptyColor: '#d6d3d1',
+    rewardBannerColor: '#92400e',
+    themePreset: 'DEFAULT' as LoyaltyWalletThemePresetValue,
+    colorMode: 'PRESET' as LoyaltyWalletColorModeValue,
     layoutVariant: 'MODERN' as const,
     createdAt: now,
     updatedAt: now,

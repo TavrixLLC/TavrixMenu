@@ -31,6 +31,18 @@ type WalletResource = {
 const defaultLogoUrl =
   'https://placehold.co/512x512/2463eb/ffffff.png?text=Waflo';
 
+const smokeWalletTheme = {
+  walletBackgroundColor: '#7c2d12',
+  imageBackgroundColor: '#7c2d12',
+  imageSurfaceColor: '#92400e',
+  imageAccentColor: '#facc15',
+  imageTextColor: '#ffffff',
+  stampFilledColor: '#facc15',
+  stampEmptyColor: '#d6d3d1',
+  rewardBannerColor: '#a16207',
+  themePreset: 'COFFEE'
+} as const;
+
 @Injectable()
 export class GoogleWalletService {
   constructor(
@@ -77,6 +89,20 @@ export class GoogleWalletService {
     };
   }
 
+  buildSmokeLoyaltyClassPayload(input: {
+    classSuffix: string;
+    logoUrl?: string;
+  }) {
+    return this.buildLoyaltyClassPayload({
+      classSuffix: input.classSuffix,
+      issuerName: 'Waflo',
+      programName: 'Waflo',
+      logoUrl: input.logoUrl,
+      rewardDescription: 'Free reward after 10 stamps.',
+      hexBackgroundColor: smokeWalletTheme.walletBackgroundColor
+    });
+  }
+
   buildLoyaltyObjectPayload(
     input: BuildLoyaltyObjectPayloadInput
   ): GoogleWalletLoyaltyObjectPayload {
@@ -98,18 +124,24 @@ export class GoogleWalletService {
       state: 'ACTIVE',
       accountName,
       accountId,
-      loyaltyPoints: {
-        label: 'Progress',
-        balance: {
-          string: `${stampCount}/${input.stampGoal}`
-        }
-      },
       barcode: {
         type: 'QR_CODE',
         value: input.barcodeValue?.trim() || accountId,
         alternateText: accountId
-      },
-      textModulesData: [
+      }
+    };
+
+    if (input.includeLoyaltyPoints !== false) {
+      payload.loyaltyPoints = {
+        label: 'Progress',
+        balance: {
+          string: `${stampCount}/${input.stampGoal}`
+        }
+      };
+    }
+
+    if (input.includeTextModules !== false) {
+      payload.textModulesData = [
         {
           id: 'reward',
           header: 'Reward',
@@ -120,8 +152,8 @@ export class GoogleWalletService {
           header: 'Progress',
           body: progressText
         }
-      ]
-    };
+      ];
+    }
 
     if (input.heroImageUrl) {
       payload.heroImage = this.buildImage(
@@ -149,14 +181,22 @@ export class GoogleWalletService {
       {
         membershipId: input.objectSuffix,
         businessName: 'Waflo',
-        programName: 'Waflo Loyalty',
+        programName: 'Stamp Card',
         rewardName: 'Free reward after 10 stamps',
         stampCount,
         stampGoal,
         presetKey: 'COOKIE',
-        backgroundColor: '#7c2d12',
-        accentColor: '#facc15',
-        textColor: '#fff7ed',
+        backgroundColor: smokeWalletTheme.imageBackgroundColor,
+        accentColor: smokeWalletTheme.imageAccentColor,
+        textColor: smokeWalletTheme.imageTextColor,
+        imageBackgroundColor: smokeWalletTheme.imageBackgroundColor,
+        imageSurfaceColor: smokeWalletTheme.imageSurfaceColor,
+        imageAccentColor: smokeWalletTheme.imageAccentColor,
+        imageTextColor: smokeWalletTheme.imageTextColor,
+        stampFilledColor: smokeWalletTheme.stampFilledColor,
+        stampEmptyColor: smokeWalletTheme.stampEmptyColor,
+        rewardBannerColor: smokeWalletTheme.rewardBannerColor,
+        themePreset: smokeWalletTheme.themePreset,
         layoutVariant: 'MODERN'
       },
       {
@@ -176,7 +216,9 @@ export class GoogleWalletService {
       barcodeValue: 'WFLO-SMOKE-01',
       heroImageUrl,
       heroImageDescription: 'Waflo loyalty stamp progress image',
-      progressText: '3 of 10 stamps collected'
+      progressText: '3 of 10 stamps collected',
+      includeLoyaltyPoints: false,
+      includeTextModules: false
     });
   }
 

@@ -5,8 +5,11 @@ import {
   HEX_COLOR_PATTERN,
   LOYALTY_STAMP_LAYOUT_VARIANTS,
   LOYALTY_STAMP_PRESET_KEYS,
+  LOYALTY_WALLET_THEME_PRESETS,
+  DEFAULT_LOYALTY_WALLET_THEME,
   LoyaltyStampLayoutVariantValue,
-  LoyaltyStampPresetKeyValue
+  LoyaltyStampPresetKeyValue,
+  LoyaltyWalletThemePresetValue
 } from './loyalty-stamp-style.constants';
 
 export type StampImageRenderInput = {
@@ -16,10 +19,32 @@ export type StampImageRenderInput = {
   stampCount: number;
   stampGoal: number;
   presetKey: LoyaltyStampPresetKeyValue;
+  backgroundColor?: string;
+  accentColor?: string;
+  textColor?: string;
+  imageBackgroundColor?: string;
+  imageSurfaceColor?: string;
+  imageAccentColor?: string;
+  imageTextColor?: string;
+  stampFilledColor?: string;
+  stampEmptyColor?: string;
+  rewardBannerColor?: string;
+  themePreset?: LoyaltyWalletThemePresetValue;
+  layoutVariant: LoyaltyStampLayoutVariantValue;
+};
+
+type NormalizedStampImageRenderInput = StampImageRenderInput & {
   backgroundColor: string;
   accentColor: string;
   textColor: string;
-  layoutVariant: LoyaltyStampLayoutVariantValue;
+  imageBackgroundColor: string;
+  imageSurfaceColor: string;
+  imageAccentColor: string;
+  imageTextColor: string;
+  stampFilledColor: string;
+  stampEmptyColor: string;
+  rewardBannerColor: string;
+  themePreset: LoyaltyWalletThemePresetValue;
 };
 
 type IconInput = {
@@ -50,6 +75,16 @@ export class StampImageRendererService {
           backgroundColor: normalized.backgroundColor,
           accentColor: normalized.accentColor,
           textColor: normalized.textColor,
+          walletTheme: {
+            imageBackgroundColor: normalized.imageBackgroundColor,
+            imageSurfaceColor: normalized.imageSurfaceColor,
+            imageAccentColor: normalized.imageAccentColor,
+            imageTextColor: normalized.imageTextColor,
+            stampFilledColor: normalized.stampFilledColor,
+            stampEmptyColor: normalized.stampEmptyColor,
+            rewardBannerColor: normalized.rewardBannerColor,
+            themePreset: normalized.themePreset
+          },
           layoutVariant: normalized.layoutVariant
         })
       )
@@ -57,7 +92,9 @@ export class StampImageRendererService {
       .slice(0, 16);
   }
 
-  private normalizeInput(input: StampImageRenderInput): StampImageRenderInput {
+  private normalizeInput(
+    input: StampImageRenderInput
+  ): NormalizedStampImageRenderInput {
     if (!Number.isInteger(input.stampGoal) || input.stampGoal < 1 || input.stampGoal > 10) {
       throw new BadRequestException('stampGoal must be between 1 and 10');
     }
@@ -74,6 +111,53 @@ export class StampImageRendererService {
       throw new BadRequestException('layoutVariant is not supported');
     }
 
+    const themePreset = input.themePreset ?? DEFAULT_LOYALTY_WALLET_THEME.themePreset;
+
+    if (!LOYALTY_WALLET_THEME_PRESETS.includes(themePreset)) {
+      throw new BadRequestException('themePreset is not supported');
+    }
+
+    const backgroundColor = this.normalizeHexColor(
+      input.backgroundColor ?? DEFAULT_LOYALTY_WALLET_THEME.imageBackgroundColor,
+      'backgroundColor'
+    );
+    const accentColor = this.normalizeHexColor(
+      input.accentColor ?? DEFAULT_LOYALTY_WALLET_THEME.imageAccentColor,
+      'accentColor'
+    );
+    const textColor = this.normalizeHexColor(
+      input.textColor ?? DEFAULT_LOYALTY_WALLET_THEME.imageTextColor,
+      'textColor'
+    );
+    const imageBackgroundColor = this.normalizeHexColor(
+      input.imageBackgroundColor ?? backgroundColor,
+      'imageBackgroundColor'
+    );
+    const imageSurfaceColor = this.normalizeHexColor(
+      input.imageSurfaceColor ?? DEFAULT_LOYALTY_WALLET_THEME.imageSurfaceColor,
+      'imageSurfaceColor'
+    );
+    const imageAccentColor = this.normalizeHexColor(
+      input.imageAccentColor ?? accentColor,
+      'imageAccentColor'
+    );
+    const imageTextColor = this.normalizeHexColor(
+      input.imageTextColor ?? textColor,
+      'imageTextColor'
+    );
+    const stampFilledColor = this.normalizeHexColor(
+      input.stampFilledColor ?? imageAccentColor,
+      'stampFilledColor'
+    );
+    const stampEmptyColor = this.normalizeHexColor(
+      input.stampEmptyColor ?? DEFAULT_LOYALTY_WALLET_THEME.stampEmptyColor,
+      'stampEmptyColor'
+    );
+    const rewardBannerColor = this.normalizeHexColor(
+      input.rewardBannerColor ?? DEFAULT_LOYALTY_WALLET_THEME.rewardBannerColor,
+      'rewardBannerColor'
+    );
+
     return {
       businessName: this.truncate(input.businessName.trim() || 'Waflo', 64),
       programName: this.truncate(input.programName.trim() || 'Loyalty Card', 64),
@@ -81,17 +165,22 @@ export class StampImageRendererService {
       stampCount: Math.min(input.stampCount, input.stampGoal),
       stampGoal: input.stampGoal,
       presetKey: input.presetKey,
-      backgroundColor: this.normalizeHexColor(
-        input.backgroundColor,
-        'backgroundColor'
-      ),
-      accentColor: this.normalizeHexColor(input.accentColor, 'accentColor'),
-      textColor: this.normalizeHexColor(input.textColor, 'textColor'),
+      backgroundColor,
+      accentColor,
+      textColor,
+      imageBackgroundColor,
+      imageSurfaceColor,
+      imageAccentColor,
+      imageTextColor,
+      stampFilledColor,
+      stampEmptyColor,
+      rewardBannerColor,
+      themePreset,
       layoutVariant: input.layoutVariant
     };
   }
 
-  private renderSvg(input: StampImageRenderInput) {
+  private renderSvg(input: NormalizedStampImageRenderInput) {
     const layout = this.getLayout(input.layoutVariant);
     const subtitle =
       input.layoutVariant === 'COMPACT' ? input.programName : input.businessName;
@@ -101,25 +190,25 @@ export class StampImageRendererService {
     return [
       `<svg xmlns="http://www.w3.org/2000/svg" width="${layout.width}" height="${layout.height}" viewBox="0 0 ${layout.width} ${layout.height}">`,
       '<defs>',
-      `<linearGradient id="bg" x1="0" y1="0" x2="1" y2="1"><stop offset="0%" stop-color="${input.backgroundColor}"/><stop offset="100%" stop-color="${this.mixWithBlack(input.backgroundColor, 0.22)}"/></linearGradient>`,
+      `<linearGradient id="bg" x1="0" y1="0" x2="1" y2="1"><stop offset="0%" stop-color="${input.imageBackgroundColor}"/><stop offset="100%" stop-color="${this.mixWithBlack(input.imageBackgroundColor, 0.22)}"/></linearGradient>`,
       '<filter id="shadow" x="-20%" y="-20%" width="140%" height="140%"><feDropShadow dx="0" dy="10" stdDeviation="12" flood-color="#000000" flood-opacity="0.24"/></filter>',
       '</defs>',
       `<rect width="100%" height="100%" rx="${layout.radius}" fill="url(#bg)"/>`,
-      `<circle cx="${layout.width - 118}" cy="84" r="158" fill="${this.hexToRgba(input.accentColor, 0.14)}"/>`,
-      `<circle cx="76" cy="${layout.height - 40}" r="154" fill="${this.hexToRgba(input.textColor, 0.08)}"/>`,
-      `<text x="${layout.padding}" y="${layout.subtitleY}" fill="${this.hexToRgba(input.textColor, 0.78)}" font-family="Inter, Arial, sans-serif" font-size="${layout.subtitleSize}" font-weight="700">${this.escapeXml(subtitle)}</text>`,
-      `<text x="${layout.padding}" y="${layout.titleY}" fill="${input.textColor}" font-family="Inter, Arial, sans-serif" font-size="${layout.titleSize}" font-weight="800">${this.escapeXml(headline)}</text>`,
-      `<text x="${layout.width - layout.padding}" y="${layout.titleY}" fill="${input.textColor}" text-anchor="end" font-family="Inter, Arial, sans-serif" font-size="${layout.progressSize}" font-weight="800">${input.stampCount} / ${input.stampGoal}</text>`,
-      `<text x="${layout.width - layout.padding}" y="${layout.subtitleY}" fill="${this.hexToRgba(input.textColor, 0.78)}" text-anchor="end" font-family="Inter, Arial, sans-serif" font-size="${layout.subtitleSize}" font-weight="700">stamps</text>`,
+      `<circle cx="${layout.width - 118}" cy="84" r="158" fill="${this.hexToRgba(input.imageAccentColor, 0.14)}"/>`,
+      `<circle cx="76" cy="${layout.height - 40}" r="154" fill="${this.hexToRgba(input.imageTextColor, 0.08)}"/>`,
+      `<text x="${layout.padding}" y="${layout.subtitleY}" fill="${this.hexToRgba(input.imageTextColor, 0.78)}" font-family="Inter, Arial, sans-serif" font-size="${layout.subtitleSize}" font-weight="700">${this.escapeXml(subtitle)}</text>`,
+      `<text x="${layout.padding}" y="${layout.titleY}" fill="${input.imageTextColor}" font-family="Inter, Arial, sans-serif" font-size="${layout.titleSize}" font-weight="800">${this.escapeXml(headline)}</text>`,
+      `<text x="${layout.width - layout.padding}" y="${layout.titleY}" fill="${input.imageTextColor}" text-anchor="end" font-family="Inter, Arial, sans-serif" font-size="${layout.progressSize}" font-weight="800">${input.stampCount} / ${input.stampGoal}</text>`,
+      `<text x="${layout.width - layout.padding}" y="${layout.subtitleY}" fill="${this.hexToRgba(input.imageTextColor, 0.78)}" text-anchor="end" font-family="Inter, Arial, sans-serif" font-size="${layout.subtitleSize}" font-weight="700">stamps</text>`,
       this.renderIconCells(input, layout),
-      `<rect x="${layout.padding}" y="${layout.rewardY}" width="${layout.width - layout.padding * 2}" height="${layout.rewardHeight}" rx="${layout.rewardHeight / 2}" fill="${this.hexToRgba(input.textColor, 0.12)}"/>`,
-      `<text x="${layout.padding + 28}" y="${layout.rewardTextY}" fill="${input.textColor}" font-family="Inter, Arial, sans-serif" font-size="${layout.rewardSize}" font-weight="750">${this.escapeXml(`Reward: ${input.rewardName}`)}</text>`,
+      `<rect x="${layout.padding}" y="${layout.rewardY}" width="${layout.width - layout.padding * 2}" height="${layout.rewardHeight}" rx="${layout.rewardHeight / 2}" fill="${this.hexToRgba(input.rewardBannerColor, 0.86)}"/>`,
+      `<text x="${layout.padding + 28}" y="${layout.rewardTextY}" fill="${input.imageTextColor}" font-family="Inter, Arial, sans-serif" font-size="${layout.rewardSize}" font-weight="750">${this.escapeXml(`Reward: ${input.rewardName}`)}</text>`,
       '</svg>'
     ].join('');
   }
 
   private renderIconCells(
-    input: StampImageRenderInput,
+    input: NormalizedStampImageRenderInput,
     layout: ReturnType<typeof this.getLayout>
   ) {
     const columns = input.layoutVariant === 'COMPACT' ? input.stampGoal : 5;
@@ -141,16 +230,14 @@ export class StampImageRendererService {
         x: x + layout.cellSize / 2,
         y: y + layout.cellSize / 2,
         size: layout.cellSize * 0.7,
-        fill: filled ? input.accentColor : 'none',
-        stroke: filled
-          ? input.accentColor
-          : this.hexToRgba(input.textColor, 0.56),
+        fill: filled ? input.stampFilledColor : 'none',
+        stroke: filled ? input.stampFilledColor : input.stampEmptyColor,
         filled
       });
 
       return [
         `<g filter="${filled ? 'url(#shadow)' : ''}">`,
-        `<rect x="${x}" y="${y}" width="${layout.cellSize}" height="${layout.cellSize}" rx="${layout.cellSize * 0.26}" fill="${filled ? this.hexToRgba(input.textColor, 0.12) : this.hexToRgba(input.textColor, 0.06)}" stroke="${filled ? this.hexToRgba(input.accentColor, 0.4) : this.hexToRgba(input.textColor, 0.18)}" stroke-width="3"/>`,
+        `<rect x="${x}" y="${y}" width="${layout.cellSize}" height="${layout.cellSize}" rx="${layout.cellSize * 0.26}" fill="${filled ? this.hexToRgba(input.imageSurfaceColor, 0.92) : this.hexToRgba(input.imageSurfaceColor, 0.48)}" stroke="${filled ? this.hexToRgba(input.stampFilledColor, 0.52) : this.hexToRgba(input.stampEmptyColor, 0.44)}" stroke-width="3"/>`,
         icon,
         '</g>'
       ].join('');

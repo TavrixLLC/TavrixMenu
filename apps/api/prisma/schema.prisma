@@ -178,17 +178,27 @@ model LoyaltyProgram {
 }
 
 model LoyaltyStampStyle {
-  id               String                    @id @default(cuid())
-  loyaltyProgramId String                    @unique @map("loyalty_program_id")
-  styleType        LoyaltyStampStyleType     @default(PRESET) @map("style_type")
-  presetKey        LoyaltyStampPresetKey     @default(STAR) @map("preset_key")
-  backgroundColor  String                    @map("background_color")
-  accentColor      String                    @map("accent_color")
-  textColor        String                    @map("text_color")
-  layoutVariant    LoyaltyStampLayoutVariant @default(MODERN) @map("layout_variant")
-  createdAt        DateTime                  @default(now()) @map("created_at")
-  updatedAt        DateTime                  @updatedAt @map("updated_at")
-  loyaltyProgram   LoyaltyProgram            @relation(fields: [loyaltyProgramId], references: [id], onDelete: Cascade)
+  id                    String                    @id @default(cuid())
+  loyaltyProgramId      String                    @unique @map("loyalty_program_id")
+  styleType             LoyaltyStampStyleType     @default(PRESET) @map("style_type")
+  presetKey             LoyaltyStampPresetKey     @default(STAR) @map("preset_key")
+  backgroundColor       String                    @map("background_color")
+  accentColor           String                    @map("accent_color")
+  textColor             String                    @map("text_color")
+  walletBackgroundColor String                    @default("#2563eb") @map("wallet_background_color")
+  imageBackgroundColor  String                    @default("#7c2d12") @map("image_background_color")
+  imageSurfaceColor     String                    @default("#92400e") @map("image_surface_color")
+  imageAccentColor      String                    @default("#facc15") @map("image_accent_color")
+  imageTextColor        String                    @default("#ffffff") @map("image_text_color")
+  stampFilledColor      String                    @default("#facc15") @map("stamp_filled_color")
+  stampEmptyColor       String                    @default("#d6d3d1") @map("stamp_empty_color")
+  rewardBannerColor     String                    @default("#a16207") @map("reward_banner_color")
+  themePreset           LoyaltyWalletThemePreset  @default(DEFAULT) @map("theme_preset")
+  colorMode             LoyaltyWalletColorMode    @default(PRESET) @map("color_mode")
+  layoutVariant         LoyaltyStampLayoutVariant @default(MODERN) @map("layout_variant")
+  createdAt             DateTime                  @default(now()) @map("created_at")
+  updatedAt             DateTime                  @updatedAt @map("updated_at")
+  loyaltyProgram        LoyaltyProgram            @relation(fields: [loyaltyProgramId], references: [id], onDelete: Cascade)
 
   @@map("loyalty_stamp_styles")
 }
@@ -312,6 +322,20 @@ enum LoyaltyStampPresetKey {
 enum LoyaltyStampLayoutVariant {
   MODERN
   COMPACT
+}
+
+enum LoyaltyWalletThemePreset {
+  DEFAULT
+  COFFEE
+  RESTAURANT
+  DESSERT
+  MINIMAL
+  CUSTOM
+}
+
+enum LoyaltyWalletColorMode {
+  PRESET
+  CUSTOM
 }
 
 enum LoyaltyTransactionType {

@@ -36,7 +36,7 @@ export type GoogleWalletLoyaltyObjectPayload = {
   state: 'ACTIVE';
   accountName: string;
   accountId: string;
-  loyaltyPoints: {
+  loyaltyPoints?: {
     label: string;
     balance: {
       int?: number;
@@ -86,6 +86,8 @@ export type BuildLoyaltyObjectPayloadInput = {
   heroImageUrl?: string;
   heroImageDescription?: string;
   progressText?: string;
+  includeLoyaltyPoints?: boolean;
+  includeTextModules?: boolean;
 };
 
 export type GenerateSaveJwtInput = {

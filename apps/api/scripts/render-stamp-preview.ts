@@ -20,6 +20,14 @@ const previews = [
     backgroundColor: '#7c2d12',
     accentColor: '#facc15',
     textColor: '#fff7ed',
+    imageBackgroundColor: '#7c2d12',
+    imageSurfaceColor: '#92400e',
+    imageAccentColor: '#facc15',
+    imageTextColor: '#ffffff',
+    stampFilledColor: '#facc15',
+    stampEmptyColor: '#d6d3d1',
+    rewardBannerColor: '#a16207',
+    themePreset: 'COFFEE' as const,
     layoutVariant: 'MODERN' as const
   },
   {
@@ -33,6 +41,14 @@ const previews = [
     backgroundColor: '#111827',
     accentColor: '#f59e0b',
     textColor: '#ffffff',
+    imageBackgroundColor: '#111827',
+    imageSurfaceColor: '#1f2937',
+    imageAccentColor: '#f59e0b',
+    imageTextColor: '#ffffff',
+    stampFilledColor: '#f59e0b',
+    stampEmptyColor: '#d1d5db',
+    rewardBannerColor: '#92400e',
+    themePreset: 'COFFEE' as const,
     layoutVariant: 'MODERN' as const
   },
   {
@@ -46,6 +62,14 @@ const previews = [
     backgroundColor: '#064e3b',
     accentColor: '#34d399',
     textColor: '#ecfdf5',
+    imageBackgroundColor: '#064e3b',
+    imageSurfaceColor: '#047857',
+    imageAccentColor: '#34d399',
+    imageTextColor: '#ecfdf5',
+    stampFilledColor: '#34d399',
+    stampEmptyColor: '#a7f3d0',
+    rewardBannerColor: '#047857',
+    themePreset: 'RESTAURANT' as const,
     layoutVariant: 'COMPACT' as const
   },
   {
@@ -59,6 +83,14 @@ const previews = [
     backgroundColor: '#1d4ed8',
     accentColor: '#fde047',
     textColor: '#eff6ff',
+    imageBackgroundColor: '#1d4ed8',
+    imageSurfaceColor: '#2563eb',
+    imageAccentColor: '#fde047',
+    imageTextColor: '#eff6ff',
+    stampFilledColor: '#fde047',
+    stampEmptyColor: '#bfdbfe',
+    rewardBannerColor: '#1e40af',
+    themePreset: 'DEFAULT' as const,
     layoutVariant: 'MODERN' as const
   }
 ];

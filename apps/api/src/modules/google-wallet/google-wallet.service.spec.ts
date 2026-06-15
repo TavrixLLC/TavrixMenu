@@ -160,10 +160,22 @@ describe('GoogleWalletService', () => {
     );
     assert.equal(objectPayload.id, `${issuerId}.waflo_test_object`);
     assert.equal(objectPayload.classId, `${issuerId}.waflo_test_class`);
-    assert.deepEqual(objectPayload.loyaltyPoints.balance, {
+    assert.deepEqual(objectPayload.loyaltyPoints?.balance, {
       string: '3/5'
     });
-    assert.equal(objectPayload.loyaltyPoints.label, 'Progress');
+    assert.equal(objectPayload.loyaltyPoints?.label, 'Progress');
+  });
+
+  it('builds the smoke class with the wallet theme background color', () => {
+    const service = createService();
+
+    const classPayload = service.buildSmokeLoyaltyClassPayload({
+      classSuffix: 'waflo_test_class',
+      logoUrl: 'https://example.com/logo.png'
+    });
+
+    assert.equal(classPayload.programName, 'Waflo');
+    assert.equal(classPayload.hexBackgroundColor, '#7c2d12');
   });
 
   it('upserts classes and objects with mocked Google Wallet API calls', async () => {
@@ -256,7 +268,7 @@ describe('GoogleWalletService', () => {
     );
   });
 
-  it('builds a smoke loyalty object with an HTTPS hero image and progress copy', async () => {
+  it('builds a smoke loyalty object with an HTTPS hero image and minimal native fields', async () => {
     const storage = new MockStampImageStorage(
       'https://api.waflo.app/generated/wallet-stamps/wallet-smoke.png'
     );
@@ -272,33 +284,22 @@ describe('GoogleWalletService', () => {
     assert.equal(payload.accountName, 'Waflo Member');
     assert.equal(payload.accountId, 'WFLO-SMOKE-01');
     assert.equal(payload.barcode?.alternateText, 'WFLO-SMOKE-01');
-    assert.deepEqual(payload.loyaltyPoints, {
-      label: 'Progress',
-      balance: {
-        string: '3/10'
-      }
-    });
+    assert.equal(payload.loyaltyPoints, undefined);
     assert.equal(
       payload.heroImage?.sourceUri.uri,
       'https://api.waflo.app/generated/wallet-stamps/wallet-smoke.png'
     );
     assert.equal(payload.heroImage?.sourceUri.uri.startsWith('https://'), true);
     assert.equal(payload.heroImage?.sourceUri.uri.includes('D:\\'), false);
-    assert.deepEqual(payload.textModulesData, [
-      {
-        id: 'reward',
-        header: 'Reward',
-        body: 'Free reward after 10 stamps'
-      },
-      {
-        id: 'progress',
-        header: 'Progress',
-        body: '3 of 10 stamps collected'
-      }
-    ]);
+    assert.equal(payload.textModulesData, undefined);
     assert.equal(storage.renderInputs[0]?.presetKey, 'COOKIE');
     assert.equal(storage.renderInputs[0]?.stampCount, 3);
     assert.equal(storage.renderInputs[0]?.stampGoal, 10);
+    assert.equal(storage.renderInputs[0]?.imageBackgroundColor, '#7c2d12');
+    assert.equal(storage.renderInputs[0]?.stampFilledColor, '#facc15');
+    assert.equal(storage.renderInputs[0]?.stampEmptyColor, '#d6d3d1');
+    assert.equal(storage.renderInputs[0]?.rewardBannerColor, '#a16207');
+    assert.equal(storage.renderInputs[0]?.themePreset, 'COFFEE');
   });
 
   it('rejects local paths for Wallet hero images', () => {

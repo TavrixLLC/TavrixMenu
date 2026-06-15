@@ -81,6 +81,24 @@ describe('StampImageRendererService', () => {
     assert.notEqual(empty.equals(full), true);
   });
 
+  it('uses stamp filled and empty colors in the SVG render path', () => {
+    const renderer = new StampImageRendererService() as unknown as {
+      renderSvg(input: StampImageRenderInput): string;
+      normalizeInput(input: StampImageRenderInput): StampImageRenderInput;
+    };
+    const normalized = renderer.normalizeInput(
+      baseInput({
+        stampCount: 1,
+        stampFilledColor: '#abcdef',
+        stampEmptyColor: '#123456'
+      })
+    );
+    const svg = renderer.renderSvg(normalized);
+
+    assert.match(svg, /#abcdef/);
+    assert.match(svg, /#123456/);
+  });
+
   it('rejects invalid preset, colors, and stamp goals above 10', async () => {
     const renderer = new StampImageRendererService();
 
@@ -98,6 +116,24 @@ describe('StampImageRendererService', () => {
         renderer.renderPng(
           baseInput({
             accentColor: 'gold'
+          })
+        ),
+      BadRequestException
+    );
+    await assert.rejects(
+      () =>
+        renderer.renderPng(
+          baseInput({
+            stampEmptyColor: 'sand'
+          })
+        ),
+      BadRequestException
+    );
+    await assert.rejects(
+      () =>
+        renderer.renderPng(
+          baseInput({
+            themePreset: 'NEON' as never
           })
         ),
       BadRequestException
@@ -145,10 +181,22 @@ describe('StampImageRendererService', () => {
         layoutVariant: 'COMPACT'
       })
     );
+    const themeColorHashes = [
+      renderer.buildStyleHash(baseInput({ imageBackgroundColor: '#0f172a' })),
+      renderer.buildStyleHash(baseInput({ imageSurfaceColor: '#334155' })),
+      renderer.buildStyleHash(baseInput({ imageAccentColor: '#22c55e' })),
+      renderer.buildStyleHash(baseInput({ imageTextColor: '#f8fafc' })),
+      renderer.buildStyleHash(baseInput({ stampFilledColor: '#fde047' })),
+      renderer.buildStyleHash(baseInput({ stampEmptyColor: '#94a3b8' })),
+      renderer.buildStyleHash(baseInput({ rewardBannerColor: '#4f46e5' }))
+    ];
 
     assert.notEqual(baseHash, presetHash);
     assert.notEqual(baseHash, colorHash);
     assert.notEqual(baseHash, layoutHash);
+    for (const themeHash of themeColorHashes) {
+      assert.notEqual(baseHash, themeHash);
+    }
   });
 
   it('keeps generated stamp images in an ignored directory', () => {
@@ -174,6 +222,14 @@ function baseInput(
     backgroundColor: '#111827',
     accentColor: '#f59e0b',
     textColor: '#ffffff',
+    imageBackgroundColor: '#111827',
+    imageSurfaceColor: '#1f2937',
+    imageAccentColor: '#f59e0b',
+    imageTextColor: '#ffffff',
+    stampFilledColor: '#f59e0b',
+    stampEmptyColor: '#d6d3d1',
+    rewardBannerColor: '#92400e',
+    themePreset: 'COFFEE',
     layoutVariant: 'MODERN',
     ...overrides
   };

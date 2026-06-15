@@ -37,13 +37,9 @@ async function main() {
     process.env.GOOGLE_WALLET_SMOKE_OBJECT_SUFFIX ??
     'waflo_loyalty_smoke_object';
 
-  const classPayload = walletService.buildLoyaltyClassPayload({
+  const classPayload = walletService.buildSmokeLoyaltyClassPayload({
     classSuffix,
-    issuerName: 'Waflo',
-    programName: 'Waflo Loyalty',
-    logoUrl: process.env.GOOGLE_WALLET_SMOKE_LOGO_URL,
-    rewardDescription: 'Smoke test card for Waflo loyalty rewards.',
-    hexBackgroundColor: '#2463eb'
+    logoUrl: process.env.GOOGLE_WALLET_SMOKE_LOGO_URL
   });
   const objectPayload =
     await walletService.buildSmokeLoyaltyObjectPayloadWithStampImage({
