@@ -10,19 +10,26 @@ import {
   getActiveLoyaltyProgram,
   getDashboardSummary,
   getLoyaltyMembership,
+  getLoyaltyStampPresets,
+  getLoyaltyStampStyle,
   listLoyaltyMemberships,
   listLoyaltyTransactions,
   redeemLoyaltyReward,
   updateLoyaltyProgram,
+  updateLoyaltyStampStyle,
   type AdminApiResult,
   type AdminDashboardSummary,
   type AdminLoyaltyCardState,
   type AdminLoyaltyMembership,
   type AdminLoyaltyProgram,
   type AdminLoyaltyProgramInput,
+  type AdminLoyaltyStampPresetCatalog,
+  type AdminLoyaltyStampStyle,
+  type AdminLoyaltyStampStyleInput,
   type AdminLoyaltyTransaction,
   type AdminMeResponse
 } from '../lib/admin-api';
+import { WalletAppearancePanel } from './WalletAppearancePanel';
 
 type LoyaltyPanelProps = {
   apiBaseUrl: string;
@@ -47,6 +54,8 @@ type LoyaltyState =
       businessId: string;
       summary: AdminDashboardSummary;
       program: AdminLoyaltyProgram | null;
+      stampPresetCatalog: AdminLoyaltyStampPresetCatalog;
+      stampStyle: AdminLoyaltyStampStyle | null;
       memberships: AdminLoyaltyMembership[];
       selectedMembership: AdminLoyaltyMembership | null;
       transactions: AdminLoyaltyTransaction[];
@@ -83,6 +92,18 @@ const emptyProgramDraft: AdminLoyaltyProgramInput = {
   terms: '',
   isActive: true
 };
+
+const stampStyleColorFields = [
+  'walletBackgroundColor',
+  'imageBackgroundColor',
+  'imageSurfaceColor',
+  'imageAccentColor',
+  'imageTextColor',
+  'stampFilledColor',
+  'stampEmptyColor',
+  'rewardBannerColor'
+] as const satisfies ReadonlyArray<keyof AdminLoyaltyStampStyleInput>;
+const hexColorPattern = /^#([0-9a-fA-F]{3}|[0-9a-fA-F]{6})$/;
 
 function pickCurrentBusinessId(me: AdminMeResponse) {
   const activeMembership = me.memberships.find((membership) => membership.isActive && membership.business.id);
@@ -130,6 +151,31 @@ function programToDraft(program: AdminLoyaltyProgram | null): AdminLoyaltyProgra
     terms: program.terms || '',
     isActive: program.isActive
   };
+}
+
+function stampStyleToDraft(style: AdminLoyaltyStampStyle): AdminLoyaltyStampStyleInput {
+  return {
+    themePreset: style.themePreset,
+    colorMode: style.colorMode,
+    presetKey: style.presetKey,
+    walletBackgroundColor: style.walletBackgroundColor,
+    imageBackgroundColor: style.imageBackgroundColor,
+    imageSurfaceColor: style.imageSurfaceColor,
+    imageAccentColor: style.imageAccentColor,
+    imageTextColor: style.imageTextColor,
+    stampFilledColor: style.stampFilledColor,
+    stampEmptyColor: style.stampEmptyColor,
+    rewardBannerColor: style.rewardBannerColor,
+    layoutVariant: style.layoutVariant
+  };
+}
+
+function stampStyleDraftKey(draft: AdminLoyaltyStampStyleInput | null) {
+  return draft ? JSON.stringify(draft) : '';
+}
+
+function hasInvalidStampStyleColors(draft: AdminLoyaltyStampStyleInput) {
+  return stampStyleColorFields.some((field) => !hexColorPattern.test(draft[field]));
 }
 
 function displayCustomer(membership: AdminLoyaltyMembership) {
@@ -866,6 +912,7 @@ export function LoyaltyPanel({ apiBaseUrl }: LoyaltyPanelProps) {
     rewardReady: 'all'
   });
   const [programDraft, setProgramDraft] = useState<AdminLoyaltyProgramInput>(emptyProgramDraft);
+  const [stampStyleDraft, setStampStyleDraft] = useState<AdminLoyaltyStampStyleInput | null>(null);
 
   const actionPending = actionState.status === 'pending';
 
@@ -909,7 +956,7 @@ export function LoyaltyPanel({ apiBaseUrl }: LoyaltyPanelProps) {
           return;
         }
 
-        const [summaryResult, programResult] = await Promise.all([
+        const [summaryResult, programResult, stampPresetsResult] = await Promise.all([
           getDashboardSummary({
             apiBaseUrl,
             token,
@@ -920,6 +967,11 @@ export function LoyaltyPanel({ apiBaseUrl }: LoyaltyPanelProps) {
             apiBaseUrl,
             token,
             businessId,
+            signal
+          }),
+          getLoyaltyStampPresets({
+            apiBaseUrl,
+            token,
             signal
           })
         ]);
@@ -946,16 +998,42 @@ export function LoyaltyPanel({ apiBaseUrl }: LoyaltyPanelProps) {
           return;
         }
 
-        const membershipsResult = programResult.data
-          ? await listLoyaltyMemberships({
-              apiBaseUrl,
-              token,
-              businessId,
-              signal
-            })
-          : null;
+        if (stampPresetsResult.status !== 'ok') {
+          setState({
+            status: stampPresetsResult.status,
+            apiUrl: stampPresetsResult.apiUrl,
+            message: stampPresetsResult.message
+          });
+          return;
+        }
+
+        const [stampStyleResult, membershipsResult] = programResult.data
+          ? await Promise.all([
+              getLoyaltyStampStyle({
+                apiBaseUrl,
+                token,
+                businessId,
+                signal
+              }),
+              listLoyaltyMemberships({
+                apiBaseUrl,
+                token,
+                businessId,
+                signal
+              })
+            ])
+          : [null, null];
 
         if (signal?.aborted) {
+          return;
+        }
+
+        if (stampStyleResult && stampStyleResult.status !== 'ok') {
+          setState({
+            status: stampStyleResult.status,
+            apiUrl: stampStyleResult.apiUrl,
+            message: stampStyleResult.message
+          });
           return;
         }
 
@@ -969,12 +1047,15 @@ export function LoyaltyPanel({ apiBaseUrl }: LoyaltyPanelProps) {
         }
 
         setProgramDraft(programToDraft(programResult.data));
+        setStampStyleDraft(stampStyleResult?.data ? stampStyleToDraft(stampStyleResult.data) : null);
         setState({
           status: 'ok',
           me: meResult.data,
           businessId,
           summary: summaryResult.data,
           program: programResult.data,
+          stampPresetCatalog: stampPresetsResult.data,
+          stampStyle: stampStyleResult?.data || null,
           memberships: membershipsResult?.data || [],
           selectedMembership: null,
           transactions: []
@@ -1149,15 +1230,80 @@ export function LoyaltyPanel({ apiBaseUrl }: LoyaltyPanelProps) {
 
       handleApiResult(result, current.program ? 'Loyalty program updated.' : 'Loyalty program created.');
       setProgramDraft(programToDraft(result.data));
+      const styleResult = await getLoyaltyStampStyle({
+        apiBaseUrl,
+        token,
+        businessId: current.businessId
+      });
+      const nextStampStyle = styleResult.status === 'ok' ? styleResult.data : current.stampStyle;
+
+      if (styleResult.status === 'ok') {
+        setStampStyleDraft(stampStyleToDraft(styleResult.data));
+      }
+
       setState((openState) =>
         openState.status === 'ok'
           ? {
               ...openState,
-              program: result.data
+              program: result.data,
+              stampStyle: nextStampStyle
             }
           : openState
       );
       await refreshMemberships(token, current.businessId);
+    });
+  }
+
+  async function submitStampStyle() {
+    if (!canConfigure) {
+      setActionState({
+        status: 'error',
+        message: 'Only OWNER and MANAGER can update wallet appearance.'
+      });
+      return;
+    }
+
+    if (!stampStyleDraft) {
+      setActionState({
+        status: 'error',
+        message: 'Wallet appearance is not loaded yet.'
+      });
+      return;
+    }
+
+    if (hasInvalidStampStyleColors(stampStyleDraft)) {
+      setActionState({
+        status: 'error',
+        message: 'Fix invalid hex colors before saving wallet appearance.'
+      });
+      return;
+    }
+
+    setActionState({ status: 'pending', message: 'Saving wallet appearance...' });
+
+    await withToken(async (token, current) => {
+      const result = await updateLoyaltyStampStyle({
+        apiBaseUrl,
+        token,
+        businessId: current.businessId,
+        input: stampStyleDraft
+      });
+
+      if (result.status !== 'ok') {
+        handleApiResult(result, 'Wallet appearance saved.');
+        return;
+      }
+
+      handleApiResult(result, 'Wallet appearance saved.');
+      setStampStyleDraft(stampStyleToDraft(result.data));
+      setState((openState) =>
+        openState.status === 'ok'
+          ? {
+              ...openState,
+              stampStyle: result.data
+            }
+          : openState
+      );
     });
   }
 
@@ -1304,7 +1450,7 @@ export function LoyaltyPanel({ apiBaseUrl }: LoyaltyPanelProps) {
             <p className="text-sm font-semibold uppercase text-accent">Sprint 6 loyalty</p>
             <h1 className="mt-2 text-2xl font-bold text-ink">{state.summary.business.name}</h1>
             <p className="mt-2 max-w-3xl text-sm leading-6 text-neutral-600">
-              Manage the stamp-card program and run staff cashier operations. This is not wallet integration.
+              Manage the stamp-card program, wallet appearance, and staff cashier operations.
             </p>
           </div>
           <div className="flex flex-wrap gap-2">
@@ -1327,6 +1473,24 @@ export function LoyaltyPanel({ apiBaseUrl }: LoyaltyPanelProps) {
 
       {state.program ? (
         <>
+          {stampStyleDraft && state.stampStyle ? (
+            <WalletAppearancePanel
+              actionPending={actionPending}
+              canConfigure={canConfigure}
+              catalog={state.stampPresetCatalog}
+              draft={stampStyleDraft}
+              isDirty={stampStyleDraftKey(stampStyleDraft) !== stampStyleDraftKey(stampStyleToDraft(state.stampStyle))}
+              onDraftChange={setStampStyleDraft}
+              onSubmit={() => void submitStampStyle()}
+            />
+          ) : (
+            <section className="rounded-lg border border-neutral-200 bg-white p-5">
+              <p className="text-sm font-semibold uppercase text-accent">Wallet &amp; Stamp Appearance</p>
+              <h2 className="mt-2 text-xl font-bold text-ink">Loading appearance settings</h2>
+              <p className="mt-2 text-sm leading-6 text-neutral-600">Appearance controls load after the active loyalty program is ready.</p>
+            </section>
+          )}
+
           <EnrollmentPanel actionPending={actionPending} disabled={!canOperate} onSubmit={submitEnrollment} />
 
           <MembershipListPanel

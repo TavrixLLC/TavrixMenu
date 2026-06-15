@@ -146,6 +146,65 @@ export type AdminLoyaltyProgram = {
   updatedAt: string | null;
 };
 
+export type AdminStampPresetKey = 'STAR' | 'COOKIE' | 'COFFEE' | 'BOWL' | 'BURGER' | 'PIZZA' | 'HEART' | 'CUPCAKE';
+export type AdminWalletThemePresetKey = 'DEFAULT' | 'COFFEE' | 'RESTAURANT' | 'DESSERT' | 'MINIMAL' | 'CUSTOM';
+export type AdminWalletColorMode = 'PRESET' | 'CUSTOM';
+export type AdminStampLayoutVariant = 'MODERN' | 'COMPACT';
+
+export type AdminWalletThemePalette = {
+  walletBackgroundColor: string;
+  imageBackgroundColor: string;
+  imageSurfaceColor: string;
+  imageAccentColor: string;
+  imageTextColor: string;
+  stampFilledColor: string;
+  stampEmptyColor: string;
+  rewardBannerColor: string;
+};
+
+export type AdminLoyaltyStampPreset = {
+  key: AdminStampPresetKey;
+  label: string;
+};
+
+export type AdminWalletThemePreset = {
+  key: AdminWalletThemePresetKey;
+  label: string;
+  recommendedPalette: AdminWalletThemePalette;
+};
+
+export type AdminLoyaltyStampPresetCatalog = {
+  presets: AdminLoyaltyStampPreset[];
+  stampPresets: AdminLoyaltyStampPreset[];
+  themePresets: AdminWalletThemePreset[];
+  styleTypes: string[];
+  colorModes: AdminWalletColorMode[];
+  layoutVariants: AdminStampLayoutVariant[];
+};
+
+export type AdminLoyaltyStampStyle = AdminWalletThemePalette & {
+  id: string | null;
+  loyaltyProgramId: string;
+  styleType: 'PRESET' | string;
+  presetKey: AdminStampPresetKey;
+  backgroundColor: string;
+  accentColor: string;
+  textColor: string;
+  themePreset: AdminWalletThemePresetKey;
+  colorMode: AdminWalletColorMode;
+  layoutVariant: AdminStampLayoutVariant;
+  isDefault: boolean;
+  createdAt: string | null;
+  updatedAt: string | null;
+};
+
+export type AdminLoyaltyStampStyleInput = AdminWalletThemePalette & {
+  themePreset: AdminWalletThemePresetKey;
+  colorMode: AdminWalletColorMode;
+  presetKey: AdminStampPresetKey;
+  layoutVariant: AdminStampLayoutVariant;
+};
+
 export type AdminLoyaltyCustomer = {
   id: string;
   phone: string | null;
@@ -655,6 +714,181 @@ function parseNullableLoyaltyProgram(value: unknown): { program: AdminLoyaltyPro
   }
 
   return { program };
+}
+
+const stampPresetKeys: AdminStampPresetKey[] = ['STAR', 'COOKIE', 'COFFEE', 'BOWL', 'BURGER', 'PIZZA', 'HEART', 'CUPCAKE'];
+const walletThemePresetKeys: AdminWalletThemePresetKey[] = ['DEFAULT', 'COFFEE', 'RESTAURANT', 'DESSERT', 'MINIMAL', 'CUSTOM'];
+const walletColorModes: AdminWalletColorMode[] = ['PRESET', 'CUSTOM'];
+const stampLayoutVariants: AdminStampLayoutVariant[] = ['MODERN', 'COMPACT'];
+
+function parseStampPresetKey(value: unknown, fallback: AdminStampPresetKey): AdminStampPresetKey {
+  const normalized = readString(value)?.toUpperCase();
+
+  return stampPresetKeys.includes(normalized as AdminStampPresetKey) ? (normalized as AdminStampPresetKey) : fallback;
+}
+
+function parseWalletThemePresetKey(value: unknown, fallback: AdminWalletThemePresetKey): AdminWalletThemePresetKey {
+  const normalized = readString(value)?.toUpperCase();
+
+  return walletThemePresetKeys.includes(normalized as AdminWalletThemePresetKey) ? (normalized as AdminWalletThemePresetKey) : fallback;
+}
+
+function parseWalletColorMode(value: unknown, fallback: AdminWalletColorMode): AdminWalletColorMode {
+  const normalized = readString(value)?.toUpperCase();
+
+  return walletColorModes.includes(normalized as AdminWalletColorMode) ? (normalized as AdminWalletColorMode) : fallback;
+}
+
+function parseStampLayoutVariant(value: unknown, fallback: AdminStampLayoutVariant): AdminStampLayoutVariant {
+  const normalized = readString(value)?.toUpperCase();
+
+  return stampLayoutVariants.includes(normalized as AdminStampLayoutVariant) ? (normalized as AdminStampLayoutVariant) : fallback;
+}
+
+function parseWalletThemePalette(value: unknown): AdminWalletThemePalette | null {
+  const record = asRecord(value);
+
+  if (!record) {
+    return null;
+  }
+
+  const walletBackgroundColor = readString(record.walletBackgroundColor);
+  const imageBackgroundColor = readString(record.imageBackgroundColor);
+  const imageSurfaceColor = readString(record.imageSurfaceColor);
+  const imageAccentColor = readString(record.imageAccentColor);
+  const imageTextColor = readString(record.imageTextColor);
+  const stampFilledColor = readString(record.stampFilledColor);
+  const stampEmptyColor = readString(record.stampEmptyColor);
+  const rewardBannerColor = readString(record.rewardBannerColor);
+
+  if (
+    !walletBackgroundColor ||
+    !imageBackgroundColor ||
+    !imageSurfaceColor ||
+    !imageAccentColor ||
+    !imageTextColor ||
+    !stampFilledColor ||
+    !stampEmptyColor ||
+    !rewardBannerColor
+  ) {
+    return null;
+  }
+
+  return {
+    walletBackgroundColor,
+    imageBackgroundColor,
+    imageSurfaceColor,
+    imageAccentColor,
+    imageTextColor,
+    stampFilledColor,
+    stampEmptyColor,
+    rewardBannerColor
+  };
+}
+
+function parseLoyaltyStampPreset(value: unknown): AdminLoyaltyStampPreset | null {
+  const record = asRecord(value);
+
+  if (!record) {
+    return null;
+  }
+
+  const key = readString(record.key)?.toUpperCase();
+  const label = readString(record.label);
+
+  if (!key || !stampPresetKeys.includes(key as AdminStampPresetKey)) {
+    return null;
+  }
+
+  return {
+    key: key as AdminStampPresetKey,
+    label: label || key
+  };
+}
+
+function parseWalletThemePreset(value: unknown): AdminWalletThemePreset | null {
+  const record = asRecord(value);
+
+  if (!record) {
+    return null;
+  }
+
+  const key = readString(record.key)?.toUpperCase();
+  const label = readString(record.label);
+  const recommendedPalette = parseWalletThemePalette(record.recommendedPalette);
+
+  if (!key || !walletThemePresetKeys.includes(key as AdminWalletThemePresetKey) || !recommendedPalette) {
+    return null;
+  }
+
+  return {
+    key: key as AdminWalletThemePresetKey,
+    label: label || key,
+    recommendedPalette
+  };
+}
+
+function parseLoyaltyStampPresetCatalog(value: unknown): AdminLoyaltyStampPresetCatalog | null {
+  const record = asRecord(value);
+
+  if (!record) {
+    return null;
+  }
+
+  const stampPresetSource = Array.isArray(record.stampPresets) ? record.stampPresets : record.presets;
+  const stampPresets = Array.isArray(stampPresetSource) ? compact(stampPresetSource.map(parseLoyaltyStampPreset)) : [];
+  const themePresets = Array.isArray(record.themePresets) ? compact(record.themePresets.map(parseWalletThemePreset)) : [];
+  const colorModes = Array.isArray(record.colorModes)
+    ? compact(record.colorModes.map((value) => (walletColorModes.includes(readString(value) as AdminWalletColorMode) ? (readString(value) as AdminWalletColorMode) : null)))
+    : walletColorModes;
+  const layoutVariants = Array.isArray(record.layoutVariants)
+    ? compact(record.layoutVariants.map((value) => (stampLayoutVariants.includes(readString(value) as AdminStampLayoutVariant) ? (readString(value) as AdminStampLayoutVariant) : null)))
+    : stampLayoutVariants;
+
+  if (!stampPresets.length || !themePresets.length) {
+    return null;
+  }
+
+  return {
+    presets: stampPresets,
+    stampPresets,
+    themePresets,
+    styleTypes: Array.isArray(record.styleTypes) ? compact(record.styleTypes.map(readString)) : ['PRESET'],
+    colorModes: colorModes.length ? colorModes : walletColorModes,
+    layoutVariants: layoutVariants.length ? layoutVariants : stampLayoutVariants
+  };
+}
+
+function parseLoyaltyStampStyle(value: unknown): AdminLoyaltyStampStyle | null {
+  const record = asRecord(value);
+  const palette = parseWalletThemePalette(value);
+
+  if (!record || !palette) {
+    return null;
+  }
+
+  const loyaltyProgramId = readString(record.loyaltyProgramId);
+
+  if (!loyaltyProgramId) {
+    return null;
+  }
+
+  return {
+    id: readNullableString(record.id),
+    loyaltyProgramId,
+    styleType: readString(record.styleType) || 'PRESET',
+    presetKey: parseStampPresetKey(record.presetKey, 'STAR'),
+    backgroundColor: readString(record.backgroundColor) || palette.imageBackgroundColor,
+    accentColor: readString(record.accentColor) || palette.imageAccentColor,
+    textColor: readString(record.textColor) || palette.imageTextColor,
+    ...palette,
+    themePreset: parseWalletThemePresetKey(record.themePreset, 'DEFAULT'),
+    colorMode: parseWalletColorMode(record.colorMode, 'PRESET'),
+    layoutVariant: parseStampLayoutVariant(record.layoutVariant, 'MODERN'),
+    isDefault: readBoolean(record.isDefault),
+    createdAt: readNullableString(record.createdAt),
+    updatedAt: readNullableString(record.updatedAt)
+  };
 }
 
 function parseLoyaltyCustomer(value: unknown): AdminLoyaltyCustomer | null {
@@ -1287,6 +1521,71 @@ export async function getActiveLoyaltyProgram({
         data: result.data.program
       }
     : result;
+}
+
+export function getLoyaltyStampPresets({
+  apiBaseUrl,
+  token,
+  signal
+}: {
+  apiBaseUrl: string;
+  token: string | null;
+  signal?: AbortSignal;
+}) {
+  return requestAdminJson({
+    apiBaseUrl,
+    token,
+    path: '/loyalty/stamp-presets',
+    signal,
+    parse: parseLoyaltyStampPresetCatalog,
+    contractName: 'GET /loyalty/stamp-presets'
+  });
+}
+
+export function getLoyaltyStampStyle({
+  apiBaseUrl,
+  token,
+  businessId,
+  signal
+}: {
+  apiBaseUrl: string;
+  token: string | null;
+  businessId: string;
+  signal?: AbortSignal;
+}) {
+  return requestAdminJson({
+    apiBaseUrl,
+    token,
+    path: `/businesses/${encodeURIComponent(businessId)}/loyalty/stamp-style`,
+    signal,
+    parse: parseLoyaltyStampStyle,
+    contractName: 'GET /businesses/{id}/loyalty/stamp-style'
+  });
+}
+
+export function updateLoyaltyStampStyle({
+  apiBaseUrl,
+  token,
+  businessId,
+  input,
+  signal
+}: {
+  apiBaseUrl: string;
+  token: string | null;
+  businessId: string;
+  input: AdminLoyaltyStampStyleInput;
+  signal?: AbortSignal;
+}) {
+  return requestAdminJson({
+    apiBaseUrl,
+    token,
+    path: `/businesses/${encodeURIComponent(businessId)}/loyalty/stamp-style`,
+    method: 'PATCH',
+    body: input,
+    signal,
+    parse: parseLoyaltyStampStyle,
+    contractName: 'PATCH /businesses/{id}/loyalty/stamp-style'
+  });
 }
 
 export function createLoyaltyProgram({
