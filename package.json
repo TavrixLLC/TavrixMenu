@@ -9,6 +9,7 @@
     "build:api": "pnpm --filter tavrix-menu-api build",
     "build:customer": "pnpm --filter @tavrix-menu/customer-web build",
     "build:admin": "pnpm --filter @tavrix-menu/admin-web build",
+    "wallet:smoke-test": "pnpm --filter tavrix-menu-api wallet:smoke-test",
     "lint": "turbo run lint",
     "build": "turbo run build"
   },
