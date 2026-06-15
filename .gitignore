@@ -29,6 +29,7 @@ out/
 
 # NestJS
 *.local
+apps/api/public/generated/
 
 # Prisma
 apps/api/prisma/migrations/*/migration_lock.toml

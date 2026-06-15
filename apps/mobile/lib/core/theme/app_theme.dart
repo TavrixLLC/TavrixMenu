@@ -1,22 +1,95 @@
 import 'package:flutter/material.dart';
 
-class AppTheme {
-  static ThemeData get light {
-    const seedColor = Color(0xFF2563EB);
+import '../constants/app_colors.dart';
+import '../constants/app_radius.dart';
 
+class AppTheme {
+  const AppTheme._();
+
+  static ThemeData get light {
     return ThemeData(
-      colorScheme: ColorScheme.fromSeed(seedColor: seedColor),
+      colorScheme: ColorScheme.fromSeed(
+        seedColor: AppColors.brandGreen,
+        primary: AppColors.greenAccent,
+        secondary: AppColors.houseGreen,
+        error: AppColors.error,
+        surface: AppColors.white,
+      ),
       useMaterial3: true,
-      scaffoldBackgroundColor: const Color(0xFFF6F7F9),
+      scaffoldBackgroundColor: AppColors.neutralWarm,
+      fontFamilyFallback: const ['Arial'],
       appBarTheme: const AppBarTheme(
         centerTitle: false,
-        backgroundColor: Color(0xFFFFFFFF),
-        foregroundColor: Color(0xFF18181B),
+        backgroundColor: AppColors.neutralWarm,
+        foregroundColor: AppColors.textBlack,
+        elevation: 0,
       ),
       cardTheme: const CardThemeData(
-        color: Color(0xFFFFFFFF),
+        color: AppColors.white,
         elevation: 0,
         margin: EdgeInsets.zero,
+      ),
+      filledButtonTheme: FilledButtonThemeData(
+        style: FilledButton.styleFrom(
+          minimumSize: const Size(44, 44),
+          backgroundColor: AppColors.greenAccent,
+          foregroundColor: AppColors.white,
+          shape: const StadiumBorder(),
+          textStyle: const TextStyle(fontWeight: FontWeight.w700),
+        ),
+      ),
+      outlinedButtonTheme: OutlinedButtonThemeData(
+        style: OutlinedButton.styleFrom(
+          minimumSize: const Size(44, 44),
+          foregroundColor: AppColors.brandGreen,
+          side: const BorderSide(color: AppColors.greenAccent),
+          shape: const StadiumBorder(),
+          textStyle: const TextStyle(fontWeight: FontWeight.w700),
+        ),
+      ),
+      inputDecorationTheme: const InputDecorationTheme(
+        filled: true,
+        fillColor: AppColors.white,
+        border: OutlineInputBorder(
+          borderRadius: BorderRadius.all(Radius.circular(AppRadius.md)),
+          borderSide: BorderSide(color: AppColors.ceramic),
+        ),
+        enabledBorder: OutlineInputBorder(
+          borderRadius: BorderRadius.all(Radius.circular(AppRadius.md)),
+          borderSide: BorderSide(color: AppColors.ceramic),
+        ),
+        focusedBorder: OutlineInputBorder(
+          borderRadius: BorderRadius.all(Radius.circular(AppRadius.md)),
+          borderSide: BorderSide(color: AppColors.greenAccent, width: 1.5),
+        ),
+        errorBorder: OutlineInputBorder(
+          borderRadius: BorderRadius.all(Radius.circular(AppRadius.md)),
+          borderSide: BorderSide(color: AppColors.error),
+        ),
+      ),
+      textTheme: const TextTheme(
+        headlineMedium: TextStyle(
+          color: AppColors.textBlack,
+          fontSize: 28,
+          fontWeight: FontWeight.w800,
+        ),
+        headlineSmall: TextStyle(
+          color: AppColors.textBlack,
+          fontSize: 24,
+          fontWeight: FontWeight.w800,
+        ),
+        titleLarge: TextStyle(
+          color: AppColors.textBlack,
+          fontSize: 20,
+          fontWeight: FontWeight.w800,
+        ),
+        titleMedium: TextStyle(
+          color: AppColors.textBlack,
+          fontSize: 16,
+          fontWeight: FontWeight.w700,
+        ),
+        bodyLarge: TextStyle(color: AppColors.textBlack, fontSize: 16),
+        bodyMedium: TextStyle(color: AppColors.textBlackSoft, fontSize: 14),
       ),
     );
   }
