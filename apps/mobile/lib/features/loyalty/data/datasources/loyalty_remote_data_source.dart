@@ -6,12 +6,23 @@ import '../models/loyalty_action_result_model.dart';
 import '../models/loyalty_enroll_result_model.dart';
 import '../models/loyalty_membership_model.dart';
 import '../models/loyalty_program_model.dart';
+import '../models/loyalty_stamp_presets_model.dart';
+import '../models/loyalty_stamp_style_model.dart';
 import '../models/loyalty_transaction_model.dart';
 
 abstract class LoyaltyRemoteDataSource {
   bool get canCallBackend;
 
   Future<LoyaltyProgramModel?> getActiveProgram(String businessId);
+
+  Future<LoyaltyStampPresetsModel> getStampPresets();
+
+  Future<LoyaltyStampStyleModel?> getStampStyle(String businessId);
+
+  Future<LoyaltyStampStyleModel> updateStampStyle({
+    required String businessId,
+    required UpdateLoyaltyStampStyleRequest request,
+  });
 
   Future<LoyaltyProgramModel> createProgram({
     required String businessId,
@@ -74,6 +85,35 @@ class LoyaltyRemoteDataSourceImpl implements LoyaltyRemoteDataSource {
       data,
       context: 'active loyalty program response',
     );
+  }
+
+  @override
+  Future<LoyaltyStampPresetsModel> getStampPresets() async {
+    final data = await apiClient.get('/loyalty/stamp-presets');
+    return _parseStampPresets(data);
+  }
+
+  @override
+  Future<LoyaltyStampStyleModel?> getStampStyle(String businessId) async {
+    final data = await apiClient.get(
+      '/businesses/$businessId/loyalty/stamp-style',
+    );
+    return _parseStampStyleOrNull(
+      data,
+      context: 'loyalty stamp style response',
+    );
+  }
+
+  @override
+  Future<LoyaltyStampStyleModel> updateStampStyle({
+    required String businessId,
+    required UpdateLoyaltyStampStyleRequest request,
+  }) async {
+    final data = await apiClient.patch(
+      '/businesses/$businessId/loyalty/stamp-style',
+      body: request.toJson(),
+    );
+    return _parseStampStyle(data, context: 'update loyalty stamp style');
   }
 
   @override
@@ -229,6 +269,58 @@ class LoyaltyRemoteDataSourceImpl implements LoyaltyRemoteDataSource {
     }
   }
 
+  LoyaltyStampPresetsModel _parseStampPresets(dynamic data) {
+    final json = _toObject(data, context: 'loyalty stamp presets response');
+
+    try {
+      return LoyaltyStampPresetsModel.fromJson(json);
+    } on ServerException {
+      rethrow;
+    } on ValidationException {
+      rethrow;
+    } catch (_) {
+      throw const ServerException('Invalid loyalty stamp presets response.');
+    }
+  }
+
+  LoyaltyStampStyleModel? _parseStampStyleOrNull(
+    dynamic data, {
+    required String context,
+  }) {
+    if (data == null) {
+      return null;
+    }
+
+    if (data is Map) {
+      final json = asJsonObject(data, context: context);
+      if (json.isEmpty) {
+        return null;
+      }
+      if (json.containsKey('data') && json['data'] == null) {
+        return null;
+      }
+    }
+
+    return _parseStampStyle(data, context: context);
+  }
+
+  LoyaltyStampStyleModel _parseStampStyle(
+    dynamic data, {
+    required String context,
+  }) {
+    final json = _toObject(data, context: context);
+
+    try {
+      return LoyaltyStampStyleModel.fromJson(json);
+    } on ServerException {
+      rethrow;
+    } on ValidationException {
+      rethrow;
+    } catch (_) {
+      throw ServerException('Invalid $context.');
+    }
+  }
+
   LoyaltyEnrollResultModel _parseEnrollResult(dynamic data) {
     final json = asJsonObject(
       data,
@@ -319,5 +411,18 @@ class LoyaltyRemoteDataSourceImpl implements LoyaltyRemoteDataSource {
     }
 
     return asJsonObjectList(data, context: context);
+  }
+
+  Map<String, dynamic> _toObject(dynamic data, {required String context}) {
+    if (data is Map) {
+      final json = asJsonObject(data, context: context);
+      final nested = json['data'] ?? json['style'] ?? json['stampStyle'];
+      if (nested is Map) {
+        return asJsonObject(nested, context: context);
+      }
+      return json;
+    }
+
+    return asJsonObject(data, context: context);
   }
 }

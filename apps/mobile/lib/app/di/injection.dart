@@ -24,10 +24,13 @@ import '../../features/loyalty/domain/usecases/create_loyalty_program.dart';
 import '../../features/loyalty/domain/usecases/enroll_loyalty_customer.dart';
 import '../../features/loyalty/domain/usecases/get_active_loyalty_program.dart';
 import '../../features/loyalty/domain/usecases/get_loyalty_membership.dart';
+import '../../features/loyalty/domain/usecases/get_loyalty_stamp_presets.dart';
+import '../../features/loyalty/domain/usecases/get_loyalty_stamp_style.dart';
 import '../../features/loyalty/domain/usecases/list_loyalty_memberships.dart';
 import '../../features/loyalty/domain/usecases/list_loyalty_transactions.dart';
 import '../../features/loyalty/domain/usecases/redeem_loyalty_reward.dart';
 import '../../features/loyalty/domain/usecases/update_loyalty_program.dart';
+import '../../features/loyalty/domain/usecases/update_loyalty_stamp_style.dart';
 import '../../features/loyalty/presentation/bloc/loyalty_cubit.dart';
 import '../../features/menu/data/datasources/menu_remote_data_source.dart';
 import '../../features/menu/data/repositories/menu_repository_impl.dart';
@@ -128,6 +131,9 @@ class AppDependencies {
     final addLoyaltyStamps = AddLoyaltyStamps(loyaltyRepository);
     final redeemLoyaltyReward = RedeemLoyaltyReward(loyaltyRepository);
     final listLoyaltyTransactions = ListLoyaltyTransactions(loyaltyRepository);
+    final getLoyaltyStampPresets = GetLoyaltyStampPresets(loyaltyRepository);
+    final getLoyaltyStampStyle = GetLoyaltyStampStyle(loyaltyRepository);
+    final updateLoyaltyStampStyle = UpdateLoyaltyStampStyle(loyaltyRepository);
 
     return AppDependencies._(
       config: resolvedConfig,
@@ -171,6 +177,9 @@ class AppDependencies {
         addStamps: addLoyaltyStamps,
         redeemReward: redeemLoyaltyReward,
         listTransactions: listLoyaltyTransactions,
+        getStampPresets: getLoyaltyStampPresets,
+        getStampStyle: getLoyaltyStampStyle,
+        updateStampStyle: updateLoyaltyStampStyle,
       ),
     );
   }

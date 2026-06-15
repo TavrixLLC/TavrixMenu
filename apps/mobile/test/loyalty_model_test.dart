@@ -1,6 +1,8 @@
 import 'package:flutter_test/flutter_test.dart';
 import 'package:tavrix_menu_mobile/features/loyalty/data/models/loyalty_membership_model.dart';
 import 'package:tavrix_menu_mobile/features/loyalty/data/models/loyalty_program_model.dart';
+import 'package:tavrix_menu_mobile/features/loyalty/data/models/loyalty_stamp_presets_model.dart';
+import 'package:tavrix_menu_mobile/features/loyalty/data/models/loyalty_stamp_style_model.dart';
 import 'package:tavrix_menu_mobile/features/loyalty/data/models/loyalty_transaction_model.dart';
 
 void main() {
@@ -84,5 +86,49 @@ void main() {
     expect(known.stampsDelta, 1);
     expect(unknown.type, 'CUSTOM_EVENT');
     expect(unknown.stampsDelta, 0);
+  });
+
+  test('parses Sprint 8 stamp presets response', () {
+    final model = LoyaltyStampPresetsModel.fromJson({
+      'presets': [
+        {'key': 'STAR', 'label': 'Star'},
+        {'key': 'COFFEE', 'label': 'Coffee'},
+      ],
+      'styleTypes': ['PRESET'],
+      'layoutVariants': ['MODERN', 'COMPACT'],
+    });
+
+    expect(model.presets, hasLength(2));
+    expect(model.presets.last.key, 'COFFEE');
+    expect(model.styleTypes, ['PRESET']);
+    expect(model.layoutVariants, ['MODERN', 'COMPACT']);
+  });
+
+  test('parses Sprint 8 stamp style response with nullable fields', () {
+    final model = LoyaltyStampStyleModel.fromJson({
+      'id': 'stamp_style_id',
+      'loyaltyProgramId': 'loyalty_program_id',
+      'styleType': 'PRESET',
+      'presetKey': 'STAR',
+      'backgroundColor': '#111827',
+      'accentColor': '#f59e0b',
+      'textColor': '#ffffff',
+      'layoutVariant': 'MODERN',
+      'isDefault': false,
+      'createdAt': '2026-06-15T00:00:00.000Z',
+      'updatedAt': '2026-06-15T00:00:00.000Z',
+    });
+
+    expect(model.id, 'stamp_style_id');
+    expect(model.loyaltyProgramId, 'loyalty_program_id');
+    expect(model.presetKey, 'STAR');
+    expect(model.backgroundColor, '#111827');
+    expect(model.isDefault, isFalse);
+
+    final sparse = LoyaltyStampStyleModel.fromJson({'id': null});
+    expect(sparse.id, '');
+    expect(sparse.styleType, 'PRESET');
+    expect(sparse.presetKey, 'STAR');
+    expect(sparse.layoutVariant, 'MODERN');
   });
 }

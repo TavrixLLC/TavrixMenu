@@ -58,4 +58,48 @@ void main() {
       'terms': 'Dine-in only',
     });
   });
+
+  test('stamp style update request sends supported Sprint 8 fields', () {
+    final request = UpdateLoyaltyStampStyleRequest(
+      styleType: ' PRESET ',
+      presetKey: ' COFFEE ',
+      themePreset: ' CUSTOM ',
+      colorMode: ' CUSTOM ',
+      backgroundColor: ' #111827 ',
+      accentColor: ' #f59e0b ',
+      textColor: ' #ffffff ',
+      walletBackgroundColor: ' #2563eb ',
+      imageBackgroundColor: ' #7c2d12 ',
+      imageSurfaceColor: ' #92400e ',
+      imageAccentColor: ' #facc15 ',
+      imageTextColor: ' #ffffff ',
+      stampFilledColor: ' #facc15 ',
+      stampEmptyColor: ' #d6d3d1 ',
+      rewardBannerColor: ' #a16207 ',
+      layoutVariant: ' MODERN ',
+    );
+
+    expect(request.toJson(), {
+      'styleType': 'PRESET',
+      'presetKey': 'COFFEE',
+      'themePreset': 'CUSTOM',
+      'colorMode': 'CUSTOM',
+      'backgroundColor': '#111827',
+      'accentColor': '#f59e0b',
+      'textColor': '#ffffff',
+      'walletBackgroundColor': '#2563eb',
+      'imageBackgroundColor': '#7c2d12',
+      'imageSurfaceColor': '#92400e',
+      'imageAccentColor': '#facc15',
+      'imageTextColor': '#ffffff',
+      'stampFilledColor': '#facc15',
+      'stampEmptyColor': '#d6d3d1',
+      'rewardBannerColor': '#a16207',
+      'layoutVariant': 'MODERN',
+    });
+
+    expect(const UpdateLoyaltyStampStyleRequest(styleType: '').toJson(), {
+      'styleType': 'PRESET',
+    });
+  });
 }

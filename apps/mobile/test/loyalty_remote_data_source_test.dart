@@ -68,6 +68,71 @@ void main() {
     );
     expect(apiClient.lastPostBody, isEmpty);
   });
+
+  test('stamp style endpoints send Sprint 8 paths and DTO body', () async {
+    final apiClient = _RecordingApiClient(
+      response: {
+        'presets': [
+          {'key': 'STAR', 'label': 'Star'},
+          {'key': 'COFFEE', 'label': 'Coffee'},
+        ],
+        'styleTypes': ['PRESET'],
+        'layoutVariants': ['MODERN', 'COMPACT'],
+      },
+    );
+    final dataSource = LoyaltyRemoteDataSourceImpl(apiClient);
+
+    final presets = await dataSource.getStampPresets();
+    expect(apiClient.lastGetPath, '/loyalty/stamp-presets');
+    expect(presets.presets.last.key, 'COFFEE');
+
+    apiClient.response = _stampStyleResponse(presetKey: 'STAR');
+    final style = await dataSource.getStampStyle('bus_123');
+    expect(apiClient.lastGetPath, '/businesses/bus_123/loyalty/stamp-style');
+    expect(style?.presetKey, 'STAR');
+
+    apiClient.response = _stampStyleResponse(presetKey: 'COFFEE');
+    await dataSource.updateStampStyle(
+      businessId: 'bus_123',
+      request: const UpdateLoyaltyStampStyleRequest(
+        presetKey: 'COFFEE',
+        themePreset: 'CUSTOM',
+        colorMode: 'CUSTOM',
+        backgroundColor: '#111827',
+        accentColor: '#f59e0b',
+        textColor: '#ffffff',
+        walletBackgroundColor: '#2563eb',
+        imageBackgroundColor: '#7c2d12',
+        imageSurfaceColor: '#92400e',
+        imageAccentColor: '#facc15',
+        imageTextColor: '#ffffff',
+        stampFilledColor: '#facc15',
+        stampEmptyColor: '#d6d3d1',
+        rewardBannerColor: '#a16207',
+        layoutVariant: 'MODERN',
+      ),
+    );
+
+    expect(apiClient.lastPatchPath, '/businesses/bus_123/loyalty/stamp-style');
+    expect(apiClient.lastPatchBody, {
+      'styleType': 'PRESET',
+      'presetKey': 'COFFEE',
+      'themePreset': 'CUSTOM',
+      'colorMode': 'CUSTOM',
+      'backgroundColor': '#111827',
+      'accentColor': '#f59e0b',
+      'textColor': '#ffffff',
+      'walletBackgroundColor': '#2563eb',
+      'imageBackgroundColor': '#7c2d12',
+      'imageSurfaceColor': '#92400e',
+      'imageAccentColor': '#facc15',
+      'imageTextColor': '#ffffff',
+      'stampFilledColor': '#facc15',
+      'stampEmptyColor': '#d6d3d1',
+      'rewardBannerColor': '#a16207',
+      'layoutVariant': 'MODERN',
+    });
+  });
 }
 
 class _RecordingApiClient extends ApiClient {
@@ -89,6 +154,8 @@ class _RecordingApiClient extends ApiClient {
   Map<String, dynamic>? lastGetQuery;
   String? lastPostPath;
   Map<String, dynamic>? lastPostBody;
+  String? lastPatchPath;
+  Map<String, dynamic>? lastPatchBody;
 
   @override
   Future<dynamic> get(
@@ -104,6 +171,13 @@ class _RecordingApiClient extends ApiClient {
   Future<dynamic> post(String path, {Map<String, dynamic>? body}) async {
     lastPostPath = path;
     lastPostBody = body;
+    return response;
+  }
+
+  @override
+  Future<dynamic> patch(String path, {Map<String, dynamic>? body}) async {
+    lastPatchPath = path;
+    lastPatchBody = body;
     return response;
   }
 }
@@ -163,5 +237,21 @@ Map<String, dynamic> _actionResponse({
       'rewardName': 'Free coffee',
       'programName': 'Tavrix Cafe Stamp Card',
     },
+  };
+}
+
+Map<String, dynamic> _stampStyleResponse({required String presetKey}) {
+  return {
+    'id': 'stamp_style_id',
+    'loyaltyProgramId': 'loyalty_program_id',
+    'styleType': 'PRESET',
+    'presetKey': presetKey,
+    'backgroundColor': '#111827',
+    'accentColor': '#f59e0b',
+    'textColor': '#ffffff',
+    'layoutVariant': 'MODERN',
+    'isDefault': false,
+    'createdAt': '2026-06-15T00:00:00.000Z',
+    'updatedAt': '2026-06-15T00:00:00.000Z',
   };
 }

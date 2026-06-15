@@ -11,6 +11,7 @@ import '../../domain/entities/loyalty_enroll_result.dart';
 import '../../domain/entities/loyalty_membership.dart';
 import '../../domain/entities/loyalty_program.dart';
 import '../../domain/entities/loyalty_requests.dart';
+import '../../domain/entities/loyalty_stamp_style.dart';
 import '../../domain/entities/loyalty_transaction.dart';
 import '../../domain/repositories/loyalty_repository.dart';
 import '../datasources/loyalty_remote_data_source.dart';
@@ -65,12 +66,29 @@ class LoyaltyRepositoryImpl implements LoyaltyRepository {
         createdAt: '2026-06-13T00:00:00.000Z',
       ),
     ];
+    _stampStyle = const LoyaltyStampStyle(
+      id: 'dev-stamp-style',
+      loyaltyProgramId: 'dev-loyalty-program',
+      styleType: 'PRESET',
+      presetKey: 'STAR',
+      themePreset: 'DEFAULT',
+      colorMode: 'PRESET',
+      backgroundColor: '#111827',
+      accentColor: '#f59e0b',
+      textColor: '#ffffff',
+      stampFilledColor: '#facc15',
+      stampEmptyColor: '#d6d3d1',
+      rewardBannerColor: '#a16207',
+      layoutVariant: 'MODERN',
+      isDefault: false,
+    );
   }
 
   final LoyaltyRemoteDataSource _remoteDataSource;
   final NetworkInfo _networkInfo;
   final bool _devFallbackEnabled;
   late LoyaltyProgram? _program;
+  late LoyaltyStampStyle? _stampStyle;
   late List<LoyaltyCustomer> _customers;
   late List<LoyaltyMembership> _memberships;
   late List<LoyaltyTransaction> _transactions;
@@ -87,6 +105,85 @@ class LoyaltyRepositoryImpl implements LoyaltyRepository {
 
       final model = await _remoteDataSource.getActiveProgram(businessId);
       return model?.toEntity();
+    }, _networkInfo);
+  }
+
+  @override
+  Future<Either<Failure, LoyaltyStampPresets>> getStampPresets() {
+    return runSafe(() async {
+      if (_useDevData) {
+        return _devStampPresets;
+      }
+
+      final model = await _remoteDataSource.getStampPresets();
+      return model.toEntity();
+    }, _networkInfo);
+  }
+
+  @override
+  Future<Either<Failure, LoyaltyStampStyle?>> getStampStyle(String businessId) {
+    return runSafe(() async {
+      if (_useDevData) {
+        final program = _program;
+        if (program == null || !program.isActive) {
+          throw const NotFoundException();
+        }
+        return _stampStyle;
+      }
+
+      final model = await _remoteDataSource.getStampStyle(businessId);
+      return model?.toEntity();
+    }, _networkInfo);
+  }
+
+  @override
+  Future<Either<Failure, LoyaltyStampStyle>> updateStampStyle({
+    required String businessId,
+    required UpdateLoyaltyStampStyleRequest request,
+  }) {
+    return runSafe(() async {
+      if (_useDevData) {
+        final program = _program;
+        if (program == null || !program.isActive) {
+          throw const NotFoundException();
+        }
+
+        final now = DateTime.now().toIso8601String();
+        _stampStyle = LoyaltyStampStyle(
+          id: _stampStyle?.id ?? 'dev-stamp-style',
+          loyaltyProgramId: program.id,
+          styleType: _clean(request.styleType) ?? 'PRESET',
+          presetKey:
+              _clean(request.presetKey) ?? _stampStyle?.presetKey ?? 'STAR',
+          themePreset: _clean(request.themePreset),
+          colorMode: _clean(request.colorMode),
+          backgroundColor: _clean(request.backgroundColor),
+          accentColor: _clean(request.accentColor),
+          textColor: _clean(request.textColor),
+          walletBackgroundColor: _clean(request.walletBackgroundColor),
+          imageBackgroundColor: _clean(request.imageBackgroundColor),
+          imageSurfaceColor: _clean(request.imageSurfaceColor),
+          imageAccentColor: _clean(request.imageAccentColor),
+          imageTextColor: _clean(request.imageTextColor),
+          stampFilledColor: _clean(request.stampFilledColor),
+          stampEmptyColor: _clean(request.stampEmptyColor),
+          rewardBannerColor: _clean(request.rewardBannerColor),
+          layoutVariant:
+              _clean(request.layoutVariant) ??
+              _stampStyle?.layoutVariant ??
+              'MODERN',
+          isDefault: false,
+          createdAt: _stampStyle?.createdAt ?? now,
+          updatedAt: now,
+        );
+        return _stampStyle!;
+      }
+
+      final model = await _remoteDataSource.updateStampStyle(
+        businessId: businessId,
+        request: request,
+      );
+      return model.toEntity();
     }, _networkInfo);
   }
 
@@ -529,3 +626,18 @@ String? _clean(String? value) {
   }
   return trimmed;
 }
+
+const _devStampPresets = LoyaltyStampPresets(
+  presets: [
+    LoyaltyStampPreset(key: 'STAR', label: 'Star'),
+    LoyaltyStampPreset(key: 'COOKIE', label: 'Cookie'),
+    LoyaltyStampPreset(key: 'COFFEE', label: 'Coffee'),
+    LoyaltyStampPreset(key: 'BOWL', label: 'Bowl'),
+    LoyaltyStampPreset(key: 'BURGER', label: 'Burger'),
+    LoyaltyStampPreset(key: 'PIZZA', label: 'Pizza'),
+    LoyaltyStampPreset(key: 'HEART', label: 'Heart'),
+    LoyaltyStampPreset(key: 'CUPCAKE', label: 'Cupcake'),
+  ],
+  styleTypes: ['PRESET'],
+  layoutVariants: ['MODERN', 'COMPACT'],
+);

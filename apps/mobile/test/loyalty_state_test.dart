@@ -21,6 +21,9 @@ void main() {
       expect(owner.canConfigureProgram, isTrue);
       expect(manager.canConfigureProgram, isTrue);
       expect(staff.canConfigureProgram, isFalse);
+      expect(owner.canConfigureStampStyle, isTrue);
+      expect(manager.canConfigureStampStyle, isTrue);
+      expect(staff.canConfigureStampStyle, isFalse);
       expect(staff.canUseDailyOperations, isTrue);
       expect(owner.canViewEnrollmentLink, isTrue);
       expect(manager.canViewEnrollmentLink, isTrue);

@@ -6,10 +6,20 @@ import '../entities/loyalty_enroll_result.dart';
 import '../entities/loyalty_membership.dart';
 import '../entities/loyalty_program.dart';
 import '../entities/loyalty_requests.dart';
+import '../entities/loyalty_stamp_style.dart';
 import '../entities/loyalty_transaction.dart';
 
 abstract class LoyaltyRepository {
   Future<Either<Failure, LoyaltyProgram?>> getActiveProgram(String businessId);
+
+  Future<Either<Failure, LoyaltyStampPresets>> getStampPresets();
+
+  Future<Either<Failure, LoyaltyStampStyle?>> getStampStyle(String businessId);
+
+  Future<Either<Failure, LoyaltyStampStyle>> updateStampStyle({
+    required String businessId,
+    required UpdateLoyaltyStampStyleRequest request,
+  });
 
   Future<Either<Failure, LoyaltyProgram>> createProgram({
     required String businessId,

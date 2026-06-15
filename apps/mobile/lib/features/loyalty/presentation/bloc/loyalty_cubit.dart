@@ -12,10 +12,13 @@ import '../../domain/usecases/create_loyalty_program.dart';
 import '../../domain/usecases/enroll_loyalty_customer.dart';
 import '../../domain/usecases/get_active_loyalty_program.dart';
 import '../../domain/usecases/get_loyalty_membership.dart';
+import '../../domain/usecases/get_loyalty_stamp_presets.dart';
+import '../../domain/usecases/get_loyalty_stamp_style.dart';
 import '../../domain/usecases/list_loyalty_memberships.dart';
 import '../../domain/usecases/list_loyalty_transactions.dart';
 import '../../domain/usecases/redeem_loyalty_reward.dart';
 import '../../domain/usecases/update_loyalty_program.dart';
+import '../../domain/usecases/update_loyalty_stamp_style.dart';
 import 'loyalty_state.dart';
 
 class LoyaltyCubit extends Cubit<LoyaltyState> {
@@ -31,6 +34,9 @@ class LoyaltyCubit extends Cubit<LoyaltyState> {
     required AddLoyaltyStamps addStamps,
     required RedeemLoyaltyReward redeemReward,
     required ListLoyaltyTransactions listTransactions,
+    required GetLoyaltyStampPresets getStampPresets,
+    required GetLoyaltyStampStyle getStampStyle,
+    required UpdateLoyaltyStampStyle updateStampStyle,
   }) : _getMyBusiness = getMyBusiness,
        _getDashboardSummary = getDashboardSummary,
        _getActiveProgram = getActiveProgram,
@@ -42,6 +48,9 @@ class LoyaltyCubit extends Cubit<LoyaltyState> {
        _addStamps = addStamps,
        _redeemReward = redeemReward,
        _listTransactions = listTransactions,
+       _getStampPresets = getStampPresets,
+       _getStampStyle = getStampStyle,
+       _updateStampStyle = updateStampStyle,
        super(const LoyaltyState.initial());
 
   final GetMyBusiness _getMyBusiness;
@@ -55,6 +64,9 @@ class LoyaltyCubit extends Cubit<LoyaltyState> {
   final AddLoyaltyStamps _addStamps;
   final RedeemLoyaltyReward _redeemReward;
   final ListLoyaltyTransactions _listTransactions;
+  final GetLoyaltyStampPresets _getStampPresets;
+  final GetLoyaltyStampStyle _getStampStyle;
+  final UpdateLoyaltyStampStyle _updateStampStyle;
 
   Future<void> load({String search = ''}) async {
     emit(
@@ -64,9 +76,14 @@ class LoyaltyCubit extends Cubit<LoyaltyState> {
         isSearching: false,
         isDetailLoading: false,
         isMutating: false,
+        isLoadingStampPresets: false,
+        isLoadingStampStyle: false,
+        isSavingStampStyle: false,
         clearError: true,
         clearSuccess: true,
         clearSummaryError: true,
+        clearStampStyleError: true,
+        clearStampStyleSaveSuccess: true,
       ),
     );
 
@@ -114,6 +131,8 @@ class LoyaltyCubit extends Cubit<LoyaltyState> {
                   ),
                 ),
               );
+              await loadStampPresets();
+              await loadStampStyle();
               return;
             }
 
@@ -142,6 +161,12 @@ class LoyaltyCubit extends Cubit<LoyaltyState> {
               );
             }
 
+            final loadNote = membershipErrorMessage == null
+                ? summaryErrorMessage
+                : _joinNotes(
+                    summaryErrorMessage,
+                    'Customer memberships could not load right now.',
+                  );
             emit(
               LoyaltyState(
                 status: LoyaltyStatus.success,
@@ -151,13 +176,130 @@ class LoyaltyCubit extends Cubit<LoyaltyState> {
                 program: program,
                 memberships: memberships,
                 searchQuery: search,
-                summaryErrorMessage: summaryErrorMessage,
-                errorMessage: membershipErrorMessage,
+                summaryErrorMessage: loadNote,
               ),
             );
+            await loadStampPresets();
+            await loadStampStyle();
           },
         );
       },
+    );
+  }
+
+  Future<void> loadStampPresets() async {
+    emit(
+      state.copyWith(
+        isLoadingStampPresets: true,
+        clearStampStyleError: true,
+        clearStampStyleSaveSuccess: true,
+      ),
+    );
+
+    final result = await _getStampPresets();
+    result.fold(
+      (failure) => emit(
+        state.copyWith(
+          isLoadingStampPresets: false,
+          clearStampStyleError: true,
+        ),
+      ),
+      (presets) => emit(
+        state.copyWith(
+          stampPresets: presets,
+          isLoadingStampPresets: false,
+          clearStampStyleError: true,
+        ),
+      ),
+    );
+  }
+
+  Future<void> loadStampStyle() async {
+    final business = state.business;
+    if (business == null || business.id.trim().isEmpty) {
+      return;
+    }
+    if (state.program == null) {
+      emit(
+        state.copyWith(
+          isLoadingStampStyle: false,
+          clearStampStyle: true,
+          stampStyleError:
+              'No active loyalty program is available for card styling yet.',
+        ),
+      );
+      return;
+    }
+
+    emit(
+      state.copyWith(
+        isLoadingStampStyle: true,
+        clearStampStyleError: true,
+        clearStampStyleSaveSuccess: true,
+      ),
+    );
+
+    final result = await _getStampStyle(business.id);
+    result.fold(
+      (failure) {
+        emit(
+          state.copyWith(
+            isLoadingStampStyle: false,
+            clearStampStyle: true,
+            clearStampStyleError: true,
+          ),
+        );
+      },
+      (style) => emit(
+        state.copyWith(
+          stampStyle: style,
+          isLoadingStampStyle: false,
+          clearStampStyle: style == null,
+          clearStampStyleError: true,
+        ),
+      ),
+    );
+  }
+
+  Future<void> updateStampStyle(UpdateLoyaltyStampStyleRequest request) async {
+    final business = state.business;
+    if (business == null || business.id.trim().isEmpty) {
+      return;
+    }
+    if (!_ensureCanConfigureStampStyle()) {
+      return;
+    }
+
+    emit(
+      state.copyWith(
+        isSavingStampStyle: true,
+        stampStyleSaveSuccess: false,
+        clearStampStyleError: true,
+        clearSuccess: true,
+      ),
+    );
+
+    final result = await _updateStampStyle(
+      businessId: business.id,
+      request: request,
+    );
+    result.fold(
+      (failure) => emit(
+        state.copyWith(
+          isSavingStampStyle: false,
+          stampStyleError: failureMessage(failure),
+          stampStyleSaveSuccess: false,
+        ),
+      ),
+      (style) => emit(
+        state.copyWith(
+          stampStyle: style,
+          isSavingStampStyle: false,
+          stampStyleSaveSuccess: true,
+          successMessage: 'Loyalty card style saved.',
+          clearStampStyleError: true,
+        ),
+      ),
     );
   }
 
@@ -494,6 +636,22 @@ class LoyaltyCubit extends Cubit<LoyaltyState> {
 
     _emitOperationFailure(
       'Only owners and managers can configure the loyalty program.',
+    );
+    return false;
+  }
+
+  bool _ensureCanConfigureStampStyle() {
+    if (state.canConfigureStampStyle) {
+      return true;
+    }
+
+    emit(
+      state.copyWith(
+        status: LoyaltyStatus.success,
+        isSavingStampStyle: false,
+        stampStyleError: 'Only owners and managers can edit the card style.',
+        clearStampStyleSaveSuccess: true,
+      ),
     );
     return false;
   }

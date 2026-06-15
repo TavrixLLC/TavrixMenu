@@ -20,6 +20,7 @@ import '../../domain/entities/loyalty_transaction.dart';
 import '../bloc/loyalty_cubit.dart';
 import '../bloc/loyalty_state.dart';
 import '../widgets/loyalty_enrollment_card.dart';
+import '../widgets/loyalty_stamp_style_card.dart';
 
 class LoyaltyScreen extends StatefulWidget {
   const LoyaltyScreen({super.key, this.customerWebBaseUrl = ''});
@@ -116,6 +117,21 @@ class _LoyaltyScreenState extends State<LoyaltyScreen> {
                 onSetup: () => _showProgramDialog(context),
                 onEdit: (program) =>
                     _showProgramDialog(context, program: program),
+              ),
+              const SizedBox(height: AppSpacing.lg),
+              LoyaltyStampStyleCard(
+                stampPresets: state.stampPresets,
+                stampStyle: state.stampStyle,
+                businessName: business.name,
+                program: state.program,
+                selectedMembership: state.selectedMembership,
+                canEdit: state.canConfigureStampStyle,
+                isLoading:
+                    state.isLoadingStampPresets || state.isLoadingStampStyle,
+                isSaving: state.isSavingStampStyle,
+                errorMessage: state.stampStyleError,
+                onSave: (request) =>
+                    context.read<LoyaltyCubit>().updateStampStyle(request),
               ),
               const SizedBox(height: AppSpacing.lg),
               if (state.canViewEnrollmentLink)

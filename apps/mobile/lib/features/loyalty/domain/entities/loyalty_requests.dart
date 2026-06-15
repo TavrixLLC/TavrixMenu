@@ -56,6 +56,94 @@ class LoyaltyProgramRequest extends Equatable {
   ];
 }
 
+class UpdateLoyaltyStampStyleRequest extends Equatable {
+  const UpdateLoyaltyStampStyleRequest({
+    this.styleType = 'PRESET',
+    this.presetKey,
+    this.themePreset,
+    this.colorMode,
+    this.backgroundColor,
+    this.accentColor,
+    this.textColor,
+    this.walletBackgroundColor,
+    this.imageBackgroundColor,
+    this.imageSurfaceColor,
+    this.imageAccentColor,
+    this.imageTextColor,
+    this.stampFilledColor,
+    this.stampEmptyColor,
+    this.rewardBannerColor,
+    this.layoutVariant,
+  });
+
+  final String styleType;
+  final String? presetKey;
+  final String? themePreset;
+  final String? colorMode;
+  final String? backgroundColor;
+  final String? accentColor;
+  final String? textColor;
+  final String? walletBackgroundColor;
+  final String? imageBackgroundColor;
+  final String? imageSurfaceColor;
+  final String? imageAccentColor;
+  final String? imageTextColor;
+  final String? stampFilledColor;
+  final String? stampEmptyColor;
+  final String? rewardBannerColor;
+  final String? layoutVariant;
+
+  Map<String, dynamic> toJson() {
+    return {
+      'styleType': styleType.trim().isEmpty ? 'PRESET' : styleType.trim(),
+      if (_clean(presetKey) != null) 'presetKey': _clean(presetKey),
+      if (_clean(themePreset) != null) 'themePreset': _clean(themePreset),
+      if (_clean(colorMode) != null) 'colorMode': _clean(colorMode),
+      if (_clean(backgroundColor) != null)
+        'backgroundColor': _clean(backgroundColor),
+      if (_clean(accentColor) != null) 'accentColor': _clean(accentColor),
+      if (_clean(textColor) != null) 'textColor': _clean(textColor),
+      if (_clean(walletBackgroundColor) != null)
+        'walletBackgroundColor': _clean(walletBackgroundColor),
+      if (_clean(imageBackgroundColor) != null)
+        'imageBackgroundColor': _clean(imageBackgroundColor),
+      if (_clean(imageSurfaceColor) != null)
+        'imageSurfaceColor': _clean(imageSurfaceColor),
+      if (_clean(imageAccentColor) != null)
+        'imageAccentColor': _clean(imageAccentColor),
+      if (_clean(imageTextColor) != null)
+        'imageTextColor': _clean(imageTextColor),
+      if (_clean(stampFilledColor) != null)
+        'stampFilledColor': _clean(stampFilledColor),
+      if (_clean(stampEmptyColor) != null)
+        'stampEmptyColor': _clean(stampEmptyColor),
+      if (_clean(rewardBannerColor) != null)
+        'rewardBannerColor': _clean(rewardBannerColor),
+      if (_clean(layoutVariant) != null) 'layoutVariant': _clean(layoutVariant),
+    };
+  }
+
+  @override
+  List<Object?> get props => [
+    styleType,
+    presetKey,
+    themePreset,
+    colorMode,
+    backgroundColor,
+    accentColor,
+    textColor,
+    walletBackgroundColor,
+    imageBackgroundColor,
+    imageSurfaceColor,
+    imageAccentColor,
+    imageTextColor,
+    stampFilledColor,
+    stampEmptyColor,
+    rewardBannerColor,
+    layoutVariant,
+  ];
+}
+
 class EnrollLoyaltyCustomerRequest extends Equatable {
   const EnrollLoyaltyCustomerRequest({
     this.phone,
