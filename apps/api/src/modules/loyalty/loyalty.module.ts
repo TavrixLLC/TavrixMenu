@@ -2,13 +2,19 @@ import { Module } from '@nestjs/common';
 import { AuthModule } from '../auth/auth.module';
 import { BusinessesModule } from '../businesses/businesses.module';
 import { LoyaltyController } from './loyalty.controller';
+import { LoyaltyStampPresetsController } from './loyalty-stamp-presets.controller';
+import { LoyaltyStampStyleService } from './loyalty-stamp-style.service';
 import { LoyaltyService } from './loyalty.service';
 import { PublicLoyaltyController } from './public-loyalty.controller';
 import { PublicLoyaltyService } from './public-loyalty.service';
 
 @Module({
   imports: [AuthModule, BusinessesModule],
-  controllers: [LoyaltyController, PublicLoyaltyController],
-  providers: [LoyaltyService, PublicLoyaltyService]
+  controllers: [
+    LoyaltyController,
+    LoyaltyStampPresetsController,
+    PublicLoyaltyController
+  ],
+  providers: [LoyaltyService, LoyaltyStampStyleService, PublicLoyaltyService]
 })
 export class LoyaltyModule {}

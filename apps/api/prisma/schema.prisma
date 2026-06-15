@@ -171,9 +171,26 @@ model LoyaltyProgram {
   business            Business             @relation(fields: [businessId], references: [id], onDelete: Cascade)
   memberships         LoyaltyMembership[]
   transactions        LoyaltyTransaction[]
+  stampStyle          LoyaltyStampStyle?
 
   @@index([businessId])
   @@map("loyalty_programs")
+}
+
+model LoyaltyStampStyle {
+  id               String                    @id @default(cuid())
+  loyaltyProgramId String                    @unique @map("loyalty_program_id")
+  styleType        LoyaltyStampStyleType     @default(PRESET) @map("style_type")
+  presetKey        LoyaltyStampPresetKey     @default(STAR) @map("preset_key")
+  backgroundColor  String                    @map("background_color")
+  accentColor      String                    @map("accent_color")
+  textColor        String                    @map("text_color")
+  layoutVariant    LoyaltyStampLayoutVariant @default(MODERN) @map("layout_variant")
+  createdAt        DateTime                  @default(now()) @map("created_at")
+  updatedAt        DateTime                  @updatedAt @map("updated_at")
+  loyaltyProgram   LoyaltyProgram            @relation(fields: [loyaltyProgramId], references: [id], onDelete: Cascade)
+
+  @@map("loyalty_stamp_styles")
 }
 
 model Customer {
@@ -275,6 +292,26 @@ enum SubscriptionStatus {
 enum LoyaltyMembershipStatus {
   ACTIVE
   INACTIVE
+}
+
+enum LoyaltyStampStyleType {
+  PRESET
+}
+
+enum LoyaltyStampPresetKey {
+  STAR
+  COOKIE
+  COFFEE
+  BOWL
+  BURGER
+  PIZZA
+  HEART
+  CUPCAKE
+}
+
+enum LoyaltyStampLayoutVariant {
+  MODERN
+  COMPACT
 }
 
 enum LoyaltyTransactionType {

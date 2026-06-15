@@ -26,7 +26,9 @@ import { CreateLoyaltyProgramDto } from './dto/create-loyalty-program.dto';
 import { EnrollLoyaltyCustomerDto } from './dto/enroll-loyalty-customer.dto';
 import { GetLoyaltyMembershipsQueryDto } from './dto/get-loyalty-memberships-query.dto';
 import { RedeemRewardDto } from './dto/redeem-reward.dto';
+import { UpdateLoyaltyStampStyleDto } from './dto/update-loyalty-stamp-style.dto';
 import { UpdateLoyaltyProgramDto } from './dto/update-loyalty-program.dto';
+import { LoyaltyStampStyleService } from './loyalty-stamp-style.service';
 import { LoyaltyService } from './loyalty.service';
 
 const cardStateExample = {
@@ -47,7 +49,10 @@ const cardStateExample = {
   description: 'Active business membership or required role is missing.'
 })
 export class LoyaltyController {
-  constructor(private readonly loyaltyService: LoyaltyService) {}
+  constructor(
+    private readonly loyaltyService: LoyaltyService,
+    private readonly loyaltyStampStyleService: LoyaltyStampStyleService
+  ) {}
 
   @Get('program')
   @ApiOkResponse({
@@ -134,6 +139,67 @@ export class LoyaltyController {
       currentUser,
       businessId,
       programId,
+      dto
+    );
+  }
+
+  @Get('stamp-style')
+  @ApiOkResponse({
+    description:
+      'Active loyalty program stamp visual style. OWNER, MANAGER, and STAFF can view.',
+    schema: {
+      example: {
+        id: 'stamp_style_id',
+        loyaltyProgramId: 'loyalty_program_id',
+        styleType: 'PRESET',
+        presetKey: 'STAR',
+        backgroundColor: '#111827',
+        accentColor: '#f59e0b',
+        textColor: '#ffffff',
+        layoutVariant: 'MODERN',
+        isDefault: false,
+        createdAt: '2026-06-15T00:00:00.000Z',
+        updatedAt: '2026-06-15T00:00:00.000Z'
+      }
+    }
+  })
+  @ApiNotFoundResponse({ description: 'No active loyalty program found.' })
+  getStampStyle(
+    @CurrentUser() currentUser: AuthenticatedUser,
+    @Param('id') businessId: string
+  ) {
+    return this.loyaltyStampStyleService.getStampStyle(currentUser, businessId);
+  }
+
+  @Patch('stamp-style')
+  @ApiOkResponse({
+    description:
+      'Creates or updates the active loyalty program stamp visual style. OWNER and MANAGER only.',
+    schema: {
+      example: {
+        id: 'stamp_style_id',
+        loyaltyProgramId: 'loyalty_program_id',
+        styleType: 'PRESET',
+        presetKey: 'COFFEE',
+        backgroundColor: '#111827',
+        accentColor: '#f59e0b',
+        textColor: '#ffffff',
+        layoutVariant: 'MODERN',
+        isDefault: false,
+        createdAt: '2026-06-15T00:00:00.000Z',
+        updatedAt: '2026-06-15T00:00:00.000Z'
+      }
+    }
+  })
+  @ApiNotFoundResponse({ description: 'No active loyalty program found.' })
+  updateStampStyle(
+    @CurrentUser() currentUser: AuthenticatedUser,
+    @Param('id') businessId: string,
+    @Body() dto: UpdateLoyaltyStampStyleDto
+  ) {
+    return this.loyaltyStampStyleService.updateStampStyle(
+      currentUser,
+      businessId,
       dto
     );
   }
