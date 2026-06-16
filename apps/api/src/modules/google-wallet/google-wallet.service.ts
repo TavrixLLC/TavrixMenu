@@ -123,13 +123,16 @@ export class GoogleWalletService {
       classId: this.buildResourceId(input.classSuffix),
       state: 'ACTIVE',
       accountName,
-      accountId,
-      barcode: {
+      accountId
+    };
+
+    if (input.includeBarcode !== false) {
+      payload.barcode = {
         type: 'QR_CODE',
         value: input.barcodeValue?.trim() || accountId,
         alternateText: accountId
-      }
-    };
+      };
+    }
 
     if (input.includeLoyaltyPoints !== false) {
       payload.loyaltyPoints = {

@@ -26,8 +26,19 @@ async function bootstrap() {
     .build();
 
   const swaggerDocument = SwaggerModule.createDocument(app, swaggerConfig);
-  const outputPath = path.join(__dirname, '..', 'openapi.json');
-  fs.writeFileSync(outputPath, JSON.stringify(swaggerDocument, null, 2), 'utf8');
+  const outputPath = path.join(
+    __dirname,
+    '..',
+    '..',
+    '..',
+    'docs',
+    'openapi',
+    'waflo-openapi-current.json'
+  );
+  const serializedDocument = JSON.stringify(swaggerDocument, null, 2);
+
+  fs.mkdirSync(path.dirname(outputPath), { recursive: true });
+  fs.writeFileSync(outputPath, serializedDocument, 'utf8');
   console.log(`OpenAPI spec successfully written to: ${outputPath}`);
   await app.close();
 }

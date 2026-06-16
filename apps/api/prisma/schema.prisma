@@ -46,6 +46,7 @@ model Business {
   loyaltyPrograms     LoyaltyProgram[]
   loyaltyMemberships  LoyaltyMembership[]
   loyaltyTransactions LoyaltyTransaction[]
+  walletPasses        WalletPass[]
   subscriptions       Subscription[]
   auditLogs           AuditLog[]
 
@@ -235,12 +236,36 @@ model LoyaltyMembership {
   loyaltyProgram        LoyaltyProgram          @relation(fields: [loyaltyProgramId], references: [id], onDelete: Cascade)
   customer              Customer                @relation(fields: [customerId], references: [id], onDelete: Cascade)
   transactions          LoyaltyTransaction[]
+  walletPasses          WalletPass[]
 
   @@unique([customerId, loyaltyProgramId])
   @@index([businessId])
   @@index([loyaltyProgramId])
   @@index([customerId])
   @@map("loyalty_memberships")
+}
+
+model WalletPass {
+  id             String             @id @default(cuid())
+  businessId     String             @map("business_id")
+  membershipId   String             @map("membership_id")
+  platform       WalletPassPlatform
+  googleClassId  String?            @map("google_class_id")
+  googleObjectId String?            @map("google_object_id")
+  saveUrl        String?            @map("save_url")
+  heroImageUrl   String?            @map("hero_image_url")
+  status         WalletPassStatus   @default(PENDING)
+  lastSyncedAt   DateTime?          @map("last_synced_at")
+  syncError      String?            @map("sync_error")
+  createdAt      DateTime           @default(now()) @map("created_at")
+  updatedAt      DateTime           @updatedAt @map("updated_at")
+  business       Business           @relation(fields: [businessId], references: [id], onDelete: Cascade)
+  membership     LoyaltyMembership  @relation(fields: [membershipId], references: [id], onDelete: Cascade)
+
+  @@unique([membershipId, platform])
+  @@index([businessId])
+  @@index([membershipId])
+  @@map("wallet_passes")
 }
 
 model LoyaltyTransaction {
@@ -302,6 +327,16 @@ enum SubscriptionStatus {
 enum LoyaltyMembershipStatus {
   ACTIVE
   INACTIVE
+}
+
+enum WalletPassPlatform {
+  GOOGLE_WALLET
+}
+
+enum WalletPassStatus {
+  PENDING
+  ACTIVE
+  ERROR
 }
 
 enum LoyaltyStampStyleType {
