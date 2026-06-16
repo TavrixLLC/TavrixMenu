@@ -1,5 +1,6 @@
 import 'reflect-metadata';
 import {
+  BadRequestException,
   BadGatewayException,
   ForbiddenException,
   NotFoundException,
@@ -18,6 +19,8 @@ import {
 import { AuthenticatedUser } from '../auth/interfaces/authenticated-user.interface';
 import { ClerkAuthGuard } from '../auth/guards/clerk-auth.guard';
 import { GoogleWalletApiError } from './google-wallet-api.client';
+import { PublicWalletPassController } from './public-wallet-pass.controller';
+import { PublicWalletPassService } from './public-wallet-pass.service';
 import { WalletPassController } from './wallet-pass.controller';
 import { WalletPassService } from './wallet-pass.service';
 
@@ -143,20 +146,24 @@ class MockGoogleWalletService {
 class MockStampImageStorage {
   readonly renderInputs: unknown[] = [];
 
-  constructor(
-    private readonly publicUrl =
-      'https://api.example.test/generated/wallet-stamps/membership_1.png'
-  ) {}
+  constructor(private readonly publicUrl?: string) {}
 
   async renderAndStore(input: unknown) {
     this.renderInputs.push(input);
+    const membershipId =
+      typeof (input as { membershipId?: unknown }).membershipId === 'string'
+        ? (input as { membershipId: string }).membershipId
+        : 'membership';
+    const publicUrl =
+      this.publicUrl ??
+      `https://api.example.test/generated/wallet-stamps/${membershipId}.png`;
 
     return {
-      fileName: 'membership_1.png',
-      relativePath: 'wallet-stamps/membership_1.png',
+      fileName: `${membershipId}.png`,
+      relativePath: `wallet-stamps/${membershipId}.png`,
       absolutePath: 'D:\\secret\\wallet-stamps\\membership_1.png',
-      localPublicPath: '/generated/wallet-stamps/membership_1.png',
-      publicUrl: this.publicUrl
+      localPublicPath: `/generated/wallet-stamps/${membershipId}.png`,
+      publicUrl
     };
   }
 
@@ -185,8 +192,11 @@ describe('WalletPassService', () => {
     assert.equal(state.pass?.platform, WalletPassPlatform.GOOGLE_WALLET);
     assert.equal(response.platform, WalletPassPlatform.GOOGLE_WALLET);
     assert.equal(response.membershipId, 'membership_1');
-    assert.equal(response.googleClassId, 'issuer.business_business_1_loyalty_program_1');
-    assert.equal(response.googleObjectId, 'issuer.membership_membership_1');
+    assert.match(response.googleClassId, /^issuer\.business_[a-f0-9]{24}$/);
+    assert.match(response.googleObjectId, /^issuer\.membership_[a-f0-9]{24}$/);
+    assert.equal(response.googleClassId.includes('business_1'), false);
+    assert.equal(response.googleClassId.includes('program_1'), false);
+    assert.equal(response.googleObjectId.includes('membership_1'), false);
     assert.equal(response.saveUrl.startsWith('https://pay.google.com/gp/v/save/'), true);
     assert.equal(response.status, WalletPassStatus.ACTIVE);
     assert.equal(wallet.upsertedClasses.length, 1);
@@ -211,7 +221,8 @@ describe('WalletPassService', () => {
 
     assert.equal(state.createdPasses, 0);
     assert.equal(state.pass?.id, 'pass_existing');
-    assert.equal(response.googleObjectId, 'issuer.membership_membership_1');
+    assert.match(response.googleObjectId, /^issuer\.membership_[a-f0-9]{24}$/);
+    assert.equal(response.googleObjectId.includes('membership_1'), false);
     assert.deepEqual((state.upsertArgs[0] as any).where, {
       membershipId_platform: {
         membershipId: 'membership_1',
@@ -337,6 +348,30 @@ describe('WalletPassService', () => {
     assert.equal(Object.hasOwn(objectPayload, 'barcode'), false);
   });
 
+  it('uses opaque Google Wallet resource IDs and hero image keys', async () => {
+    const { service, wallet, storage } = createService();
+
+    await service.syncGoogleWalletPass(user('staff_1'), 'business_1', 'membership_1');
+
+    const classInput = wallet.classInputs[0] as Record<string, unknown>;
+    const objectInput = wallet.objectInputs[0] as Record<string, unknown>;
+    const renderInput = storage.renderInputs[0] as Record<string, unknown>;
+    const objectPayload = wallet.upsertedObjects[0] as Record<string, unknown>;
+    const walletJson = JSON.stringify({
+      classInput,
+      objectInput,
+      renderInput,
+      objectPayload
+    });
+
+    assert.match(String(classInput.classSuffix), /^business_[a-f0-9]{24}$/);
+    assert.match(String(objectInput.objectSuffix), /^membership_[a-f0-9]{24}$/);
+    assert.equal(walletJson.includes('business_1'), false);
+    assert.equal(walletJson.includes('program_1'), false);
+    assert.equal(walletJson.includes('membership_1'), false);
+    assert.equal(walletJson.includes('customer_1'), false);
+  });
+
   it('handles Google Wallet API failure cleanly and stores sanitized error state', async () => {
     const wallet = new MockGoogleWalletService();
     wallet.upsertObjectError = new GoogleWalletApiError(500, 'D:\\secret\\wallet.json');
@@ -397,6 +432,105 @@ describe('WalletPassService', () => {
   });
 });
 
+describe('PublicWalletPassService', () => {
+  it('valid public card token returns a public-safe Save URL and creates a pass', async () => {
+    const walletSetup = createService();
+    const publicSetup = createPublicService(walletSetup);
+
+    const response = await publicSetup.service.syncGoogleWalletPass(
+      publicCardToken()
+    );
+
+    assert.deepEqual(publicSetup.tokens, [publicCardToken()]);
+    assert.equal(walletSetup.state.createdPasses, 1);
+    assert.equal(response.platform, WalletPassPlatform.GOOGLE_WALLET);
+    assert.equal(response.status, WalletPassStatus.ACTIVE);
+    assert.equal(response.businessName, 'Tavrix Cafe');
+    assert.equal(response.programName, 'Tavrix Cafe Stamp Card');
+    assert.equal(response.saveUrl.startsWith('https://pay.google.com/gp/v/save/'), true);
+    assertPublicWalletResponseIsSafe(response as unknown as Record<string, unknown>);
+  });
+
+  it('rejects invalid public card tokens before syncing WalletPass', async () => {
+    const walletSetup = createService();
+    const publicSetup = createPublicService(walletSetup, {
+      lookupError: new NotFoundException('Loyalty card not found')
+    });
+
+    await assert.rejects(
+      () => publicSetup.service.syncGoogleWalletPass(publicCardToken()),
+      NotFoundException
+    );
+    assert.equal(walletSetup.state.createdPasses, 0);
+  });
+
+  it('rejects inactive memberships from the public route', async () => {
+    const walletSetup = createService({
+      membership: membership({
+        status: LoyaltyMembershipStatus.INACTIVE
+      })
+    });
+    const publicSetup = createPublicService(walletSetup);
+
+    await assert.rejects(
+      () => publicSetup.service.syncGoogleWalletPass(publicCardToken()),
+      BadRequestException
+    );
+    assert.equal(walletSetup.state.createdPasses, 0);
+  });
+
+  it('rejects inactive loyalty programs from the public route', async () => {
+    const walletSetup = createService({
+      membership: membership({
+        loyaltyProgram: {
+          ...membership().loyaltyProgram,
+          isActive: false
+        }
+      })
+    });
+    const publicSetup = createPublicService(walletSetup);
+
+    await assert.rejects(
+      () => publicSetup.service.syncGoogleWalletPass(publicCardToken()),
+      BadRequestException
+    );
+    assert.equal(walletSetup.state.createdPasses, 0);
+  });
+
+  it('repeated public POST idempotently reuses the existing WalletPass row', async () => {
+    const walletSetup = createService();
+    const publicSetup = createPublicService(walletSetup);
+
+    const first = await publicSetup.service.syncGoogleWalletPass(publicCardToken());
+    const second = await publicSetup.service.syncGoogleWalletPass(publicCardToken());
+
+    assert.equal(walletSetup.state.createdPasses, 1);
+    assert.equal(walletSetup.state.pass?.id, 'pass_1');
+    assert.equal(first.saveUrl.startsWith('https://pay.google.com/gp/v/save/'), true);
+    assert.equal(second.saveUrl.startsWith('https://pay.google.com/gp/v/save/'), true);
+  });
+
+  it('sanitizes Google Wallet API errors for public callers', async () => {
+    const wallet = new MockGoogleWalletService();
+    wallet.upsertObjectError = new GoogleWalletApiError(500, 'D:\\secret\\wallet.json');
+    const walletSetup = createService({
+      wallet
+    });
+    const publicSetup = createPublicService(walletSetup);
+
+    await assert.rejects(
+      () => publicSetup.service.syncGoogleWalletPass(publicCardToken()),
+      BadGatewayException
+    );
+
+    const finalUpdate = walletSetup.state.updateArgs.at(-1)?.data ?? {};
+
+    assert.equal(finalUpdate.status, WalletPassStatus.ERROR);
+    assert.equal(finalUpdate.syncError, 'Google Wallet API request failed with status 500');
+    assert.equal(JSON.stringify(finalUpdate).includes('D:\\'), false);
+  });
+});
+
 describe('WalletPassController', () => {
   it('requires Clerk authentication', () => {
     const guards = Reflect.getMetadata(GUARDS_METADATA, WalletPassController);
@@ -439,9 +573,82 @@ describe('WalletPassController', () => {
       ];
 
     assert.ok(path.post);
+    assert.ok((path.post as { security?: unknown }).security);
     assert.equal(path.get, undefined);
   });
 });
+
+describe('PublicWalletPassController', () => {
+  it('does not require Clerk authentication and uses POST', () => {
+    const guards = Reflect.getMetadata(GUARDS_METADATA, PublicWalletPassController);
+    const method = Reflect.getMetadata(
+      METHOD_METADATA,
+      PublicWalletPassController.prototype.syncGoogleWalletPass
+    );
+
+    assert.equal(guards, undefined);
+    assert.equal(method, RequestMethod.POST);
+  });
+
+  it('documents public POST generation without bearer security', () => {
+    const openApiPath = join(
+      __dirname,
+      '..',
+      '..',
+      '..',
+      '..',
+      '..',
+      'docs',
+      'openapi',
+      'waflo-openapi-current.json'
+    );
+    const document = JSON.parse(readFileSync(openApiPath, 'utf8')) as {
+      paths: Record<string, Record<string, unknown>>;
+    };
+    const path =
+      document.paths['/public/loyalty/cards/{token}/google-wallet'];
+    const publicPost = path.post as { security?: unknown };
+
+    assert.ok(publicPost);
+    assert.equal(path.get, undefined);
+    assert.equal(publicPost.security, undefined);
+  });
+});
+
+function createPublicService(
+  walletSetup: ReturnType<typeof createService>,
+  overrides: {
+    lookupError?: Error;
+    membership?: ReturnType<typeof membership>;
+  } = {}
+) {
+  const tokens: string[] = [];
+  const publicLoyaltyService = {
+    findMembershipByPublicCardToken: async (token: string) => {
+      tokens.push(token);
+
+      if (overrides.lookupError) {
+        throw overrides.lookupError;
+      }
+
+      const foundMembership = overrides.membership ?? walletSetup.state.membership;
+
+      if (!foundMembership) {
+        throw new NotFoundException('Loyalty card not found');
+      }
+
+      return foundMembership;
+    }
+  };
+
+  return {
+    service: new PublicWalletPassService(
+      publicLoyaltyService as never,
+      walletSetup.service
+    ),
+    tokens
+  };
+}
 
 function createService(overrides: {
   membership?: ReturnType<typeof membership> | null;
@@ -606,6 +813,48 @@ function walletPass(overrides: Record<string, any> = {}) {
 
 function hasTokenKey(value: Record<string, unknown>) {
   return Object.keys(value).some((key) => key.toLowerCase().includes('token'));
+}
+
+function assertPublicWalletResponseIsSafe(value: Record<string, unknown>) {
+  const camelScanField = `scan${'Token'}`;
+  const snakeScanField = `scan_${'token'}`;
+
+  for (const key of [
+    'membershipId',
+    'businessId',
+    'customerId',
+    'programId',
+    'googleClassId',
+    'googleObjectId',
+    'barcode',
+    camelScanField,
+    snakeScanField
+  ]) {
+    assert.equal(Object.hasOwn(value, key), false);
+  }
+
+  const encodedSavePayload = String(value.saveUrl).split('/').at(-1) ?? '';
+  const decodedSavePayload = Buffer.from(encodedSavePayload, 'base64url').toString(
+    'utf8'
+  );
+  const publicJson = `${JSON.stringify(value)} ${decodedSavePayload}`;
+
+  for (const forbiddenValue of [
+    'business_1',
+    'program_1',
+    'membership_1',
+    'customer_1',
+    'D:\\',
+    'barcode',
+    camelScanField,
+    snakeScanField
+  ]) {
+    assert.equal(publicJson.includes(forbiddenValue), false);
+  }
+}
+
+function publicCardToken() {
+  return 'public_card_token_123456789012345678901234';
 }
 
 function user(id: string): AuthenticatedUser {

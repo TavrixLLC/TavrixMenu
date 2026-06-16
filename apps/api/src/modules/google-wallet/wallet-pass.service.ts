@@ -4,7 +4,9 @@ import {
   Injectable,
   NotFoundException
 } from '@nestjs/common';
+import { createHash } from 'crypto';
 import {
+  BusinessStatus,
   BusinessUserRole,
   LoyaltyMembershipStatus,
   Prisma,
@@ -20,7 +22,7 @@ import { StampImageStorageService } from '../loyalty/stamp-image-storage.service
 import { GoogleWalletApiError } from './google-wallet-api.client';
 import { GoogleWalletService } from './google-wallet.service';
 
-type WalletMembership = Prisma.LoyaltyMembershipGetPayload<{
+export type WalletMembership = Prisma.LoyaltyMembershipGetPayload<{
   include: {
     business: true;
     customer: true;
@@ -70,13 +72,13 @@ export class WalletPassService {
 
     const membership = await this.findMembership(businessId, membershipId);
 
-    if (membership.status !== LoyaltyMembershipStatus.ACTIVE) {
-      throw new BadRequestException('Loyalty membership is inactive');
-    }
+    return this.syncResolvedGoogleWalletPass(membership);
+  }
 
-    if (!membership.loyaltyProgram.isActive) {
-      throw new BadRequestException('Loyalty program is inactive');
-    }
+  async syncResolvedGoogleWalletPass(
+    membership: WalletMembership
+  ): Promise<GoogleWalletPassResponse> {
+    this.assertSyncableMembership(membership);
 
     let pass = await this.createOrReusePendingPass(membership);
 
@@ -161,6 +163,20 @@ export class WalletPassService {
     }
   }
 
+  private assertSyncableMembership(membership: WalletMembership) {
+    if (membership.business.status !== BusinessStatus.ACTIVE) {
+      throw new BadRequestException('Business is inactive');
+    }
+
+    if (membership.status !== LoyaltyMembershipStatus.ACTIVE) {
+      throw new BadRequestException('Loyalty membership is inactive');
+    }
+
+    if (!membership.loyaltyProgram.isActive) {
+      throw new BadRequestException('Loyalty program is inactive');
+    }
+  }
+
   private async findMembership(
     businessId: string,
     membershipId: string
@@ -214,7 +230,7 @@ export class WalletPassService {
   private async renderHeroImage(membership: WalletMembership) {
     const style = this.resolveStampStyle(membership);
     const storedImage = await this.stampImageStorageService.renderAndStore({
-      membershipId: membership.id,
+      membershipId: this.buildObjectSuffix(membership),
       businessName: membership.business.name,
       programName: membership.loyaltyProgram.name,
       rewardName: membership.loyaltyProgram.rewardName,
@@ -243,13 +259,14 @@ export class WalletPassService {
   }
 
   private buildClassSuffix(membership: WalletMembership) {
-    return `business_${this.safeResourceSegment(
-      membership.businessId
-    )}_loyalty_${this.safeResourceSegment(membership.loyaltyProgramId)}`;
+    return `business_${this.stableOpaqueSegment(
+      membership.businessId,
+      membership.loyaltyProgramId
+    )}`;
   }
 
   private buildObjectSuffix(membership: WalletMembership) {
-    return `membership_${this.safeResourceSegment(membership.id)}`;
+    return `membership_${this.stableOpaqueSegment(membership.id)}`;
   }
 
   private buildAccountName(membership: WalletMembership) {
@@ -257,13 +274,13 @@ export class WalletPassService {
   }
 
   private buildAccountId(pass: WalletPass) {
-    const suffix = pass.id.replace(/[^A-Za-z0-9]/g, '').slice(0, 10);
+    const suffix = this.stableOpaqueSegment(pass.id).slice(0, 10);
 
     return `WAFLO-${suffix.toUpperCase()}`;
   }
 
-  private safeResourceSegment(value: string) {
-    return value.replace(/[^A-Za-z0-9._-]/g, '_');
+  private stableOpaqueSegment(...values: string[]) {
+    return createHash('sha256').update(values.join(':')).digest('hex').slice(0, 24);
   }
 
   private httpsUrlOrUndefined(value: string | null) {

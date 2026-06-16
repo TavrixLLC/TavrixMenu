@@ -7,15 +7,18 @@ import {
   GoogleWalletRestClient
 } from './google-wallet-api.client';
 import { GoogleWalletService } from './google-wallet.service';
+import { PublicWalletPassController } from './public-wallet-pass.controller';
+import { PublicWalletPassService } from './public-wallet-pass.service';
 import { WalletPassController } from './wallet-pass.controller';
 import { WalletPassService } from './wallet-pass.service';
 
 @Module({
   imports: [AuthModule, BusinessesModule, LoyaltyModule],
-  controllers: [WalletPassController],
+  controllers: [WalletPassController, PublicWalletPassController],
   providers: [
     GoogleWalletService,
     GoogleWalletRestClient,
+    PublicWalletPassService,
     WalletPassService,
     {
       provide: GOOGLE_WALLET_API_CLIENT,
