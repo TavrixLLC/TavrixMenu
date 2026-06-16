@@ -36,6 +36,19 @@ type PublicMembership = LoyaltyMembership & {
   loyaltyProgram: LoyaltyProgram;
 };
 
+export type PublicLoyaltyWalletMembership =
+  Prisma.LoyaltyMembershipGetPayload<{
+    include: {
+      business: true;
+      customer: true;
+      loyaltyProgram: {
+        include: {
+          stampStyle: true;
+        };
+      };
+    };
+  }>;
+
 @Injectable()
 export class PublicLoyaltyService {
   constructor(private readonly prisma: PrismaService) {}
@@ -132,6 +145,32 @@ export class PublicLoyaltyService {
   }
 
   async getPublicCard(token: string) {
+    const membership = await this.findMembershipByPublicCardToken(token);
+
+    return {
+      business: {
+        name: membership.business.name,
+        slug: membership.business.slug,
+        logoUrl: membership.business.logoUrl,
+        coverUrl: membership.business.coverUrl
+      },
+      program: {
+        name: membership.loyaltyProgram.name,
+        stampGoal: membership.loyaltyProgram.stampGoal,
+        rewardName: membership.loyaltyProgram.rewardName,
+        rewardDescription: membership.loyaltyProgram.rewardDescription,
+        terms: membership.loyaltyProgram.terms
+      },
+      customer: {
+        name: membership.customer.name
+      },
+      cardState: this.mapCardState(membership, membership.loyaltyProgram)
+    };
+  }
+
+  async findMembershipByPublicCardToken(
+    token: string
+  ): Promise<PublicLoyaltyWalletMembership> {
     const normalizedToken = this.normalizeRequiredToken(token);
     const publicAccessTokenHash = this.hashPublicAccessToken(normalizedToken);
 
@@ -163,33 +202,17 @@ export class PublicLoyaltyService {
         publicAccessTokenLastViewedAt: new Date()
       },
       include: {
-        business: {
-          select: this.publicBusinessSelect()
-        },
+        business: true,
         customer: true,
-        loyaltyProgram: true
+        loyaltyProgram: {
+          include: {
+            stampStyle: true
+          }
+        }
       }
     });
 
-    return {
-      business: {
-        name: membership.business.name,
-        slug: membership.business.slug,
-        logoUrl: membership.business.logoUrl,
-        coverUrl: membership.business.coverUrl
-      },
-      program: {
-        name: membership.loyaltyProgram.name,
-        stampGoal: membership.loyaltyProgram.stampGoal,
-        rewardName: membership.loyaltyProgram.rewardName,
-        rewardDescription: membership.loyaltyProgram.rewardDescription,
-        terms: membership.loyaltyProgram.terms
-      },
-      customer: {
-        name: membership.customer.name
-      },
-      cardState: this.mapCardState(membership, membership.loyaltyProgram)
-    };
+    return membership;
   }
 
   private async findActiveBusinessAndProgram(slug: string) {

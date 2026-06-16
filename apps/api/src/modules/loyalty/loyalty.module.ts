@@ -24,6 +24,10 @@ import { StampImageStorageService } from './stamp-image-storage.service';
     StampImageRendererService,
     StampImageStorageService
   ],
-  exports: [StampImageRendererService, StampImageStorageService]
+  exports: [
+    PublicLoyaltyService,
+    StampImageRendererService,
+    StampImageStorageService
+  ]
 })
 export class LoyaltyModule {}

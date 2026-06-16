@@ -2302,6 +2302,51 @@
           "google wallet"
         ]
       }
+    },
+    "/public/loyalty/cards/{token}/google-wallet": {
+      "post": {
+        "operationId": "PublicWalletPassController_syncGoogleWalletPass",
+        "parameters": [
+          {
+            "name": "token",
+            "required": true,
+            "in": "path",
+            "description": "Opaque public card access token returned by enrollment.",
+            "schema": {
+              "example": "public_card_token",
+              "type": "string"
+            }
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": "Creates, syncs, or reuses a Google Wallet pass for an active public loyalty card token and returns a public-safe Save URL response.",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "example": {
+                    "platform": "GOOGLE_WALLET",
+                    "saveUrl": "https://pay.google.com/gp/v/save/signed.jwt",
+                    "status": "ACTIVE",
+                    "businessName": "Tavrix Cafe",
+                    "programName": "Tavrix Cafe Stamp Card",
+                    "lastSyncedAt": "2026-06-16T09:00:00.000Z"
+                  }
+                }
+              }
+            }
+          },
+          "404": {
+            "description": "Invalid, inactive, or expired public card token."
+          },
+          "502": {
+            "description": "Google Wallet sync failed."
+          }
+        },
+        "tags": [
+          "public loyalty"
+        ]
+      }
     }
   },
   "info": {
