@@ -6,6 +6,7 @@ import {
   NotFoundException,
   RequestMethod
 } from '@nestjs/common';
+import { ConfigService } from '@nestjs/config';
 import { GUARDS_METADATA, METHOD_METADATA } from '@nestjs/common/constants';
 import { strict as assert } from 'assert';
 import { readFileSync } from 'fs';
@@ -23,6 +24,7 @@ import { PublicWalletPassController } from './public-wallet-pass.controller';
 import { PublicWalletPassService } from './public-wallet-pass.service';
 import { WalletPassController } from './wallet-pass.controller';
 import { WalletPassService } from './wallet-pass.service';
+import { WalletScanTokenService } from './wallet-scan-token.service';
 
 type MockState = {
   membership: ReturnType<typeof membership> | null;
@@ -80,6 +82,7 @@ class MockGoogleWalletService {
     accountName: string;
     accountId: string;
     barcodeValue?: string;
+    barcodeAlternateText?: string;
     includeBarcode?: boolean;
     heroImageUrl?: string;
   }) {
@@ -97,7 +100,7 @@ class MockGoogleWalletService {
             barcode: {
               type: 'QR_CODE',
               value: input.barcodeValue ?? input.accountId,
-              alternateText: input.accountId
+              alternateText: input.barcodeAlternateText ?? input.accountId
             }
           }),
       heroImage: input.heroImageUrl
@@ -325,7 +328,7 @@ describe('WalletPassService', () => {
     assert.equal(String(objectInput.heroImageUrl).includes('D:\\'), false);
   });
 
-  it('does not persist or return raw token fields and omits barcode support', async () => {
+  it('includes a secure barcode without persisting or returning the raw scan token', async () => {
     const { service, state, wallet } = createService();
 
     const response = await service.syncGoogleWalletPass(
@@ -337,15 +340,88 @@ describe('WalletPassService', () => {
       string,
       unknown
     >;
-    const updateInput = state.updateArgs.at(-1)?.data ?? {};
+    const tokenUpdate = state.updateArgs.find((update) =>
+      Object.hasOwn(update.data, 'scanTokenHash')
+    )?.data;
     const objectInput = wallet.objectInputs[0] as Record<string, unknown>;
     const objectPayload = wallet.upsertedObjects[0] as Record<string, unknown>;
+    const barcode = objectPayload.barcode as {
+      type: string;
+      value: string;
+      alternateText: string;
+    };
+    const rawToken = String(objectInput.barcodeValue);
 
-    assert.equal(hasTokenKey(createInput), false);
-    assert.equal(hasTokenKey(updateInput), false);
-    assert.equal(hasTokenKey(response as unknown as Record<string, unknown>), false);
-    assert.equal(objectInput.includeBarcode, false);
-    assert.equal(Object.hasOwn(objectPayload, 'barcode'), false);
+    assert.equal(Object.hasOwn(createInput, 'scanToken'), false);
+    assert.ok(tokenUpdate);
+    assert.match(rawToken, /^waflo_scan_v1\./);
+    assert.equal(barcode.type, 'QR_CODE');
+    assert.ok(barcode.value);
+    assert.equal(barcode.value, rawToken);
+    assert.notEqual(barcode.value, objectPayload.accountId);
+    assert.equal(String(barcode.value).startsWith('WAFLO-'), false);
+    assert.notEqual(barcode.alternateText, rawToken);
+    assert.equal(
+      barcode.alternateText,
+      `Scan code ending ${rawToken.slice(-4).toUpperCase()}`
+    );
+    assert.equal(typeof tokenUpdate.scanTokenHash, 'string');
+    assert.equal(String(tokenUpdate.scanTokenHash).length, 64);
+    assert.equal(tokenUpdate.scanTokenHash === rawToken, false);
+    assert.equal(tokenUpdate.scanTokenVersion, 1);
+    assert.equal(tokenUpdate.scanTokenLast4, rawToken.slice(-4));
+    assert.equal(JSON.stringify(response).includes(rawToken), false);
+    assert.equal(
+      JSON.stringify([...state.upsertArgs, ...state.updateArgs]).includes(rawToken),
+      false
+    );
+    assert.equal(
+      Object.hasOwn(response as unknown as Record<string, unknown>, 'scanTokenHash'),
+      false
+    );
+  });
+
+  it('stores a token hash and validates the generated barcode token', async () => {
+    const tokenService = createTokenService();
+    const { service, state, wallet } = createService({
+      tokenService
+    });
+
+    await service.syncGoogleWalletPass(user('staff_1'), 'business_1', 'membership_1');
+
+    const rawToken = String(
+      (wallet.objectInputs[0] as Record<string, unknown>).barcodeValue
+    );
+
+    assert.ok(state.pass?.scanTokenHash);
+    assert.equal(tokenService.verifyForPass(rawToken, state.pass!), true);
+    assert.equal(tokenService.parse(rawToken)?.token, rawToken);
+    assert.equal(tokenService.verifyForPass(`${rawToken.slice(0, -1)}x`, state.pass!), false);
+    assert.equal(tokenService.parse('not-a-wallet-token'), null);
+  });
+
+  it('repeated Add to Wallet rebuilds a stable barcode without raw token persistence', async () => {
+    const tokenService = createTokenService();
+    const { service, state, wallet } = createService({
+      tokenService
+    });
+
+    await service.syncGoogleWalletPass(user('staff_1'), 'business_1', 'membership_1');
+    const firstRawToken = String(
+      (wallet.objectInputs.at(-1) as Record<string, unknown>).barcodeValue
+    );
+
+    await service.syncGoogleWalletPass(user('staff_1'), 'business_1', 'membership_1');
+    const secondRawToken = String(
+      (wallet.objectInputs.at(-1) as Record<string, unknown>).barcodeValue
+    );
+    const tokenUpdates = state.updateArgs.filter((update) =>
+      Object.hasOwn(update.data, 'scanTokenHash')
+    );
+
+    assert.equal(firstRawToken, secondRawToken);
+    assert.equal(tokenUpdates.length, 1);
+    assert.equal(JSON.stringify(state.pass).includes(firstRawToken), false);
   });
 
   it('uses opaque Google Wallet resource IDs and hero image keys', async () => {
@@ -654,6 +730,7 @@ function createService(overrides: {
   membership?: ReturnType<typeof membership> | null;
   pass?: ReturnType<typeof walletPass> | null;
   wallet?: MockGoogleWalletService;
+  tokenService?: WalletScanTokenService;
   storage?: MockStampImageStorage;
   assertRole?: () => Promise<void>;
 } = {}) {
@@ -666,6 +743,7 @@ function createService(overrides: {
     updateArgs: []
   };
   const wallet = overrides.wallet ?? new MockGoogleWalletService();
+  const tokenService = overrides.tokenService ?? createTokenService();
   const storage = overrides.storage ?? new MockStampImageStorage();
   const prisma = {
     loyaltyMembership: {
@@ -721,6 +799,7 @@ function createService(overrides: {
     prisma as never,
     businessAccess as never,
     wallet as never,
+    tokenService,
     storage as never
   );
 
@@ -802,6 +881,10 @@ function walletPass(overrides: Record<string, any> = {}) {
     googleObjectId: null,
     saveUrl: null,
     heroImageUrl: null,
+    scanTokenHash: null,
+    scanTokenVersion: null,
+    scanTokenIssuedAt: null,
+    scanTokenLast4: null,
     status: WalletPassStatus.PENDING,
     lastSyncedAt: null,
     syncError: null,
@@ -809,10 +892,6 @@ function walletPass(overrides: Record<string, any> = {}) {
     updatedAt: now(),
     ...overrides
   };
-}
-
-function hasTokenKey(value: Record<string, unknown>) {
-  return Object.keys(value).some((key) => key.toLowerCase().includes('token'));
 }
 
 function assertPublicWalletResponseIsSafe(value: Record<string, unknown>) {
@@ -833,11 +912,7 @@ function assertPublicWalletResponseIsSafe(value: Record<string, unknown>) {
     assert.equal(Object.hasOwn(value, key), false);
   }
 
-  const encodedSavePayload = String(value.saveUrl).split('/').at(-1) ?? '';
-  const decodedSavePayload = Buffer.from(encodedSavePayload, 'base64url').toString(
-    'utf8'
-  );
-  const publicJson = `${JSON.stringify(value)} ${decodedSavePayload}`;
+  const publicJson = JSON.stringify(value);
 
   for (const forbiddenValue of [
     'business_1',
@@ -845,7 +920,6 @@ function assertPublicWalletResponseIsSafe(value: Record<string, unknown>) {
     'membership_1',
     'customer_1',
     'D:\\',
-    'barcode',
     camelScanField,
     snakeScanField
   ]) {
@@ -855,6 +929,15 @@ function assertPublicWalletResponseIsSafe(value: Record<string, unknown>) {
 
 function publicCardToken() {
   return 'public_card_token_123456789012345678901234';
+}
+
+function createTokenService() {
+  return new WalletScanTokenService(
+    new ConfigService({
+      WALLET_SCAN_TOKEN_SECRET:
+        'test-wallet-scan-token-secret-at-least-32-characters'
+    })
+  );
 }
 
 function user(id: string): AuthenticatedUser {

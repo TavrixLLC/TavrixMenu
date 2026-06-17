@@ -130,7 +130,7 @@ export class GoogleWalletService {
       payload.barcode = {
         type: 'QR_CODE',
         value: input.barcodeValue?.trim() || accountId,
-        alternateText: accountId
+        alternateText: input.barcodeAlternateText?.trim() || accountId
       };
     }
 

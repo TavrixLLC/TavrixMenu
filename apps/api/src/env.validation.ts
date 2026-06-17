@@ -42,6 +42,7 @@ export function validateEnvironment(config: Environment) {
     config.WALLET_IMAGE_PUBLIC_BASE_URL,
     'WALLET_IMAGE_PUBLIC_BASE_URL'
   );
+  const walletScanTokenSecret = config.WALLET_SCAN_TOKEN_SECRET?.trim() ?? '';
 
   if (googleWalletEnabled) {
     if (!googleWalletIssuerId) {
@@ -65,6 +66,12 @@ export function validateEnvironment(config: Environment) {
         'GOOGLE_WALLET_ORIGINS must include at least one origin when GOOGLE_WALLET_ENABLED=true'
       );
     }
+
+    if (walletScanTokenSecret.length < 32) {
+      throw new Error(
+        'WALLET_SCAN_TOKEN_SECRET must be at least 32 characters when GOOGLE_WALLET_ENABLED=true'
+      );
+    }
   }
 
   return {
@@ -77,7 +84,8 @@ export function validateEnvironment(config: Environment) {
     GOOGLE_WALLET_ISSUER_ID: googleWalletIssuerId,
     GOOGLE_WALLET_CREDENTIALS_PATH: googleWalletCredentialsPath,
     GOOGLE_WALLET_ORIGINS: googleWalletOrigins,
-    WALLET_IMAGE_PUBLIC_BASE_URL: walletImagePublicBaseUrl
+    WALLET_IMAGE_PUBLIC_BASE_URL: walletImagePublicBaseUrl,
+    WALLET_SCAN_TOKEN_SECRET: walletScanTokenSecret
   };
 }
 

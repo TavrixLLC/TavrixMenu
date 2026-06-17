@@ -83,6 +83,7 @@ export type BuildLoyaltyObjectPayloadInput = {
   stampGoal: number;
   rewardName: string;
   barcodeValue?: string;
+  barcodeAlternateText?: string;
   includeBarcode?: boolean;
   heroImageUrl?: string;
   heroImageDescription?: string;

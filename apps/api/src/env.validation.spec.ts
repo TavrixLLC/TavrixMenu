@@ -42,6 +42,18 @@ describe('validateEnvironment Google Wallet config', () => {
         }),
       /GOOGLE_WALLET_ORIGINS must include at least one origin/
     );
+
+    assert.throws(
+      () =>
+        validateEnvironment({
+          NODE_ENV: 'development',
+          GOOGLE_WALLET_ENABLED: 'true',
+          GOOGLE_WALLET_ISSUER_ID: '3388000000023161301',
+          GOOGLE_WALLET_CREDENTIALS_PATH: 'service-account.json',
+          GOOGLE_WALLET_ORIGINS: 'https://menu.example.test'
+        }),
+      /WALLET_SCAN_TOKEN_SECRET must be at least 32 characters/
+    );
   });
 
   it('normalizes comma-separated Wallet origins', () => {
@@ -52,7 +64,9 @@ describe('validateEnvironment Google Wallet config', () => {
       GOOGLE_WALLET_CREDENTIALS_PATH: 'service-account.json',
       GOOGLE_WALLET_ORIGINS:
         'https://menu.example.test/, http://localhost:3001/path',
-      WALLET_IMAGE_PUBLIC_BASE_URL: 'https://api.waflo.app/generated/'
+      WALLET_IMAGE_PUBLIC_BASE_URL: 'https://api.waflo.app/generated/',
+      WALLET_SCAN_TOKEN_SECRET:
+        'test-wallet-scan-token-secret-at-least-32-characters'
     });
 
     assert.deepEqual(config.GOOGLE_WALLET_ORIGINS, [
@@ -62,6 +76,10 @@ describe('validateEnvironment Google Wallet config', () => {
     assert.equal(
       config.WALLET_IMAGE_PUBLIC_BASE_URL,
       'https://api.waflo.app/generated'
+    );
+    assert.equal(
+      config.WALLET_SCAN_TOKEN_SECRET,
+      'test-wallet-scan-token-secret-at-least-32-characters'
     );
   });
 

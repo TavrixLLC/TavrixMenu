@@ -11,15 +11,24 @@ import { PublicWalletPassController } from './public-wallet-pass.controller';
 import { PublicWalletPassService } from './public-wallet-pass.service';
 import { WalletPassController } from './wallet-pass.controller';
 import { WalletPassService } from './wallet-pass.service';
+import { WalletScanController } from './wallet-scan.controller';
+import { WalletScanService } from './wallet-scan.service';
+import { WalletScanTokenService } from './wallet-scan-token.service';
 
 @Module({
   imports: [AuthModule, BusinessesModule, LoyaltyModule],
-  controllers: [WalletPassController, PublicWalletPassController],
+  controllers: [
+    WalletPassController,
+    PublicWalletPassController,
+    WalletScanController
+  ],
   providers: [
     GoogleWalletService,
     GoogleWalletRestClient,
     PublicWalletPassService,
     WalletPassService,
+    WalletScanService,
+    WalletScanTokenService,
     {
       provide: GOOGLE_WALLET_API_CLIENT,
       useExisting: GoogleWalletRestClient

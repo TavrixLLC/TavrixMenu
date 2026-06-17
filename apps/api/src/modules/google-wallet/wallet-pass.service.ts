@@ -21,6 +21,10 @@ import { DEFAULT_LOYALTY_STAMP_STYLE } from '../loyalty/loyalty-stamp-style.cons
 import { StampImageStorageService } from '../loyalty/stamp-image-storage.service';
 import { GoogleWalletApiError } from './google-wallet-api.client';
 import { GoogleWalletService } from './google-wallet.service';
+import {
+  WalletScanTokenMetadata,
+  WalletScanTokenService
+} from './wallet-scan-token.service';
 
 export type WalletMembership = Prisma.LoyaltyMembershipGetPayload<{
   include: {
@@ -56,6 +60,7 @@ export class WalletPassService {
     private readonly prisma: PrismaService,
     private readonly businessAccessService: BusinessAccessService,
     private readonly googleWalletService: GoogleWalletService,
+    private readonly walletScanTokenService: WalletScanTokenService,
     private readonly stampImageStorageService: StampImageStorageService
   ) {}
 
@@ -83,6 +88,9 @@ export class WalletPassService {
     let pass = await this.createOrReusePendingPass(membership);
 
     try {
+      const barcodeToken = await this.ensureScanToken(pass);
+      pass = barcodeToken.pass;
+
       const heroImageUrl = await this.renderHeroImage(membership);
       const classSuffix = this.buildClassSuffix(membership);
       const objectSuffix = this.buildObjectSuffix(membership);
@@ -106,7 +114,10 @@ export class WalletPassService {
         stampCount: membership.stampCount,
         stampGoal: membership.loyaltyProgram.stampGoal,
         rewardName: membership.loyaltyProgram.rewardName,
-        includeBarcode: false,
+        barcodeValue: barcodeToken.metadata.rawToken,
+        barcodeAlternateText: this.buildBarcodeAlternateText(
+          barcodeToken.metadata.scanTokenLast4
+        ),
         heroImageUrl,
         heroImageDescription: `${membership.loyaltyProgram.name} stamp progress`,
         progressText: `${Math.min(
@@ -227,6 +238,42 @@ export class WalletPassService {
     });
   }
 
+  private async ensureScanToken(pass: WalletPass): Promise<{
+    pass: WalletPass;
+    metadata: WalletScanTokenMetadata;
+  }> {
+    const metadata = this.walletScanTokenService.buildMetadataForPass(pass);
+    const tokenFieldsMatch =
+      pass.scanTokenHash === metadata.scanTokenHash &&
+      pass.scanTokenVersion === metadata.scanTokenVersion &&
+      pass.scanTokenIssuedAt?.getTime() === metadata.scanTokenIssuedAt.getTime() &&
+      pass.scanTokenLast4 === metadata.scanTokenLast4;
+
+    if (tokenFieldsMatch) {
+      return {
+        pass,
+        metadata
+      };
+    }
+
+    const updatedPass = await this.prisma.walletPass.update({
+      where: {
+        id: pass.id
+      },
+      data: {
+        scanTokenHash: metadata.scanTokenHash,
+        scanTokenVersion: metadata.scanTokenVersion,
+        scanTokenIssuedAt: metadata.scanTokenIssuedAt,
+        scanTokenLast4: metadata.scanTokenLast4
+      }
+    });
+
+    return {
+      pass: updatedPass,
+      metadata
+    };
+  }
+
   private async renderHeroImage(membership: WalletMembership) {
     const style = this.resolveStampStyle(membership);
     const storedImage = await this.stampImageStorageService.renderAndStore({
@@ -279,6 +326,10 @@ export class WalletPassService {
     return `WAFLO-${suffix.toUpperCase()}`;
   }
 
+  private buildBarcodeAlternateText(last4: string) {
+    return `Scan code ending ${last4.toUpperCase()}`;
+  }
+
   private stableOpaqueSegment(...values: string[]) {
     return createHash('sha256').update(values.join(':')).digest('hex').slice(0, 24);
   }
@@ -315,6 +366,8 @@ export class WalletPassService {
     const unsafePatterns = [
       /private[_ -]?key/i,
       /client[_ -]?email/i,
+      /waflo_scan_v1/i,
+      /scan[_ -]?token/i,
       /[A-Za-z]:\\/,
       /\/(?:home|users|var|tmp|etc)\//i
     ];

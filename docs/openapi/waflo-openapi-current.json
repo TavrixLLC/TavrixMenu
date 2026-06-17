@@ -2347,6 +2347,80 @@
           "public loyalty"
         ]
       }
+    },
+    "/businesses/{businessId}/loyalty/wallet-scan": {
+      "post": {
+        "operationId": "WalletScanController_scanGoogleWalletPass",
+        "parameters": [
+          {
+            "name": "businessId",
+            "required": true,
+            "in": "path",
+            "schema": {
+              "type": "string"
+            }
+          }
+        ],
+        "requestBody": {
+          "required": true,
+          "content": {
+            "application/json": {
+              "schema": {
+                "$ref": "#/components/schemas/WalletScanDto"
+              }
+            }
+          }
+        },
+        "responses": {
+          "200": {
+            "description": "Validates a Google Wallet loyalty barcode token and returns safe staff scan data.",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "example": {
+                    "membershipId": "membership_id",
+                    "customer": {
+                      "name": "Demo Customer",
+                      "phone": "+9647700000000"
+                    },
+                    "program": {
+                      "name": "Tavrix Cafe Stamp Card",
+                      "stampGoal": 10,
+                      "rewardName": "Free coffee"
+                    },
+                    "progress": {
+                      "stamps": 3,
+                      "goal": 10,
+                      "canRedeem": false
+                    },
+                    "walletPass": {
+                      "platform": "GOOGLE_WALLET",
+                      "status": "ACTIVE"
+                    }
+                  }
+                }
+              }
+            }
+          },
+          "400": {
+            "description": "Malformed, invalid, inactive, or rotated wallet scan token."
+          },
+          "401": {
+            "description": "Missing or invalid bearer token."
+          },
+          "403": {
+            "description": "Active OWNER, MANAGER, or STAFF membership is required."
+          }
+        },
+        "security": [
+          {
+            "bearer": []
+          }
+        ],
+        "tags": [
+          "loyalty"
+        ]
+      }
     }
   },
   "info": {
@@ -2959,6 +3033,19 @@
             "nullable": true
           }
         }
+      },
+      "WalletScanDto": {
+        "type": "object",
+        "properties": {
+          "token": {
+            "type": "string",
+            "example": "waflo_scan_v1.1.1781704800000.opaquePayload.signature",
+            "description": "Raw opaque token read from a Google Wallet loyalty barcode."
+          }
+        },
+        "required": [
+          "token"
+        ]
       }
     }
   }

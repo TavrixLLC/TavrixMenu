@@ -53,6 +53,13 @@ Expected response:
 }
 ```
 
+## Google Wallet Scan Smoke Note
+
+Real Google Wallet loyalty membership passes should show a square QR code after
+Sprint 9D, not only the `WAFLO-...` member display text. Existing Wallet passes
+created before Sprint 9D may need to be re-synced or re-added before the QR code
+appears.
+
 ## Future Integrations
 
 - Clerk backend session verification will be added in `src/modules/auth` and backend guards.
