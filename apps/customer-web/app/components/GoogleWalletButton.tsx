@@ -4,26 +4,43 @@ import { useState } from 'react';
 import {
   getGoogleWalletButtonLabel,
   isGoogleWalletButtonDisabled,
+  openGoogleWalletSaveUrl,
   requestGoogleWalletSaveUrl,
   shouldShowGoogleWalletButton
 } from '../lib/google-wallet';
 
 type GoogleWalletButtonProps = {
   apiBaseUrl: string;
-  businessId?: string | null;
-  membershipId?: string | null;
+  cardToken?: string | null;
 };
 
-export function GoogleWalletButton({ apiBaseUrl, businessId, membershipId }: GoogleWalletButtonProps) {
+export function GoogleWalletButton({ apiBaseUrl, cardToken }: GoogleWalletButtonProps) {
   const [isLoading, setIsLoading] = useState(false);
   const [error, setError] = useState<string | null>(null);
+  const normalizedCardToken = cardToken?.trim() || null;
+  const hasCardToken = shouldShowGoogleWalletButton({
+    cardToken: normalizedCardToken
+  });
 
-  if (!shouldShowGoogleWalletButton({ businessId, membershipId })) {
-    return null;
+  if (!hasCardToken) {
+    return (
+      <div className="mt-5 rounded-lg border border-neutral-200 bg-neutral-50 p-4">
+        <button
+          type="button"
+          disabled
+          className="h-12 w-full cursor-not-allowed rounded-md bg-neutral-300 px-5 text-sm font-semibold text-white"
+        >
+          Add to Google Wallet
+        </button>
+        <p role="status" className="mt-3 rounded-md border border-amber-100 bg-amber-50 p-3 text-sm leading-6 text-amber-700">
+          Open this loyalty card from its card link to add it to Google Wallet.
+        </p>
+      </div>
+    );
   }
 
   async function handleClick() {
-    if (isLoading || !businessId || !membershipId) {
+    if (isLoading || !hasCardToken || !normalizedCardToken) {
       return;
     }
 
@@ -32,8 +49,7 @@ export function GoogleWalletButton({ apiBaseUrl, businessId, membershipId }: Goo
 
     const result = await requestGoogleWalletSaveUrl({
       apiBaseUrl,
-      businessId,
-      membershipId
+      cardToken: normalizedCardToken
     });
 
     setIsLoading(false);
@@ -43,11 +59,7 @@ export function GoogleWalletButton({ apiBaseUrl, businessId, membershipId }: Goo
       return;
     }
 
-    const openedWindow = window.open(result.data.saveUrl, '_blank', 'noopener,noreferrer');
-
-    if (!openedWindow) {
-      window.location.assign(result.data.saveUrl);
-    }
+    openGoogleWalletSaveUrl(result.data.saveUrl);
   }
 
   return (
@@ -55,7 +67,7 @@ export function GoogleWalletButton({ apiBaseUrl, businessId, membershipId }: Goo
       <button
         type="button"
         onClick={handleClick}
-        disabled={isGoogleWalletButtonDisabled({ isLoading })}
+        disabled={isGoogleWalletButtonDisabled({ isLoading, hasCardToken })}
         className="h-12 w-full rounded-md bg-ink px-5 text-sm font-semibold text-white transition hover:bg-neutral-800 disabled:cursor-not-allowed disabled:bg-neutral-400"
       >
         {getGoogleWalletButtonLabel({

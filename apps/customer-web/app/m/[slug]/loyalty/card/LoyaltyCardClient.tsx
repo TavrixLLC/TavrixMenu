@@ -20,6 +20,7 @@ type CardStatus =
   | {
       state: 'ok';
       card: PublicLoyaltyCard;
+      token: string;
     };
 
 type LoyaltyCardClientProps = {
@@ -116,7 +117,17 @@ function CardMetrics({ card }: { card: PublicLoyaltyCard }) {
   );
 }
 
-function CardView({ slug, card, apiBaseUrl }: { slug: string; card: PublicLoyaltyCard; apiBaseUrl: string }) {
+function CardView({
+  slug,
+  card,
+  cardToken,
+  apiBaseUrl
+}: {
+  slug: string;
+  card: PublicLoyaltyCard;
+  cardToken: string;
+  apiBaseUrl: string;
+}) {
   return (
     <main className="min-h-screen bg-[#fafaf7] pb-10">
       <section className="mx-auto w-full max-w-3xl px-4 pt-5">
@@ -166,8 +177,7 @@ function CardView({ slug, card, apiBaseUrl }: { slug: string; card: PublicLoyalt
 
             <GoogleWalletButton
               apiBaseUrl={apiBaseUrl}
-              businessId={card.googleWallet?.businessId}
-              membershipId={card.googleWallet?.membershipId}
+              cardToken={cardToken}
             />
 
             {card.program.terms ? (
@@ -224,7 +234,8 @@ export function LoyaltyCardClient({ slug, initialToken, apiBaseUrl }: LoyaltyCar
       if (result.status === 'ok') {
         setStatus({
           state: 'ok',
-          card: result.data
+          card: result.data,
+          token
         });
         return;
       }
@@ -279,6 +290,6 @@ export function LoyaltyCardClient({ slug, initialToken, apiBaseUrl }: LoyaltyCar
         </LoyaltyCardShell>
       );
     case 'ok':
-      return <CardView slug={slug} card={status.card} apiBaseUrl={apiBaseUrl} />;
+      return <CardView slug={slug} card={status.card} cardToken={status.token} apiBaseUrl={apiBaseUrl} />;
   }
 }

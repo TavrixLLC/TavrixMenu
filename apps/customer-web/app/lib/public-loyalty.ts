@@ -1,5 +1,4 @@
 import { getApiBaseUrl } from './public-menu';
-import type { GoogleWalletContext } from './google-wallet';
 
 export type PublicLoyaltyBusiness = {
   id: string;
@@ -74,7 +73,6 @@ export type PublicLoyaltyEnrollment = {
     token: string;
     cardUrlPath: string;
   };
-  googleWallet: GoogleWalletContext | null;
 };
 
 export type PublicLoyaltyCard = {
@@ -96,7 +94,6 @@ export type PublicLoyaltyCard = {
     name: string | null;
   };
   cardState: PublicLoyaltyCardState;
-  googleWallet: GoogleWalletContext | null;
 };
 
 export type PublicLoyaltyContextResult =
@@ -263,31 +260,6 @@ function parseCardState(value: unknown): PublicLoyaltyCardState | null {
   };
 }
 
-function parseGoogleWalletContext(record: Record<string, unknown> | null): GoogleWalletContext | null {
-  if (!record) {
-    return null;
-  }
-
-  const walletRecord =
-    asRecord(record.googleWallet) ??
-    asRecord(record.walletPass) ??
-    asRecord(record.wallet) ??
-    record;
-  const business = asRecord(record.business);
-  const membership = asRecord(record.membership);
-  const businessId = readString(walletRecord.businessId) ?? readString(business?.id);
-  const membershipId = readString(walletRecord.membershipId) ?? readString(membership?.id);
-
-  if (!businessId || !membershipId) {
-    return null;
-  }
-
-  return {
-    businessId,
-    membershipId
-  };
-}
-
 function parseContext(value: unknown): PublicLoyaltyContext | null {
   const record = asRecord(value);
   const business = parseBusiness(record?.business);
@@ -347,8 +319,7 @@ function parseEnrollment(value: unknown): PublicLoyaltyEnrollment | null {
     cardAccess: {
       token,
       cardUrlPath
-    },
-    googleWallet: parseGoogleWalletContext(record)
+    }
   };
 }
 
@@ -385,8 +356,7 @@ function parseCard(value: unknown): PublicLoyaltyCard | null {
     customer: {
       name: readString(customer?.name)
     },
-    cardState,
-    googleWallet: parseGoogleWalletContext(record)
+    cardState
   };
 }
 

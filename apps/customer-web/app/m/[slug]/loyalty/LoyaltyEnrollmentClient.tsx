@@ -102,8 +102,7 @@ export function LoyaltyEnrollmentClient({ slug, apiBaseUrl }: LoyaltyEnrollmentC
 
         <GoogleWalletButton
           apiBaseUrl={apiBaseUrl}
-          businessId={enrollment.googleWallet?.businessId}
-          membershipId={enrollment.googleWallet?.membershipId}
+          cardToken={enrollment.cardAccess.token}
         />
 
         {storageUnavailable ? (

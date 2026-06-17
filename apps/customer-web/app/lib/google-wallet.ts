@@ -1,15 +1,13 @@
 export type GoogleWalletContext = {
-  businessId: string;
-  membershipId: string;
+  cardToken: string;
 };
 
 export type GoogleWalletSaveUrlResponse = {
   platform: 'GOOGLE_WALLET';
-  membershipId: string;
-  googleClassId: string;
-  googleObjectId: string;
   saveUrl: string;
   status: string;
+  businessName: string;
+  programName: string;
   lastSyncedAt: string;
 };
 
@@ -38,10 +36,9 @@ type WalletFetch = (
 }>;
 
 export function shouldShowGoogleWalletButton(context: {
-  businessId?: string | null;
-  membershipId?: string | null;
+  cardToken?: string | null;
 }) {
-  return Boolean(context.businessId?.trim() && context.membershipId?.trim());
+  return Boolean(context.cardToken?.trim());
 }
 
 export function getGoogleWalletButtonLabel(state: {
@@ -55,27 +52,28 @@ export function getGoogleWalletButtonLabel(state: {
   return state.hasError ? 'Try Google Wallet again' : 'Add to Google Wallet';
 }
 
-export function isGoogleWalletButtonDisabled(state: { isLoading: boolean }) {
-  return state.isLoading;
+export function isGoogleWalletButtonDisabled(state: {
+  isLoading: boolean;
+  hasCardToken?: boolean;
+}) {
+  return state.isLoading || state.hasCardToken === false;
 }
 
 export function buildGoogleWalletUrl(input: {
   apiBaseUrl: string;
-  businessId: string;
-  membershipId: string;
+  cardToken: string;
 }) {
   const apiBaseUrl = input.apiBaseUrl.replace(/\/+$/, '');
 
-  return `${apiBaseUrl}/businesses/${encodeURIComponent(input.businessId)}/loyalty/memberships/${encodeURIComponent(
-    input.membershipId
+  return `${apiBaseUrl}/public/loyalty/cards/${encodeURIComponent(
+    input.cardToken
   )}/google-wallet`;
 }
 
 export async function requestGoogleWalletSaveUrl(
   input: {
     apiBaseUrl: string;
-    businessId: string;
-    membershipId: string;
+    cardToken: string;
   },
   fetcher: WalletFetch = fetch
 ): Promise<GoogleWalletSaveUrlResult> {
@@ -109,23 +107,37 @@ export async function requestGoogleWalletSaveUrl(
   };
 }
 
+export function openGoogleWalletSaveUrl(
+  saveUrl: string,
+  target: {
+    open: (url: string, target: string, features: string) => unknown;
+    location: {
+      assign: (url: string) => void;
+    };
+  } = window
+) {
+  const openedWindow = target.open(saveUrl, '_blank', 'noopener,noreferrer');
+
+  if (!openedWindow) {
+    target.location.assign(saveUrl);
+  }
+}
+
 function parseGoogleWalletResponse(value: unknown): GoogleWalletSaveUrlResponse | null {
   const record = asRecord(value);
   const platform = readString(record?.platform);
-  const membershipId = readString(record?.membershipId);
-  const googleClassId = readString(record?.googleClassId);
-  const googleObjectId = readString(record?.googleObjectId);
   const saveUrl = readString(record?.saveUrl);
   const status = readString(record?.status);
+  const businessName = readString(record?.businessName);
+  const programName = readString(record?.programName);
   const lastSyncedAt = readString(record?.lastSyncedAt);
 
   if (
     platform !== 'GOOGLE_WALLET' ||
-    !membershipId ||
-    !googleClassId ||
-    !googleObjectId ||
     !saveUrl ||
     !status ||
+    !businessName ||
+    !programName ||
     !lastSyncedAt
   ) {
     return null;
@@ -133,11 +145,10 @@ function parseGoogleWalletResponse(value: unknown): GoogleWalletSaveUrlResponse 
 
   return {
     platform,
-    membershipId,
-    googleClassId,
-    googleObjectId,
     saveUrl,
     status,
+    businessName,
+    programName,
     lastSyncedAt
   };
 }
