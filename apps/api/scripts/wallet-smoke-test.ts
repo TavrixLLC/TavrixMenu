@@ -61,13 +61,17 @@ async function main() {
     throw new Error('Google Wallet save URL was not generated correctly');
   }
 
+  // Never print the full saveUrl — it contains a signed JWT.
+  // Report only the prefix to confirm the URL was generated correctly.
+  const saveUrlPrefix = saveUrl.slice(0, 50) + '…';
+
   console.log(
     JSON.stringify(
       {
         passed: true,
         classId: classPayload.id,
         objectId: objectPayload.id,
-        saveUrl
+        saveUrlPrefix
       },
       null,
       2
