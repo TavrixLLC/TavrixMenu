@@ -2,7 +2,8 @@ import { strict as assert } from 'assert';
 import { describe, it } from 'node:test';
 import {
   LoyaltyMembershipStatus,
-  LoyaltyTransactionType
+  LoyaltyTransactionType,
+  WalletRefreshJobReason
 } from '../../generated/prisma';
 import { AuthenticatedUser } from '../auth/interfaces/authenticated-user.interface';
 import { LoyaltyService } from './loyalty.service';
@@ -47,7 +48,7 @@ describe('LoyaltyService compatibility', () => {
 });
 
 describe('LoyaltyService wallet refresh hooks', () => {
-  it('refreshes an existing Google Wallet pass after add stamp transaction succeeds', async () => {
+  it('enqueues a Google Wallet refresh job after add stamp transaction succeeds', async () => {
     const setup = createMutationService();
 
     const response = await setup.service.addStamps(
@@ -60,16 +61,22 @@ describe('LoyaltyService wallet refresh hooks', () => {
     );
 
     assert.equal(response.membership.stampCount, 4);
-    assert.deepEqual(setup.refreshCalls, ['membership_1']);
+    assert.deepEqual(setup.enqueueCalls, [
+      {
+        businessId: 'business_1',
+        membershipId: 'membership_1',
+        reason: WalletRefreshJobReason.STAMP_ADDED
+      }
+    ]);
     assert.deepEqual(setup.order, [
       'transaction:start',
       'transaction:end',
-      'wallet:refresh'
+      'wallet:enqueue'
     ]);
     assert.equal(setup.transactions[0]?.type, LoyaltyTransactionType.STAMP_ADDED);
   });
 
-  it('refreshes an existing Google Wallet pass after redeem transaction succeeds', async () => {
+  it('enqueues a Google Wallet refresh job after redeem transaction succeeds', async () => {
     const setup = createMutationService({
       membership: mutationMembership({
         stampCount: 5,
@@ -88,11 +95,17 @@ describe('LoyaltyService wallet refresh hooks', () => {
 
     assert.equal(response.membership.stampCount, 0);
     assert.equal(response.membership.rewardReady, false);
-    assert.deepEqual(setup.refreshCalls, ['membership_1']);
+    assert.deepEqual(setup.enqueueCalls, [
+      {
+        businessId: 'business_1',
+        membershipId: 'membership_1',
+        reason: WalletRefreshJobReason.REWARD_REDEEMED
+      }
+    ]);
     assert.deepEqual(setup.order, [
       'transaction:start',
       'transaction:end',
-      'wallet:refresh'
+      'wallet:enqueue'
     ]);
     assert.equal(
       setup.transactions[0]?.type,
@@ -100,9 +113,9 @@ describe('LoyaltyService wallet refresh hooks', () => {
     );
   });
 
-  it('does not fail add stamps when wallet refresh throws', async () => {
+  it('does not fail add stamps when wallet refresh enqueue throws', async () => {
     const setup = createMutationService({
-      refreshError: new Error('Google Wallet sync failed')
+      enqueueError: new Error('Wallet refresh enqueue failed')
     });
 
     const response = await setup.service.addStamps(
@@ -115,16 +128,16 @@ describe('LoyaltyService wallet refresh hooks', () => {
     );
 
     assert.equal(response.membership.stampCount, 4);
-    assert.deepEqual(setup.refreshCalls, ['membership_1']);
+    assert.equal(setup.enqueueCalls.length, 1);
   });
 
-  it('does not fail redeem when wallet refresh throws', async () => {
+  it('does not fail redeem when wallet refresh enqueue throws', async () => {
     const setup = createMutationService({
       membership: mutationMembership({
         stampCount: 5,
         rewardReady: true
       }),
-      refreshError: new Error('Google Wallet sync failed')
+      enqueueError: new Error('Wallet refresh enqueue failed')
     });
 
     const response = await setup.service.redeemReward(
@@ -136,17 +149,21 @@ describe('LoyaltyService wallet refresh hooks', () => {
 
     assert.equal(response.membership.stampCount, 0);
     assert.equal(response.membership.rewardReady, false);
-    assert.deepEqual(setup.refreshCalls, ['membership_1']);
+    assert.equal(setup.enqueueCalls.length, 1);
   });
 });
 
 function createMutationService(overrides: {
   membership?: ReturnType<typeof mutationMembership>;
-  refreshError?: Error;
+  enqueueError?: Error;
 } = {}) {
   let currentMembership = overrides.membership ?? mutationMembership();
   const order: string[] = [];
-  const refreshCalls: string[] = [];
+  const enqueueCalls: Array<{
+    businessId: string;
+    membershipId: string;
+    reason: WalletRefreshJobReason;
+  }> = [];
   const transactions: Array<Record<string, unknown>> = [];
   const transaction = {
     $queryRaw: async () => [{ id: currentMembership.id }],
@@ -188,18 +205,26 @@ function createMutationService(overrides: {
   const businessAccess = {
     assertRole: async () => undefined
   };
-  const walletPassService = {
-    refreshGoogleWalletPassForMembership: async (membershipId: string) => {
-      refreshCalls.push(membershipId);
-      order.push('wallet:refresh');
+  const walletRefreshJobService = {
+    enqueueWalletRefreshForMembership: async (input: {
+      businessId: string;
+      membershipId: string;
+      reason: WalletRefreshJobReason;
+    }) => {
+      enqueueCalls.push(input);
+      order.push('wallet:enqueue');
 
-      if (overrides.refreshError) {
-        throw overrides.refreshError;
+      if (overrides.enqueueError) {
+        throw overrides.enqueueError;
       }
 
       return {
-        status: 'REFRESHED'
+        status: 'QUEUED',
+        jobId: 'job_1'
       };
+    },
+    refreshGoogleWalletPassForMembership: async () => {
+      throw new Error('Google Wallet API must not be called inline');
     }
   };
 
@@ -207,10 +232,10 @@ function createMutationService(overrides: {
     service: new LoyaltyService(
       prisma as never,
       businessAccess as never,
-      walletPassService as never
+      walletRefreshJobService as never
     ),
     order,
-    refreshCalls,
+    enqueueCalls,
     transactions
   };
 }

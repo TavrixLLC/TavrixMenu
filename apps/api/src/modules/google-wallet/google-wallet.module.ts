@@ -11,6 +11,7 @@ import { PublicWalletPassController } from './public-wallet-pass.controller';
 import { PublicWalletPassService } from './public-wallet-pass.service';
 import { WalletPassController } from './wallet-pass.controller';
 import { WalletPassService } from './wallet-pass.service';
+import { WalletRefreshJobService } from './wallet-refresh-job.service';
 import { WalletScanController } from './wallet-scan.controller';
 import { WalletScanService } from './wallet-scan.service';
 import { WalletScanTokenService } from './wallet-scan-token.service';
@@ -27,6 +28,7 @@ import { WalletScanTokenService } from './wallet-scan-token.service';
     GoogleWalletRestClient,
     PublicWalletPassService,
     WalletPassService,
+    WalletRefreshJobService,
     WalletScanService,
     WalletScanTokenService,
     {
@@ -34,6 +36,6 @@ import { WalletScanTokenService } from './wallet-scan-token.service';
       useExisting: GoogleWalletRestClient
     }
   ],
-  exports: [GoogleWalletService, WalletPassService]
+  exports: [GoogleWalletService, WalletPassService, WalletRefreshJobService]
 })
 export class GoogleWalletModule {}

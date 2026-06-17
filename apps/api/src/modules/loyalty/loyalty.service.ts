@@ -15,12 +15,13 @@ import {
   LoyaltyProgram,
   LoyaltyTransaction,
   LoyaltyTransactionType,
-  Prisma
+  Prisma,
+  WalletRefreshJobReason
 } from '../../generated/prisma';
 import { PrismaService } from '../../prisma/prisma.service';
 import { AuthenticatedUser } from '../auth/interfaces/authenticated-user.interface';
 import { BusinessAccessService } from '../businesses/business-access.service';
-import { WalletPassService } from '../google-wallet/wallet-pass.service';
+import { WalletRefreshJobService } from '../google-wallet/wallet-refresh-job.service';
 import { AddStampsDto } from './dto/add-stamps.dto';
 import { CreateLoyaltyProgramDto } from './dto/create-loyalty-program.dto';
 import { EnrollLoyaltyCustomerDto } from './dto/enroll-loyalty-customer.dto';
@@ -53,8 +54,8 @@ export class LoyaltyService {
     private readonly prisma: PrismaService,
     private readonly businessAccessService: BusinessAccessService,
     @Optional()
-    @Inject(forwardRef(() => WalletPassService))
-    private readonly walletPassService?: WalletPassService
+    @Inject(forwardRef(() => WalletRefreshJobService))
+    private readonly walletRefreshJobService?: WalletRefreshJobService
   ) {}
 
   async getActiveProgram(currentUser: AuthenticatedUser, businessId: string) {
@@ -395,7 +396,10 @@ export class LoyaltyService {
       return updated;
     });
 
-    await this.refreshWalletPassAfterMembershipChange(updatedMembership.id);
+    await this.enqueueWalletRefreshAfterMembershipChange(
+      updatedMembership,
+      WalletRefreshJobReason.STAMP_ADDED
+    );
 
     return this.mapCardStateResponse(updatedMembership);
   }
@@ -462,7 +466,10 @@ export class LoyaltyService {
       return updated;
     });
 
-    await this.refreshWalletPassAfterMembershipChange(updatedMembership.id);
+    await this.enqueueWalletRefreshAfterMembershipChange(
+      updatedMembership,
+      WalletRefreshJobReason.REWARD_REDEEMED
+    );
 
     return this.mapCardStateResponse(updatedMembership);
   }
@@ -519,15 +526,20 @@ export class LoyaltyService {
     }
   }
 
-  private async refreshWalletPassAfterMembershipChange(membershipId: string) {
-    if (!this.walletPassService) {
+  private async enqueueWalletRefreshAfterMembershipChange(
+    membership: LoyaltyMembership,
+    reason: WalletRefreshJobReason
+  ) {
+    if (!this.walletRefreshJobService) {
       return;
     }
 
     try {
-      await this.walletPassService.refreshGoogleWalletPassForMembership(
-        membershipId
-      );
+      await this.walletRefreshJobService.enqueueWalletRefreshForMembership({
+        businessId: membership.businessId,
+        membershipId: membership.id,
+        reason
+      });
     } catch {
       undefined;
     }

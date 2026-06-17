@@ -47,6 +47,7 @@ model Business {
   loyaltyMemberships  LoyaltyMembership[]
   loyaltyTransactions LoyaltyTransaction[]
   walletPasses        WalletPass[]
+  walletRefreshJobs   WalletRefreshJob[]
   subscriptions       Subscription[]
   auditLogs           AuditLog[]
 
@@ -237,6 +238,7 @@ model LoyaltyMembership {
   customer              Customer                @relation(fields: [customerId], references: [id], onDelete: Cascade)
   transactions          LoyaltyTransaction[]
   walletPasses          WalletPass[]
+  walletRefreshJobs     WalletRefreshJob[]
 
   @@unique([customerId, loyaltyProgramId])
   @@index([businessId])
@@ -270,6 +272,32 @@ model WalletPass {
   @@index([businessId])
   @@index([membershipId])
   @@map("wallet_passes")
+}
+
+model WalletRefreshJob {
+  id           String                   @id @default(cuid())
+  membershipId String                  @map("membership_id")
+  businessId   String                  @map("business_id")
+  provider     WalletRefreshJobProvider
+  reason       WalletRefreshJobReason
+  status       WalletRefreshJobStatus  @default(PENDING)
+  attempts     Int                     @default(0)
+  maxAttempts  Int                     @default(3) @map("max_attempts")
+  nextRunAt    DateTime                @default(now()) @map("next_run_at")
+  lockedAt     DateTime?               @map("locked_at")
+  lockedUntil  DateTime?               @map("locked_until")
+  lockedBy     String?                 @map("locked_by")
+  lastError    String?                 @map("last_error")
+  completedAt  DateTime?               @map("completed_at")
+  createdAt    DateTime                @default(now()) @map("created_at")
+  updatedAt    DateTime                @updatedAt @map("updated_at")
+  business     Business                @relation(fields: [businessId], references: [id], onDelete: Cascade)
+  membership   LoyaltyMembership       @relation(fields: [membershipId], references: [id], onDelete: Cascade)
+
+  @@index([status, nextRunAt])
+  @@index([membershipId, provider, status])
+  @@index([lockedUntil])
+  @@map("wallet_refresh_jobs")
 }
 
 model LoyaltyTransaction {
@@ -341,6 +369,23 @@ enum WalletPassStatus {
   PENDING
   ACTIVE
   ERROR
+}
+
+enum WalletRefreshJobProvider {
+  GOOGLE_WALLET
+}
+
+enum WalletRefreshJobReason {
+  STAMP_ADDED
+  REWARD_REDEEMED
+}
+
+enum WalletRefreshJobStatus {
+  PENDING
+  PROCESSING
+  SUCCEEDED
+  FAILED
+  SKIPPED
 }
 
 enum LoyaltyStampStyleType {
