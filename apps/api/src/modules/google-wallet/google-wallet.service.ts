@@ -272,6 +272,17 @@ export class GoogleWalletService {
     );
   }
 
+  isEnabled() {
+    const value = this.configService.get<boolean | string>(
+      'GOOGLE_WALLET_ENABLED'
+    );
+
+    return (
+      value === true ||
+      (typeof value === 'string' && value.toLowerCase() === 'true')
+    );
+  }
+
   private async upsertResource<TPayload extends WalletResource>(
     resourceName: 'loyaltyClass' | 'loyaltyObject',
     payload: TPayload
@@ -435,13 +446,7 @@ export class GoogleWalletService {
   }
 
   private assertEnabled() {
-    const value = this.configService.get<boolean | string>(
-      'GOOGLE_WALLET_ENABLED'
-    );
-    const enabled =
-      value === true || (typeof value === 'string' && value.toLowerCase() === 'true');
-
-    if (!enabled) {
+    if (!this.isEnabled()) {
       throw new Error('Google Wallet integration is disabled');
     }
   }

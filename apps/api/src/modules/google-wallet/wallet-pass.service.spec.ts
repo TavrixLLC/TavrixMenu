@@ -31,6 +31,7 @@ type MockState = {
   pass: ReturnType<typeof walletPass> | null;
   createdPasses: number;
   membershipQueries: unknown[];
+  walletPassFindQueries: unknown[];
   upsertArgs: unknown[];
   updateArgs: Array<{
     where: { id: string };
@@ -44,8 +45,13 @@ class MockGoogleWalletService {
   readonly upsertedClasses: unknown[] = [];
   readonly upsertedObjects: unknown[] = [];
 
+  enabled = true;
   upsertClassError?: Error;
   upsertObjectError?: Error;
+
+  isEnabled() {
+    return this.enabled;
+  }
 
   buildLoyaltyClassPayload(input: {
     classSuffix: string;
@@ -103,6 +109,19 @@ class MockGoogleWalletService {
               alternateText: input.barcodeAlternateText ?? input.accountId
             }
           }),
+      loyaltyPoints: {
+        label: 'Progress',
+        balance: {
+          string: `${(input as any).stampCount}/${(input as any).stampGoal}`
+        }
+      },
+      textModulesData: [
+        {
+          id: 'progress',
+          header: 'Progress',
+          body: (input as any).progressText
+        }
+      ],
       heroImage: input.heroImageUrl
         ? {
             sourceUri: {
@@ -424,6 +443,166 @@ describe('WalletPassService', () => {
     assert.equal(JSON.stringify(state.pass).includes(firstRawToken), false);
   });
 
+  it('refreshes an existing WalletPass with updated progress and preserves the barcode token', async () => {
+    const tokenService = createTokenService();
+    const existingPass = walletPass({
+      id: 'pass_existing',
+      status: WalletPassStatus.ACTIVE
+    });
+    const metadata = tokenService.buildMetadataForPass(existingPass);
+    const { service, state, wallet } = createService({
+      tokenService,
+      pass: walletPass({
+        ...existingPass,
+        scanTokenHash: metadata.scanTokenHash,
+        scanTokenVersion: metadata.scanTokenVersion,
+        scanTokenIssuedAt: metadata.scanTokenIssuedAt,
+        scanTokenLast4: metadata.scanTokenLast4
+      }),
+      membership: membership({
+        stampCount: 4
+      })
+    });
+
+    const response =
+      await service.refreshGoogleWalletPassForMembership('membership_1');
+    const objectInput = wallet.objectInputs[0] as Record<string, unknown>;
+    const objectPayload = wallet.upsertedObjects[0] as Record<string, any>;
+    const tokenUpdates = state.updateArgs.filter((update) =>
+      Object.hasOwn(update.data, 'scanTokenHash')
+    );
+
+    assert.equal(response.status, 'REFRESHED');
+    assert.equal(wallet.upsertedClasses.length, 0);
+    assert.equal(wallet.upsertedObjects.length, 1);
+    assert.equal(objectInput.stampCount, 4);
+    assert.equal(objectInput.progressText, '4 of 5 stamps collected');
+    assert.equal(objectPayload.loyaltyPoints.balance.string, '4/5');
+    assert.equal(objectPayload.barcode.type, 'QR_CODE');
+    assert.equal(objectPayload.barcode.value, metadata.rawToken);
+    assert.notEqual(objectPayload.barcode.alternateText, metadata.rawToken);
+    assert.equal(tokenUpdates.length, 0);
+    assert.equal(state.pass?.scanTokenHash, metadata.scanTokenHash);
+    assert.equal(JSON.stringify(response).includes(metadata.rawToken), false);
+  });
+
+  it('does not rotate the scan token across repeated WalletPass refreshes', async () => {
+    const tokenService = createTokenService();
+    const existingPass = walletPass({
+      id: 'pass_existing',
+      status: WalletPassStatus.ACTIVE
+    });
+    const metadata = tokenService.buildMetadataForPass(existingPass);
+    const { service, state, wallet } = createService({
+      tokenService,
+      pass: walletPass({
+        ...existingPass,
+        scanTokenHash: metadata.scanTokenHash,
+        scanTokenVersion: metadata.scanTokenVersion,
+        scanTokenIssuedAt: metadata.scanTokenIssuedAt,
+        scanTokenLast4: metadata.scanTokenLast4
+      })
+    });
+
+    await service.refreshGoogleWalletPassForMembership('membership_1');
+    await service.refreshGoogleWalletPassForMembership('membership_1');
+
+    const firstBarcode = (wallet.upsertedObjects[0] as any).barcode.value;
+    const secondBarcode = (wallet.upsertedObjects[1] as any).barcode.value;
+    const tokenUpdates = state.updateArgs.filter((update) =>
+      Object.hasOwn(update.data, 'scanTokenHash')
+    );
+
+    assert.equal(firstBarcode, metadata.rawToken);
+    assert.equal(secondBarcode, metadata.rawToken);
+    assert.equal(firstBarcode, secondBarcode);
+    assert.equal(tokenUpdates.length, 0);
+  });
+
+  it('skips refresh without calling Google Wallet when no WalletPass exists', async () => {
+    const { service, wallet, state } = createService({
+      pass: null
+    });
+
+    const response =
+      await service.refreshGoogleWalletPassForMembership('membership_1');
+
+    assert.equal(response.status, 'SKIPPED_NO_PASS');
+    assert.equal(wallet.objectInputs.length, 0);
+    assert.equal(wallet.upsertedObjects.length, 0);
+    assert.equal(state.membershipQueries.length, 0);
+  });
+
+  it('skips refresh without lookup or Google calls when Google Wallet is disabled', async () => {
+    const wallet = new MockGoogleWalletService();
+    wallet.enabled = false;
+    const { service, state } = createService({
+      wallet
+    });
+
+    const response =
+      await service.refreshGoogleWalletPassForMembership('membership_1');
+
+    assert.equal(response.status, 'SKIPPED_DISABLED');
+    assert.equal(wallet.objectInputs.length, 0);
+    assert.equal(wallet.upsertedObjects.length, 0);
+    assert.equal(state.walletPassFindQueries.length, 0);
+    assert.equal(state.membershipQueries.length, 0);
+  });
+
+  it('marks WalletPass ERROR with a sanitized error when refresh fails', async () => {
+    const tokenService = createTokenService();
+    const existingPass = walletPass({
+      id: 'pass_existing',
+      status: WalletPassStatus.ACTIVE
+    });
+    const metadata = tokenService.buildMetadataForPass(existingPass);
+    const wallet = new MockGoogleWalletService();
+    wallet.upsertObjectError = new Error(`failed for ${metadata.rawToken}`);
+    const { service, state } = createService({
+      tokenService,
+      wallet,
+      pass: walletPass({
+        ...existingPass,
+        scanTokenHash: metadata.scanTokenHash,
+        scanTokenVersion: metadata.scanTokenVersion,
+        scanTokenIssuedAt: metadata.scanTokenIssuedAt,
+        scanTokenLast4: metadata.scanTokenLast4
+      })
+    });
+    const originalLog = console.log;
+    const originalError = console.error;
+    const calls: string[] = [];
+
+    console.log = (...args: unknown[]) => {
+      calls.push(args.join(' '));
+    };
+    console.error = (...args: unknown[]) => {
+      calls.push(args.join(' '));
+    };
+
+    try {
+      const response =
+        await service.refreshGoogleWalletPassForMembership('membership_1');
+      const finalUpdate = state.updateArgs.at(-1)?.data ?? {};
+
+      assert.deepEqual(response, {
+        status: 'FAILED',
+        platform: WalletPassPlatform.GOOGLE_WALLET,
+        membershipId: 'membership_1',
+        error: 'Google Wallet sync failed'
+      });
+      assert.equal(finalUpdate.status, WalletPassStatus.ERROR);
+      assert.equal(finalUpdate.syncError, 'Google Wallet sync failed');
+      assert.equal(JSON.stringify(finalUpdate).includes(metadata.rawToken), false);
+      assert.equal(JSON.stringify(response).includes(metadata.rawToken), false);
+      assert.equal(calls.join(' ').includes(metadata.rawToken), false);
+    } finally {
+      console.log = originalLog;
+      console.error = originalError;
+    }
+  });
+
   it('uses opaque Google Wallet resource IDs and hero image keys', async () => {
     const { service, wallet, storage } = createService();
 
@@ -739,6 +918,7 @@ function createService(overrides: {
     pass: overrides.pass ?? null,
     createdPasses: 0,
     membershipQueries: [],
+    walletPassFindQueries: [],
     upsertArgs: [],
     updateArgs: []
   };
@@ -751,9 +931,19 @@ function createService(overrides: {
         state.membershipQueries.push(query);
 
         return state.membership;
+      },
+      findUnique: async (query: unknown) => {
+        state.membershipQueries.push(query);
+
+        return state.membership;
       }
     },
     walletPass: {
+      findFirst: async (query: unknown) => {
+        state.walletPassFindQueries.push(query);
+
+        return state.pass;
+      },
       upsert: async (args: any) => {
         state.upsertArgs.push(args);
 

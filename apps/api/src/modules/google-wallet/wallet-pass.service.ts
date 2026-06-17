@@ -48,6 +48,24 @@ export type GoogleWalletPassResponse = {
   lastSyncedAt: Date;
 };
 
+export type GoogleWalletPassRefreshResult =
+  | {
+      status: 'SKIPPED_DISABLED' | 'SKIPPED_NO_PASS';
+    }
+  | {
+      status: 'REFRESHED';
+      platform: WalletPassPlatform;
+      membershipId: string;
+      googleObjectId: string;
+      lastSyncedAt: Date;
+    }
+  | {
+      status: 'FAILED';
+      platform: WalletPassPlatform;
+      membershipId: string;
+      error: string;
+    };
+
 @Injectable()
 export class WalletPassService {
   private readonly staffRoles = [
@@ -174,6 +192,105 @@ export class WalletPassService {
     }
   }
 
+  async refreshGoogleWalletPassForMembership(
+    membershipId: string
+  ): Promise<GoogleWalletPassRefreshResult> {
+    if (!this.googleWalletService.isEnabled()) {
+      return {
+        status: 'SKIPPED_DISABLED'
+      };
+    }
+
+    let pass = await this.prisma.walletPass.findFirst({
+      where: {
+        membershipId,
+        platform: WalletPassPlatform.GOOGLE_WALLET
+      }
+    });
+
+    if (!pass) {
+      return {
+        status: 'SKIPPED_NO_PASS'
+      };
+    }
+
+    try {
+      const membership = await this.findMembershipById(membershipId);
+
+      this.assertSyncableMembership(membership);
+
+      const barcodeToken = await this.ensureScanToken(pass);
+      pass = barcodeToken.pass;
+
+      const heroImageUrl = await this.renderHeroImage(membership);
+      const classSuffix = this.buildClassSuffix(membership);
+      const objectSuffix = this.buildObjectSuffix(membership);
+      const objectPayload = this.googleWalletService.buildLoyaltyObjectPayload({
+        classSuffix,
+        objectSuffix,
+        accountName: this.buildAccountName(membership),
+        accountId: this.buildAccountId(pass),
+        stampCount: membership.stampCount,
+        stampGoal: membership.loyaltyProgram.stampGoal,
+        rewardName: membership.loyaltyProgram.rewardName,
+        barcodeValue: barcodeToken.metadata.rawToken,
+        barcodeAlternateText: this.buildBarcodeAlternateText(
+          barcodeToken.metadata.scanTokenLast4
+        ),
+        heroImageUrl,
+        heroImageDescription: `${membership.loyaltyProgram.name} stamp progress`,
+        progressText: `${Math.min(
+          membership.stampCount,
+          membership.loyaltyProgram.stampGoal
+        )} of ${membership.loyaltyProgram.stampGoal} stamps collected`
+      });
+
+      await this.googleWalletService.upsertLoyaltyObject(objectPayload);
+
+      const lastSyncedAt = new Date();
+      const updatedPass = await this.prisma.walletPass.update({
+        where: {
+          id: pass.id
+        },
+        data: {
+          googleObjectId: objectPayload.id,
+          heroImageUrl,
+          status: WalletPassStatus.ACTIVE,
+          lastSyncedAt,
+          syncError: null
+        }
+      });
+
+      return {
+        status: 'REFRESHED',
+        platform: updatedPass.platform,
+        membershipId: updatedPass.membershipId,
+        googleObjectId: objectPayload.id,
+        lastSyncedAt: updatedPass.lastSyncedAt ?? lastSyncedAt
+      };
+    } catch (error) {
+      const syncError = this.sanitizeSyncError(error);
+
+      await this.prisma.walletPass.update({
+        where: {
+          id: pass.id
+        },
+        data: {
+          status: WalletPassStatus.ERROR,
+          syncError,
+          lastSyncedAt: new Date()
+        }
+      });
+
+      return {
+        status: 'FAILED',
+        platform: pass.platform,
+        membershipId: pass.membershipId,
+        error: syncError
+      };
+    }
+  }
+
   private assertSyncableMembership(membership: WalletMembership) {
     if (membership.business.status !== BusinessStatus.ACTIVE) {
       throw new BadRequestException('Business is inactive');
@@ -196,6 +313,29 @@ export class WalletPassService {
       where: {
         id: membershipId,
         businessId
+      },
+      include: {
+        business: true,
+        customer: true,
+        loyaltyProgram: {
+          include: {
+            stampStyle: true
+          }
+        }
+      }
+    });
+
+    if (!membership) {
+      throw new NotFoundException('Loyalty membership not found');
+    }
+
+    return membership;
+  }
+
+  private async findMembershipById(membershipId: string): Promise<WalletMembership> {
+    const membership = await this.prisma.loyaltyMembership.findUnique({
+      where: {
+        id: membershipId
       },
       include: {
         business: true,

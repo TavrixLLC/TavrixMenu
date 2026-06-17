@@ -1,4 +1,4 @@
-import { Module } from '@nestjs/common';
+import { forwardRef, Module } from '@nestjs/common';
 import { AuthModule } from '../auth/auth.module';
 import { BusinessesModule } from '../businesses/businesses.module';
 import { LoyaltyModule } from '../loyalty/loyalty.module';
@@ -16,7 +16,7 @@ import { WalletScanService } from './wallet-scan.service';
 import { WalletScanTokenService } from './wallet-scan-token.service';
 
 @Module({
-  imports: [AuthModule, BusinessesModule, LoyaltyModule],
+  imports: [AuthModule, BusinessesModule, forwardRef(() => LoyaltyModule)],
   controllers: [
     WalletPassController,
     PublicWalletPassController,
@@ -34,6 +34,6 @@ import { WalletScanTokenService } from './wallet-scan-token.service';
       useExisting: GoogleWalletRestClient
     }
   ],
-  exports: [GoogleWalletService]
+  exports: [GoogleWalletService, WalletPassService]
 })
 export class GoogleWalletModule {}

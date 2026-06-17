@@ -1,8 +1,11 @@
 import {
   BadRequestException,
   ConflictException,
+  forwardRef,
+  Inject,
   Injectable,
-  NotFoundException
+  NotFoundException,
+  Optional
 } from '@nestjs/common';
 import {
   BusinessUserRole,
@@ -17,6 +20,7 @@ import {
 import { PrismaService } from '../../prisma/prisma.service';
 import { AuthenticatedUser } from '../auth/interfaces/authenticated-user.interface';
 import { BusinessAccessService } from '../businesses/business-access.service';
+import { WalletPassService } from '../google-wallet/wallet-pass.service';
 import { AddStampsDto } from './dto/add-stamps.dto';
 import { CreateLoyaltyProgramDto } from './dto/create-loyalty-program.dto';
 import { EnrollLoyaltyCustomerDto } from './dto/enroll-loyalty-customer.dto';
@@ -47,7 +51,10 @@ export class LoyaltyService {
 
   constructor(
     private readonly prisma: PrismaService,
-    private readonly businessAccessService: BusinessAccessService
+    private readonly businessAccessService: BusinessAccessService,
+    @Optional()
+    @Inject(forwardRef(() => WalletPassService))
+    private readonly walletPassService?: WalletPassService
   ) {}
 
   async getActiveProgram(currentUser: AuthenticatedUser, businessId: string) {
@@ -388,6 +395,8 @@ export class LoyaltyService {
       return updated;
     });
 
+    await this.refreshWalletPassAfterMembershipChange(updatedMembership.id);
+
     return this.mapCardStateResponse(updatedMembership);
   }
 
@@ -453,6 +462,8 @@ export class LoyaltyService {
       return updated;
     });
 
+    await this.refreshWalletPassAfterMembershipChange(updatedMembership.id);
+
     return this.mapCardStateResponse(updatedMembership);
   }
 
@@ -505,6 +516,20 @@ export class LoyaltyService {
       throw new ConflictException(
         'An active loyalty program already exists for this business'
       );
+    }
+  }
+
+  private async refreshWalletPassAfterMembershipChange(membershipId: string) {
+    if (!this.walletPassService) {
+      return;
+    }
+
+    try {
+      await this.walletPassService.refreshGoogleWalletPassForMembership(
+        membershipId
+      );
+    } catch {
+      undefined;
     }
   }
 

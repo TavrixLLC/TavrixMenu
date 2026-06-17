@@ -1,6 +1,7 @@
-import { Module } from '@nestjs/common';
+import { forwardRef, Module } from '@nestjs/common';
 import { AuthModule } from '../auth/auth.module';
 import { BusinessesModule } from '../businesses/businesses.module';
+import { GoogleWalletModule } from '../google-wallet/google-wallet.module';
 import { LoyaltyController } from './loyalty.controller';
 import { LoyaltyStampPresetsController } from './loyalty-stamp-presets.controller';
 import { LoyaltyStampStyleService } from './loyalty-stamp-style.service';
@@ -11,7 +12,7 @@ import { StampImageRendererService } from './stamp-image-renderer.service';
 import { StampImageStorageService } from './stamp-image-storage.service';
 
 @Module({
-  imports: [AuthModule, BusinessesModule],
+  imports: [AuthModule, BusinessesModule, forwardRef(() => GoogleWalletModule)],
   controllers: [
     LoyaltyController,
     LoyaltyStampPresetsController,
