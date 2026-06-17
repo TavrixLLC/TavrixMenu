@@ -77,6 +77,7 @@ export type PublicLoyaltyEnrollment = {
 
 export type PublicLoyaltyCard = {
   business: {
+    id: string | null;
     name: string;
     slug: string;
     logoUrl: string | null;
@@ -339,6 +340,7 @@ function parseCard(value: unknown): PublicLoyaltyCard | null {
 
   return {
     business: {
+      id: readString(business?.id),
       name: businessName,
       slug: businessSlug,
       logoUrl: readString(business?.logoUrl),

@@ -1,8 +1,9 @@
 'use client';
 
 import { FormEvent, useState } from 'react';
-import { useRouter } from 'next/navigation';
-import { enrollPublicLoyaltyCustomer } from '../../../lib/public-loyalty';
+import Link from 'next/link';
+import { GoogleWalletButton } from '../../../components/GoogleWalletButton';
+import { enrollPublicLoyaltyCustomer, type PublicLoyaltyEnrollment } from '../../../lib/public-loyalty';
 
 type LoyaltyEnrollmentClientProps = {
   slug: string;
@@ -23,13 +24,13 @@ function storeCardToken(slug: string, token: string): boolean {
 }
 
 export function LoyaltyEnrollmentClient({ slug, apiBaseUrl }: LoyaltyEnrollmentClientProps) {
-  const router = useRouter();
   const [phone, setPhone] = useState('');
   const [email, setEmail] = useState('');
   const [name, setName] = useState('');
   const [error, setError] = useState<string | null>(null);
   const [isSubmitting, setIsSubmitting] = useState(false);
   const [storageUnavailable, setStorageUnavailable] = useState(false);
+  const [enrollment, setEnrollment] = useState<PublicLoyaltyEnrollment | null>(null);
 
   async function handleSubmit(event: FormEvent<HTMLFormElement>) {
     event.preventDefault();
@@ -71,7 +72,50 @@ export function LoyaltyEnrollmentClient({ slug, apiBaseUrl }: LoyaltyEnrollmentC
       setStorageUnavailable(true);
     }
 
-    router.push(`/m/${encodeURIComponent(slug)}/loyalty/card?token=${encodeURIComponent(token)}`);
+    setEnrollment(result.data);
+  }
+
+  if (enrollment) {
+    const cardHref = `/m/${encodeURIComponent(slug)}/loyalty/card?token=${encodeURIComponent(enrollment.cardAccess.token)}`;
+
+    return (
+      <section className="grid gap-4">
+        <div className="rounded-lg border border-emerald-100 bg-emerald-50 p-4">
+          <p className="text-sm font-semibold text-emerald-800">You joined {enrollment.program.name}</p>
+          <p className="mt-2 text-sm leading-6 text-emerald-900">
+            {enrollment.customer.name ? `${enrollment.customer.name}, y` : 'Y'}our card is ready.
+          </p>
+        </div>
+
+        <div className="grid gap-3 rounded-lg border border-neutral-200 bg-neutral-50 p-4">
+          <div>
+            <p className="text-sm font-semibold text-neutral-500">Reward</p>
+            <p className="mt-1 text-lg font-bold text-ink">{enrollment.program.rewardName}</p>
+          </div>
+          <div className="h-3 overflow-hidden rounded-full bg-white">
+            <div className="h-full rounded-full bg-mint" style={{ width: `${enrollment.cardState.progressPercent}%` }} />
+          </div>
+          <p className="text-sm font-semibold text-neutral-700">
+            {enrollment.cardState.stampCount} / {enrollment.cardState.stampGoal} stamps
+          </p>
+        </div>
+
+        <GoogleWalletButton
+          apiBaseUrl={apiBaseUrl}
+          cardToken={enrollment.cardAccess.token}
+        />
+
+        {storageUnavailable ? (
+          <p className="rounded-md border border-amber-100 bg-amber-50 p-3 text-sm leading-6 text-amber-700">
+            This browser could not save the card token for later, but this card link will still open now.
+          </p>
+        ) : null}
+
+        <Link href={cardHref} className="inline-flex h-12 items-center justify-center rounded-md border border-neutral-200 bg-white px-5 text-sm font-semibold text-ink">
+          Open web loyalty card
+        </Link>
+      </section>
+    );
   }
 
   return (

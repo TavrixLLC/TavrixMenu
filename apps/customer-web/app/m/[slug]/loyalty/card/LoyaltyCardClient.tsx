@@ -2,6 +2,7 @@
 
 import Link from 'next/link';
 import { useEffect, useState } from 'react';
+import { GoogleWalletButton } from '../../../../components/GoogleWalletButton';
 import { fetchPublicLoyaltyCard, type PublicLoyaltyCard } from '../../../../lib/public-loyalty';
 
 type CardStatus =
@@ -19,6 +20,7 @@ type CardStatus =
   | {
       state: 'ok';
       card: PublicLoyaltyCard;
+      token: string;
     };
 
 type LoyaltyCardClientProps = {
@@ -115,7 +117,17 @@ function CardMetrics({ card }: { card: PublicLoyaltyCard }) {
   );
 }
 
-function CardView({ slug, card }: { slug: string; card: PublicLoyaltyCard }) {
+function CardView({
+  slug,
+  card,
+  cardToken,
+  apiBaseUrl
+}: {
+  slug: string;
+  card: PublicLoyaltyCard;
+  cardToken: string;
+  apiBaseUrl: string;
+}) {
   return (
     <main className="min-h-screen bg-[#fafaf7] pb-10">
       <section className="mx-auto w-full max-w-3xl px-4 pt-5">
@@ -162,6 +174,11 @@ function CardView({ slug, card }: { slug: string; card: PublicLoyaltyCard }) {
             </div>
 
             <CardMetrics card={card} />
+
+            <GoogleWalletButton
+              apiBaseUrl={apiBaseUrl}
+              cardToken={cardToken}
+            />
 
             {card.program.terms ? (
               <p className="mt-5 rounded-md bg-neutral-50 p-4 text-sm leading-6 text-neutral-600">
@@ -217,7 +234,8 @@ export function LoyaltyCardClient({ slug, initialToken, apiBaseUrl }: LoyaltyCar
       if (result.status === 'ok') {
         setStatus({
           state: 'ok',
-          card: result.data
+          card: result.data,
+          token
         });
         return;
       }
@@ -272,6 +290,6 @@ export function LoyaltyCardClient({ slug, initialToken, apiBaseUrl }: LoyaltyCar
         </LoyaltyCardShell>
       );
     case 'ok':
-      return <CardView slug={slug} card={status.card} />;
+      return <CardView slug={slug} card={status.card} cardToken={status.token} apiBaseUrl={apiBaseUrl} />;
   }
 }
