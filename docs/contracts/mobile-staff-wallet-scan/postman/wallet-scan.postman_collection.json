@@ -1,0 +1,169 @@
+{
+  "info": {
+    "name": "Mobile Staff Wallet Scan - Sanitized",
+    "description": "Placeholder-only requests for the mobile staff wallet scan flow. Do not commit populated variable values.",
+    "schema": "https://schema.getpostman.com/json/collection/v2.1.0/collection.json"
+  },
+  "auth": {
+    "type": "bearer",
+    "bearer": [
+      {
+        "key": "token",
+        "value": "{{bearerToken}}",
+        "type": "string"
+      }
+    ]
+  },
+  "item": [
+    {
+      "name": "Get Current Businesses",
+      "request": {
+        "method": "GET",
+        "header": [],
+        "url": {
+          "raw": "{{baseUrl}}/businesses/me",
+          "host": [
+            "{{baseUrl}}"
+          ],
+          "path": [
+            "businesses",
+            "me"
+          ]
+        }
+      }
+    },
+    {
+      "name": "Scan Wallet Pass",
+      "request": {
+        "method": "POST",
+        "header": [
+          {
+            "key": "Content-Type",
+            "value": "application/json",
+            "type": "text"
+          }
+        ],
+        "body": {
+          "mode": "raw",
+          "raw": "{\n  \"token\": \"{{walletQrToken}}\"\n}",
+          "options": {
+            "raw": {
+              "language": "json"
+            }
+          }
+        },
+        "url": {
+          "raw": "{{baseUrl}}/businesses/{{businessId}}/loyalty/wallet-scan",
+          "host": [
+            "{{baseUrl}}"
+          ],
+          "path": [
+            "businesses",
+            "{{businessId}}",
+            "loyalty",
+            "wallet-scan"
+          ]
+        }
+      }
+    },
+    {
+      "name": "Add Stamp",
+      "request": {
+        "method": "POST",
+        "header": [
+          {
+            "key": "Content-Type",
+            "value": "application/json",
+            "type": "text"
+          }
+        ],
+        "body": {
+          "mode": "raw",
+          "raw": "{\n  \"count\": 1,\n  \"reason\": \"Mobile staff scan\"\n}",
+          "options": {
+            "raw": {
+              "language": "json"
+            }
+          }
+        },
+        "url": {
+          "raw": "{{baseUrl}}/businesses/{{businessId}}/loyalty/memberships/{{membershipId}}/stamps",
+          "host": [
+            "{{baseUrl}}"
+          ],
+          "path": [
+            "businesses",
+            "{{businessId}}",
+            "loyalty",
+            "memberships",
+            "{{membershipId}}",
+            "stamps"
+          ]
+        }
+      }
+    },
+    {
+      "name": "Redeem Reward",
+      "request": {
+        "method": "POST",
+        "header": [
+          {
+            "key": "Content-Type",
+            "value": "application/json",
+            "type": "text"
+          }
+        ],
+        "body": {
+          "mode": "raw",
+          "raw": "{\n  \"reason\": \"Mobile staff scan\"\n}",
+          "options": {
+            "raw": {
+              "language": "json"
+            }
+          }
+        },
+        "url": {
+          "raw": "{{baseUrl}}/businesses/{{businessId}}/loyalty/memberships/{{membershipId}}/redeem",
+          "host": [
+            "{{baseUrl}}"
+          ],
+          "path": [
+            "businesses",
+            "{{businessId}}",
+            "loyalty",
+            "memberships",
+            "{{membershipId}}",
+            "redeem"
+          ]
+        }
+      }
+    }
+  ],
+  "variable": [
+    {
+      "key": "baseUrl",
+      "value": "<api-base-url>",
+      "type": "string"
+    },
+    {
+      "key": "businessId",
+      "value": "<business-id>",
+      "type": "string"
+    },
+    {
+      "key": "membershipId",
+      "value": "<membership-id-from-wallet-scan>",
+      "type": "string"
+    },
+    {
+      "key": "bearerToken",
+      "value": "<staff-bearer-token>",
+      "type": "string"
+    },
+    {
+      "key": "walletQrToken",
+      "value": "<paste-wallet-qr-token-here>",
+      "type": "string"
+    }
+  ]
+}

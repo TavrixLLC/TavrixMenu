@@ -18,7 +18,11 @@ export class AddStampsDto {
   @Max(10)
   count?: number;
 
-  @ApiPropertyOptional({ example: 'Coffee purchase', nullable: true })
+  @ApiPropertyOptional({
+    type: String,
+    example: 'Coffee purchase',
+    nullable: true
+  })
   @IsOptional()
   @IsString()
   @MaxLength(500)

@@ -2403,13 +2403,46 @@
             }
           },
           "400": {
-            "description": "Malformed, invalid, inactive, or rotated wallet scan token."
+            "description": "Malformed, invalid, inactive, or rotated wallet scan token.",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "example": {
+                    "statusCode": 400,
+                    "message": "Invalid wallet scan token",
+                    "error": "Bad Request"
+                  }
+                }
+              }
+            }
           },
           "401": {
-            "description": "Missing or invalid bearer token."
+            "description": "Missing or invalid bearer token.",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "example": {
+                    "statusCode": 401,
+                    "message": "Missing bearer token",
+                    "error": "Unauthorized"
+                  }
+                }
+              }
+            }
           },
           "403": {
-            "description": "Active OWNER, MANAGER, or STAFF membership is required."
+            "description": "Active OWNER, MANAGER, or STAFF membership is required, and the pass must belong to the requested business.",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "example": {
+                    "statusCode": 403,
+                    "message": "Wallet pass belongs to another business",
+                    "error": "Forbidden"
+                  }
+                }
+              }
+            }
           }
         },
         "security": [
@@ -2998,7 +3031,7 @@
             "maximum": 10
           },
           "reason": {
-            "type": "object",
+            "type": "string",
             "example": "Coffee purchase",
             "nullable": true
           }
@@ -3008,7 +3041,7 @@
         "type": "object",
         "properties": {
           "reason": {
-            "type": "object",
+            "type": "string",
             "example": "Free coffee redeemed",
             "nullable": true
           }
@@ -3039,8 +3072,8 @@
         "properties": {
           "token": {
             "type": "string",
-            "example": "waflo_scan_v1.1.1781704800000.opaquePayload.signature",
-            "description": "Raw opaque token read from a Google Wallet loyalty barcode."
+            "example": "<paste-wallet-qr-token-here>",
+            "description": "Opaque value read from a Google Wallet loyalty barcode."
           }
         },
         "required": [

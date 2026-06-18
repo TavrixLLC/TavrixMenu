@@ -17,9 +17,26 @@ import { WalletScanService } from './wallet-scan.service';
 @ApiBearerAuth()
 @UseGuards(ClerkAuthGuard)
 @Controller('businesses/:businessId/loyalty/wallet-scan')
-@ApiUnauthorizedResponse({ description: 'Missing or invalid bearer token.' })
+@ApiUnauthorizedResponse({
+  description: 'Missing or invalid bearer token.',
+  schema: {
+    example: {
+      statusCode: 401,
+      message: 'Missing bearer token',
+      error: 'Unauthorized'
+    }
+  }
+})
 @ApiForbiddenResponse({
-  description: 'Active OWNER, MANAGER, or STAFF membership is required.'
+  description:
+    'Active OWNER, MANAGER, or STAFF membership is required, and the pass must belong to the requested business.',
+  schema: {
+    example: {
+      statusCode: 403,
+      message: 'Wallet pass belongs to another business',
+      error: 'Forbidden'
+    }
+  }
 })
 export class WalletScanController {
   constructor(private readonly walletScanService: WalletScanService) {}
@@ -53,7 +70,14 @@ export class WalletScanController {
     }
   })
   @ApiBadRequestResponse({
-    description: 'Malformed, invalid, inactive, or rotated wallet scan token.'
+    description: 'Malformed, invalid, inactive, or rotated wallet scan token.',
+    schema: {
+      example: {
+        statusCode: 400,
+        message: 'Invalid wallet scan token',
+        error: 'Bad Request'
+      }
+    }
   })
   scanGoogleWalletPass(
     @CurrentUser() currentUser: AuthenticatedUser,

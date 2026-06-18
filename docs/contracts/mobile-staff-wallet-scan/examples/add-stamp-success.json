@@ -1,0 +1,47 @@
+{
+  "membership": {
+    "id": "membership_demo_001",
+    "businessId": "business_demo_001",
+    "loyaltyProgramId": "program_demo_001",
+    "customerId": "customer_demo_001",
+    "stampCount": 4,
+    "rewardReady": false,
+    "totalStampsEarned": 4,
+    "totalRewardsRedeemed": 0,
+    "status": "ACTIVE",
+    "createdAt": "2026-01-15T09:00:00.000Z",
+    "updatedAt": "2026-01-18T12:00:00.000Z"
+  },
+  "customer": {
+    "id": "customer_demo_001",
+    "phone": "+9647700000000",
+    "email": "demo.customer@example.test",
+    "name": "Demo Customer",
+    "createdAt": "2026-01-15T09:00:00.000Z",
+    "updatedAt": "2026-01-15T09:00:00.000Z"
+  },
+  "program": {
+    "id": "program_demo_001",
+    "businessId": "business_demo_001",
+    "name": "Demo Cafe Stamp Card",
+    "description": "Collect stamps on demo purchases.",
+    "stampGoal": 10,
+    "rewardName": "Free coffee",
+    "rewardDescription": "One demo reward after ten stamps.",
+    "isActive": true,
+    "cardColor": "#1E3932",
+    "accentColor": "#CBA258",
+    "logoUrl": null,
+    "terms": "Demo data only.",
+    "createdAt": "2026-01-10T08:00:00.000Z",
+    "updatedAt": "2026-01-10T08:00:00.000Z"
+  },
+  "cardState": {
+    "stampCount": 4,
+    "stampGoal": 10,
+    "rewardReady": false,
+    "progressPercent": 40,
+    "rewardName": "Free coffee",
+    "programName": "Demo Cafe Stamp Card"
+  }
+}
