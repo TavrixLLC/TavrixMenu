@@ -4,13 +4,20 @@
   "private": true,
   "description": "NestJS API foundation for Tavrix Menu.",
   "scripts": {
+    "predev": "prisma generate",
     "dev": "nest start --watch",
     "start": "node dist/main.js",
+    "prebuild": "prisma generate",
     "build": "nest build",
+    "prelint": "prisma generate",
     "lint": "tsc -p tsconfig.json --noEmit",
     "prisma:generate": "prisma generate",
     "prisma:migrate": "prisma migrate dev",
-    "prisma:studio": "prisma studio"
+    "prisma:studio": "prisma studio",
+    "preprisma:seed": "prisma generate",
+    "prisma:seed": "ts-node prisma/seed.ts",
+    "preseed:dev": "prisma generate",
+    "seed:dev": "ts-node prisma/seed.ts"
   },
   "dependencies": {
     "@nestjs/common": "^11.1.3",

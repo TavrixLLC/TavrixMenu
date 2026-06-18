@@ -12,7 +12,7 @@ export default function HomePage() {
         href="/m/tavrix-cafe"
         className="mt-8 inline-flex w-fit rounded-md bg-ink px-5 py-3 text-sm font-semibold text-white"
       >
-        View mock menu
+        View Tavrix Cafe menu
       </Link>
     </main>
   );
