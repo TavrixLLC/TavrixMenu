@@ -137,10 +137,10 @@ class _DashboardScreenState extends State<DashboardScreen> {
               ),
               const SizedBox(height: AppSpacing.sm),
               _DashboardActionCard(
-                title: 'Staff Scanner',
-                subtitle: 'Sprint 1 placeholder for staff scanning.',
+                title: 'Wallet Scan',
+                subtitle: 'Paste a customer wallet QR token for lookup.',
                 icon: Icons.document_scanner_outlined,
-                routeName: AppRouteNames.staffScanner,
+                routeName: AppRouteNames.walletScan,
               ),
             ],
           );

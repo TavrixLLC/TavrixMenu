@@ -10,5 +10,6 @@ class AppRouteNames {
   static const loyalty = '/loyalty';
   static const qr = '/qr';
   static const subscription = '/subscription';
-  static const staffScanner = '/staff-scanner';
+  static const walletScan = '/wallet-scan';
+  static const staffScanner = walletScan;
 }

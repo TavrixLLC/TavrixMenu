@@ -42,6 +42,10 @@ import '../../features/menu/domain/usecases/reorder_menu_items.dart';
 import '../../features/menu/domain/usecases/restore_menu_category.dart';
 import '../../features/menu/domain/usecases/restore_menu_item.dart';
 import '../../features/menu/presentation/bloc/menu_cubit.dart';
+import '../../features/staff_scanner/data/datasources/wallet_scan_remote_data_source.dart';
+import '../../features/staff_scanner/data/repositories/wallet_scan_repository_impl.dart';
+import '../../features/staff_scanner/domain/usecases/scan_wallet_pass.dart';
+import '../../features/staff_scanner/presentation/bloc/wallet_scan_cubit.dart';
 import '../config/app_config.dart';
 
 class AppDependencies {
@@ -53,6 +57,7 @@ class AppDependencies {
     required this.dashboardCubit,
     required this.menuCubit,
     required this.loyaltyCubit,
+    required this.walletScanCubit,
   });
 
   factory AppDependencies.create({AppConfig? config}) {
@@ -129,6 +134,13 @@ class AppDependencies {
     final redeemLoyaltyReward = RedeemLoyaltyReward(loyaltyRepository);
     final listLoyaltyTransactions = ListLoyaltyTransactions(loyaltyRepository);
 
+    final walletScanRemoteDataSource = WalletScanRemoteDataSourceImpl(apiClient);
+    final walletScanRepository = WalletScanRepositoryImpl(
+      remoteDataSource: walletScanRemoteDataSource,
+      networkInfo: networkInfo,
+    );
+    final scanWalletPass = ScanWalletPass(walletScanRepository);
+
     return AppDependencies._(
       config: resolvedConfig,
       authSessionController: authSessionController,
@@ -172,6 +184,10 @@ class AppDependencies {
         redeemReward: redeemLoyaltyReward,
         listTransactions: listLoyaltyTransactions,
       ),
+      walletScanCubit: WalletScanCubit(
+        getMyBusiness: getMyBusiness,
+        scanWalletPass: scanWalletPass,
+      ),
     );
   }
 
@@ -182,6 +198,7 @@ class AppDependencies {
   final DashboardCubit dashboardCubit;
   final MenuCubit menuCubit;
   final LoyaltyCubit loyaltyCubit;
+  final WalletScanCubit walletScanCubit;
 
   Future<void> dispose() async {
     await authCubit.close();
@@ -189,5 +206,6 @@ class AppDependencies {
     await dashboardCubit.close();
     await menuCubit.close();
     await loyaltyCubit.close();
+    await walletScanCubit.close();
   }
 }

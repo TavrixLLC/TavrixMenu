@@ -1,6 +1,7 @@
 import 'package:flutter/material.dart';
 import 'package:flutter_bloc/flutter_bloc.dart';
 
+import '../../../../app/router/route_names.dart';
 import '../../../../core/constants/app_colors.dart';
 import '../../../../core/constants/app_spacing.dart';
 import '../../../../shared/widgets/app_button.dart';
@@ -91,6 +92,17 @@ class _LoyaltyScreenState extends State<LoyaltyScreen> {
                 subtitle:
                     'Stamp-card loyalty operations for owners, managers, and staff.',
               ),
+              if (state.canUseDailyOperations) ...[
+                const SizedBox(height: AppSpacing.md),
+                AppButton(
+                  label: 'Wallet Scan',
+                  icon: Icons.document_scanner_outlined,
+                  onPressed: () => Navigator.of(
+                    context,
+                  ).pushNamed(AppRouteNames.walletScan),
+                  variant: AppButtonVariant.secondary,
+                ),
+              ],
               if (state.summaryErrorMessage != null) ...[
                 const SizedBox(height: AppSpacing.md),
                 _LoyaltyNotice(
