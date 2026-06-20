@@ -2549,6 +2549,271 @@
           "public loyalty"
         ]
       }
+    },
+    "/apple-wallet/v1/devices/{deviceLibraryIdentifier}/registrations/{passTypeIdentifier}/{serialNumber}": {
+      "post": {
+        "operationId": "AppleWalletUpdateController_registerDevice",
+        "parameters": [
+          {
+            "name": "passTypeIdentifier",
+            "required": true,
+            "in": "path",
+            "description": "Apple Pass Type Identifier.",
+            "schema": {
+              "type": "string"
+            }
+          },
+          {
+            "name": "serialNumber",
+            "required": true,
+            "in": "path",
+            "description": "Opaque Apple pass serial number.",
+            "schema": {
+              "type": "string"
+            }
+          },
+          {
+            "name": "deviceLibraryIdentifier",
+            "required": true,
+            "in": "path",
+            "description": "Opaque device library identifier.",
+            "schema": {
+              "type": "string"
+            }
+          },
+          {
+            "name": "Authorization",
+            "in": "header",
+            "description": "ApplePass authentication token embedded in the signed pass.",
+            "required": true,
+            "schema": {
+              "type": "string"
+            }
+          }
+        ],
+        "requestBody": {
+          "required": true,
+          "content": {
+            "application/json": {
+              "schema": {
+                "$ref": "#/components/schemas/AppleWalletRegistrationDto"
+              }
+            }
+          }
+        },
+        "responses": {
+          "200": {
+            "description": "Existing device registration updated."
+          },
+          "201": {
+            "description": "Device registration created."
+          },
+          "401": {
+            "description": "Invalid pass authorization."
+          }
+        },
+        "tags": [
+          "apple wallet web service"
+        ]
+      },
+      "delete": {
+        "operationId": "AppleWalletUpdateController_unregisterDevice",
+        "parameters": [
+          {
+            "name": "passTypeIdentifier",
+            "required": true,
+            "in": "path",
+            "description": "Apple Pass Type Identifier.",
+            "schema": {
+              "type": "string"
+            }
+          },
+          {
+            "name": "serialNumber",
+            "required": true,
+            "in": "path",
+            "description": "Opaque Apple pass serial number.",
+            "schema": {
+              "type": "string"
+            }
+          },
+          {
+            "name": "deviceLibraryIdentifier",
+            "required": true,
+            "in": "path",
+            "description": "Opaque device library identifier.",
+            "schema": {
+              "type": "string"
+            }
+          },
+          {
+            "name": "Authorization",
+            "in": "header",
+            "description": "ApplePass authentication token embedded in the signed pass.",
+            "required": true,
+            "schema": {
+              "type": "string"
+            }
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": "Device registration removed."
+          },
+          "401": {
+            "description": "Invalid pass authorization."
+          }
+        },
+        "tags": [
+          "apple wallet web service"
+        ]
+      }
+    },
+    "/apple-wallet/v1/devices/{deviceLibraryIdentifier}/registrations/{passTypeIdentifier}": {
+      "get": {
+        "operationId": "AppleWalletUpdateController_listUpdatedPasses",
+        "parameters": [
+          {
+            "name": "deviceLibraryIdentifier",
+            "required": true,
+            "in": "path",
+            "description": "Opaque device library identifier.",
+            "schema": {
+              "type": "string"
+            }
+          },
+          {
+            "name": "passTypeIdentifier",
+            "required": true,
+            "in": "path",
+            "description": "Apple Pass Type Identifier.",
+            "schema": {
+              "type": "string"
+            }
+          },
+          {
+            "name": "passesUpdatedSince",
+            "required": false,
+            "in": "query",
+            "description": "Opaque numeric update tag returned by the previous request.",
+            "schema": {
+              "type": "string"
+            }
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": "Serial numbers for passes changed after the supplied tag.",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "example": {
+                    "serialNumbers": [
+                      "waflo-apple-pass"
+                    ],
+                    "lastUpdated": "1781956800000"
+                  }
+                }
+              }
+            }
+          },
+          "204": {
+            "description": "No registered passes changed."
+          }
+        },
+        "tags": [
+          "apple wallet web service"
+        ]
+      }
+    },
+    "/apple-wallet/v1/passes/{passTypeIdentifier}/{serialNumber}": {
+      "get": {
+        "operationId": "AppleWalletUpdateController_getUpdatedPass",
+        "parameters": [
+          {
+            "name": "passTypeIdentifier",
+            "required": true,
+            "in": "path",
+            "description": "Apple Pass Type Identifier.",
+            "schema": {
+              "type": "string"
+            }
+          },
+          {
+            "name": "serialNumber",
+            "required": true,
+            "in": "path",
+            "description": "Opaque Apple pass serial number.",
+            "schema": {
+              "type": "string"
+            }
+          },
+          {
+            "name": "If-Modified-Since",
+            "in": "header",
+            "description": "Optional HTTP date for conditional pass delivery.",
+            "required": false,
+            "schema": {
+              "type": "string"
+            }
+          },
+          {
+            "name": "Authorization",
+            "in": "header",
+            "description": "ApplePass authentication token embedded in the signed pass.",
+            "required": true,
+            "schema": {
+              "type": "string"
+            }
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": "Latest signed Apple Wallet pass.",
+            "content": {
+              "application/vnd.apple.pkpass": {
+                "schema": {
+                  "type": "string",
+                  "format": "binary"
+                }
+              }
+            }
+          },
+          "304": {
+            "description": "The pass has not changed since If-Modified-Since."
+          },
+          "401": {
+            "description": "Invalid pass authorization."
+          }
+        },
+        "tags": [
+          "apple wallet web service"
+        ]
+      }
+    },
+    "/apple-wallet/v1/log": {
+      "post": {
+        "operationId": "AppleWalletUpdateController_acceptLogs",
+        "parameters": [],
+        "requestBody": {
+          "required": true,
+          "content": {
+            "application/json": {
+              "schema": {
+                "$ref": "#/components/schemas/AppleWalletLogDto"
+              }
+            }
+          }
+        },
+        "responses": {
+          "200": {
+            "description": "Diagnostic messages accepted safely."
+          }
+        },
+        "tags": [
+          "apple wallet web service"
+        ]
+      }
     }
   },
   "info": {
@@ -3173,6 +3438,34 @@
         },
         "required": [
           "token"
+        ]
+      },
+      "AppleWalletRegistrationDto": {
+        "type": "object",
+        "properties": {
+          "pushToken": {
+            "type": "string",
+            "description": "Sensitive APNs push token supplied by Apple Wallet.",
+            "writeOnly": true
+          }
+        },
+        "required": [
+          "pushToken"
+        ]
+      },
+      "AppleWalletLogDto": {
+        "type": "object",
+        "properties": {
+          "logs": {
+            "description": "Apple Wallet diagnostic messages. Values are sanitized.",
+            "type": "array",
+            "items": {
+              "type": "string"
+            }
+          }
+        },
+        "required": [
+          "logs"
         ]
       }
     }

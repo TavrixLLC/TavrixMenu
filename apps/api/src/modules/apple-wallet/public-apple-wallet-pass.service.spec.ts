@@ -25,6 +25,7 @@ import { WalletScanTokenService } from '../google-wallet/wallet-scan-token.servi
 import { AppleWalletPassBuilderService } from './apple-wallet-pass-builder.service';
 import { AppleWalletSignerService } from './apple-wallet-signer.service';
 import { AppleWalletService } from './apple-wallet.service';
+import { AppleWalletUpdateAuthTokenService } from './apple-wallet-update-auth-token.service';
 import {
   AppleWalletPassAssets,
   AppleWalletPassPayload,
@@ -183,6 +184,30 @@ describe('PublicAppleWalletPassService token safety', () => {
     assert.ok(newBarcodeValue);
     assert.notEqual(newBarcodeValue, oldMetadata.rawToken);
   });
+
+  it('embeds a separate update token and persists only its metadata when enabled', async () => {
+    const setup = createSetup({ updateReadiness: 'READY' });
+
+    await setup.service.generatePublicPass(publicCardToken());
+
+    const payload = setup.signer.payload;
+    const updateToken = payload?.authenticationToken ?? '';
+    const scanToken = payload?.barcodes[0]?.message ?? '';
+    const activeUpdate = setup.state.updates.at(-1)?.data ?? {};
+
+    assert.equal(
+      payload?.webServiceURL,
+      'http://localhost:3000/apple-wallet/v1'
+    );
+    assert.match(updateToken, /^waflo_apple_update_v1\./);
+    assert.notEqual(updateToken, scanToken);
+    assert.equal(updateToken.includes(publicCardToken()), false);
+    assert.equal(String(activeUpdate.appleUpdateAuthTokenHash).length, 64);
+    assert.equal(activeUpdate.appleUpdateAuthTokenVersion, 1);
+    assert.ok(activeUpdate.appleUpdateAuthTokenIssuedAt instanceof Date);
+    assert.equal(String(activeUpdate.appleUpdateAuthTokenLast4).length, 4);
+    assert.equal(JSON.stringify(activeUpdate).includes(updateToken), false);
+  });
 });
 
 describe('PublicAppleWalletPassController', () => {
@@ -265,6 +290,7 @@ type MockPass = ReturnType<typeof walletPass>;
 
 function createSetup(options: {
   readiness?: AppleWalletReadiness;
+  updateReadiness?: AppleWalletReadiness;
   lookupError?: Error;
   pass?: MockPass | null;
 } = {}) {
@@ -319,7 +345,12 @@ function createSetup(options: {
     APPLE_WALLET_PASS_TYPE_IDENTIFIER: 'pass.app.waflo.loyalty',
     APPLE_WALLET_ORGANIZATION_NAME: 'Waflo',
     WALLET_SCAN_TOKEN_SECRET:
-      'test-wallet-scan-token-secret-at-least-32-characters'
+      'test-wallet-scan-token-secret-at-least-32-characters',
+    APPLE_WALLET_UPDATE_AUTH_TOKEN_SECRET:
+      'test-apple-update-token-secret-at-least-32-characters',
+    APPLE_WALLET_WEB_SERVICE_ENABLED: options.updateReadiness === 'READY',
+    APPLE_WALLET_WEB_SERVICE_BASE_URL:
+      'http://localhost:3000/apple-wallet/v1'
   });
   const signer = new RecordingSigner();
   const appleWalletService = new AppleWalletService(
@@ -330,6 +361,7 @@ function createSetup(options: {
   );
   const appleWalletFacade = {
     getReadiness: () => options.readiness ?? 'READY',
+    getUpdateWebServiceReadiness: () => options.updateReadiness ?? 'DISABLED',
     generatePass: (input: GenerateAppleWalletPassInput) =>
       appleWalletService.generatePass(input)
   };
@@ -338,7 +370,8 @@ function createSetup(options: {
     service: new PublicAppleWalletPassService(
       prisma as never,
       publicLoyaltyService as never,
-      appleWalletFacade as never
+      appleWalletFacade as never,
+      new AppleWalletUpdateAuthTokenService(config)
     ),
     signer,
     state
@@ -440,6 +473,13 @@ function walletPass(overrides: Record<string, unknown> = {}) {
     scanTokenVersion: null,
     scanTokenIssuedAt: null,
     scanTokenLast4: null,
+    applePassTypeIdentifier: null,
+    appleSerialNumber: null,
+    appleUpdateAuthTokenHash: null,
+    appleUpdateAuthTokenVersion: null,
+    appleUpdateAuthTokenIssuedAt: null,
+    appleUpdateAuthTokenLast4: null,
+    applePassUpdatedAt: null,
     status: WalletPassStatus.PENDING,
     lastSyncedAt: null,
     syncError: null,

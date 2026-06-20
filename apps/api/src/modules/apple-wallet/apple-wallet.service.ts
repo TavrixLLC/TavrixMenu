@@ -57,6 +57,22 @@ export class AppleWalletService {
     return 'READY';
   }
 
+  getUpdateWebServiceReadiness(): AppleWalletReadiness {
+    if (
+      this.configService.get<boolean>('APPLE_WALLET_WEB_SERVICE_ENABLED') !==
+      true
+    ) {
+      return 'DISABLED';
+    }
+
+    const baseUrl = this.configValue('APPLE_WALLET_WEB_SERVICE_BASE_URL');
+    const secret = this.configValue(
+      'APPLE_WALLET_UPDATE_AUTH_TOKEN_SECRET'
+    );
+
+    return baseUrl && secret.length >= 32 ? 'READY' : 'NOT_CONFIGURED';
+  }
+
   async generatePass(
     input: GenerateAppleWalletPassInput
   ): Promise<AppleWalletPassGenerationResult> {
@@ -68,8 +84,19 @@ export class AppleWalletService {
     const scanToken = this.walletScanTokenService.buildMetadataForPass(
       input.scanTokenPass
     );
+    const updateFields =
+      this.getUpdateWebServiceReadiness() === 'READY' &&
+      input.updateAuthenticationToken
+        ? {
+            webServiceURL: this.requireConfig(
+              'APPLE_WALLET_WEB_SERVICE_BASE_URL'
+            ),
+            authenticationToken: input.updateAuthenticationToken
+          }
+        : {};
     const payload = this.passBuilder.buildPayload({
       ...input,
+      ...updateFields,
       passTypeIdentifier,
       teamIdentifier: this.requireConfig('APPLE_WALLET_TEAM_ID'),
       organizationName: this.requireConfig('APPLE_WALLET_ORGANIZATION_NAME'),

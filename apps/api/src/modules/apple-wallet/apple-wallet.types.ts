@@ -30,6 +30,8 @@ export type AppleWalletPassPayload = {
   backgroundColor: string;
   labelColor: string;
   sharingProhibited: true;
+  webServiceURL?: string;
+  authenticationToken?: string;
   storeCard: {
     headerFields: AppleWalletPassField[];
     primaryFields: AppleWalletPassField[];
@@ -50,6 +52,8 @@ export type BuildAppleWalletPassInput = {
   stampCount: number;
   stampGoal: number;
   rewardDescription?: string;
+  webServiceURL?: string;
+  authenticationToken?: string;
 };
 
 export type AppleWalletPassAssets = Record<string, Buffer>;
@@ -59,6 +63,7 @@ export type GenerateAppleWalletPassInput = Omit<
   'passTypeIdentifier' | 'teamIdentifier' | 'organizationName' | 'barcodeValue'
 > & {
   scanTokenPass: WalletScanTokenPassFields;
+  updateAuthenticationToken?: string;
 };
 
 export type AppleWalletPassMetadata = {

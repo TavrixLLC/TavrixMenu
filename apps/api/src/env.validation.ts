@@ -54,6 +54,21 @@ export function validateEnvironment(config: Environment) {
     config.APPLE_WALLET_CERTIFICATE_PASSWORD ?? '';
   const appleWalletWwdrCertificatePath =
     config.APPLE_WALLET_WWDR_CERTIFICATE_PATH?.trim() ?? '';
+  const appleWalletWebServiceEnabled = parseBoolean(
+    config.APPLE_WALLET_WEB_SERVICE_ENABLED,
+    false,
+    'APPLE_WALLET_WEB_SERVICE_ENABLED'
+  );
+  const appleWalletWebServiceBaseUrlInput =
+    config.APPLE_WALLET_WEB_SERVICE_BASE_URL?.trim() ?? '';
+  const appleWalletUpdateAuthTokenSecret =
+    config.APPLE_WALLET_UPDATE_AUTH_TOKEN_SECRET?.trim() ?? '';
+  const appleWalletWebServiceBaseUrl = appleWalletWebServiceEnabled
+    ? normalizeAppleWalletWebServiceUrl(
+        appleWalletWebServiceBaseUrlInput,
+        nodeEnv
+      )
+    : appleWalletWebServiceBaseUrlInput;
   const walletImagePublicBaseUrl = normalizeOptionalHttpsUrl(
     config.WALLET_IMAGE_PUBLIC_BASE_URL,
     'WALLET_IMAGE_PUBLIC_BASE_URL'
@@ -128,6 +143,16 @@ export function validateEnvironment(config: Environment) {
     );
   }
 
+  if (
+    appleWalletWebServiceEnabled &&
+    appleWalletUpdateAuthTokenSecret &&
+    appleWalletUpdateAuthTokenSecret.length < 32
+  ) {
+    throw new Error(
+      'APPLE_WALLET_UPDATE_AUTH_TOKEN_SECRET must be at least 32 characters'
+    );
+  }
+
   return {
     ...config,
     NODE_ENV: nodeEnv,
@@ -145,9 +170,84 @@ export function validateEnvironment(config: Environment) {
     APPLE_WALLET_CERTIFICATE_PATH: appleWalletCertificatePath,
     APPLE_WALLET_CERTIFICATE_PASSWORD: appleWalletCertificatePassword,
     APPLE_WALLET_WWDR_CERTIFICATE_PATH: appleWalletWwdrCertificatePath,
+    APPLE_WALLET_WEB_SERVICE_ENABLED: appleWalletWebServiceEnabled,
+    APPLE_WALLET_WEB_SERVICE_BASE_URL: appleWalletWebServiceBaseUrl,
+    APPLE_WALLET_UPDATE_AUTH_TOKEN_SECRET:
+      appleWalletUpdateAuthTokenSecret,
     WALLET_IMAGE_PUBLIC_BASE_URL: walletImagePublicBaseUrl,
     WALLET_SCAN_TOKEN_SECRET: walletScanTokenSecret
   };
+}
+
+function normalizeAppleWalletWebServiceUrl(value: string, nodeEnv: string) {
+  if (!value) {
+    return '';
+  }
+
+  let parsed: URL;
+
+  try {
+    parsed = new URL(value);
+  } catch {
+    throw new Error('APPLE_WALLET_WEB_SERVICE_BASE_URL must be a valid URL');
+  }
+
+  if (!['http:', 'https:'].includes(parsed.protocol)) {
+    throw new Error(
+      'APPLE_WALLET_WEB_SERVICE_BASE_URL must use http or https'
+    );
+  }
+
+  if (nodeEnv === 'production') {
+    if (parsed.protocol !== 'https:') {
+      throw new Error(
+        'APPLE_WALLET_WEB_SERVICE_BASE_URL must use HTTPS in production'
+      );
+    }
+
+    if (isLocalOrPrivateHostname(parsed.hostname)) {
+      throw new Error(
+        'APPLE_WALLET_WEB_SERVICE_BASE_URL cannot use a local or private host in production'
+      );
+    }
+  }
+
+  return parsed.toString().replace(/\/$/, '');
+}
+
+function isLocalOrPrivateHostname(value: string) {
+  const hostname = value.toLowerCase().replace(/^\[|\]$/g, '');
+
+  if (
+    hostname === 'localhost' ||
+    hostname.endsWith('.localhost') ||
+    hostname.endsWith('.local') ||
+    hostname === '::1' ||
+    (hostname.includes(':') &&
+      (hostname.startsWith('fc') ||
+        hostname.startsWith('fd') ||
+        hostname.startsWith('fe80:')))
+  ) {
+    return true;
+  }
+
+  const octets = hostname.split('.').map(Number);
+
+  if (
+    octets.length !== 4 ||
+    octets.some((octet) => !Number.isInteger(octet) || octet < 0 || octet > 255)
+  ) {
+    return false;
+  }
+
+  return (
+    octets[0] === 0 ||
+    octets[0] === 10 ||
+    octets[0] === 127 ||
+    (octets[0] === 169 && octets[1] === 254) ||
+    (octets[0] === 172 && octets[1] >= 16 && octets[1] <= 31) ||
+    (octets[0] === 192 && octets[1] === 168)
+  );
 }
 
 function requireAppleWalletValue(value: string, fieldName: string) {

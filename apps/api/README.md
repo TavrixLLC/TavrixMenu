@@ -108,7 +108,7 @@ pnpm exec ts-node --project tsconfig.json scripts/rotate-test-pass.ts
 
 ## Apple Wallet Foundation
 
-Sprint 10A added the backend signing foundation. Sprint 10B adds the public
+Sprint 10A added the backend signing foundation. Sprint 10B added the public
 `POST /public/loyalty/cards/:token/apple-wallet` endpoint, which resolves the
 existing public loyalty card token and returns a signed loyalty `.pkpass` when
 Apple signing is enabled and configured.
@@ -124,9 +124,46 @@ Identifier, Pass Type ID certificate/private key bundle, certificate password,
 and WWDR certificate on the backend. Disabled or incomplete configuration
 returns a safe JSON error instead of certificate or signing details.
 
-This endpoint creates a fresh Apple pass download only. Automatic Apple Wallet
-updates, `webServiceURL`, pass authentication tokens, device registration,
-APNs, and push notifications are intentionally deferred to a later sprint.
+Sprint 10C adds the backend-owned Apple Wallet update web service foundation.
+When its separate configuration is ready, newly generated passes contain a
+`webServiceURL` and Apple update `authenticationToken`. When it is disabled or
+incomplete, both fields remain absent and the Sprint 10B download-only behavior
+continues unchanged.
+
+The API implements these Apple protocol routes:
+
+```text
+POST   /apple-wallet/v1/devices/:deviceLibraryIdentifier/registrations/:passTypeIdentifier/:serialNumber
+GET    /apple-wallet/v1/devices/:deviceLibraryIdentifier/registrations/:passTypeIdentifier
+GET    /apple-wallet/v1/passes/:passTypeIdentifier/:serialNumber
+DELETE /apple-wallet/v1/devices/:deviceLibraryIdentifier/registrations/:passTypeIdentifier/:serialNumber
+POST   /apple-wallet/v1/log
+```
+
+Configure the update service in the backend environment only:
+
+```dotenv
+APPLE_WALLET_WEB_SERVICE_ENABLED=true
+APPLE_WALLET_WEB_SERVICE_BASE_URL=https://api.example.test/apple-wallet/v1
+APPLE_WALLET_UPDATE_AUTH_TOKEN_SECRET=<local-secret-at-least-32-characters>
+```
+
+Production deployments, including staging deployments run with
+`NODE_ENV=production`, require a public HTTPS base URL and reject localhost or
+private literal IP addresses. Development may use HTTP localhost or an HTTPS
+tunnel.
+The update secret is distinct from public loyalty card tokens and
+`WALLET_SCAN_TOKEN_SECRET`; never reuse or log any of them. Device library
+identifiers are stored as hashes plus last four characters. APNs push tokens
+may be stored for a future sprint but are never returned, documented with
+example values, or logged.
+
+Apple pass updates are entirely backend-owned. Mobile code never owns signing,
+registration, or pass regeneration. Sprint 10C does not send APNs pushes, so a
+changed pass may not be pushed to a device immediately; the protocol endpoints
+only support Wallet polling and retrieval. Real Apple certificate signing and
+Add to Wallet validation on an iPhone are still required before production
+readiness.
 
 Set the `APPLE_WALLET_*` variables and `WALLET_SCAN_TOKEN_SECRET` in the local
 API environment, then run from the repository root:

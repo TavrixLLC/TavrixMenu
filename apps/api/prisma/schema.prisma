@@ -260,6 +260,13 @@ model WalletPass {
   scanTokenVersion  Int?               @map("scan_token_version")
   scanTokenIssuedAt DateTime?          @map("scan_token_issued_at")
   scanTokenLast4    String?            @map("scan_token_last4")
+  applePassTypeIdentifier      String?            @map("apple_pass_type_identifier")
+  appleSerialNumber            String?            @map("apple_serial_number")
+  appleUpdateAuthTokenHash     String?            @unique @map("apple_update_auth_token_hash")
+  appleUpdateAuthTokenVersion  Int?               @map("apple_update_auth_token_version")
+  appleUpdateAuthTokenIssuedAt DateTime?          @map("apple_update_auth_token_issued_at")
+  appleUpdateAuthTokenLast4    String?            @map("apple_update_auth_token_last4")
+  applePassUpdatedAt           DateTime?          @map("apple_pass_updated_at")
   status            WalletPassStatus   @default(PENDING)
   lastSyncedAt      DateTime?          @map("last_synced_at")
   syncError         String?            @map("sync_error")
@@ -267,11 +274,33 @@ model WalletPass {
   updatedAt         DateTime           @updatedAt @map("updated_at")
   business          Business           @relation(fields: [businessId], references: [id], onDelete: Cascade)
   membership        LoyaltyMembership  @relation(fields: [membershipId], references: [id], onDelete: Cascade)
+  appleDeviceRegistrations AppleWalletDeviceRegistration[]
 
   @@unique([membershipId, platform])
+  @@unique([platform, applePassTypeIdentifier, appleSerialNumber])
   @@index([businessId])
   @@index([membershipId])
   @@map("wallet_passes")
+}
+
+model AppleWalletDeviceRegistration {
+  id                           String     @id @default(cuid())
+  walletPassId                 String     @map("wallet_pass_id")
+  passTypeIdentifier           String     @map("pass_type_identifier")
+  serialNumber                 String     @map("serial_number")
+  deviceLibraryIdentifierHash  String     @map("device_library_identifier_hash")
+  deviceLibraryIdentifierLast4 String     @map("device_library_identifier_last4")
+  pushToken                    String?    @map("push_token")
+  pushTokenLast4               String?    @map("push_token_last4")
+  unregisteredAt               DateTime?  @map("unregistered_at")
+  createdAt                    DateTime   @default(now()) @map("created_at")
+  updatedAt                    DateTime   @updatedAt @map("updated_at")
+  walletPass                   WalletPass @relation(fields: [walletPassId], references: [id], onDelete: Cascade)
+
+  @@unique([walletPassId, deviceLibraryIdentifierHash])
+  @@index([deviceLibraryIdentifierHash, passTypeIdentifier, unregisteredAt])
+  @@index([walletPassId, unregisteredAt])
+  @@map("apple_wallet_device_registrations")
 }
 
 model WalletRefreshJob {

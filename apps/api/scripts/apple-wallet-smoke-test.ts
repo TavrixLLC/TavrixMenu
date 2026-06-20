@@ -7,6 +7,7 @@ import { validateEnvironment } from '../src/env.validation';
 import { AppleWalletPassBuilderService } from '../src/modules/apple-wallet/apple-wallet-pass-builder.service';
 import { AppleWalletSignerService } from '../src/modules/apple-wallet/apple-wallet-signer.service';
 import { AppleWalletService } from '../src/modules/apple-wallet/apple-wallet.service';
+import { AppleWalletUpdateAuthTokenService } from '../src/modules/apple-wallet/apple-wallet-update-auth-token.service';
 import { WalletScanTokenService } from '../src/modules/google-wallet/wallet-scan-token.service';
 
 loadEnvFile();
@@ -46,14 +47,30 @@ async function main() {
     new WalletScanTokenService(configService)
   );
   const serialNumber = `waflo-smoke-${randomUUID()}`;
+  const smokePassId = `apple-smoke-pass-${randomUUID()}`;
+  const updateToken =
+    service.getUpdateWebServiceReadiness() === 'READY'
+      ? new AppleWalletUpdateAuthTokenService(
+          configService
+        ).buildMetadataForPass({
+          id: smokePassId,
+          businessId: 'internal-smoke-business',
+          membershipId: 'internal-smoke-membership',
+          appleUpdateAuthTokenHash: null,
+          appleUpdateAuthTokenVersion: null,
+          appleUpdateAuthTokenIssuedAt: null,
+          appleUpdateAuthTokenLast4: null
+        })
+      : null;
   const result = await service.generatePass({
     serialNumber,
     programName: 'Waflo Loyalty',
     stampCount: 3,
     stampGoal: 10,
     rewardDescription: 'Reward after 10 stamps',
+    updateAuthenticationToken: updateToken?.rawToken,
     scanTokenPass: {
-      id: `apple-smoke-pass-${randomUUID()}`,
+      id: smokePassId,
       businessId: 'internal-smoke-business',
       membershipId: 'internal-smoke-membership',
       scanTokenHash: null,

@@ -38,6 +38,12 @@ export class AppleWalletPassBuilderService {
       backgroundColor: 'rgb(124, 45, 18)',
       labelColor: 'rgb(253, 230, 138)',
       sharingProhibited: true,
+      ...(input.webServiceURL && input.authenticationToken
+        ? {
+            webServiceURL: input.webServiceURL,
+            authenticationToken: input.authenticationToken
+          }
+        : {}),
       storeCard: {
         headerFields: [
           {

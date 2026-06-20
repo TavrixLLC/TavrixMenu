@@ -13,6 +13,10 @@ import {
 import { PrismaService } from '../../prisma/prisma.service';
 import { PublicLoyaltyService } from '../loyalty/public-loyalty.service';
 import { AppleWalletService } from './apple-wallet.service';
+import {
+  AppleUpdateAuthTokenMetadata,
+  AppleWalletUpdateAuthTokenService
+} from './apple-wallet-update-auth-token.service';
 
 export const APPLE_WALLET_PASS_CONTENT_TYPE =
   'application/vnd.apple.pkpass';
@@ -34,7 +38,8 @@ export class PublicAppleWalletPassService {
   constructor(
     private readonly prisma: PrismaService,
     private readonly publicLoyaltyService: PublicLoyaltyService,
-    private readonly appleWalletService: AppleWalletService
+    private readonly appleWalletService: AppleWalletService,
+    private readonly updateAuthTokenService: AppleWalletUpdateAuthTokenService
   ) {}
 
   async generatePublicPass(token: string): Promise<PublicAppleWalletPassFile> {
@@ -77,6 +82,7 @@ export class PublicAppleWalletPassService {
     });
 
     try {
+      const updateToken = this.buildUpdateToken(walletPass);
       const generated = await this.appleWalletService.generatePass({
         serialNumber: this.buildSerialNumber(walletPass.id),
         programName: membership.loyaltyProgram.name,
@@ -85,6 +91,7 @@ export class PublicAppleWalletPassService {
         rewardDescription:
           membership.loyaltyProgram.rewardDescription ??
           membership.loyaltyProgram.rewardName,
+        updateAuthenticationToken: updateToken?.rawToken,
         scanTokenPass: {
           id: walletPass.id,
           businessId: walletPass.businessId,
@@ -106,6 +113,10 @@ export class PublicAppleWalletPassService {
           scanTokenVersion: generated.scanTokenMetadata.scanTokenVersion,
           scanTokenIssuedAt: generated.scanTokenMetadata.scanTokenIssuedAt,
           scanTokenLast4: generated.scanTokenMetadata.scanTokenLast4,
+          applePassTypeIdentifier: generated.metadata.passTypeIdentifier,
+          appleSerialNumber: generated.metadata.serialNumber,
+          applePassUpdatedAt: lastSyncedAt,
+          ...this.updateTokenFields(updateToken),
           status: WalletPassStatus.ACTIVE,
           lastSyncedAt,
           syncError: null
@@ -123,6 +134,35 @@ export class PublicAppleWalletPassService {
         'APPLE_WALLET_SIGNING_FAILED'
       );
     }
+  }
+
+  private buildUpdateToken(walletPass: {
+    id: string;
+    businessId: string;
+    membershipId: string;
+    appleUpdateAuthTokenHash: string | null;
+    appleUpdateAuthTokenVersion: number | null;
+    appleUpdateAuthTokenIssuedAt: Date | null;
+    appleUpdateAuthTokenLast4: string | null;
+  }) {
+    if (this.appleWalletService.getUpdateWebServiceReadiness() !== 'READY') {
+      return null;
+    }
+
+    return this.updateAuthTokenService.buildMetadataForPass(walletPass);
+  }
+
+  private updateTokenFields(metadata: AppleUpdateAuthTokenMetadata | null) {
+    if (!metadata) {
+      return {};
+    }
+
+    return {
+      appleUpdateAuthTokenHash: metadata.tokenHash,
+      appleUpdateAuthTokenVersion: metadata.tokenVersion,
+      appleUpdateAuthTokenIssuedAt: metadata.tokenIssuedAt,
+      appleUpdateAuthTokenLast4: metadata.tokenLast4
+    };
   }
 
   private async resolveMembership(token: string) {

@@ -139,6 +139,93 @@ describe('validateEnvironment Apple Wallet config', () => {
   });
 });
 
+describe('validateEnvironment Apple Wallet update web service config', () => {
+  it('is opt-in and does not require update config for existing pass flows', () => {
+    const disabled = validateEnvironment({ NODE_ENV: 'development' });
+    const incomplete = validateEnvironment({
+      NODE_ENV: 'development',
+      APPLE_WALLET_WEB_SERVICE_ENABLED: 'true'
+    });
+
+    assert.equal(disabled.APPLE_WALLET_WEB_SERVICE_ENABLED, false);
+    assert.equal(incomplete.APPLE_WALLET_WEB_SERVICE_ENABLED, true);
+    assert.equal(incomplete.APPLE_WALLET_WEB_SERVICE_BASE_URL, '');
+    assert.equal(incomplete.APPLE_WALLET_UPDATE_AUTH_TOKEN_SECRET, '');
+  });
+
+  it('accepts local HTTP only outside production and removes a trailing slash', () => {
+    const config = validateEnvironment({
+      NODE_ENV: 'development',
+      APPLE_WALLET_WEB_SERVICE_ENABLED: 'true',
+      APPLE_WALLET_WEB_SERVICE_BASE_URL:
+        'http://localhost:3000/apple-wallet/v1/',
+      APPLE_WALLET_UPDATE_AUTH_TOKEN_SECRET:
+        'test-apple-update-token-secret-at-least-32-characters'
+    });
+
+    assert.equal(
+      config.APPLE_WALLET_WEB_SERVICE_BASE_URL,
+      'http://localhost:3000/apple-wallet/v1'
+    );
+  });
+
+  it('rejects short secrets and unsafe production URLs', () => {
+    assert.throws(
+      () =>
+        validateEnvironment({
+          NODE_ENV: 'development',
+          APPLE_WALLET_WEB_SERVICE_ENABLED: 'true',
+          APPLE_WALLET_UPDATE_AUTH_TOKEN_SECRET: 'too-short'
+        }),
+      /APPLE_WALLET_UPDATE_AUTH_TOKEN_SECRET must be at least 32 characters/
+    );
+
+    const productionBase = {
+      NODE_ENV: 'production',
+      CLERK_JWT_ISSUER: 'https://clerk.example.test',
+      APPLE_WALLET_WEB_SERVICE_ENABLED: 'true',
+      APPLE_WALLET_UPDATE_AUTH_TOKEN_SECRET:
+        'test-apple-update-token-secret-at-least-32-characters'
+    };
+
+    assert.throws(
+      () =>
+        validateEnvironment({
+          ...productionBase,
+          APPLE_WALLET_WEB_SERVICE_BASE_URL:
+            'http://wallet.example.test/apple-wallet/v1'
+        }),
+      /must use HTTPS in production/
+    );
+    assert.throws(
+      () =>
+        validateEnvironment({
+          ...productionBase,
+          APPLE_WALLET_WEB_SERVICE_BASE_URL:
+            'https://192.168.1.20/apple-wallet/v1'
+        }),
+      /cannot use a local or private host in production/
+    );
+  });
+
+  it('accepts a public HTTPS production URL', () => {
+    const config = validateEnvironment({
+      NODE_ENV: 'production',
+      CLERK_JWT_ISSUER: 'https://clerk.example.test',
+      APPLE_WALLET_WEB_SERVICE_ENABLED: 'true',
+      APPLE_WALLET_WEB_SERVICE_BASE_URL:
+        'https://api.example.test/apple-wallet/v1',
+      APPLE_WALLET_UPDATE_AUTH_TOKEN_SECRET:
+        'test-apple-update-token-secret-at-least-32-characters'
+    });
+
+    assert.equal(
+      config.APPLE_WALLET_WEB_SERVICE_BASE_URL,
+      'https://api.example.test/apple-wallet/v1'
+    );
+  });
+});
+
 function validAppleWalletEnvironment() {
   return {
     NODE_ENV: 'development',
