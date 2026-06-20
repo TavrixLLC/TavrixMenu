@@ -1,6 +1,7 @@
 import { Module } from '@nestjs/common';
 import { ConfigModule } from '@nestjs/config';
 import { AdminModule } from './modules/admin/admin.module';
+import { AppleWalletModule } from './modules/apple-wallet/apple-wallet.module';
 import { AuthModule } from './modules/auth/auth.module';
 import { BillingModule } from './modules/billing/billing.module';
 import { BusinessesModule } from './modules/businesses/businesses.module';
@@ -26,6 +27,7 @@ import { validateEnvironment } from './env.validation';
     MenuModule,
     LoyaltyModule,
     GoogleWalletModule,
+    AppleWalletModule,
     BillingModule,
     AdminModule
   ]

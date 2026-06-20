@@ -36,6 +36,11 @@ import { WalletScanTokenService } from './wallet-scan-token.service';
       useExisting: GoogleWalletRestClient
     }
   ],
-  exports: [GoogleWalletService, WalletPassService, WalletRefreshJobService]
+  exports: [
+    GoogleWalletService,
+    WalletPassService,
+    WalletRefreshJobService,
+    WalletScanTokenService
+  ]
 })
 export class GoogleWalletModule {}

@@ -30,6 +30,7 @@ out/
 # NestJS
 *.local
 apps/api/public/generated/
+apps/api/public/generated/apple-wallet/
 
 # Prisma
 apps/api/prisma/migrations/*/migration_lock.toml

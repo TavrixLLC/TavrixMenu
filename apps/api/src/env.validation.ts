@@ -38,6 +38,22 @@ export function validateEnvironment(config: Environment) {
   const googleWalletIssuerId = config.GOOGLE_WALLET_ISSUER_ID?.trim() ?? '';
   const googleWalletCredentialsPath =
     config.GOOGLE_WALLET_CREDENTIALS_PATH?.trim() ?? '';
+  const appleWalletEnabled = parseBoolean(
+    config.APPLE_WALLET_ENABLED,
+    false,
+    'APPLE_WALLET_ENABLED'
+  );
+  const appleWalletTeamId = config.APPLE_WALLET_TEAM_ID?.trim() ?? '';
+  const appleWalletPassTypeIdentifier =
+    config.APPLE_WALLET_PASS_TYPE_IDENTIFIER?.trim() ?? '';
+  const appleWalletOrganizationName =
+    config.APPLE_WALLET_ORGANIZATION_NAME?.trim() ?? '';
+  const appleWalletCertificatePath =
+    config.APPLE_WALLET_CERTIFICATE_PATH?.trim() ?? '';
+  const appleWalletCertificatePassword =
+    config.APPLE_WALLET_CERTIFICATE_PASSWORD ?? '';
+  const appleWalletWwdrCertificatePath =
+    config.APPLE_WALLET_WWDR_CERTIFICATE_PATH?.trim() ?? '';
   const walletImagePublicBaseUrl = normalizeOptionalHttpsUrl(
     config.WALLET_IMAGE_PUBLIC_BASE_URL,
     'WALLET_IMAGE_PUBLIC_BASE_URL'
@@ -67,11 +83,49 @@ export function validateEnvironment(config: Environment) {
       );
     }
 
-    if (walletScanTokenSecret.length < 32) {
+  }
+
+  if (appleWalletEnabled) {
+    requireAppleWalletValue(appleWalletTeamId, 'APPLE_WALLET_TEAM_ID');
+    requireAppleWalletValue(
+      appleWalletPassTypeIdentifier,
+      'APPLE_WALLET_PASS_TYPE_IDENTIFIER'
+    );
+    requireAppleWalletValue(
+      appleWalletOrganizationName,
+      'APPLE_WALLET_ORGANIZATION_NAME'
+    );
+    requireAppleWalletValue(
+      appleWalletCertificatePath,
+      'APPLE_WALLET_CERTIFICATE_PATH'
+    );
+    requireAppleWalletValue(
+      appleWalletCertificatePassword,
+      'APPLE_WALLET_CERTIFICATE_PASSWORD'
+    );
+    requireAppleWalletValue(
+      appleWalletWwdrCertificatePath,
+      'APPLE_WALLET_WWDR_CERTIFICATE_PATH'
+    );
+
+    if (!/^[A-Z0-9]{10}$/.test(appleWalletTeamId)) {
+      throw new Error('APPLE_WALLET_TEAM_ID must be a 10-character team ID');
+    }
+
+    if (!/^pass\.[A-Za-z0-9.-]+$/.test(appleWalletPassTypeIdentifier)) {
       throw new Error(
-        'WALLET_SCAN_TOKEN_SECRET must be at least 32 characters when GOOGLE_WALLET_ENABLED=true'
+        'APPLE_WALLET_PASS_TYPE_IDENTIFIER must start with pass.'
       );
     }
+  }
+
+  if (
+    (googleWalletEnabled || appleWalletEnabled) &&
+    walletScanTokenSecret.length < 32
+  ) {
+    throw new Error(
+      'WALLET_SCAN_TOKEN_SECRET must be at least 32 characters when a wallet integration is enabled'
+    );
   }
 
   return {
@@ -84,9 +138,22 @@ export function validateEnvironment(config: Environment) {
     GOOGLE_WALLET_ISSUER_ID: googleWalletIssuerId,
     GOOGLE_WALLET_CREDENTIALS_PATH: googleWalletCredentialsPath,
     GOOGLE_WALLET_ORIGINS: googleWalletOrigins,
+    APPLE_WALLET_ENABLED: appleWalletEnabled,
+    APPLE_WALLET_TEAM_ID: appleWalletTeamId,
+    APPLE_WALLET_PASS_TYPE_IDENTIFIER: appleWalletPassTypeIdentifier,
+    APPLE_WALLET_ORGANIZATION_NAME: appleWalletOrganizationName,
+    APPLE_WALLET_CERTIFICATE_PATH: appleWalletCertificatePath,
+    APPLE_WALLET_CERTIFICATE_PASSWORD: appleWalletCertificatePassword,
+    APPLE_WALLET_WWDR_CERTIFICATE_PATH: appleWalletWwdrCertificatePath,
     WALLET_IMAGE_PUBLIC_BASE_URL: walletImagePublicBaseUrl,
     WALLET_SCAN_TOKEN_SECRET: walletScanTokenSecret
   };
+}
+
+function requireAppleWalletValue(value: string, fieldName: string) {
+  if (!value) {
+    throw new Error(`${fieldName} is required when APPLE_WALLET_ENABLED=true`);
+  }
 }
 
 function parseBoolean(

@@ -94,3 +94,62 @@ describe('validateEnvironment Google Wallet config', () => {
     );
   });
 });
+
+describe('validateEnvironment Apple Wallet config', () => {
+  it('defaults Apple Wallet to disabled without requiring certificates', () => {
+    const config = validateEnvironment({
+      NODE_ENV: 'development'
+    });
+
+    assert.equal(config.APPLE_WALLET_ENABLED, false);
+    assert.equal(config.APPLE_WALLET_CERTIFICATE_PATH, '');
+    assert.equal(config.APPLE_WALLET_WWDR_CERTIFICATE_PATH, '');
+  });
+
+  it('requires every Apple Wallet setting when enabled', () => {
+    const requiredFields = [
+      'APPLE_WALLET_TEAM_ID',
+      'APPLE_WALLET_PASS_TYPE_IDENTIFIER',
+      'APPLE_WALLET_ORGANIZATION_NAME',
+      'APPLE_WALLET_CERTIFICATE_PATH',
+      'APPLE_WALLET_CERTIFICATE_PASSWORD',
+      'APPLE_WALLET_WWDR_CERTIFICATE_PATH'
+    ] as const;
+
+    for (const field of requiredFields) {
+      const environment = validAppleWalletEnvironment();
+      delete environment[field];
+
+      assert.throws(
+        () => validateEnvironment(environment),
+        new RegExp(`${field} is required`)
+      );
+    }
+  });
+
+  it('accepts complete Apple Wallet config without exposing its password', () => {
+    const config = validateEnvironment(validAppleWalletEnvironment());
+
+    assert.equal(config.APPLE_WALLET_ENABLED, true);
+    assert.equal(config.APPLE_WALLET_TEAM_ID, 'A1B2C3D4E5');
+    assert.equal(
+      config.APPLE_WALLET_PASS_TYPE_IDENTIFIER,
+      'pass.app.waflo.loyalty'
+    );
+  });
+});
+
+function validAppleWalletEnvironment() {
+  return {
+    NODE_ENV: 'development',
+    APPLE_WALLET_ENABLED: 'true',
+    APPLE_WALLET_TEAM_ID: 'A1B2C3D4E5',
+    APPLE_WALLET_PASS_TYPE_IDENTIFIER: 'pass.app.waflo.loyalty',
+    APPLE_WALLET_ORGANIZATION_NAME: 'Waflo',
+    APPLE_WALLET_CERTIFICATE_PATH: 'outside-repo/certificate.p12',
+    APPLE_WALLET_CERTIFICATE_PASSWORD: 'local-test-password',
+    APPLE_WALLET_WWDR_CERTIFICATE_PATH: 'outside-repo/wwdr.cer',
+    WALLET_SCAN_TOKEN_SECRET:
+      'test-wallet-scan-token-secret-at-least-32-characters'
+  };
+}
