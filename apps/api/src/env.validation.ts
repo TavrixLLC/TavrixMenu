@@ -63,6 +63,17 @@ export function validateEnvironment(config: Environment) {
     config.APPLE_WALLET_WEB_SERVICE_BASE_URL?.trim() ?? '';
   const appleWalletUpdateAuthTokenSecret =
     config.APPLE_WALLET_UPDATE_AUTH_TOKEN_SECRET?.trim() ?? '';
+  const appleWalletApnsEnabled = parseBoolean(
+    config.APPLE_WALLET_APNS_ENABLED,
+    false,
+    'APPLE_WALLET_APNS_ENABLED'
+  );
+  const appleWalletApnsEnvironment =
+    config.APPLE_WALLET_APNS_ENVIRONMENT?.trim().toLowerCase() ||
+    (nodeEnv === 'production' ? 'production' : 'sandbox');
+  const appleWalletApnsTimeoutMs = Number(
+    config.APPLE_WALLET_APNS_TIMEOUT_MS ?? 10000
+  );
   const appleWalletWebServiceBaseUrl = appleWalletWebServiceEnabled
     ? normalizeAppleWalletWebServiceUrl(
         appleWalletWebServiceBaseUrlInput,
@@ -74,6 +85,22 @@ export function validateEnvironment(config: Environment) {
     'WALLET_IMAGE_PUBLIC_BASE_URL'
   );
   const walletScanTokenSecret = config.WALLET_SCAN_TOKEN_SECRET?.trim() ?? '';
+
+  if (!['sandbox', 'production'].includes(appleWalletApnsEnvironment)) {
+    throw new Error(
+      'APPLE_WALLET_APNS_ENVIRONMENT must be sandbox or production'
+    );
+  }
+
+  if (
+    !Number.isInteger(appleWalletApnsTimeoutMs) ||
+    appleWalletApnsTimeoutMs < 100 ||
+    appleWalletApnsTimeoutMs > 60000
+  ) {
+    throw new Error(
+      'APPLE_WALLET_APNS_TIMEOUT_MS must be an integer between 100 and 60000'
+    );
+  }
 
   if (googleWalletEnabled) {
     if (!googleWalletIssuerId) {
@@ -153,6 +180,20 @@ export function validateEnvironment(config: Environment) {
     );
   }
 
+  if (appleWalletApnsEnabled && nodeEnv !== 'development') {
+    if (!appleWalletEnabled) {
+      throw new Error(
+        'APPLE_WALLET_ENABLED must be true when APNs is enabled outside development'
+      );
+    }
+
+    if (appleWalletApnsEnvironment !== 'production') {
+      throw new Error(
+        'APPLE_WALLET_APNS_ENVIRONMENT must be production outside development'
+      );
+    }
+  }
+
   return {
     ...config,
     NODE_ENV: nodeEnv,
@@ -174,6 +215,9 @@ export function validateEnvironment(config: Environment) {
     APPLE_WALLET_WEB_SERVICE_BASE_URL: appleWalletWebServiceBaseUrl,
     APPLE_WALLET_UPDATE_AUTH_TOKEN_SECRET:
       appleWalletUpdateAuthTokenSecret,
+    APPLE_WALLET_APNS_ENABLED: appleWalletApnsEnabled,
+    APPLE_WALLET_APNS_ENVIRONMENT: appleWalletApnsEnvironment,
+    APPLE_WALLET_APNS_TIMEOUT_MS: appleWalletApnsTimeoutMs,
     WALLET_IMAGE_PUBLIC_BASE_URL: walletImagePublicBaseUrl,
     WALLET_SCAN_TOKEN_SECRET: walletScanTokenSecret
   };

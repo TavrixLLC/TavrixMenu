@@ -1,8 +1,14 @@
-import { Injectable, OnModuleDestroy, OnModuleInit } from '@nestjs/common';
+import {
+  Injectable,
+  OnModuleDestroy,
+  OnModuleInit
+} from '@nestjs/common';
+import { ConfigService } from '@nestjs/config';
 import { randomUUID } from 'crypto';
 import {
   Prisma,
   WalletPassPlatform,
+  WalletPassStatus,
   WalletRefreshJobProvider,
   WalletRefreshJobReason,
   WalletRefreshJobStatus
@@ -47,7 +53,8 @@ export class WalletRefreshJobService implements OnModuleInit, OnModuleDestroy {
   constructor(
     private readonly prisma: PrismaService,
     private readonly googleWalletService: GoogleWalletService,
-    private readonly walletPassService: WalletPassService
+    private readonly walletPassService: WalletPassService,
+    private readonly configService: ConfigService
   ) {}
 
   onModuleInit() {
@@ -67,6 +74,15 @@ export class WalletRefreshJobService implements OnModuleInit, OnModuleDestroy {
   }
 
   async enqueueWalletRefreshForMembership(
+    input: EnqueueWalletRefreshInput
+  ): Promise<EnqueueWalletRefreshResult> {
+    const googleResult = await this.enqueueGoogleWalletRefresh(input);
+    await this.markAndEnqueueAppleWalletPush(input);
+
+    return googleResult;
+  }
+
+  private async enqueueGoogleWalletRefresh(
     input: EnqueueWalletRefreshInput
   ): Promise<EnqueueWalletRefreshResult> {
     if (!this.googleWalletService.isEnabled()) {
@@ -92,7 +108,10 @@ export class WalletRefreshJobService implements OnModuleInit, OnModuleDestroy {
       };
     }
 
-    return this.createOrReusePendingJob(input);
+    return this.createOrReusePendingJob(
+      input,
+      WalletRefreshJobProvider.GOOGLE_WALLET
+    );
   }
 
   async processDueJobs(limit = 10) {
@@ -107,9 +126,52 @@ export class WalletRefreshJobService implements OnModuleInit, OnModuleDestroy {
     };
   }
 
-  private async createOrReusePendingJob(input: EnqueueWalletRefreshInput) {
+  private async markAndEnqueueAppleWalletPush(
+    input: EnqueueWalletRefreshInput
+  ) {
+    const pass = await this.prisma.walletPass.findFirst({
+      where: {
+        businessId: input.businessId,
+        membershipId: input.membershipId,
+        platform: WalletPassPlatform.APPLE_WALLET,
+        status: WalletPassStatus.ACTIVE
+      },
+      select: {
+        id: true
+      }
+    });
+
+    if (!pass) {
+      return;
+    }
+
+    await this.prisma.walletPass.update({
+      where: {
+        id: pass.id
+      },
+      data: {
+        applePassUpdatedAt: new Date()
+      }
+    });
+
+    if (
+      this.configService.get<boolean>('APPLE_WALLET_APNS_ENABLED') !== true
+    ) {
+      return;
+    }
+
+    await this.createOrReusePendingJob(
+      input,
+      WalletRefreshJobProvider.APPLE_WALLET
+    );
+  }
+
+  private async createOrReusePendingJob(
+    input: EnqueueWalletRefreshInput,
+    provider: WalletRefreshJobProvider
+  ) {
     const now = new Date();
-    const existingJob = await this.findActiveJob(input.membershipId);
+    const existingJob = await this.findActiveJob(input.membershipId, provider);
 
     if (existingJob) {
       const job = await this.prisma.walletRefreshJob.update({
@@ -139,7 +201,7 @@ export class WalletRefreshJobService implements OnModuleInit, OnModuleDestroy {
         data: {
           businessId: input.businessId,
           membershipId: input.membershipId,
-          provider: WalletRefreshJobProvider.GOOGLE_WALLET,
+          provider,
           reason: input.reason,
           status: WalletRefreshJobStatus.PENDING,
           attempts: 0,
@@ -155,7 +217,7 @@ export class WalletRefreshJobService implements OnModuleInit, OnModuleDestroy {
       } as const;
     } catch (error) {
       if (this.isUniqueConstraintError(error)) {
-        const racedJob = await this.findActiveJob(input.membershipId);
+        const racedJob = await this.findActiveJob(input.membershipId, provider);
 
         if (racedJob) {
           return {
@@ -169,11 +231,14 @@ export class WalletRefreshJobService implements OnModuleInit, OnModuleDestroy {
     }
   }
 
-  private findActiveJob(membershipId: string) {
+  private findActiveJob(
+    membershipId: string,
+    provider: WalletRefreshJobProvider
+  ) {
     return this.prisma.walletRefreshJob.findFirst({
       where: {
         membershipId,
-        provider: WalletRefreshJobProvider.GOOGLE_WALLET,
+        provider,
         status: {
           in: [
             WalletRefreshJobStatus.PENDING,

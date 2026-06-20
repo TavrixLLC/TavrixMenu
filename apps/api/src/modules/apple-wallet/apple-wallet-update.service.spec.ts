@@ -129,6 +129,29 @@ describe('AppleWalletUpdateService', () => {
     );
   });
 
+  it('lists a registered serial after the Apple pass update marker advances', async () => {
+    const setup = createSetup();
+    const marker = new Date('2026-06-20T12:20:00.000Z');
+    setup.pass.applePassUpdatedAt = marker;
+    setup.state.registrations = [
+      {
+        serialNumber: setup.pass.appleSerialNumber,
+        walletPass: setup.pass
+      }
+    ];
+
+    const result = await setup.service.listUpdatedPasses({
+      deviceLibraryIdentifier: 'device-library-identifier-1234',
+      passTypeIdentifier: setup.pass.applePassTypeIdentifier,
+      passesUpdatedSince: String(membershipUpdatedAt.getTime())
+    });
+
+    assert.deepEqual(result, {
+      serialNumbers: [setup.pass.appleSerialNumber],
+      lastUpdated: String(marker.getTime())
+    });
+  });
+
   it('returns an updated pass with the stable update token and fresh scan metadata', async () => {
     const setup = createSetup();
     const result = await setup.service.getUpdatedPass({

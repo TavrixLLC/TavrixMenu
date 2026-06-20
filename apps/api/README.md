@@ -155,15 +155,37 @@ tunnel.
 The update secret is distinct from public loyalty card tokens and
 `WALLET_SCAN_TOKEN_SECRET`; never reuse or log any of them. Device library
 identifiers are stored as hashes plus last four characters. APNs push tokens
-may be stored for a future sprint but are never returned, documented with
+are stored only for backend delivery and are never returned, documented with
 example values, or logged.
 
 Apple pass updates are entirely backend-owned. Mobile code never owns signing,
-registration, or pass regeneration. Sprint 10C does not send APNs pushes, so a
-changed pass may not be pushed to a device immediately; the protocol endpoints
-only support Wallet polling and retrieval. Real Apple certificate signing and
-Add to Wallet validation on an iPhone are still required before production
-readiness.
+registration, push delivery, or pass regeneration. Sprint 10D marks active
+Apple passes updated after stamp and reward mutations, coalesces an
+`APPLE_WALLET` outbox job, and sends registered devices an empty JSON APNs
+payload. The payload is only a wake-up signal and contains no loyalty state,
+tokens, or customer data. The device then fetches changed serial numbers and
+the latest signed pass through the Sprint 10C update web service.
+
+APNs uses the same backend-held Pass Type ID signing certificate and private
+key bundle as pass signing. It is disabled by default and never runs inline on
+the cashier request path:
+
+```dotenv
+APPLE_WALLET_APNS_ENABLED=false
+APPLE_WALLET_APNS_ENVIRONMENT=production
+APPLE_WALLET_APNS_TIMEOUT_MS=10000
+```
+
+The transport supports `sandbox` for local integration testing, but Apple
+Wallet pass-update pushes work only against production APNs. Production and
+staging deployments must use `production` and complete Apple signing config.
+Transient failures retry with bounded backoff. APNs invalid-token responses
+soft-unregister the device and clear its stored push token. With APNs disabled,
+the pass update marker still advances and no Apple push job is created.
+
+Real Apple certificate signing and Add to Wallet validation on an iPhone are
+still required before production readiness. The customer-web Apple button must
+wait until that certificate and device smoke has passed.
 
 Set the `APPLE_WALLET_*` variables and `WALLET_SCAN_TOKEN_SECRET` in the local
 API environment, then run from the repository root:

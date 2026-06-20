@@ -1,4 +1,5 @@
 import { strict as assert } from 'assert';
+import { ConfigService } from '@nestjs/config';
 import { describe, it } from 'node:test';
 import {
   WalletPassPlatform,
@@ -67,7 +68,7 @@ describe('WalletRefreshJobService enqueue', () => {
     assert.equal(setup.jobs.length, 0);
   });
 
-  it('skips enqueue without lookup when Google Wallet is disabled', async () => {
+  it('skips the Google lookup when Google Wallet is disabled', async () => {
     const setup = createJobService({
       walletEnabled: false
     });
@@ -79,7 +80,88 @@ describe('WalletRefreshJobService enqueue', () => {
     });
 
     assert.equal(response.status, 'SKIPPED_DISABLED');
-    assert.equal(setup.walletPassQueries.length, 0);
+    assert.equal(
+      setup.walletPassQueries.some(
+        (query: any) =>
+          query.where.platform === WalletPassPlatform.GOOGLE_WALLET
+      ),
+      false
+    );
+    assert.equal(setup.jobs.length, 0);
+  });
+
+  it('marks an Apple pass updated and queues Apple push work when APNs is enabled', async () => {
+    const setup = createJobService({
+      walletEnabled: false,
+      hasApplePass: true,
+      apnsEnabled: true
+    });
+
+    await setup.service.enqueueWalletRefreshForMembership({
+      businessId: 'business_1',
+      membershipId: 'membership_1',
+      reason: WalletRefreshJobReason.STAMP_ADDED
+    });
+
+    assert.equal(setup.walletPassUpdates.length, 1);
+    assert.ok(setup.walletPassUpdates[0].data.applePassUpdatedAt instanceof Date);
+    assert.equal(setup.jobs.length, 1);
+    assert.equal(setup.jobs[0].provider, WalletRefreshJobProvider.APPLE_WALLET);
+    assert.equal(setup.jobs[0].reason, WalletRefreshJobReason.STAMP_ADDED);
+  });
+
+  it('coalesces Apple push work and retains the latest loyalty reason', async () => {
+    const setup = createJobService({
+      walletEnabled: false,
+      hasApplePass: true,
+      apnsEnabled: true
+    });
+
+    await setup.service.enqueueWalletRefreshForMembership({
+      businessId: 'business_1',
+      membershipId: 'membership_1',
+      reason: WalletRefreshJobReason.STAMP_ADDED
+    });
+    await setup.service.enqueueWalletRefreshForMembership({
+      businessId: 'business_1',
+      membershipId: 'membership_1',
+      reason: WalletRefreshJobReason.REWARD_REDEEMED
+    });
+
+    assert.equal(setup.jobs.length, 1);
+    assert.equal(setup.jobs[0].provider, WalletRefreshJobProvider.APPLE_WALLET);
+    assert.equal(setup.jobs[0].reason, WalletRefreshJobReason.REWARD_REDEEMED);
+  });
+
+  it('marks an Apple pass updated without creating a job when APNs is disabled', async () => {
+    const setup = createJobService({
+      walletEnabled: false,
+      hasApplePass: true
+    });
+
+    await setup.service.enqueueWalletRefreshForMembership({
+      businessId: 'business_1',
+      membershipId: 'membership_1',
+      reason: WalletRefreshJobReason.STAMP_ADDED
+    });
+
+    assert.equal(setup.walletPassUpdates.length, 1);
+    assert.equal(setup.jobs.length, 0);
+  });
+
+  it('does not create Apple push work when no Apple pass exists', async () => {
+    const setup = createJobService({
+      walletEnabled: false,
+      apnsEnabled: true
+    });
+
+    await setup.service.enqueueWalletRefreshForMembership({
+      businessId: 'business_1',
+      membershipId: 'membership_1',
+      reason: WalletRefreshJobReason.STAMP_ADDED
+    });
+
+    assert.equal(setup.walletPassUpdates.length, 0);
     assert.equal(setup.jobs.length, 0);
   });
 
@@ -233,6 +315,8 @@ describe('WalletRefreshJobService worker', () => {
 function createJobService(overrides: {
   claimedJobs?: Array<ReturnType<typeof claimedJob>>;
   hasPass?: boolean;
+  hasApplePass?: boolean;
+  apnsEnabled?: boolean;
   walletEnabled?: boolean;
 } = {}) {
   const jobs: any[] = [];
@@ -241,6 +325,7 @@ function createJobService(overrides: {
   wallet.enabled = overrides.walletEnabled ?? true;
   const walletPassService = new MockWalletPassService();
   const claimedJobs = overrides.claimedJobs ?? [];
+  const walletPassUpdates: any[] = [];
 
   for (const job of claimedJobs) {
     jobs.push(jobFromClaim(job));
@@ -248,8 +333,17 @@ function createJobService(overrides: {
 
   const prisma = {
     walletPass: {
-      findFirst: async (query: unknown) => {
+      findFirst: async (query: any) => {
         walletPassQueries.push(query);
+
+        if (query.where.platform === WalletPassPlatform.APPLE_WALLET) {
+          return overrides.hasApplePass
+            ? {
+                id: 'apple_pass_1',
+                platform: WalletPassPlatform.APPLE_WALLET
+              }
+            : null;
+        }
 
         return overrides.hasPass === false
           ? null
@@ -257,6 +351,10 @@ function createJobService(overrides: {
               id: 'pass_1',
               platform: WalletPassPlatform.GOOGLE_WALLET
             };
+      },
+      update: async (args: any) => {
+        walletPassUpdates.push(args);
+        return args;
       }
     },
     walletRefreshJob: {
@@ -302,10 +400,14 @@ function createJobService(overrides: {
     service: new WalletRefreshJobService(
       prisma as never,
       wallet as never,
-      walletPassService as never
+      walletPassService as never,
+      new ConfigService({
+        APPLE_WALLET_APNS_ENABLED: overrides.apnsEnabled ?? false
+      })
     ),
     jobs,
     walletPassQueries,
+    walletPassUpdates,
     walletPassService
   };
 }

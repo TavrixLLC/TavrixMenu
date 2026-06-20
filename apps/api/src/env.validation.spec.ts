@@ -226,6 +226,85 @@ describe('validateEnvironment Apple Wallet update web service config', () => {
   });
 });
 
+describe('validateEnvironment Apple Wallet APNs config', () => {
+  it('defaults APNs off without requiring credentials', () => {
+    const config = validateEnvironment({ NODE_ENV: 'development' });
+
+    assert.equal(config.APPLE_WALLET_APNS_ENABLED, false);
+    assert.equal(config.APPLE_WALLET_APNS_ENVIRONMENT, 'sandbox');
+    assert.equal(config.APPLE_WALLET_APNS_TIMEOUT_MS, 10000);
+  });
+
+  it('keeps development boot-safe when enabled config is incomplete', () => {
+    const config = validateEnvironment({
+      NODE_ENV: 'development',
+      APPLE_WALLET_APNS_ENABLED: 'true'
+    });
+
+    assert.equal(config.APPLE_WALLET_APNS_ENABLED, true);
+    assert.equal(config.APPLE_WALLET_APNS_ENVIRONMENT, 'sandbox');
+  });
+
+  it('rejects invalid APNs environments and timeouts', () => {
+    assert.throws(
+      () =>
+        validateEnvironment({
+          NODE_ENV: 'development',
+          APPLE_WALLET_APNS_ENVIRONMENT: 'invalid'
+        }),
+      /APPLE_WALLET_APNS_ENVIRONMENT must be sandbox or production/
+    );
+    assert.throws(
+      () =>
+        validateEnvironment({
+          NODE_ENV: 'development',
+          APPLE_WALLET_APNS_TIMEOUT_MS: '99'
+        }),
+      /APPLE_WALLET_APNS_TIMEOUT_MS must be an integer between 100 and 60000/
+    );
+  });
+
+  it('requires Apple signing config and production APNs outside development', () => {
+    assert.throws(
+      () =>
+        validateEnvironment({
+          NODE_ENV: 'production',
+          CLERK_JWT_ISSUER: 'https://clerk.example.test',
+          APPLE_WALLET_APNS_ENABLED: 'true',
+          APPLE_WALLET_APNS_ENVIRONMENT: 'production'
+        }),
+      /APPLE_WALLET_ENABLED must be true when APNs is enabled outside development/
+    );
+
+    assert.throws(
+      () =>
+        validateEnvironment({
+          ...validAppleWalletEnvironment(),
+          NODE_ENV: 'production',
+          CLERK_JWT_ISSUER: 'https://clerk.example.test',
+          APPLE_WALLET_APNS_ENABLED: 'true',
+          APPLE_WALLET_APNS_ENVIRONMENT: 'sandbox'
+        }),
+      /APPLE_WALLET_APNS_ENVIRONMENT must be production outside development/
+    );
+  });
+
+  it('accepts complete production APNs config using signing credentials', () => {
+    const config = validateEnvironment({
+      ...validAppleWalletEnvironment(),
+      NODE_ENV: 'production',
+      CLERK_JWT_ISSUER: 'https://clerk.example.test',
+      APPLE_WALLET_APNS_ENABLED: 'true',
+      APPLE_WALLET_APNS_ENVIRONMENT: 'production',
+      APPLE_WALLET_APNS_TIMEOUT_MS: '5000'
+    });
+
+    assert.equal(config.APPLE_WALLET_APNS_ENABLED, true);
+    assert.equal(config.APPLE_WALLET_APNS_ENVIRONMENT, 'production');
+    assert.equal(config.APPLE_WALLET_APNS_TIMEOUT_MS, 5000);
+  });
+});
+
 function validAppleWalletEnvironment() {
   return {
     NODE_ENV: 'development',

@@ -403,6 +403,7 @@ enum WalletPassStatus {
 
 enum WalletRefreshJobProvider {
   GOOGLE_WALLET
+  APPLE_WALLET
 }
 
 enum WalletRefreshJobReason {
