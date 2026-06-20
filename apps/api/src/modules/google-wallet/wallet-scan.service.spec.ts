@@ -60,6 +60,40 @@ describe('WalletScanService', () => {
     assert.equal(JSON.stringify(response).includes('scanTokenHash'), false);
   });
 
+  it('validates an Apple Wallet barcode token through the same staff flow', async () => {
+    const tokenService = createTokenService();
+    const applePass = walletPass({
+      platform: WalletPassPlatform.APPLE_WALLET,
+      googleClassId: null,
+      googleObjectId: null,
+      saveUrl: null,
+      heroImageUrl: null
+    });
+    const metadata = tokenService.buildMetadataForPass(applePass);
+    const { service } = createScanService({
+      tokenService,
+      rawToken: metadata.rawToken,
+      pass: {
+        ...applePass,
+        scanTokenHash: metadata.scanTokenHash,
+        scanTokenVersion: metadata.scanTokenVersion,
+        scanTokenIssuedAt: metadata.scanTokenIssuedAt,
+        scanTokenLast4: metadata.scanTokenLast4
+      }
+    });
+
+    const response = await service.scanGoogleWalletPass(
+      user('staff_1'),
+      'business_1',
+      {
+        token: metadata.rawToken
+      }
+    );
+
+    assert.equal(response.walletPass.platform, WalletPassPlatform.APPLE_WALLET);
+    assert.equal(JSON.stringify(response).includes(metadata.rawToken), false);
+  });
+
   it('rejects invalid and malformed scan tokens', async () => {
     const { service, rawToken, queries } = createScanService();
 

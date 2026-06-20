@@ -44,7 +44,7 @@ export class WalletScanController {
   @Post()
   @ApiOkResponse({
     description:
-      'Validates a Google Wallet loyalty barcode token and returns safe staff scan data.',
+      'Validates an Apple Wallet or Google Wallet loyalty barcode token and returns safe staff scan data.',
     schema: {
       example: {
         membershipId: 'membership_id',

@@ -34,6 +34,10 @@ export class WalletScanService {
     BusinessUserRole.MANAGER,
     BusinessUserRole.STAFF
   ];
+  private readonly supportedPlatforms = new Set([
+    WalletPassPlatform.GOOGLE_WALLET,
+    WalletPassPlatform.APPLE_WALLET
+  ]);
 
   constructor(
     private readonly prisma: PrismaService,
@@ -74,7 +78,7 @@ export class WalletScanService {
 
     if (
       !pass ||
-      pass.platform !== WalletPassPlatform.GOOGLE_WALLET ||
+      !this.supportedPlatforms.has(pass.platform) ||
       pass.status !== WalletPassStatus.ACTIVE ||
       pass.membership.status !== LoyaltyMembershipStatus.ACTIVE ||
       !this.walletScanTokenService.verifyForPass(parsedToken.token, pass)

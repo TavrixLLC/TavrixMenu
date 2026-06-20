@@ -66,6 +66,21 @@ describe('AppleWalletService', () => {
       () => service.generatePass(generationInput()),
       /Apple Wallet integration is disabled/
     );
+    assert.equal(service.getReadiness(), 'DISABLED');
+    assert.equal(signer.payload, undefined);
+  });
+
+  it('reports missing signing config without reading certificate contents', () => {
+    const signer = new RecordingSigner();
+    const incomplete = createService(signer);
+    const configured = createService(signer, {
+      APPLE_WALLET_CERTIFICATE_PATH: __filename,
+      APPLE_WALLET_CERTIFICATE_PASSWORD: 'test-only-placeholder',
+      APPLE_WALLET_WWDR_CERTIFICATE_PATH: __filename
+    });
+
+    assert.equal(incomplete.getReadiness(), 'NOT_CONFIGURED');
+    assert.equal(configured.getReadiness(), 'READY');
     assert.equal(signer.payload, undefined);
   });
 

@@ -4,7 +4,7 @@ import { IsString, MaxLength, MinLength } from 'class-validator';
 export class WalletScanDto {
   @ApiProperty({
     example: '<paste-wallet-qr-token-here>',
-    description: 'Opaque value read from a Google Wallet loyalty barcode.'
+    description: 'Opaque value read from a supported loyalty wallet barcode.'
   })
   @IsString()
   @MinLength(1)
