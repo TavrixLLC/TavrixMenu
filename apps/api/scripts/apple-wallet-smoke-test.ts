@@ -1,7 +1,8 @@
 import { ConfigService } from '@nestjs/config';
+import { execFileSync } from 'child_process';
 import { randomUUID } from 'crypto';
 import { existsSync, mkdirSync, readFileSync, writeFileSync } from 'fs';
-import { join, resolve } from 'path';
+import { isAbsolute, join, relative, resolve, sep } from 'path';
 import { validateEnvironment } from '../src/env.validation';
 import { AppleWalletPassBuilderService } from '../src/modules/apple-wallet/apple-wallet-pass-builder.service';
 import { AppleWalletSignerService } from '../src/modules/apple-wallet/apple-wallet-signer.service';
@@ -27,6 +28,15 @@ async function main() {
     validatedConfig.APPLE_WALLET_WWDR_CERTIFICATE_PATH,
     'APPLE_WALLET_WWDR_CERTIFICATE_PATH'
   );
+  const outputDirectory = resolve(
+    __dirname,
+    '..',
+    'public',
+    'generated',
+    'apple-wallet'
+  );
+
+  verifyOutputDirectoryIsSafe(outputDirectory);
 
   const configService = new ConfigService(validatedConfig);
   const service = new AppleWalletService(
@@ -52,13 +62,6 @@ async function main() {
       scanTokenLast4: null
     }
   });
-  const outputDirectory = resolve(
-    __dirname,
-    '..',
-    'public',
-    'generated',
-    'apple-wallet'
-  );
   const outputPath = join(outputDirectory, `${serialNumber}.pkpass`);
 
   mkdirSync(outputDirectory, { recursive: true });
@@ -67,10 +70,12 @@ async function main() {
   console.log(
     JSON.stringify(
       {
-        passTypeIdentifier: result.metadata.passTypeIdentifier,
-        serialNumber: redactSerial(result.metadata.serialNumber),
-        outputPath,
-        fileSize: result.metadata.fileSize
+        passTypeIdentifierSuffix: summarizePassTypeIdentifier(
+          result.metadata.passTypeIdentifier
+        ),
+        teamIdPresent: validatedConfig.APPLE_WALLET_TEAM_ID ? 'yes' : 'no',
+        serialNumberSuffix: result.metadata.serialNumber.slice(-6),
+        outputByteSize: result.metadata.fileSize
       },
       null,
       2
@@ -84,8 +89,43 @@ function verifyCertificatePath(path: string, fieldName: string) {
   }
 }
 
-function redactSerial(serialNumber: string) {
-  return `${serialNumber.slice(0, 6)}...${serialNumber.slice(-6)}`;
+function verifyOutputDirectoryIsSafe(outputDirectory: string) {
+  const repositoryRoot = resolve(__dirname, '..', '..', '..');
+  const relativeOutput = relative(repositoryRoot, outputDirectory);
+  const isInsideRepository =
+    relativeOutput === '' ||
+    (relativeOutput !== '..' &&
+      !relativeOutput.startsWith(`..${sep}`) &&
+      !isAbsolute(relativeOutput));
+
+  if (!isInsideRepository) {
+    return;
+  }
+
+  const ignoreProbe = relative(
+    repositoryRoot,
+    join(outputDirectory, 'apple-wallet-smoke-output.pkpass')
+  );
+
+  try {
+    execFileSync(
+      'git',
+      ['check-ignore', '--quiet', '--no-index', '--', ignoreProbe],
+      {
+        cwd: repositoryRoot,
+        stdio: 'ignore'
+      }
+    );
+  } catch {
+    throw new Error(
+      'Apple Wallet smoke output must be outside the repository or ignored by git'
+    );
+  }
+}
+
+function summarizePassTypeIdentifier(passTypeIdentifier: string) {
+  const suffix = passTypeIdentifier.split('.').filter(Boolean).at(-1);
+  return suffix?.slice(-24) || 'configured';
 }
 
 function loadEnvFile() {

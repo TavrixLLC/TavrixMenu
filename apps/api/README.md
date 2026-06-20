@@ -127,8 +127,12 @@ pnpm apple-wallet:smoke-test
 
 The smoke writes a `.pkpass` under
 `apps/api/public/generated/apple-wallet/`, which is ignored by git. Its output
-contains only the pass type identifier, a redacted serial number, output path,
-and file size. It never prints certificate contents or the QR scan token.
+contains only the pass type identifier suffix, Team ID presence, serial number
+suffix, and file size. It never prints certificate contents, certificate
+paths, passwords, private keys, pass contents, or the QR scan token.
+
+Follow the [real certificate smoke guide](../../docs/apple-wallet-real-certificate-smoke.md)
+for secure local certificate setup, iPhone validation, and cleanup.
 
 ## Future Integrations
 
