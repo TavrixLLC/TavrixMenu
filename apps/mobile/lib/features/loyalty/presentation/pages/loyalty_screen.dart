@@ -97,9 +97,8 @@ class _LoyaltyScreenState extends State<LoyaltyScreen> {
                 AppButton(
                   label: 'Wallet Scan',
                   icon: Icons.document_scanner_outlined,
-                  onPressed: () => Navigator.of(
-                    context,
-                  ).pushNamed(AppRouteNames.walletScan),
+                  onPressed: () =>
+                      Navigator.of(context).pushNamed(AppRouteNames.walletScan),
                   variant: AppButtonVariant.secondary,
                 ),
               ],

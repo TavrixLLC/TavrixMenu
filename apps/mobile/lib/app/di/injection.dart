@@ -134,7 +134,9 @@ class AppDependencies {
     final redeemLoyaltyReward = RedeemLoyaltyReward(loyaltyRepository);
     final listLoyaltyTransactions = ListLoyaltyTransactions(loyaltyRepository);
 
-    final walletScanRemoteDataSource = WalletScanRemoteDataSourceImpl(apiClient);
+    final walletScanRemoteDataSource = WalletScanRemoteDataSourceImpl(
+      apiClient,
+    );
     final walletScanRepository = WalletScanRepositoryImpl(
       remoteDataSource: walletScanRemoteDataSource,
       networkInfo: networkInfo,

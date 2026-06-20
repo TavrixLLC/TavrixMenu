@@ -19,9 +19,10 @@ class WalletScanRemoteDataSourceImpl implements WalletScanRemoteDataSource {
     required String businessId,
     required String token,
   }) async {
-    final data = await apiClient.post(
+    final data = await apiClient.postWithValidationStatusCodes(
       '/businesses/$businessId/loyalty/wallet-scan',
       body: {'token': token.trim()},
+      validationStatusCodes: const {400, 422},
     );
     final json = asJsonObject(data, context: 'wallet scan response');
     return WalletScanResultModel.fromJson(json);

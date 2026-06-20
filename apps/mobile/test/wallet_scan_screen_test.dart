@@ -5,14 +5,19 @@ import 'package:flutter/material.dart';
 import 'package:flutter_bloc/flutter_bloc.dart';
 import 'package:flutter_test/flutter_test.dart';
 import 'package:tavrix_menu_mobile/core/errors/failures.dart';
+import 'package:tavrix_menu_mobile/core/network/network_info.dart';
 import 'package:tavrix_menu_mobile/features/business_setup/domain/entities/business.dart';
 import 'package:tavrix_menu_mobile/features/business_setup/domain/repositories/business_repository.dart';
 import 'package:tavrix_menu_mobile/features/business_setup/domain/usecases/get_my_business.dart';
+import 'package:tavrix_menu_mobile/features/staff_scanner/data/datasources/wallet_scan_remote_data_source.dart';
+import 'package:tavrix_menu_mobile/features/staff_scanner/data/repositories/wallet_scan_repository_impl.dart';
 import 'package:tavrix_menu_mobile/features/staff_scanner/domain/entities/wallet_scan_result.dart';
 import 'package:tavrix_menu_mobile/features/staff_scanner/domain/repositories/wallet_scan_repository.dart';
 import 'package:tavrix_menu_mobile/features/staff_scanner/domain/usecases/scan_wallet_pass.dart';
 import 'package:tavrix_menu_mobile/features/staff_scanner/presentation/bloc/wallet_scan_cubit.dart';
 import 'package:tavrix_menu_mobile/features/staff_scanner/presentation/pages/staff_scanner_screen.dart';
+
+import 'helpers/stub_http_client_adapter.dart';
 
 void main() {
   testWidgets('requires a manual token without calling the backend', (
@@ -33,32 +38,41 @@ void main() {
     expect(repository.scanCalls, 0);
   });
 
-  testWidgets('shows an invalid token error and keeps the token for correction', (
-    tester,
-  ) async {
-    final repository = _FakeWalletScanRepository(
-      (_) async => const Left(
-        ValidationFailure('The wallet QR token is invalid or inactive.'),
-      ),
-    );
-    final cubit = _cubit(repository);
-    addTearDown(cubit.close);
+  testWidgets(
+    'HTTP 400 shows invalid token error and keeps token for correction',
+    (tester) async {
+      final adapter = StubHttpClientAdapter(
+        statusCode: 400,
+        data: const {
+          'statusCode': 400,
+          'message': 'The wallet QR token is invalid or inactive.',
+        },
+      );
+      final repository = WalletScanRepositoryImpl(
+        remoteDataSource: WalletScanRemoteDataSourceImpl(
+          buildTestApiClient(adapter),
+        ),
+        networkInfo: const NetworkInfoImpl(),
+      );
+      final cubit = _cubit(repository);
+      addTearDown(cubit.close);
 
-    await tester.pumpWidget(_screen(cubit));
-    await tester.pumpAndSettle();
-    await tester.enterText(
-      find.byKey(const ValueKey('walletScanTokenField')),
-      'invalid-token',
-    );
-    await tester.tap(find.byKey(const ValueKey('walletScanButton')));
-    await tester.pumpAndSettle();
+      await tester.pumpWidget(_screen(cubit));
+      await tester.pumpAndSettle();
+      await tester.enterText(
+        find.byKey(const ValueKey('walletScanTokenField')),
+        'invalid-token',
+      );
+      await tester.tap(find.byKey(const ValueKey('walletScanButton')));
+      await tester.pumpAndSettle();
 
-    expect(
-      find.text('The wallet QR token is invalid or inactive.'),
-      findsOneWidget,
-    );
-    expect(_tokenField(tester).controller?.text, 'invalid-token');
-  });
+      expect(
+        find.text('The wallet QR token is invalid or inactive.'),
+        findsOneWidget,
+      );
+      expect(_tokenField(tester).controller?.text, 'invalid-token');
+    },
+  );
 
   testWidgets('shows loading then renders customer progress and clears token', (
     tester,
@@ -135,7 +149,7 @@ class _FakeWalletScanRepository implements WalletScanRepository {
   _FakeWalletScanRepository(this.response);
 
   final Future<Either<Failure, WalletScanResult>> Function(String token)
-      response;
+  response;
   int scanCalls = 0;
 
   @override
