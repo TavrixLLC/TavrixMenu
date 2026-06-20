@@ -36,6 +36,19 @@ class ApiClient {
     return _send('POST', path, body: body);
   }
 
+  Future<dynamic> postWithValidationStatusCodes(
+    String path, {
+    Map<String, dynamic>? body,
+    required Set<int> validationStatusCodes,
+  }) {
+    return _send(
+      'POST',
+      path,
+      body: body,
+      validationStatusCodes: validationStatusCodes,
+    );
+  }
+
   Future<dynamic> patch(String path, {Map<String, dynamic>? body}) {
     return _send('PATCH', path, body: body);
   }
@@ -47,6 +60,7 @@ class ApiClient {
     String path, {
     Map<String, dynamic>? body,
     Map<String, dynamic>? queryParameters,
+    Set<int> validationStatusCodes = const {422},
   }) async {
     if (!canCallBackend) {
       throw const ServerException('API_BASE_URL is not configured.');
@@ -89,9 +103,9 @@ class ApiClient {
       if (statusCode == 404) {
         throw const NotFoundException();
       }
-      if (statusCode == 422) {
+      if (validationStatusCodes.contains(statusCode)) {
         throw ValidationException(
-          error.response?.data.toString() ?? 'Validation failed.',
+          _responseMessage(error.response?.data) ?? 'Validation failed.',
         );
       }
 
@@ -102,4 +116,28 @@ class ApiClient {
       );
     }
   }
+}
+
+String? _responseMessage(dynamic data) {
+  if (data is Map) {
+    final message = data['message'];
+    if (message is String && message.trim().isNotEmpty) {
+      return message.trim();
+    }
+    if (message is List) {
+      final messages = message
+          .whereType<String>()
+          .map((value) => value.trim())
+          .where((value) => value.isNotEmpty)
+          .toList();
+      if (messages.isNotEmpty) {
+        return messages.join(' ');
+      }
+    }
+  }
+
+  if (data is String && data.trim().isNotEmpty) {
+    return data.trim();
+  }
+  return null;
 }

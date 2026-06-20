@@ -29,7 +29,7 @@ class AppRouter {
       ),
       AppRouteNames.qr: (_) => const QRScreen(),
       AppRouteNames.subscription: (_) => const SubscriptionScreen(),
-      AppRouteNames.staffScanner: (_) => const StaffScannerScreen(),
+      AppRouteNames.walletScan: (_) => const StaffScannerScreen(),
     };
   }
 }
