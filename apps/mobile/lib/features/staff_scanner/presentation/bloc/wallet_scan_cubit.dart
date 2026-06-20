@@ -48,6 +48,10 @@ class WalletScanCubit extends Cubit<WalletScanState> {
   }
 
   Future<bool> scan(String token) async {
+    if (state.status == WalletScanStatus.scanning) {
+      return false;
+    }
+
     final cleanToken = token.trim();
     if (cleanToken.isEmpty) {
       emit(

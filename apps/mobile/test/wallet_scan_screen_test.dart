@@ -16,6 +16,7 @@ import 'package:tavrix_menu_mobile/features/staff_scanner/domain/repositories/wa
 import 'package:tavrix_menu_mobile/features/staff_scanner/domain/usecases/scan_wallet_pass.dart';
 import 'package:tavrix_menu_mobile/features/staff_scanner/presentation/bloc/wallet_scan_cubit.dart';
 import 'package:tavrix_menu_mobile/features/staff_scanner/presentation/pages/staff_scanner_screen.dart';
+import 'package:tavrix_menu_mobile/shared/widgets/app_button.dart';
 
 import 'helpers/stub_http_client_adapter.dart';
 
@@ -105,6 +106,214 @@ void main() {
     expect(find.text('Free coffee is not ready yet.'), findsOneWidget);
     expect(_tokenField(tester).controller?.text, isEmpty);
   });
+
+  testWidgets(
+    'camera result uses existing submit path and ignores duplicate events',
+    (tester) async {
+      final completer = Completer<Either<Failure, WalletScanResult>>();
+      final repository = _FakeWalletScanRepository((_) => completer.future);
+      final cubit = _cubit(repository);
+      addTearDown(cubit.close);
+      ValueChanged<String>? detect;
+
+      await tester.pumpWidget(
+        _screen(
+          cubit,
+          cameraScannerBuilder: (onDetect, onCancel) {
+            detect = onDetect;
+            return _FakeCameraScanner(onDetect: onDetect, onCancel: onCancel);
+          },
+        ),
+      );
+      await tester.pumpAndSettle();
+      await tester.tap(find.byKey(const ValueKey('walletOpenCameraButton')));
+      await tester.pump();
+
+      detect?.call('camera-test-token');
+      detect?.call('camera-test-token');
+      await tester.pump();
+
+      expect(repository.scanCalls, 1);
+      expect(repository.receivedTokens, ['camera-test-token']);
+      expect(find.byKey(const ValueKey('walletScanLoading')), findsOneWidget);
+      expect(find.text('camera-test-token'), findsNothing);
+
+      completer.complete(const Right(_scanResult));
+      await tester.pumpAndSettle();
+
+      expect(find.byKey(const ValueKey('walletScanResult')), findsOneWidget);
+      expect(find.byKey(const ValueKey('walletCameraRetryCard')), findsNothing);
+      expect(find.text('camera-test-token'), findsNothing);
+
+      final scanAnotherButton = find.byKey(
+        const ValueKey('walletScanAnotherButton'),
+      );
+      tester.widget<AppButton>(scanAnotherButton).onPressed?.call();
+      await tester.pumpAndSettle();
+
+      expect(find.byKey(const ValueKey('fakeWalletCamera')), findsOneWidget);
+      expect(find.byKey(const ValueKey('walletScanResult')), findsNothing);
+      expect(repository.scanCalls, 1);
+    },
+  );
+
+  testWidgets(
+    'camera failure redacts token and allows retry through existing path',
+    (tester) async {
+      var attempt = 0;
+      final repository = _FakeWalletScanRepository((token) async {
+        attempt += 1;
+        if (attempt == 1) {
+          return Left(ValidationFailure('Invalid wallet code: $token'));
+        }
+        return const Right(_scanResult);
+      });
+      final cubit = _cubit(repository);
+      addTearDown(cubit.close);
+      ValueChanged<String>? detect;
+
+      await tester.pumpWidget(
+        _screen(
+          cubit,
+          cameraScannerBuilder: (onDetect, onCancel) {
+            detect = onDetect;
+            return _FakeCameraScanner(onDetect: onDetect, onCancel: onCancel);
+          },
+        ),
+      );
+      await tester.pumpAndSettle();
+      await tester.tap(find.byKey(const ValueKey('walletOpenCameraButton')));
+      await tester.pump();
+      detect?.call('camera-sensitive-token');
+      await tester.pumpAndSettle();
+
+      expect(repository.scanCalls, 1);
+      expect(find.textContaining('camera-sensitive-token'), findsNothing);
+      expect(find.text('Invalid wallet code: [redacted]'), findsOneWidget);
+      expect(
+        find.byKey(const ValueKey('walletCameraRetryCard')),
+        findsOneWidget,
+      );
+
+      await tester.tap(find.byKey(const ValueKey('walletCameraRetryButton')));
+      await tester.pumpAndSettle();
+
+      expect(repository.scanCalls, 2);
+      expect(repository.receivedTokens, [
+        'camera-sensitive-token',
+        'camera-sensitive-token',
+      ]);
+      expect(find.byKey(const ValueKey('walletScanResult')), findsOneWidget);
+      expect(find.textContaining('camera-sensitive-token'), findsNothing);
+    },
+  );
+
+  testWidgets('camera failure allows an intentional rescan', (tester) async {
+    final repository = _FakeWalletScanRepository(
+      (_) async => const Left(ValidationFailure('Invalid wallet code.')),
+    );
+    final cubit = _cubit(repository);
+    addTearDown(cubit.close);
+    ValueChanged<String>? detect;
+
+    await tester.pumpWidget(
+      _screen(
+        cubit,
+        cameraScannerBuilder: (onDetect, onCancel) {
+          detect = onDetect;
+          return _FakeCameraScanner(onDetect: onDetect, onCancel: onCancel);
+        },
+      ),
+    );
+    await tester.pumpAndSettle();
+    await tester.tap(find.byKey(const ValueKey('walletOpenCameraButton')));
+    await tester.pump();
+    detect?.call('camera-retry-token');
+    await tester.pumpAndSettle();
+
+    await tester.tap(find.byKey(const ValueKey('walletCameraRescanButton')));
+    await tester.pumpAndSettle();
+
+    expect(find.byKey(const ValueKey('fakeWalletCamera')), findsOneWidget);
+    expect(find.byKey(const ValueKey('walletCameraRetryCard')), findsNothing);
+    expect(repository.scanCalls, 1);
+  });
+
+  testWidgets('manual retry after camera failure redacts the manual token', (
+    tester,
+  ) async {
+    final repository = _FakeWalletScanRepository(
+      (token) async => Left(ValidationFailure('Invalid wallet code: $token')),
+    );
+    final cubit = _cubit(repository);
+    addTearDown(cubit.close);
+    ValueChanged<String>? detect;
+
+    await tester.pumpWidget(
+      _screen(
+        cubit,
+        cameraScannerBuilder: (onDetect, onCancel) {
+          detect = onDetect;
+          return _FakeCameraScanner(onDetect: onDetect, onCancel: onCancel);
+        },
+      ),
+    );
+    await tester.pumpAndSettle();
+    await tester.tap(find.byKey(const ValueKey('walletOpenCameraButton')));
+    await tester.pump();
+    detect?.call('camera-sensitive-token');
+    await tester.pumpAndSettle();
+
+    await tester.enterText(
+      find.byKey(const ValueKey('walletScanTokenField')),
+      'manual-sensitive-token',
+    );
+    await tester.tap(find.byKey(const ValueKey('walletScanButton')));
+    await tester.pumpAndSettle();
+
+    expect(repository.receivedTokens, [
+      'camera-sensitive-token',
+      'manual-sensitive-token',
+    ]);
+    expect(find.textContaining('camera-sensitive-token'), findsNothing);
+    expect(find.text('Invalid wallet code: [redacted]'), findsOneWidget);
+    expect(find.byKey(const ValueKey('walletCameraRetryCard')), findsNothing);
+  });
+
+  testWidgets('manual fallback remains available beside camera scan', (
+    tester,
+  ) async {
+    final repository = _FakeWalletScanRepository(
+      (_) async => const Right(_scanResult),
+    );
+    final cubit = _cubit(repository);
+    addTearDown(cubit.close);
+
+    await tester.pumpWidget(
+      _screen(
+        cubit,
+        cameraScannerBuilder: (onDetect, onCancel) =>
+            _FakeCameraScanner(onDetect: onDetect, onCancel: onCancel),
+      ),
+    );
+    await tester.pumpAndSettle();
+
+    expect(
+      find.byKey(const ValueKey('walletOpenCameraButton')),
+      findsOneWidget,
+    );
+    expect(find.byKey(const ValueKey('walletScanTokenField')), findsOneWidget);
+
+    await tester.enterText(
+      find.byKey(const ValueKey('walletScanTokenField')),
+      'manual-fallback-token',
+    );
+    await tester.tap(find.byKey(const ValueKey('walletScanButton')));
+    await tester.pumpAndSettle();
+
+    expect(repository.receivedTokens, ['manual-fallback-token']);
+    expect(_tokenField(tester).controller?.text, isEmpty);
+  });
 }
 
 WalletScanCubit _cubit(WalletScanRepository repository) {
@@ -114,10 +323,15 @@ WalletScanCubit _cubit(WalletScanRepository repository) {
   );
 }
 
-Widget _screen(WalletScanCubit cubit) {
+Widget _screen(
+  WalletScanCubit cubit, {
+  WalletCameraScannerBuilder? cameraScannerBuilder,
+}) {
   return BlocProvider<WalletScanCubit>.value(
     value: cubit,
-    child: const MaterialApp(home: StaffScannerScreen()),
+    child: MaterialApp(
+      home: StaffScannerScreen(cameraScannerBuilder: cameraScannerBuilder),
+    ),
   );
 }
 
@@ -151,6 +365,7 @@ class _FakeWalletScanRepository implements WalletScanRepository {
   final Future<Either<Failure, WalletScanResult>> Function(String token)
   response;
   int scanCalls = 0;
+  final List<String> receivedTokens = [];
 
   @override
   Future<Either<Failure, WalletScanResult>> scan({
@@ -158,8 +373,35 @@ class _FakeWalletScanRepository implements WalletScanRepository {
     required String token,
   }) {
     scanCalls += 1;
+    receivedTokens.add(token);
     expect(businessId, _business.id);
     return response(token);
+  }
+}
+
+class _FakeCameraScanner extends StatelessWidget {
+  const _FakeCameraScanner({required this.onDetect, required this.onCancel});
+
+  final ValueChanged<String> onDetect;
+  final VoidCallback onCancel;
+
+  @override
+  Widget build(BuildContext context) {
+    return Column(
+      key: const ValueKey('fakeWalletCamera'),
+      children: [
+        ElevatedButton(
+          key: const ValueKey('fakeWalletCameraDetect'),
+          onPressed: () => onDetect('camera-test-token'),
+          child: const Text('Detect'),
+        ),
+        ElevatedButton(
+          key: const ValueKey('fakeWalletCameraCancel'),
+          onPressed: onCancel,
+          child: const Text('Cancel'),
+        ),
+      ],
+    );
   }
 }
 
