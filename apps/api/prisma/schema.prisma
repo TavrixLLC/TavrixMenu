@@ -363,6 +363,7 @@ enum LoyaltyMembershipStatus {
 
 enum WalletPassPlatform {
   GOOGLE_WALLET
+  APPLE_WALLET
 }
 
 enum WalletPassStatus {

@@ -2373,7 +2373,7 @@
         },
         "responses": {
           "200": {
-            "description": "Validates a Google Wallet loyalty barcode token and returns safe staff scan data.",
+            "description": "Validates an Apple Wallet or Google Wallet loyalty barcode token and returns safe staff scan data.",
             "content": {
               "application/json": {
                 "schema": {
@@ -2452,6 +2452,101 @@
         ],
         "tags": [
           "loyalty"
+        ]
+      }
+    },
+    "/public/loyalty/cards/{token}/apple-wallet": {
+      "post": {
+        "operationId": "PublicAppleWalletPassController_generateAppleWalletPass",
+        "parameters": [
+          {
+            "name": "token",
+            "required": true,
+            "in": "path",
+            "description": "Opaque public card access token returned by enrollment.",
+            "schema": {
+              "example": "public_card_token",
+              "type": "string"
+            }
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": "Returns a signed Apple Wallet loyalty pass package.",
+            "headers": {
+              "Content-Disposition": {
+                "description": "Safe attachment filename for the generated pass.",
+                "schema": {
+                  "type": "string",
+                  "example": "attachment; filename=\"waflo-loyalty.pkpass\""
+                }
+              }
+            },
+            "content": {
+              "application/vnd.apple.pkpass": {
+                "schema": {
+                  "type": "string",
+                  "format": "binary"
+                }
+              }
+            }
+          },
+          "404": {
+            "description": "The public loyalty card token is invalid or inactive.",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "example": {
+                    "statusCode": 404,
+                    "code": "PUBLIC_LOYALTY_CARD_NOT_FOUND",
+                    "message": "Loyalty card not found"
+                  }
+                }
+              }
+            }
+          },
+          "502": {
+            "description": "Apple Wallet signing failed.",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "example": {
+                    "statusCode": 502,
+                    "code": "APPLE_WALLET_SIGNING_FAILED",
+                    "message": "Apple Wallet pass generation failed"
+                  }
+                }
+              }
+            }
+          },
+          "503": {
+            "description": "Apple Wallet is disabled or signing is not configured.",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "oneOf": [
+                    {
+                      "example": {
+                        "statusCode": 503,
+                        "code": "APPLE_WALLET_DISABLED",
+                        "message": "Apple Wallet is unavailable"
+                      }
+                    },
+                    {
+                      "example": {
+                        "statusCode": 503,
+                        "code": "APPLE_WALLET_NOT_CONFIGURED",
+                        "message": "Apple Wallet is unavailable"
+                      }
+                    }
+                  ]
+                }
+              }
+            }
+          }
+        },
+        "tags": [
+          "public loyalty"
         ]
       }
     }
@@ -3073,7 +3168,7 @@
           "token": {
             "type": "string",
             "example": "<paste-wallet-qr-token-here>",
-            "description": "Opaque value read from a Google Wallet loyalty barcode."
+            "description": "Opaque value read from a supported loyalty wallet barcode."
           }
         },
         "required": [

@@ -1,5 +1,10 @@
 import { WalletScanTokenPassFields } from '../google-wallet/wallet-scan-token.service';
 
+export type AppleWalletReadiness =
+  | 'DISABLED'
+  | 'NOT_CONFIGURED'
+  | 'READY';
+
 export type AppleWalletPassField = {
   key: string;
   label: string;
