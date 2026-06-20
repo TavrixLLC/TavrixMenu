@@ -24,9 +24,16 @@ Copy `.env.example` to `.env.local` and set the public API base URL:
 
 ```bash
 NEXT_PUBLIC_API_BASE_URL=http://localhost:3000
+NEXT_PUBLIC_ENABLE_APPLE_WALLET_BUTTON=false
 ```
 
 Server-side fetching also supports `API_BASE_URL` if you want to avoid exposing the base URL in a browser bundle later.
+
+The Apple Wallet action is intentionally hidden by default. Set
+`NEXT_PUBLIC_ENABLE_APPLE_WALLET_BUTTON=true` only for certificate and iPhone
+validation. The customer-web proxy requests the pass from the backend only
+after a customer clicks the button; Apple signing credentials remain backend
+owned and must never be added to this app.
 
 ## Local API Check
 

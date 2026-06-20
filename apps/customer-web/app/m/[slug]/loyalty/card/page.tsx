@@ -1,3 +1,4 @@
+import { isAppleWalletButtonEnabled } from '../../../../lib/apple-wallet';
 import { getApiBaseUrl } from '../../../../lib/public-menu';
 import { LoyaltyCardClient } from './LoyaltyCardClient';
 
@@ -22,5 +23,12 @@ export default async function LoyaltyCardPage({ params, searchParams }: LoyaltyC
   const { slug } = await params;
   const query = await searchParams;
 
-  return <LoyaltyCardClient slug={slug} initialToken={readSearchToken(query.token)} apiBaseUrl={getApiBaseUrl()} />;
+  return (
+    <LoyaltyCardClient
+      slug={slug}
+      initialToken={readSearchToken(query.token)}
+      apiBaseUrl={getApiBaseUrl()}
+      appleWalletEnabled={isAppleWalletButtonEnabled()}
+    />
+  );
 }

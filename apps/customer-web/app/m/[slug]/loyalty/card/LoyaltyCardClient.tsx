@@ -2,6 +2,7 @@
 
 import Link from 'next/link';
 import { useEffect, useState } from 'react';
+import { AppleWalletButton } from '../../../../components/AppleWalletButton';
 import { GoogleWalletButton } from '../../../../components/GoogleWalletButton';
 import { fetchPublicLoyaltyCard, type PublicLoyaltyCard } from '../../../../lib/public-loyalty';
 
@@ -27,6 +28,7 @@ type LoyaltyCardClientProps = {
   slug: string;
   initialToken: string | null;
   apiBaseUrl: string;
+  appleWalletEnabled: boolean;
 };
 
 function getTokenStorageKey(slug: string) {
@@ -121,12 +123,14 @@ function CardView({
   slug,
   card,
   cardToken,
-  apiBaseUrl
+  apiBaseUrl,
+  appleWalletEnabled
 }: {
   slug: string;
   card: PublicLoyaltyCard;
   cardToken: string;
   apiBaseUrl: string;
+  appleWalletEnabled: boolean;
 }) {
   return (
     <main className="min-h-screen bg-[#fafaf7] pb-10">
@@ -180,6 +184,11 @@ function CardView({
               cardToken={cardToken}
             />
 
+            <AppleWalletButton
+              enabled={appleWalletEnabled}
+              cardToken={cardToken}
+            />
+
             {card.program.terms ? (
               <p className="mt-5 rounded-md bg-neutral-50 p-4 text-sm leading-6 text-neutral-600">
                 {card.program.terms}
@@ -192,7 +201,12 @@ function CardView({
   );
 }
 
-export function LoyaltyCardClient({ slug, initialToken, apiBaseUrl }: LoyaltyCardClientProps) {
+export function LoyaltyCardClient({
+  slug,
+  initialToken,
+  apiBaseUrl,
+  appleWalletEnabled
+}: LoyaltyCardClientProps) {
   const [status, setStatus] = useState<CardStatus>({ state: 'bootstrapping' });
   const [retryNonce, setRetryNonce] = useState(0);
 
@@ -290,6 +304,14 @@ export function LoyaltyCardClient({ slug, initialToken, apiBaseUrl }: LoyaltyCar
         </LoyaltyCardShell>
       );
     case 'ok':
-      return <CardView slug={slug} card={status.card} cardToken={status.token} apiBaseUrl={apiBaseUrl} />;
+      return (
+        <CardView
+          slug={slug}
+          card={status.card}
+          cardToken={status.token}
+          apiBaseUrl={apiBaseUrl}
+          appleWalletEnabled={appleWalletEnabled}
+        />
+      );
   }
 }
