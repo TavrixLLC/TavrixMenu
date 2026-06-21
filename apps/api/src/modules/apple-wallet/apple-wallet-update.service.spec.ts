@@ -237,18 +237,39 @@ describe('AppleWalletUpdateService', () => {
     setup.service.acceptLogs([
       `Authorization ApplePass ${setup.rawToken}`,
       `pushToken=${'p'.repeat(80)}`,
-      `scan=${scanToken}`
+      `scan=${scanToken}`,
+      'POST /apple-wallet/v1/v1/devices/private-device/registrations/pass.private/private-serial failed for private@example.test +1 555 123 4567'
     ]);
 
     const output = logged.join('\n');
     assert.equal(output.includes(setup.rawToken), false);
     assert.equal(output.includes(scanToken), false);
     assert.equal(output.includes('p'.repeat(80)), false);
+    assert.equal(output.includes('private-device'), false);
+    assert.equal(output.includes('pass.private'), false);
+    assert.equal(output.includes('private-serial'), false);
+    assert.equal(output.includes('private@example.test'), false);
+    assert.equal(output.includes('+1 555 123 4567'), false);
     assert.match(output, /redacted/);
   });
 });
 
 describe('AppleWalletUpdateController', () => {
+  it('forwards Apple passd logs to the sanitizing service', () => {
+    const accepted: string[][] = [];
+    const controller = new AppleWalletUpdateController({
+      acceptLogs: (logs: string[]) => accepted.push(logs)
+    } as never);
+
+    controller.acceptLogs({
+      logs: ['Spec-safe Apple Wallet diagnostic']
+    });
+
+    assert.deepEqual(accepted, [
+      ['Spec-safe Apple Wallet diagnostic']
+    ]);
+  });
+
   it('returns 201 for a new registration and 200 for an existing one', async () => {
     const calls: any[] = [];
     let created = true;

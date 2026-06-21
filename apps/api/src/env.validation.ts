@@ -256,7 +256,9 @@ function normalizeAppleWalletWebServiceUrl(value: string, nodeEnv: string) {
     }
   }
 
-  return parsed.toString().replace(/\/$/, '');
+  const normalized = parsed.toString().replace(/\/$/, '');
+
+  return normalized.replace(/\/v1$/i, '');
 }
 
 function isLocalOrPrivateHostname(value: string) {

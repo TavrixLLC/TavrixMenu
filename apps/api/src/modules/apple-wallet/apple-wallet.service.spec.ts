@@ -261,7 +261,7 @@ describe('AppleWalletService', () => {
     const signer = new RecordingSigner();
     const service = createService(signer, {
       APPLE_WALLET_WEB_SERVICE_ENABLED: true,
-      APPLE_WALLET_WEB_SERVICE_BASE_URL: 'http://localhost:3000/apple-wallet/v1',
+      APPLE_WALLET_WEB_SERVICE_BASE_URL: 'http://localhost:3000/apple-wallet',
       APPLE_WALLET_UPDATE_AUTH_TOKEN_SECRET:
         'test-apple-update-token-secret-at-least-32-characters'
     });
@@ -274,7 +274,7 @@ describe('AppleWalletService', () => {
 
     assert.equal(
       signer.payload?.webServiceURL,
-      'http://localhost:3000/apple-wallet/v1'
+      'http://localhost:3000/apple-wallet'
     );
     assert.equal(signer.payload?.authenticationToken, updateToken);
     assert.notEqual(signer.payload?.barcodes[0]?.message, updateToken);

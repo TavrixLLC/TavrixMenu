@@ -440,8 +440,24 @@ export class AppleWalletUpdateService {
       .replace(/waflo_scan_v1\.\S+/gi, '[redacted-scan-token]')
       .replace(/waflo_apple_update_v1\.\S+/gi, '[redacted-update-token]')
       .replace(
+        /\/(?:apple-wallet\/)?(?:v1\/)+devices\/[^/\s?]+\/registrations\/[^/\s?]+(?:\/[^/\s?]+)?/gi,
+        '/apple-wallet/v1/devices/[redacted]/registrations/[redacted]/[redacted]'
+      )
+      .replace(
+        /\/(?:apple-wallet\/)?(?:v1\/)+passes\/[^/\s?]+\/[^/\s?]+/gi,
+        '/apple-wallet/v1/passes/[redacted]/[redacted]'
+      )
+      .replace(
         /(pushToken|authenticationToken)\s*[:=]\s*\S+/gi,
         '$1=[redacted]'
+      )
+      .replace(
+        /\b[A-Z0-9._%+-]+@[A-Z0-9.-]+\.[A-Z]{2,}\b/gi,
+        '[redacted-email]'
+      )
+      .replace(
+        /(?:\+?\d[\d\s().-]{7,}\d)/g,
+        '[redacted-phone]'
       )
       .replace(/eyJ[A-Za-z0-9_-]+\.eyJ[A-Za-z0-9_-]+\.[A-Za-z0-9_-]+/g, '[redacted-jwt]')
       .replace(/[A-Za-z0-9_-]{64,}/g, '[redacted-value]')
