@@ -416,7 +416,7 @@ class _CategoryList extends StatelessWidget {
       shrinkWrap: true,
       physics: const NeverScrollableScrollPhysics(),
       itemCount: categories.length,
-      onReorder: (oldIndex, newIndex) {
+      onReorderItem: (oldIndex, newIndex) {
         final reordered = _reordered(categories, oldIndex, newIndex);
         onReorder(reordered);
       },
@@ -532,7 +532,7 @@ class _ItemList extends StatelessWidget {
       shrinkWrap: true,
       physics: const NeverScrollableScrollPhysics(),
       itemCount: items.length,
-      onReorder: (oldIndex, newIndex) {
+      onReorderItem: (oldIndex, newIndex) {
         final reordered = _reordered(items, oldIndex, newIndex);
         onReorder(reordered);
       },
@@ -639,11 +639,7 @@ class _MenuNotice extends StatelessWidget {
 
 List<T> _reordered<T>(List<T> items, int oldIndex, int newIndex) {
   final next = [...items];
-  var targetIndex = newIndex;
-  if (targetIndex > oldIndex) {
-    targetIndex -= 1;
-  }
   final moved = next.removeAt(oldIndex);
-  next.insert(targetIndex, moved);
+  next.insert(newIndex, moved);
   return next;
 }
