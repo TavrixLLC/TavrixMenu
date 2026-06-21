@@ -1,5 +1,6 @@
 import Link from 'next/link';
 import { PlaceholderImage } from '../../../components/PlaceholderImage';
+import { isAppleWalletButtonEnabled } from '../../../lib/apple-wallet';
 import { getApiBaseUrl } from '../../../lib/public-menu';
 import { fetchPublicLoyaltyContext, type PublicLoyaltyContext } from '../../../lib/public-loyalty';
 import { LoyaltyEnrollmentClient } from './LoyaltyEnrollmentClient';
@@ -139,10 +140,14 @@ export default async function LoyaltyPage({ params }: LoyaltyPageProps) {
         <section className="rounded-lg border border-neutral-200 bg-white p-5 shadow-sm">
           <h2 className="text-xl font-bold text-ink">Join loyalty</h2>
           <p className="mt-2 text-sm leading-6 text-neutral-600">
-            Enter a phone number or email address. Your contact details are not shown on the card page.
+            Join in one step. We will show the best wallet option for this device as soon as your card is ready.
           </p>
           <div className="mt-5">
-            <LoyaltyEnrollmentClient slug={context.business.slug} apiBaseUrl={getApiBaseUrl()} />
+            <LoyaltyEnrollmentClient
+              slug={context.business.slug}
+              apiBaseUrl={getApiBaseUrl()}
+              appleWalletEnabled={isAppleWalletButtonEnabled()}
+            />
           </div>
         </section>
       </section>

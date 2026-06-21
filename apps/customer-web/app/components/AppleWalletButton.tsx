@@ -39,19 +39,27 @@ export function AppleWalletButton({
   }
 
   return (
-    <div className="mt-3 rounded-lg border border-neutral-200 bg-neutral-50 p-4">
+    <div className="grid justify-items-center gap-3">
       <button
         type="button"
         onClick={handleClick}
         disabled={isLoading}
-        className="h-12 w-full rounded-md border border-ink bg-white px-5 text-sm font-semibold text-ink transition hover:bg-neutral-100 disabled:cursor-not-allowed disabled:border-neutral-300 disabled:text-neutral-400"
+        aria-label={isLoading ? 'Adding to Apple Wallet' : 'Add to Apple Wallet'}
+        aria-busy={isLoading}
+        className="inline-flex rounded-lg bg-black p-0 transition hover:opacity-90 focus-visible:outline focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-ink disabled:cursor-wait disabled:opacity-60"
       >
-        {isLoading ? 'Adding to Apple Wallet...' : 'Add to Apple Wallet'}
+        <img
+          src="/add-to-apple-wallet.svg"
+          alt="Add to Apple Wallet"
+          width={162}
+          height={50}
+          className="h-[50px] w-auto"
+        />
       </button>
       {error ? (
         <p
           role="alert"
-          className="mt-3 rounded-md border border-red-100 bg-red-50 p-3 text-sm leading-6 text-red-700"
+          className="w-full rounded-md border border-red-100 bg-red-50 p-3 text-sm leading-6 text-red-700"
         >
           {error}
         </p>

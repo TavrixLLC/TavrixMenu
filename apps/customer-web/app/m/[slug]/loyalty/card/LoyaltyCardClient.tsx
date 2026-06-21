@@ -2,9 +2,10 @@
 
 import Link from 'next/link';
 import { useEffect, useState } from 'react';
-import { AppleWalletButton } from '../../../../components/AppleWalletButton';
-import { GoogleWalletButton } from '../../../../components/GoogleWalletButton';
+import { WalletActions } from '../../../../components/WalletActions';
 import { fetchPublicLoyaltyCard, type PublicLoyaltyCard } from '../../../../lib/public-loyalty';
+import { useWalletPlatform } from '../../../../lib/use-wallet-platform';
+import type { WalletPlatform } from '../../../../lib/wallet-platform';
 
 type CardStatus =
   | {
@@ -124,14 +125,18 @@ function CardView({
   card,
   cardToken,
   apiBaseUrl,
-  appleWalletEnabled
+  appleWalletEnabled,
+  platform
 }: {
   slug: string;
   card: PublicLoyaltyCard;
   cardToken: string;
   apiBaseUrl: string;
   appleWalletEnabled: boolean;
+  platform: WalletPlatform;
 }) {
+  const cardHref = `/m/${encodeURIComponent(slug)}/loyalty/card?token=${encodeURIComponent(cardToken)}`;
+
   return (
     <main className="min-h-screen bg-[#fafaf7] pb-10">
       <section className="mx-auto w-full max-w-3xl px-4 pt-5">
@@ -179,15 +184,22 @@ function CardView({
 
             <CardMetrics card={card} />
 
-            <GoogleWalletButton
-              apiBaseUrl={apiBaseUrl}
-              cardToken={cardToken}
-            />
+            <p className="mt-5 rounded-md bg-sky-50 p-3 text-sm leading-6 text-sky-800">
+              This web card loads current stamp and reward progress from the loyalty service.
+            </p>
 
-            <AppleWalletButton
-              enabled={appleWalletEnabled}
-              cardToken={cardToken}
-            />
+            <div className="mt-5 border-t border-neutral-200 pt-5">
+              <h2 className="text-lg font-bold text-ink">Wallet options</h2>
+              <div className="mt-3">
+                <WalletActions
+                  platform={platform}
+                  appleWalletEnabled={appleWalletEnabled}
+                  apiBaseUrl={apiBaseUrl}
+                  cardToken={cardToken}
+                  cardHref={cardHref}
+                />
+              </div>
+            </div>
 
             {card.program.terms ? (
               <p className="mt-5 rounded-md bg-neutral-50 p-4 text-sm leading-6 text-neutral-600">
@@ -209,6 +221,7 @@ export function LoyaltyCardClient({
 }: LoyaltyCardClientProps) {
   const [status, setStatus] = useState<CardStatus>({ state: 'bootstrapping' });
   const [retryNonce, setRetryNonce] = useState(0);
+  const platform = useWalletPlatform();
 
   useEffect(() => {
     let isActive = true;
@@ -304,6 +317,16 @@ export function LoyaltyCardClient({
         </LoyaltyCardShell>
       );
     case 'ok':
+      if (!platform) {
+        return (
+          <LoyaltyCardShell slug={slug} title="Loading wallet options">
+            <p role="status" className="mt-3 text-base leading-7 text-neutral-600">
+              Preparing the best wallet option for this device...
+            </p>
+          </LoyaltyCardShell>
+        );
+      }
+
       return (
         <CardView
           slug={slug}
@@ -311,6 +334,7 @@ export function LoyaltyCardClient({
           cardToken={status.token}
           apiBaseUrl={apiBaseUrl}
           appleWalletEnabled={appleWalletEnabled}
+          platform={platform}
         />
       );
   }
