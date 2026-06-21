@@ -94,17 +94,18 @@ export class AppleWalletService {
             authenticationToken: input.updateAuthenticationToken
           }
         : {};
-    const payload = this.passBuilder.buildPayload({
+    const builderInput = {
       ...input,
       ...updateFields,
       passTypeIdentifier,
       teamIdentifier: this.requireConfig('APPLE_WALLET_TEAM_ID'),
       organizationName: this.requireConfig('APPLE_WALLET_ORGANIZATION_NAME'),
       barcodeValue: scanToken.rawToken
-    });
+    };
+    const payload = this.passBuilder.buildPayload(builderInput);
     const pass = await this.signer.sign(
       payload,
-      await this.passBuilder.buildAssets()
+      await this.passBuilder.buildAssets(builderInput)
     );
 
     return {

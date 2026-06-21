@@ -9,6 +9,7 @@ export type AppleWalletPassField = {
   key: string;
   label: string;
   value: string | number;
+  textAlignment?: 'PKTextAlignmentLeft' | 'PKTextAlignmentRight';
 };
 
 export type AppleWalletBarcode = {
@@ -29,6 +30,7 @@ export type AppleWalletPassPayload = {
   foregroundColor: string;
   backgroundColor: string;
   labelColor: string;
+  suppressStripShine: true;
   sharingProhibited: true;
   webServiceURL?: string;
   authenticationToken?: string;
@@ -48,12 +50,27 @@ export type BuildAppleWalletPassInput = {
   teamIdentifier: string;
   organizationName: string;
   barcodeValue: string;
+  businessName?: string;
   programName?: string;
+  programDescription?: string;
   stampCount: number;
   stampGoal: number;
+  rewardName?: string;
   rewardDescription?: string;
+  terms?: string;
+  theme?: AppleWalletPassTheme;
   webServiceURL?: string;
   authenticationToken?: string;
+};
+
+export type AppleWalletPassTheme = {
+  walletBackgroundColor?: string;
+  imageBackgroundColor?: string;
+  imageSurfaceColor?: string;
+  imageAccentColor?: string;
+  imageTextColor?: string;
+  stampFilledColor?: string;
+  stampEmptyColor?: string;
 };
 
 export type AppleWalletPassAssets = Record<string, Buffer>;
