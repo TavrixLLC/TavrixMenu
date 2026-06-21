@@ -158,6 +158,23 @@ describe('requestGoogleWalletSaveUrl', () => {
     });
   });
 
+  it('recovers from network failures with a safe retryable error', async () => {
+    const result = await requestGoogleWalletSaveUrl(
+      {
+        apiBaseUrl: 'https://api.example.test',
+        cardToken: 'public_card_token'
+      },
+      async () => {
+        throw new Error('network detail must not escape');
+      }
+    );
+
+    assert.deepEqual(result, {
+      status: 'error',
+      message: 'Google Wallet could not be opened right now. Please try again.'
+    });
+  });
+
   it('does not expose raw auth errors to customers', async () => {
     const result = await requestGoogleWalletSaveUrl(
       {

@@ -24,11 +24,15 @@ describe('Apple Wallet feature gate', () => {
     const hidden = renderToStaticMarkup(
       <AppleWalletButton enabled={false} cardToken="public-card-placeholder" />
     );
+    const missingToken = renderToStaticMarkup(
+      <AppleWalletButton enabled cardToken=" " />
+    );
     const visible = renderToStaticMarkup(
       <AppleWalletButton enabled cardToken="public-card-placeholder" />
     );
 
     assert.equal(hidden, '');
+    assert.equal(missingToken, '');
     assert.match(visible, /Add to Apple Wallet/);
   });
 

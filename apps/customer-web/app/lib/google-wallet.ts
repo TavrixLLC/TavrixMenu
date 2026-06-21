@@ -77,34 +77,41 @@ export async function requestGoogleWalletSaveUrl(
   },
   fetcher: WalletFetch = fetch
 ): Promise<GoogleWalletSaveUrlResult> {
-  const response = await fetcher(buildGoogleWalletUrl(input), {
-    method: 'POST',
-    headers: {
-      Accept: 'application/json'
+  try {
+    const response = await fetcher(buildGoogleWalletUrl(input), {
+      method: 'POST',
+      headers: {
+        Accept: 'application/json'
+      }
+    });
+    const body = await response.json().catch(() => null);
+
+    if (!response.ok) {
+      return {
+        status: 'error',
+        message: parseApiMessage(body, response.status)
+      };
     }
-  });
-  const body = await response.json().catch(() => null);
 
-  if (!response.ok) {
+    const data = parseGoogleWalletResponse(body);
+
+    if (!data) {
+      return {
+        status: 'error',
+        message: 'Google Wallet did not return a valid save link. Please try again.'
+      };
+    }
+
+    return {
+      status: 'ok',
+      data
+    };
+  } catch {
     return {
       status: 'error',
-      message: parseApiMessage(body, response.status)
+      message: 'Google Wallet could not be opened right now. Please try again.'
     };
   }
-
-  const data = parseGoogleWalletResponse(body);
-
-  if (!data) {
-    return {
-      status: 'error',
-      message: 'Google Wallet did not return a valid save link. Please try again.'
-    };
-  }
-
-  return {
-    status: 'ok',
-    data
-  };
 }
 
 export function openGoogleWalletSaveUrl(
