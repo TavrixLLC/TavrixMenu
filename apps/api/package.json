@@ -22,6 +22,8 @@
     "test": "node --test -r ts-node/register ./src/env.validation.spec.ts ./src/modules/apple-wallet/apple-wallet.service.spec.ts ./src/modules/apple-wallet/apple-wallet-apns.client.spec.ts ./src/modules/apple-wallet/apple-wallet-push-job.service.spec.ts ./src/modules/apple-wallet/apple-wallet-update.service.spec.ts ./src/modules/apple-wallet/public-apple-wallet-pass.service.spec.ts ./src/modules/google-wallet/google-wallet.service.spec.ts ./src/modules/google-wallet/wallet-pass.service.spec.ts ./src/modules/google-wallet/wallet-refresh-job.service.spec.ts ./src/modules/google-wallet/wallet-scan.service.spec.ts ./src/modules/loyalty/loyalty-stamp-style.service.spec.ts ./src/modules/loyalty/loyalty.service.spec.ts ./src/modules/loyalty/stamp-image-renderer.service.spec.ts",
     "wallet:smoke-test": "ts-node scripts/wallet-smoke-test.ts",
     "apple-wallet:smoke-test": "ts-node scripts/apple-wallet-smoke-test.ts",
+    "apple-wallet:inspect-pass": "ts-node scripts/apple-wallet-inspect-pass.ts",
+    "apple-wallet:update-diagnostics": "ts-node scripts/apple-wallet-update-diagnostics.ts",
     "wallet:render-stamp-preview": "ts-node scripts/render-stamp-preview.ts",
     "test:wallet": "node --test -r ts-node/register ./src/env.validation.spec.ts ./src/modules/apple-wallet/apple-wallet.service.spec.ts ./src/modules/apple-wallet/apple-wallet-apns.client.spec.ts ./src/modules/apple-wallet/apple-wallet-push-job.service.spec.ts ./src/modules/apple-wallet/apple-wallet-update.service.spec.ts ./src/modules/apple-wallet/public-apple-wallet-pass.service.spec.ts ./src/modules/google-wallet/google-wallet.service.spec.ts"
   },

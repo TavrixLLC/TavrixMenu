@@ -60,6 +60,11 @@ describe('AppleWalletUpdateService', () => {
   it('registers a device with valid auth and never returns the push token', async () => {
     const setup = createSetup();
     const pushToken = 'sensitive-push-token-placeholder';
+    const logs: string[] = [];
+    (setup.service as any).logger = {
+      log: (message: string) => logs.push(message),
+      warn: (message: string) => logs.push(message)
+    };
     const result = await setup.service.registerDevice({
       authorization: `ApplePass ${setup.rawToken}`,
       deviceLibraryIdentifier: 'device-library-identifier-1234',
@@ -76,6 +81,14 @@ describe('AppleWalletUpdateService', () => {
       setup.state.registrationWrites[0].create.deviceLibraryIdentifierHash,
       'device-library-identifier-1234'
     );
+    const output = logs.join('\n');
+    assert.match(output, /apple_wallet\.registration_received/);
+    assert.match(output, /apple_wallet\.registration_authorized/);
+    assert.match(output, /apple_wallet\.registration_persisted/);
+    assert.equal(output.includes(setup.rawToken), false);
+    assert.equal(output.includes(pushToken), false);
+    assert.equal(output.includes('device-library-identifier-1234'), false);
+    assert.match(output, /"deviceLibraryIdentifierSuffix":"1234"/);
   });
 
   it('rejects invalid ApplePass authorization before registration', async () => {
@@ -163,6 +176,22 @@ describe('AppleWalletUpdateService', () => {
     assert.equal(result.status, 'UPDATED');
     assert.equal(result.pass?.toString(), 'signed-updated-pass');
     assert.equal(setup.state.generateInputs[0].updateAuthenticationToken, setup.rawToken);
+    assert.equal(
+      setup.state.generateInputs[0].businessName,
+      'Waflo Test Business'
+    );
+    assert.equal(
+      setup.state.generateInputs[0].programDescription,
+      'Collect stamps.'
+    );
+    assert.equal(setup.state.generateInputs[0].stampCount, 4);
+    assert.equal(setup.state.generateInputs[0].stampGoal, 10);
+    assert.equal(setup.state.generateInputs[0].rewardName, 'Reward');
+    assert.equal(setup.state.generateInputs[0].terms, 'Test terms');
+    assert.equal(
+      setup.state.generateInputs[0].theme.walletBackgroundColor,
+      '#111827'
+    );
     assert.equal(setup.state.walletPassUpdates.length, 1);
     assert.equal(
       setup.state.walletPassUpdates[0].data.scanTokenHash,
@@ -220,6 +249,46 @@ describe('AppleWalletUpdateService', () => {
 });
 
 describe('AppleWalletUpdateController', () => {
+  it('returns 201 for a new registration and 200 for an existing one', async () => {
+    const calls: any[] = [];
+    let created = true;
+    const service = {
+      registerDevice: async (input: any) => {
+        calls.push(input);
+        return { created };
+      }
+    };
+    const controller = new AppleWalletUpdateController(service as never);
+    const params = {
+      deviceLibraryIdentifier: 'device-library-identifier-1234',
+      passTypeIdentifier: 'pass.app.waflo.loyalty',
+      serialNumber: 'waflo-apple-serial-placeholder'
+    };
+    const createdResponse = new RecordingResponse();
+
+    await controller.registerDevice(
+      'ApplePass token-placeholder-value',
+      params,
+      { pushToken: 'push-token-placeholder' },
+      createdResponse
+    );
+
+    assert.equal(createdResponse.statusCode, 201);
+    assert.equal(calls[0].authorization, 'ApplePass token-placeholder-value');
+    assert.equal(calls[0].pushToken, 'push-token-placeholder');
+
+    created = false;
+    const updatedResponse = new RecordingResponse();
+    await controller.registerDevice(
+      'ApplePass token-placeholder-value',
+      params,
+      { pushToken: 'push-token-placeholder' },
+      updatedResponse
+    );
+
+    assert.equal(updatedResponse.statusCode, 200);
+  });
+
   it('returns the updated pass with Apple Wallet content metadata', async () => {
     const service = {
       getUpdatedPass: async () => ({
@@ -338,11 +407,19 @@ function createSetup() {
     membership: {
       stampCount: 4,
       updatedAt: membershipUpdatedAt,
+      business: {
+        name: 'Waflo Test Business'
+      },
       loyaltyProgram: {
         name: 'Waflo Loyalty',
+        description: 'Collect stamps.',
         stampGoal: 10,
         rewardName: 'Reward',
         rewardDescription: 'Reward after ten stamps',
+        terms: 'Test terms',
+        cardColor: '#111827',
+        accentColor: '#f59e0b',
+        stampStyle: null,
         updatedAt: programUpdatedAt
       }
     }

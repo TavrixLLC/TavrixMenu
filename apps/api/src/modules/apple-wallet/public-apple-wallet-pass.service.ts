@@ -12,7 +12,7 @@ import {
 } from '../../generated/prisma';
 import { PrismaService } from '../../prisma/prisma.service';
 import { PublicLoyaltyService } from '../loyalty/public-loyalty.service';
-import { DEFAULT_LOYALTY_STAMP_STYLE } from '../loyalty/loyalty-stamp-style.constants';
+import { resolveAppleWalletPassTheme } from './apple-wallet-pass-theme';
 import { AppleWalletService } from './apple-wallet.service';
 import {
   AppleUpdateAuthTokenMetadata,
@@ -97,7 +97,7 @@ export class PublicAppleWalletPassService {
           membership.loyaltyProgram.rewardDescription ??
           membership.loyaltyProgram.rewardName,
         terms: membership.loyaltyProgram.terms ?? undefined,
-        theme: this.resolvePassTheme(membership.loyaltyProgram),
+        theme: resolveAppleWalletPassTheme(membership.loyaltyProgram),
         updateAuthenticationToken: updateToken?.rawToken,
         scanTokenPass: {
           id: walletPass.id,
@@ -157,75 +157,6 @@ export class PublicAppleWalletPassService {
     }
 
     return this.updateAuthTokenService.buildMetadataForPass(walletPass);
-  }
-
-  private resolvePassTheme(program: {
-    cardColor: string | null;
-    accentColor: string | null;
-    stampStyle: {
-      walletBackgroundColor: string;
-      imageBackgroundColor: string;
-      imageSurfaceColor: string;
-      imageAccentColor: string;
-      imageTextColor: string;
-      stampFilledColor: string;
-      stampEmptyColor: string;
-    } | null;
-  }) {
-    if (program.stampStyle) {
-      return {
-        walletBackgroundColor: program.stampStyle.walletBackgroundColor,
-        imageBackgroundColor: program.stampStyle.imageBackgroundColor,
-        imageSurfaceColor: program.stampStyle.imageSurfaceColor,
-        imageAccentColor: program.stampStyle.imageAccentColor,
-        imageTextColor: program.stampStyle.imageTextColor,
-        stampFilledColor: program.stampStyle.stampFilledColor,
-        stampEmptyColor: program.stampStyle.stampEmptyColor
-      };
-    }
-
-    const background = this.safeHexColor(
-      program.cardColor,
-      DEFAULT_LOYALTY_STAMP_STYLE.walletBackgroundColor
-    );
-    const accent = this.safeHexColor(
-      program.accentColor,
-      DEFAULT_LOYALTY_STAMP_STYLE.imageAccentColor
-    );
-
-    return {
-      walletBackgroundColor: background,
-      imageBackgroundColor: background,
-      imageSurfaceColor: background,
-      imageAccentColor: accent,
-      imageTextColor: this.contrastText(background),
-      stampFilledColor: accent,
-      stampEmptyColor: DEFAULT_LOYALTY_STAMP_STYLE.stampEmptyColor
-    };
-  }
-
-  private safeHexColor(value: string | null, fallback: string) {
-    const normalized = value?.trim();
-    return normalized && /^#(?:[0-9a-f]{3}|[0-9a-f]{6})$/i.test(normalized)
-      ? normalized
-      : fallback;
-  }
-
-  private contrastText(color: string) {
-    const normalized =
-      color.length === 4
-        ? color
-            .slice(1)
-            .split('')
-            .map((character) => character.repeat(2))
-            .join('')
-        : color.slice(1);
-    const red = Number.parseInt(normalized.slice(0, 2), 16);
-    const green = Number.parseInt(normalized.slice(2, 4), 16);
-    const blue = Number.parseInt(normalized.slice(4, 6), 16);
-    const luminance = (red * 299 + green * 587 + blue * 114) / 1000;
-
-    return luminance > 165 ? '#111827' : '#ffffff';
   }
 
   private updateTokenFields(metadata: AppleUpdateAuthTokenMetadata | null) {

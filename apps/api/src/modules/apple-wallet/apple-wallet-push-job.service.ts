@@ -1,4 +1,9 @@
-import { Injectable, OnModuleDestroy, OnModuleInit } from '@nestjs/common';
+import {
+  Injectable,
+  Logger,
+  OnModuleDestroy,
+  OnModuleInit
+} from '@nestjs/common';
 import { randomUUID } from 'crypto';
 import {
   WalletPassPlatform,
@@ -26,6 +31,7 @@ type ClaimedAppleWalletPushJob = {
 export class AppleWalletPushJobService
   implements OnModuleInit, OnModuleDestroy
 {
+  private readonly logger = new Logger(AppleWalletPushJobService.name);
   private readonly workerId = `apple-wallet-push-${randomUUID()}`;
   private readonly lockTtlMs = 2 * 60 * 1000;
   private readonly pollIntervalMs = 5000;
@@ -109,6 +115,9 @@ export class AppleWalletPushJobService
 
   private async processClaimedJob(job: ClaimedAppleWalletPushJob) {
     if (!this.apnsClient.isEnabled()) {
+      this.logPushEvent('job_skipped', job, {
+        reason: 'APNS_DISABLED'
+      });
       await this.markSkipped(job.id, 'Apple Wallet APNs is disabled');
       return;
     }
@@ -138,15 +147,28 @@ export class AppleWalletPushJobService
       });
 
       if (!pass) {
+        this.logPushEvent('job_skipped', job, {
+          reason: 'PASS_NOT_FOUND'
+        });
         await this.markSkipped(job.id, 'Apple Wallet pass not found');
         return;
       }
 
       if (pass.appleDeviceRegistrations.length === 0) {
+        this.logPushEvent('no_active_registrations', job, {
+          serialNumberSuffix: this.valueSuffix(
+            pass.appleSerialNumber,
+            8
+          )
+        });
         await this.markSucceededOrRequeue(job);
         return;
       }
 
+      this.logPushEvent('dispatch_started', job, {
+        serialNumberSuffix: this.valueSuffix(pass.appleSerialNumber, 8),
+        registrationCount: pass.appleDeviceRegistrations.length
+      });
       let retryableError: string | null = null;
       let permanentError: string | null = null;
 
@@ -159,24 +181,53 @@ export class AppleWalletPushJobService
           pushToken: registration.pushToken,
           passTypeIdentifier: registration.passTypeIdentifier
         });
+        const registrationContext = {
+          registrationIdSuffix: this.valueSuffix(registration.id, 8),
+          passTypeIdentifierSuffix: this.identifierSuffix(
+            registration.passTypeIdentifier
+          )
+        };
 
         if (result.status === 'INVALID_TOKEN') {
+          this.logPushEvent(
+            'invalid_device_token',
+            job,
+            registrationContext,
+            'warn'
+          );
           await this.unregisterInvalidDevice(registration.id);
           continue;
         }
 
         if (result.status === 'SKIPPED_DISABLED') {
+          this.logPushEvent('job_skipped', job, {
+            ...registrationContext,
+            reason: 'APNS_DISABLED'
+          });
           await this.markSkipped(job.id, 'Apple Wallet APNs is disabled');
           return;
         }
 
         if (result.status === 'FAILED') {
+          this.logPushEvent(
+            'dispatch_failed',
+            job,
+            {
+              ...registrationContext,
+              retryable: result.retryable,
+              error: this.sanitizeError(result.error)
+            },
+            'warn'
+          );
           if (result.retryable) {
             retryableError ??= result.error;
           } else {
             permanentError ??= result.error;
           }
+          continue;
         }
+
+        this.logPushEvent('dispatch_sent', job, registrationContext);
       }
 
       if (permanentError) {
@@ -191,7 +242,17 @@ export class AppleWalletPushJobService
 
       await this.markSucceededOrRequeue(job);
     } catch (error) {
-      await this.markFailedOrRetry(job, this.sanitizeError(error));
+      const sanitizedError = this.sanitizeError(error);
+      this.logPushEvent(
+        'dispatch_failed',
+        job,
+        {
+          retryable: true,
+          error: sanitizedError
+        },
+        'warn'
+      );
+      await this.markFailedOrRetry(job, sanitizedError);
     }
   }
 
@@ -344,5 +405,29 @@ export class AppleWalletPushJobService
     }
 
     return message.slice(0, 500);
+  }
+
+  private identifierSuffix(value: string) {
+    return value.split('.').filter(Boolean).at(-1)?.slice(-24) ?? 'unknown';
+  }
+
+  private valueSuffix(value: string | null, length: number) {
+    return value?.trim().slice(-length) || null;
+  }
+
+  private logPushEvent(
+    event: string,
+    job: ClaimedAppleWalletPushJob,
+    details: Record<string, unknown>,
+    level: 'log' | 'warn' = 'log'
+  ) {
+    this.logger[level](
+      JSON.stringify({
+        event: `apple_wallet.apns_${event}`,
+        jobIdSuffix: this.valueSuffix(job.id, 8),
+        attempt: job.attempts + 1,
+        ...details
+      })
+    );
   }
 }

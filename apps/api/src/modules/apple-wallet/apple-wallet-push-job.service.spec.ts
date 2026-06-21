@@ -137,20 +137,16 @@ describe('AppleWalletPushJobService', () => {
     ].join(' ');
     const setup = createSetup();
     setup.apnsClient.thrownError = new Error(unsafeValue);
-    const calls: string[] = [];
-    const originalLog = console.log;
-    const originalError = console.error;
-    console.log = (...values: unknown[]) => calls.push(values.join(' '));
-    console.error = (...values: unknown[]) => calls.push(values.join(' '));
+    const logs: string[] = [];
+    (setup.service as any).logger = {
+      log: (message: string) => logs.push(message),
+      warn: (message: string) => logs.push(message)
+    };
 
-    try {
-      await setup.service.processDueJobs();
-    } finally {
-      console.log = originalLog;
-      console.error = originalError;
-    }
+    await setup.service.processDueJobs();
 
-    assert.equal(calls.join('\n').includes(unsafeValue), false);
+    assert.equal(logs.join('\n').includes(unsafeValue), false);
+    assert.match(logs.join('\n'), /apple_wallet\.apns_dispatch_failed/);
     assert.equal(setup.job.lastError, 'Apple Wallet push failed');
     assert.equal(JSON.stringify(setup.job).includes(unsafeValue), false);
   });
