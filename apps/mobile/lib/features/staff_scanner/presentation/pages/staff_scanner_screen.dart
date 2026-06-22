@@ -148,7 +148,16 @@ class _StaffScannerScreenState extends State<StaffScannerScreen> {
               ],
               if (state.result != null) ...[
                 const SizedBox(height: AppSpacing.lg),
-                _WalletScanResultCard(result: state.result!),
+                _WalletScanResultCard(
+                  result: state.result!,
+                  updatedStamps: state.updatedStamps,
+                  updatedGoal: state.updatedGoal,
+                  stampStatus: state.stampStatus,
+                  stampErrorMessage: state.stampErrorMessage,
+                  onAddStamp: isScanning
+                      ? null
+                      : () => _addStamp(state.stampStatus),
+                ),
                 const SizedBox(height: AppSpacing.md),
                 AppButton(
                   key: const ValueKey('walletScanAnotherButton'),
@@ -263,6 +272,13 @@ class _StaffScannerScreenState extends State<StaffScannerScreen> {
     FocusScope.of(context).unfocus();
     return context.read<WalletScanCubit>().scan(token);
   }
+
+  void _addStamp(StampStatus currentStampStatus) {
+    if (currentStampStatus == StampStatus.stamping) {
+      return;
+    }
+    context.read<WalletScanCubit>().addStamp();
+  }
 }
 
 class _CameraRetryCard extends StatelessWidget {
@@ -326,14 +342,31 @@ String? _safeErrorMessage(String? message, String sensitiveValue) {
 }
 
 class _WalletScanResultCard extends StatelessWidget {
-  const _WalletScanResultCard({required this.result});
+  const _WalletScanResultCard({
+    required this.result,
+    required this.stampStatus,
+    required this.onAddStamp,
+    this.updatedStamps,
+    this.updatedGoal,
+    this.stampErrorMessage,
+  });
 
   final WalletScanResult result;
+  final int? updatedStamps;
+  final int? updatedGoal;
+  final StampStatus stampStatus;
+  final String? stampErrorMessage;
+  final VoidCallback? onAddStamp;
 
   @override
   Widget build(BuildContext context) {
     final phone = result.customerPhone?.trim();
-    final progress = result.progressPercent / 100;
+    final stamps = updatedStamps ?? result.stamps;
+    final goal = updatedGoal ?? result.goal;
+    final progress = goal > 0 ? (stamps / goal).clamp(0.0, 1.0) : 0.0;
+
+    final isStamping = stampStatus == StampStatus.stamping;
+    final stampSucceeded = stampStatus == StampStatus.stampSuccess;
 
     return Column(
       key: const ValueKey('walletScanResult'),
@@ -369,19 +402,76 @@ class _WalletScanResultCard extends StatelessWidget {
                 style: Theme.of(context).textTheme.titleMedium,
               ),
               const SizedBox(height: AppSpacing.sm),
-              LinearProgressIndicator(value: progress),
+              LinearProgressIndicator(
+                key: const ValueKey('walletStampProgressBar'),
+                value: progress,
+              ),
               const SizedBox(height: AppSpacing.xs),
-              Text('${result.stamps} of ${result.goal} stamps'),
+              Text(
+                key: const ValueKey('walletStampCount'),
+                '$stamps of $goal stamps',
+              ),
               const SizedBox(height: AppSpacing.md),
               Text(
                 result.canRedeem
                     ? '${result.rewardName} is ready to redeem.'
                     : '${result.rewardName} is not ready yet.',
               ),
+              const SizedBox(height: AppSpacing.lg),
+              // ── Add stamp action ──────────────────────────────────
+              AppButton(
+                key: const ValueKey('walletAddStampButton'),
+                label: isStamping ? 'Adding stamp...' : 'Add stamp',
+                icon: Icons.add_circle_outline,
+                onPressed: (isStamping || stampSucceeded) ? null : onAddStamp,
+              ),
+              if (isStamping) ...[
+                const SizedBox(height: AppSpacing.sm),
+                const LinearProgressIndicator(
+                  key: ValueKey('walletAddStampLoading'),
+                ),
+              ],
+              if (stampSucceeded) ...[
+                const SizedBox(height: AppSpacing.sm),
+                _StampSuccessBanner(),
+              ],
+              if (stampStatus == StampStatus.stampFailure &&
+                  stampErrorMessage != null) ...[
+                const SizedBox(height: AppSpacing.sm),
+                ErrorView(
+                  key: const ValueKey('walletAddStampError'),
+                  message: stampErrorMessage!,
+                ),
+              ],
             ],
           ),
         ),
       ],
+    );
+  }
+}
+
+class _StampSuccessBanner extends StatelessWidget {
+  @override
+  Widget build(BuildContext context) {
+    return Container(
+      key: const ValueKey('walletStampSuccessBanner'),
+      padding: const EdgeInsets.symmetric(
+        horizontal: AppSpacing.md,
+        vertical: AppSpacing.sm,
+      ),
+      decoration: BoxDecoration(
+        color: AppColors.greenLight,
+        borderRadius: BorderRadius.circular(8),
+        border: Border.all(color: AppColors.brandGreen.withValues(alpha: 0.25)),
+      ),
+      child: Row(
+        children: [
+          const Icon(Icons.check_circle_outline, color: AppColors.brandGreen),
+          const SizedBox(width: AppSpacing.sm),
+          const Text('Stamp added!'),
+        ],
+      ),
     );
   }
 }
