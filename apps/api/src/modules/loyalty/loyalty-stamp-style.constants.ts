@@ -54,13 +54,13 @@ export type LoyaltyWalletThemePreset = {
 
 export const DEFAULT_LOYALTY_WALLET_THEME_PALETTE = {
   walletBackgroundColor: '#2563eb',
-  imageBackgroundColor: '#7c2d12',
-  imageSurfaceColor: '#92400e',
-  imageAccentColor: '#facc15',
-  imageTextColor: '#ffffff',
-  stampFilledColor: '#facc15',
-  stampEmptyColor: '#d6d3d1',
-  rewardBannerColor: '#a16207'
+  imageBackgroundColor: '#1d4ed8',
+  imageSurfaceColor: '#2563eb',
+  imageAccentColor: '#fde047',
+  imageTextColor: '#eff6ff',
+  stampFilledColor: '#fde047',
+  stampEmptyColor: '#bfdbfe',
+  rewardBannerColor: '#1e40af'
 } as const satisfies LoyaltyWalletThemePalette;
 
 export const DEFAULT_LOYALTY_WALLET_THEME = {

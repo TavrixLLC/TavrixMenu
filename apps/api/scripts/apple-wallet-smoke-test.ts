@@ -4,6 +4,7 @@ import { randomUUID } from 'crypto';
 import { existsSync, mkdirSync, readFileSync, writeFileSync } from 'fs';
 import { isAbsolute, join, relative, resolve, sep } from 'path';
 import { validateEnvironment } from '../src/env.validation';
+import { StampImageRendererService } from '../src/modules/loyalty/stamp-image-renderer.service';
 import { AppleWalletPassBuilderService } from '../src/modules/apple-wallet/apple-wallet-pass-builder.service';
 import { AppleWalletSignerService } from '../src/modules/apple-wallet/apple-wallet-signer.service';
 import { AppleWalletService } from '../src/modules/apple-wallet/apple-wallet.service';
@@ -42,7 +43,7 @@ async function main() {
   const configService = new ConfigService(validatedConfig);
   const service = new AppleWalletService(
     configService,
-    new AppleWalletPassBuilderService(),
+    new AppleWalletPassBuilderService(new StampImageRendererService()),
     new AppleWalletSignerService(configService),
     new WalletScanTokenService(configService)
   );

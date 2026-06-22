@@ -2,7 +2,12 @@ import {
   Business,
   BusinessUserRole,
   BusinessUserStatus,
+  LoyaltyStampLayoutVariant,
+  LoyaltyStampPresetKey,
+  LoyaltyStampStyleType,
   LoyaltyTransactionType,
+  LoyaltyWalletColorMode,
+  LoyaltyWalletThemePreset,
   PrismaClient,
   UserStatus
 } from '../src/generated/prisma';
@@ -121,11 +126,9 @@ async function main() {
   });
 
   await seedLoyaltyDemo(business, owner.id);
+  await seedWalletVisualQaBusinesses(owner.id);
 
-  console.log('Seeded Tavrix Cafe demo data.');
-  console.log(
-    'Development auth token: Bearer dev:user_tavrix_owner;email=owner@tavrix.local;name=Tavrix%20Owner'
-  );
+  console.log('Seeded Tavrix Cafe and wallet visual QA data.');
 }
 
 async function upsertCategory(
@@ -270,6 +273,49 @@ async function seedLoyaltyDemo(business: Business, ownerUserId: string) {
     }
   });
 
+  await prisma.loyaltyStampStyle.upsert({
+    where: {
+      loyaltyProgramId: program.id
+    },
+    create: {
+      loyaltyProgramId: program.id,
+      styleType: LoyaltyStampStyleType.PRESET,
+      presetKey: LoyaltyStampPresetKey.COFFEE,
+      backgroundColor: '#7c2d12',
+      accentColor: '#facc15',
+      textColor: '#ffffff',
+      walletBackgroundColor: '#7c2d12',
+      imageBackgroundColor: '#7c2d12',
+      imageSurfaceColor: '#92400e',
+      imageAccentColor: '#facc15',
+      imageTextColor: '#ffffff',
+      stampFilledColor: '#facc15',
+      stampEmptyColor: '#d6d3d1',
+      rewardBannerColor: '#a16207',
+      themePreset: LoyaltyWalletThemePreset.COFFEE,
+      colorMode: LoyaltyWalletColorMode.PRESET,
+      layoutVariant: LoyaltyStampLayoutVariant.MODERN
+    },
+    update: {
+      styleType: LoyaltyStampStyleType.PRESET,
+      presetKey: LoyaltyStampPresetKey.COFFEE,
+      backgroundColor: '#7c2d12',
+      accentColor: '#facc15',
+      textColor: '#ffffff',
+      walletBackgroundColor: '#7c2d12',
+      imageBackgroundColor: '#7c2d12',
+      imageSurfaceColor: '#92400e',
+      imageAccentColor: '#facc15',
+      imageTextColor: '#ffffff',
+      stampFilledColor: '#facc15',
+      stampEmptyColor: '#d6d3d1',
+      rewardBannerColor: '#a16207',
+      themePreset: LoyaltyWalletThemePreset.COFFEE,
+      colorMode: LoyaltyWalletColorMode.PRESET,
+      layoutVariant: LoyaltyStampLayoutVariant.MODERN
+    }
+  });
+
   const customer = await prisma.customer.upsert({
     where: {
       phone: '+9647700000000'
@@ -350,6 +396,210 @@ async function seedLoyaltyDemo(business: Business, ownerUserId: string) {
       }
     ]
   });
+}
+
+async function seedWalletVisualQaBusinesses(ownerUserId: string) {
+  const styles = [
+    {
+      slug: 'wallet-cookie-qa',
+      businessName: 'Cookie Wallet QA',
+      programName: 'Cookie Club',
+      rewardName: 'Free cookie box',
+      stampGoal: 5,
+      presetKey: LoyaltyStampPresetKey.COOKIE,
+      themePreset: LoyaltyWalletThemePreset.DESSERT,
+      palette: {
+        walletBackgroundColor: '#be185d',
+        imageBackgroundColor: '#831843',
+        imageSurfaceColor: '#9d174d',
+        imageAccentColor: '#f9a8d4',
+        imageTextColor: '#fff1f2',
+        stampFilledColor: '#f9a8d4',
+        stampEmptyColor: '#fce7f3',
+        rewardBannerColor: '#be185d'
+      }
+    },
+    {
+      slug: 'wallet-coffee-qa',
+      businessName: 'Coffee Wallet QA',
+      programName: 'Coffee Rewards',
+      rewardName: 'Free Turkish coffee',
+      stampGoal: 8,
+      presetKey: LoyaltyStampPresetKey.COFFEE,
+      themePreset: LoyaltyWalletThemePreset.COFFEE,
+      palette: {
+        walletBackgroundColor: '#7c2d12',
+        imageBackgroundColor: '#7c2d12',
+        imageSurfaceColor: '#92400e',
+        imageAccentColor: '#facc15',
+        imageTextColor: '#ffffff',
+        stampFilledColor: '#facc15',
+        stampEmptyColor: '#d6d3d1',
+        rewardBannerColor: '#a16207'
+      }
+    },
+    {
+      slug: 'wallet-blue-qa',
+      businessName: 'Blue Wallet QA',
+      programName: 'Blue Rewards',
+      rewardName: 'Free menu item',
+      stampGoal: 10,
+      presetKey: LoyaltyStampPresetKey.STAR,
+      themePreset: LoyaltyWalletThemePreset.DEFAULT,
+      palette: {
+        walletBackgroundColor: '#2563eb',
+        imageBackgroundColor: '#1d4ed8',
+        imageSurfaceColor: '#2563eb',
+        imageAccentColor: '#fde047',
+        imageTextColor: '#eff6ff',
+        stampFilledColor: '#fde047',
+        stampEmptyColor: '#bfdbfe',
+        rewardBannerColor: '#1e40af'
+      }
+    },
+    {
+      slug: 'wallet-dark-qa',
+      businessName: 'Dark Wallet QA',
+      programName: 'After Dark Rewards',
+      rewardName: 'VIP dessert',
+      stampGoal: 12,
+      presetKey: LoyaltyStampPresetKey.HEART,
+      themePreset: LoyaltyWalletThemePreset.MINIMAL,
+      palette: {
+        walletBackgroundColor: '#111827',
+        imageBackgroundColor: '#111827',
+        imageSurfaceColor: '#1f2937',
+        imageAccentColor: '#e5e7eb',
+        imageTextColor: '#f9fafb',
+        stampFilledColor: '#f9fafb',
+        stampEmptyColor: '#9ca3af',
+        rewardBannerColor: '#374151'
+      }
+    }
+  ] as const;
+
+  for (const style of styles) {
+    const business = await prisma.business.upsert({
+      where: {
+        slug: style.slug
+      },
+      create: {
+        ownerId: ownerUserId,
+        name: style.businessName,
+        slug: style.slug,
+        type: 'wallet-qa',
+        city: 'Baghdad',
+        currency: 'IQD',
+        language: 'en'
+      },
+      update: {
+        ownerId: ownerUserId,
+        name: style.businessName,
+        type: 'wallet-qa',
+        city: 'Baghdad',
+        currency: 'IQD',
+        language: 'en',
+        status: 'ACTIVE'
+      }
+    });
+
+    await prisma.businessUser.upsert({
+      where: {
+        businessId_userId: {
+          businessId: business.id,
+          userId: ownerUserId
+        }
+      },
+      create: {
+        businessId: business.id,
+        userId: ownerUserId,
+        role: BusinessUserRole.OWNER
+      },
+      update: {
+        role: BusinessUserRole.OWNER,
+        status: BusinessUserStatus.ACTIVE
+      }
+    });
+
+    const existingProgram = await prisma.loyaltyProgram.findFirst({
+      where: {
+        businessId: business.id,
+        name: style.programName
+      }
+    });
+    const program = existingProgram
+      ? await prisma.loyaltyProgram.update({
+          where: {
+            id: existingProgram.id
+          },
+          data: {
+            description: 'Sprint 11 wallet visual QA program.',
+            stampGoal: style.stampGoal,
+            rewardName: style.rewardName,
+            rewardDescription: style.rewardName,
+            isActive: true,
+            cardColor: style.palette.walletBackgroundColor,
+            accentColor: style.palette.imageAccentColor,
+            terms: 'Staging visual QA only.'
+          }
+        })
+      : await prisma.loyaltyProgram.create({
+          data: {
+            businessId: business.id,
+            name: style.programName,
+            description: 'Sprint 11 wallet visual QA program.',
+            stampGoal: style.stampGoal,
+            rewardName: style.rewardName,
+            rewardDescription: style.rewardName,
+            isActive: true,
+            cardColor: style.palette.walletBackgroundColor,
+            accentColor: style.palette.imageAccentColor,
+            terms: 'Staging visual QA only.'
+          }
+        });
+
+    await prisma.loyaltyProgram.updateMany({
+      where: {
+        businessId: business.id,
+        id: {
+          not: program.id
+        },
+        isActive: true
+      },
+      data: {
+        isActive: false
+      }
+    });
+
+    await prisma.loyaltyStampStyle.upsert({
+      where: {
+        loyaltyProgramId: program.id
+      },
+      create: {
+        loyaltyProgramId: program.id,
+        styleType: LoyaltyStampStyleType.PRESET,
+        presetKey: style.presetKey,
+        backgroundColor: style.palette.imageBackgroundColor,
+        accentColor: style.palette.imageAccentColor,
+        textColor: style.palette.imageTextColor,
+        ...style.palette,
+        themePreset: style.themePreset,
+        colorMode: LoyaltyWalletColorMode.PRESET,
+        layoutVariant: LoyaltyStampLayoutVariant.MODERN
+      },
+      update: {
+        styleType: LoyaltyStampStyleType.PRESET,
+        presetKey: style.presetKey,
+        backgroundColor: style.palette.imageBackgroundColor,
+        accentColor: style.palette.imageAccentColor,
+        textColor: style.palette.imageTextColor,
+        ...style.palette,
+        themePreset: style.themePreset,
+        colorMode: LoyaltyWalletColorMode.PRESET,
+        layoutVariant: LoyaltyStampLayoutVariant.MODERN
+      }
+    });
+  }
 }
 
 main()

@@ -56,6 +56,19 @@ type IconInput = {
   filled: boolean;
 };
 
+export type AppleStripLayout = {
+  width: 1125;
+  height: 369;
+  columns: number;
+  rows: number;
+  cellSize: number;
+  gap: number;
+  gridX: number;
+  gridY: number;
+  gridWidth: number;
+  gridHeight: number;
+};
+
 @Injectable()
 export class StampImageRendererService {
   async renderPng(input: StampImageRenderInput): Promise<Buffer> {
@@ -63,6 +76,53 @@ export class StampImageRendererService {
     const svg = this.renderSvg(normalized);
 
     return sharp(Buffer.from(svg)).png().toBuffer();
+  }
+
+  async renderAppleStripPng(input: StampImageRenderInput): Promise<Buffer> {
+    const normalized = this.normalizeInput(input);
+    const svg = this.renderAppleStripSvg(normalized);
+
+    return sharp(Buffer.from(svg)).png().toBuffer();
+  }
+
+  buildAppleStripSvg(input: StampImageRenderInput) {
+    return this.renderAppleStripSvg(this.normalizeInput(input));
+  }
+
+  getAppleStripLayout(stampGoal: number): AppleStripLayout {
+    if (!Number.isInteger(stampGoal) || stampGoal < 1 || stampGoal > 12) {
+      throw new BadRequestException('stampGoal must be between 1 and 12');
+    }
+
+    const columns =
+      stampGoal <= 5
+        ? stampGoal
+        : stampGoal <= 6
+          ? 3
+          : stampGoal <= 8
+            ? 4
+            : stampGoal <= 10
+              ? 5
+              : 6;
+    const rows = Math.ceil(stampGoal / columns);
+    const cellSize =
+      rows === 1 ? 116 : columns >= 6 ? 72 : columns >= 5 ? 78 : 80;
+    const gap = rows === 1 ? 24 : columns >= 6 ? 12 : 14;
+    const gridWidth = columns * cellSize + (columns - 1) * gap;
+    const gridHeight = rows * cellSize + (rows - 1) * gap;
+
+    return {
+      width: 1125,
+      height: 369,
+      columns,
+      rows,
+      cellSize,
+      gap,
+      gridX: Math.round((1125 - gridWidth) / 2),
+      gridY: Math.round(120 + (174 - gridHeight) / 2),
+      gridWidth,
+      gridHeight
+    };
   }
 
   buildStyleHash(input: StampImageRenderInput) {
@@ -95,8 +155,8 @@ export class StampImageRendererService {
   private normalizeInput(
     input: StampImageRenderInput
   ): NormalizedStampImageRenderInput {
-    if (!Number.isInteger(input.stampGoal) || input.stampGoal < 1 || input.stampGoal > 10) {
-      throw new BadRequestException('stampGoal must be between 1 and 10');
+    if (!Number.isInteger(input.stampGoal) || input.stampGoal < 1 || input.stampGoal > 12) {
+      throw new BadRequestException('stampGoal must be between 1 and 12');
     }
 
     if (!Number.isInteger(input.stampCount) || input.stampCount < 0) {
@@ -159,9 +219,18 @@ export class StampImageRendererService {
     );
 
     return {
-      businessName: this.truncate(input.businessName.trim() || 'Waflo', 64),
-      programName: this.truncate(input.programName.trim() || 'Loyalty Card', 64),
-      rewardName: this.truncate(input.rewardName.trim() || 'Reward', 72),
+      businessName: this.truncate(
+        this.sanitizeDisplayText(input.businessName) || 'Waflo',
+        64
+      ),
+      programName: this.truncate(
+        this.sanitizeDisplayText(input.programName) || 'Loyalty Card',
+        64
+      ),
+      rewardName: this.truncate(
+        this.sanitizeDisplayText(input.rewardName) || 'Reward',
+        72
+      ),
       stampCount: Math.min(input.stampCount, input.stampGoal),
       stampGoal: input.stampGoal,
       presetKey: input.presetKey,
@@ -197,40 +266,122 @@ export class StampImageRendererService {
       `<rect width="100%" height="100%" rx="${layout.radius}" fill="url(#bg)"/>`,
       `<circle cx="${progressBadge.cx}" cy="${progressBadge.cy}" r="${progressBadge.radius}" fill="${this.hexToRgba(input.imageAccentColor, 0.18)}"/>`,
       `<circle cx="76" cy="${layout.height - 40}" r="154" fill="${this.hexToRgba(input.imageTextColor, 0.08)}"/>`,
-      `<text x="${layout.padding}" y="${layout.subtitleY}" fill="${this.hexToRgba(input.imageTextColor, 0.78)}" font-family="Inter, Arial, sans-serif" font-size="${layout.subtitleSize}" font-weight="700">${this.escapeXml(subtitle)}</text>`,
-      `<text x="${layout.padding}" y="${layout.titleY}" fill="${input.imageTextColor}" font-family="Inter, Arial, sans-serif" font-size="${layout.titleSize}" font-weight="800">${this.escapeXml(headline)}</text>`,
-      `<text x="${progressBadge.cx}" y="${progressBadge.labelY}" fill="${this.hexToRgba(input.imageTextColor, 0.78)}" text-anchor="middle" font-family="Inter, Arial, sans-serif" font-size="${layout.subtitleSize}" font-weight="700">stamps</text>`,
-      `<text x="${progressBadge.cx}" y="${progressBadge.valueY}" fill="${input.imageTextColor}" text-anchor="middle" font-family="Inter, Arial, sans-serif" font-size="${layout.progressSize}" font-weight="800">${input.stampCount} / ${input.stampGoal}</text>`,
+      `<text x="${layout.padding}" y="${layout.subtitleY}" fill="${this.hexToRgba(input.imageTextColor, 0.78)}" font-family="${this.fontFamily()}" font-size="${layout.subtitleSize}" font-weight="700">${this.escapeXml(subtitle)}</text>`,
+      `<text x="${layout.padding}" y="${layout.titleY}" fill="${input.imageTextColor}" font-family="${this.fontFamily()}" font-size="${layout.titleSize}" font-weight="800">${this.escapeXml(headline)}</text>`,
+      `<text x="${progressBadge.cx}" y="${progressBadge.labelY}" fill="${this.hexToRgba(input.imageTextColor, 0.78)}" text-anchor="middle" font-family="${this.fontFamily()}" font-size="${layout.subtitleSize}" font-weight="700">stamps</text>`,
+      `<text x="${progressBadge.cx}" y="${progressBadge.valueY}" fill="${input.imageTextColor}" text-anchor="middle" font-family="${this.fontFamily()}" font-size="${layout.progressSize}" font-weight="800">${input.stampCount} / ${input.stampGoal}</text>`,
       this.renderIconCells(input, layout),
       `<rect x="${layout.padding}" y="${layout.rewardY}" width="${layout.width - layout.padding * 2}" height="${layout.rewardHeight}" rx="${layout.rewardHeight / 2}" fill="${this.hexToRgba(input.rewardBannerColor, 0.86)}"/>`,
-      `<text x="${layout.padding + 28}" y="${layout.rewardTextY}" fill="${input.imageTextColor}" font-family="Inter, Arial, sans-serif" font-size="${layout.rewardSize}" font-weight="750">${this.escapeXml(`Reward: ${input.rewardName}`)}</text>`,
+      `<text x="${layout.padding + 28}" y="${layout.rewardTextY}" fill="${input.imageTextColor}" font-family="${this.fontFamily()}" font-size="${layout.rewardSize}" font-weight="750">${this.escapeXml(`Reward: ${input.rewardName}`)}</text>`,
       '</svg>'
     ].join('');
+  }
+
+  private renderAppleStripSvg(input: NormalizedStampImageRenderInput) {
+    const layout = this.getAppleStripLayout(input.stampGoal);
+    const titleSize = this.fitFontSize(input.programName, 52, 38, 24);
+    const rewardText = this.truncate(`Reward: ${input.rewardName}`, 46);
+    const rewardSize = this.fitFontSize(rewardText, 31, 23, 38);
+
+    return [
+      `<svg xmlns="http://www.w3.org/2000/svg" width="${layout.width}" height="${layout.height}" viewBox="0 0 ${layout.width} ${layout.height}">`,
+      '<defs>',
+      `<linearGradient id="apple-bg" x1="0" y1="0" x2="1" y2="1"><stop offset="0%" stop-color="${input.imageBackgroundColor}"/><stop offset="100%" stop-color="${this.mixWithBlack(input.imageBackgroundColor, 0.18)}"/></linearGradient>`,
+      '<filter id="apple-shadow" x="-30%" y="-30%" width="160%" height="160%"><feDropShadow dx="0" dy="6" stdDeviation="7" flood-color="#000000" flood-opacity="0.22"/></filter>',
+      '</defs>',
+      '<rect width="1125" height="369" fill="url(#apple-bg)"/>',
+      `<circle cx="64" cy="330" r="170" fill="${this.hexToRgba(input.imageTextColor, 0.07)}"/>`,
+      `<text x="48" y="76" fill="${input.imageTextColor}" font-family="${this.fontFamily()}" font-size="${titleSize}" font-weight="800">${this.escapeXml(this.truncate(input.programName, 34))}</text>`,
+      `<rect x="914" y="32" width="163" height="66" rx="33" fill="${this.hexToRgba(input.imageSurfaceColor, 0.92)}" stroke="${this.hexToRgba(input.imageAccentColor, 0.5)}" stroke-width="3"/>`,
+      `<text x="995.5" y="58" fill="${this.hexToRgba(input.imageTextColor, 0.74)}" text-anchor="middle" font-family="${this.fontFamily()}" font-size="18" font-weight="700">STAMPS</text>`,
+      `<text x="995.5" y="87" fill="${input.imageTextColor}" text-anchor="middle" font-family="${this.fontFamily()}" font-size="30" font-weight="800">${input.stampCount} / ${input.stampGoal}</text>`,
+      this.renderAppleIconCells(input, layout),
+      `<rect x="48" y="309" width="1029" height="42" rx="21" fill="${this.hexToRgba(input.rewardBannerColor, 0.94)}"/>`,
+      `<text x="562.5" y="338" fill="${input.imageTextColor}" text-anchor="middle" font-family="${this.fontFamily()}" font-size="${rewardSize}" font-weight="700">${this.escapeXml(rewardText)}</text>`,
+      '</svg>'
+    ].join('');
+  }
+
+  private renderAppleIconCells(
+    input: NormalizedStampImageRenderInput,
+    layout: AppleStripLayout
+  ) {
+    const cells = Array.from({ length: input.stampGoal }, (_, index) => {
+      const column = index % layout.columns;
+      const row = Math.floor(index / layout.columns);
+      const rowItemCount = Math.min(
+        layout.columns,
+        input.stampGoal - row * layout.columns
+      );
+      const rowWidth =
+        rowItemCount * layout.cellSize + (rowItemCount - 1) * layout.gap;
+      const rowStartX = (layout.width - rowWidth) / 2;
+      const x = rowStartX + column * (layout.cellSize + layout.gap);
+      const y = layout.gridY + row * (layout.cellSize + layout.gap);
+      const filled = index < input.stampCount;
+      const icon = this.renderPresetIcon(input.presetKey, {
+        x: x + layout.cellSize / 2,
+        y: y + layout.cellSize / 2,
+        size: layout.cellSize * 0.58,
+        fill: filled ? input.stampFilledColor : 'none',
+        stroke: filled ? input.stampFilledColor : input.stampEmptyColor,
+        filled
+      });
+
+      return [
+        `<g${filled ? ' filter="url(#apple-shadow)"' : ''}>`,
+        `<rect data-apple-stamp="${index + 1}" x="${x}" y="${y}" width="${layout.cellSize}" height="${layout.cellSize}" rx="${layout.cellSize * 0.28}" fill="${filled ? this.hexToRgba(input.imageSurfaceColor, 0.94) : this.hexToRgba(input.imageSurfaceColor, 0.42)}" stroke="${filled ? this.hexToRgba(input.stampFilledColor, 0.5) : this.hexToRgba(input.stampEmptyColor, 0.55)}" stroke-width="3"/>`,
+        icon,
+        '</g>'
+      ].join('');
+    }).join('');
+
+    return `<g data-stamp-preset="${input.presetKey}">${cells}</g>`;
   }
 
   private renderIconCells(
     input: NormalizedStampImageRenderInput,
     layout: ReturnType<typeof this.getLayout>
   ) {
-    const columns = input.layoutVariant === 'COMPACT' ? input.stampGoal : 5;
+    const columns =
+      input.stampGoal <= 5
+        ? input.stampGoal
+        : input.stampGoal <= 6
+          ? 3
+          : input.stampGoal <= 8
+            ? 4
+            : input.stampGoal <= 10
+              ? 5
+              : 6;
     const rows = Math.ceil(input.stampGoal / columns);
-    const gridWidth =
-      columns * layout.cellSize + (columns - 1) * layout.iconGap;
-    const gridHeight = rows * layout.cellSize + (rows - 1) * layout.iconGap;
-    const startX = (layout.width - gridWidth) / 2;
+    const cellSize =
+      input.layoutVariant === 'COMPACT' && rows > 1
+        ? 48
+        : layout.cellSize;
+    const iconGap =
+      input.layoutVariant === 'COMPACT' && rows > 1
+        ? 10
+        : layout.iconGap;
+    const gridHeight = rows * cellSize + (rows - 1) * iconGap;
     const startY =
       layout.iconsY + Math.max(0, (layout.iconBoxHeight - gridHeight) / 2);
 
     return Array.from({ length: input.stampGoal }, (_, index) => {
       const column = index % columns;
       const row = Math.floor(index / columns);
-      const x = startX + column * (layout.cellSize + layout.iconGap);
-      const y = startY + row * (layout.cellSize + layout.iconGap);
+      const rowItemCount = Math.min(
+        columns,
+        input.stampGoal - row * columns
+      );
+      const rowWidth = rowItemCount * cellSize + (rowItemCount - 1) * iconGap;
+      const rowStartX = (layout.width - rowWidth) / 2;
+      const x = rowStartX + column * (cellSize + iconGap);
+      const y = startY + row * (cellSize + iconGap);
       const filled = index < input.stampCount;
       const icon = this.renderPresetIcon(input.presetKey, {
-        x: x + layout.cellSize / 2,
-        y: y + layout.cellSize / 2,
-        size: layout.cellSize * 0.7,
+        x: x + cellSize / 2,
+        y: y + cellSize / 2,
+        size: cellSize * 0.7,
         fill: filled ? input.stampFilledColor : 'none',
         stroke: filled ? input.stampFilledColor : input.stampEmptyColor,
         filled
@@ -238,7 +389,7 @@ export class StampImageRendererService {
 
       return [
         `<g filter="${filled ? 'url(#shadow)' : ''}">`,
-        `<rect x="${x}" y="${y}" width="${layout.cellSize}" height="${layout.cellSize}" rx="${layout.cellSize * 0.26}" fill="${filled ? this.hexToRgba(input.imageSurfaceColor, 0.92) : this.hexToRgba(input.imageSurfaceColor, 0.48)}" stroke="${filled ? this.hexToRgba(input.stampFilledColor, 0.52) : this.hexToRgba(input.stampEmptyColor, 0.44)}" stroke-width="3"/>`,
+        `<rect x="${x}" y="${y}" width="${cellSize}" height="${cellSize}" rx="${cellSize * 0.26}" fill="${filled ? this.hexToRgba(input.imageSurfaceColor, 0.92) : this.hexToRgba(input.imageSurfaceColor, 0.48)}" stroke="${filled ? this.hexToRgba(input.stampFilledColor, 0.52) : this.hexToRgba(input.stampEmptyColor, 0.44)}" stroke-width="3"/>`,
         icon,
         '</g>'
       ].join('');
@@ -494,9 +645,42 @@ export class StampImageRendererService {
       .replace(/'/g, '&apos;');
   }
 
+  private sanitizeDisplayText(value: string) {
+    return value
+      .replace(/[\u0000-\u001f\u007f]/g, ' ')
+      .replace(/\p{Extended_Pictographic}/gu, ' ')
+      .replace(/[\u200d\ufe0e\ufe0f]/g, '')
+      .replace(/\s+/g, ' ')
+      .trim();
+  }
+
+  private fitFontSize(
+    value: string,
+    preferred: number,
+    minimum: number,
+    preferredLength: number
+  ) {
+    const length = Array.from(value).length;
+
+    if (length <= preferredLength) {
+      return preferred;
+    }
+
+    return Math.max(
+      minimum,
+      Math.floor(preferred * (preferredLength / length))
+    );
+  }
+
+  private fontFamily() {
+    return 'DejaVu Sans, Noto Sans, Arial, sans-serif';
+  }
+
   private truncate(value: string, maxLength: number) {
-    return value.length <= maxLength
+    const characters = Array.from(value);
+
+    return characters.length <= maxLength
       ? value
-      : `${value.slice(0, maxLength - 3)}...`;
+      : `${characters.slice(0, maxLength - 3).join('')}...`;
   }
 }

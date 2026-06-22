@@ -17,7 +17,7 @@ import {
 import { PrismaService } from '../../prisma/prisma.service';
 import { AuthenticatedUser } from '../auth/interfaces/authenticated-user.interface';
 import { BusinessAccessService } from '../businesses/business-access.service';
-import { DEFAULT_LOYALTY_STAMP_STYLE } from '../loyalty/loyalty-stamp-style.constants';
+import { resolveLoyaltyVisualStyle } from '../loyalty/loyalty-visual-style';
 import { StampImageStorageService } from '../loyalty/stamp-image-storage.service';
 import { GoogleWalletApiError } from './google-wallet-api.client';
 import { GoogleWalletService } from './google-wallet.service';
@@ -141,7 +141,9 @@ export class WalletPassService {
         progressText: `${Math.min(
           membership.stampCount,
           membership.loyaltyProgram.stampGoal
-        )} of ${membership.loyaltyProgram.stampGoal} stamps collected`
+        )} of ${membership.loyaltyProgram.stampGoal} stamps collected`,
+        includeLoyaltyPoints: false,
+        includeTextModules: false
       });
 
       await this.googleWalletService.upsertLoyaltyClass(classPayload);
@@ -242,7 +244,9 @@ export class WalletPassService {
         progressText: `${Math.min(
           membership.stampCount,
           membership.loyaltyProgram.stampGoal
-        )} of ${membership.loyaltyProgram.stampGoal} stamps collected`
+        )} of ${membership.loyaltyProgram.stampGoal} stamps collected`,
+        includeLoyaltyPoints: false,
+        includeTextModules: false
       });
 
       await this.googleWalletService.upsertLoyaltyObject(objectPayload);
@@ -442,7 +446,7 @@ export class WalletPassService {
   }
 
   private resolveStampStyle(membership: WalletMembership) {
-    return membership.loyaltyProgram.stampStyle ?? DEFAULT_LOYALTY_STAMP_STYLE;
+    return resolveLoyaltyVisualStyle(membership.loyaltyProgram);
   }
 
   private buildClassSuffix(membership: WalletMembership) {

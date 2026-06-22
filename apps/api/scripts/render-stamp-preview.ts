@@ -1,114 +1,161 @@
-import { existsSync, readFileSync } from 'fs';
-import { resolve } from 'path';
-import { StampImageRendererService } from '../src/modules/loyalty/stamp-image-renderer.service';
-import { StampImageStorageService } from '../src/modules/loyalty/stamp-image-storage.service';
+import { mkdir, writeFile } from 'fs/promises';
+import { join, relative } from 'path';
+import {
+  LOYALTY_WALLET_THEME_PRESET_CATALOG,
+  LoyaltyStampLayoutVariantValue,
+  LoyaltyStampPresetKeyValue,
+  LoyaltyWalletThemePresetValue
+} from '../src/modules/loyalty/loyalty-stamp-style.constants';
+import {
+  StampImageRendererService,
+  StampImageRenderInput
+} from '../src/modules/loyalty/stamp-image-renderer.service';
 
-loadEnvFile();
+type PreviewDefinition = {
+  fileName: string;
+  platform: 'APPLE' | 'GOOGLE';
+  businessName: string;
+  programName: string;
+  rewardName: string;
+  stampCount: number;
+  stampGoal: number;
+  presetKey: LoyaltyStampPresetKeyValue;
+  themePreset: LoyaltyWalletThemePresetValue;
+  layoutVariant: LoyaltyStampLayoutVariantValue;
+};
 
+const outputRoot = join(
+  process.cwd(),
+  'public',
+  'generated',
+  'wallet-previews'
+);
 const renderer = new StampImageRendererService();
-const storage = new StampImageStorageService(renderer);
 
-const previews = [
+const previews: PreviewDefinition[] = [
   {
-    membershipId: 'preview-cookie',
-    businessName: 'Waflo Demo Cafe',
+    fileName: 'apple-5-cookie-coffee.png',
+    platform: 'APPLE',
+    businessName: 'Waflo Bakery',
     programName: 'Cookie Club',
     rewardName: 'Free cookie box',
     stampCount: 3,
-    stampGoal: 10,
-    presetKey: 'COOKIE' as const,
-    backgroundColor: '#7c2d12',
-    accentColor: '#facc15',
-    textColor: '#fff7ed',
-    imageBackgroundColor: '#7c2d12',
-    imageSurfaceColor: '#92400e',
-    imageAccentColor: '#facc15',
-    imageTextColor: '#ffffff',
-    stampFilledColor: '#facc15',
-    stampEmptyColor: '#d6d3d1',
-    rewardBannerColor: '#a16207',
-    themePreset: 'COFFEE' as const,
-    layoutVariant: 'MODERN' as const
+    stampGoal: 5,
+    presetKey: 'COOKIE',
+    themePreset: 'COFFEE',
+    layoutVariant: 'MODERN'
   },
   {
-    membershipId: 'preview-coffee',
+    fileName: 'apple-10-star-blue.png',
+    platform: 'APPLE',
+    businessName: 'Waflo',
+    programName: 'Blue Rewards',
+    rewardName: 'Free menu item',
+    stampCount: 7,
+    stampGoal: 10,
+    presetKey: 'STAR',
+    themePreset: 'DEFAULT',
+    layoutVariant: 'MODERN'
+  },
+  {
+    fileName: 'apple-8-coffee.png',
+    platform: 'APPLE',
     businessName: 'Tavrix Cafe',
     programName: 'Coffee Rewards',
     rewardName: 'Free Turkish coffee',
     stampCount: 5,
-    stampGoal: 10,
-    presetKey: 'COFFEE' as const,
-    backgroundColor: '#111827',
-    accentColor: '#f59e0b',
-    textColor: '#ffffff',
-    imageBackgroundColor: '#111827',
-    imageSurfaceColor: '#1f2937',
-    imageAccentColor: '#f59e0b',
-    imageTextColor: '#ffffff',
-    stampFilledColor: '#f59e0b',
-    stampEmptyColor: '#d1d5db',
-    rewardBannerColor: '#92400e',
-    themePreset: 'COFFEE' as const,
-    layoutVariant: 'MODERN' as const
+    stampGoal: 8,
+    presetKey: 'COFFEE',
+    themePreset: 'COFFEE',
+    layoutVariant: 'MODERN'
   },
   {
-    membershipId: 'preview-bowl',
-    businessName: 'Baghdad Bowl',
-    programName: 'Lunch Stamps',
-    rewardName: 'Free lunch bowl',
-    stampCount: 2,
+    fileName: 'apple-12-heart-dark.png',
+    platform: 'APPLE',
+    businessName: 'Waflo',
+    programName: 'After Dark Rewards',
+    rewardName: 'VIP dessert',
+    stampCount: 9,
+    stampGoal: 12,
+    presetKey: 'HEART',
+    themePreset: 'MINIMAL',
+    layoutVariant: 'MODERN'
+  },
+  {
+    fileName: 'google-5-cookie.png',
+    platform: 'GOOGLE',
+    businessName: 'Waflo Bakery',
+    programName: 'Cookie Club',
+    rewardName: 'Free cookie box',
+    stampCount: 3,
     stampGoal: 5,
-    presetKey: 'BOWL' as const,
-    backgroundColor: '#064e3b',
-    accentColor: '#34d399',
-    textColor: '#ecfdf5',
-    imageBackgroundColor: '#064e3b',
-    imageSurfaceColor: '#047857',
-    imageAccentColor: '#34d399',
-    imageTextColor: '#ecfdf5',
-    stampFilledColor: '#34d399',
-    stampEmptyColor: '#a7f3d0',
-    rewardBannerColor: '#047857',
-    themePreset: 'RESTAURANT' as const,
-    layoutVariant: 'COMPACT' as const
+    presetKey: 'COOKIE',
+    themePreset: 'DESSERT',
+    layoutVariant: 'MODERN'
   },
   {
-    membershipId: 'preview-star',
-    businessName: 'Waflo Stars',
-    programName: 'VIP Rewards',
-    rewardName: 'Completed reward',
-    stampCount: 10,
+    fileName: 'google-10-coffee.png',
+    platform: 'GOOGLE',
+    businessName: 'Tavrix Cafe',
+    programName: 'Coffee Rewards',
+    rewardName: 'Free Turkish coffee',
+    stampCount: 6,
     stampGoal: 10,
-    presetKey: 'STAR' as const,
-    backgroundColor: '#1d4ed8',
-    accentColor: '#fde047',
-    textColor: '#eff6ff',
-    imageBackgroundColor: '#1d4ed8',
-    imageSurfaceColor: '#2563eb',
-    imageAccentColor: '#fde047',
-    imageTextColor: '#eff6ff',
-    stampFilledColor: '#fde047',
-    stampEmptyColor: '#bfdbfe',
-    rewardBannerColor: '#1e40af',
-    themePreset: 'DEFAULT' as const,
-    layoutVariant: 'MODERN' as const
+    presetKey: 'COFFEE',
+    themePreset: 'COFFEE',
+    layoutVariant: 'MODERN'
+  },
+  {
+    fileName: 'google-10-default-blue.png',
+    platform: 'GOOGLE',
+    businessName: 'Waflo',
+    programName: 'Blue Rewards',
+    rewardName: 'Free menu item',
+    stampCount: 7,
+    stampGoal: 10,
+    presetKey: 'STAR',
+    themePreset: 'DEFAULT',
+    layoutVariant: 'MODERN'
+  },
+  {
+    fileName: 'google-10-dark.png',
+    platform: 'GOOGLE',
+    businessName: 'Waflo',
+    programName: 'After Dark Rewards',
+    rewardName: 'VIP dessert',
+    stampCount: 8,
+    stampGoal: 10,
+    presetKey: 'CUPCAKE',
+    themePreset: 'MINIMAL',
+    layoutVariant: 'MODERN'
   }
 ];
 
 async function main() {
-  const files = await Promise.all(
-    previews.map((preview) => storage.renderAndStore(preview))
-  );
+  await mkdir(outputRoot, {
+    recursive: true
+  });
+
+  const renderedFiles: string[] = [];
+
+  for (const preview of previews) {
+    const input = renderInput(preview);
+    const png =
+      preview.platform === 'APPLE'
+        ? await renderer.renderAppleStripPng(input)
+        : await renderer.renderPng(input);
+    const outputPath = join(outputRoot, preview.fileName);
+
+    await writeFile(outputPath, png);
+    renderedFiles.push(relative(process.cwd(), outputPath));
+  }
 
   console.log(
     JSON.stringify(
       {
         passed: true,
-        files: files.map((file) => ({
-          fileName: file.fileName,
-          absolutePath: file.absolutePath,
-          publicUrl: file.publicUrl
-        }))
+        outputDirectory: relative(process.cwd(), outputRoot),
+        files: renderedFiles
       },
       null,
       2
@@ -116,39 +163,34 @@ async function main() {
   );
 }
 
-function loadEnvFile() {
-  const envPath = resolve(__dirname, '..', '.env');
+function renderInput(preview: PreviewDefinition): StampImageRenderInput {
+  const theme = LOYALTY_WALLET_THEME_PRESET_CATALOG.find(
+    (candidate) => candidate.key === preview.themePreset
+  );
 
-  if (!existsSync(envPath)) {
-    return;
+  if (!theme) {
+    throw new Error(`Missing preview theme ${preview.themePreset}`);
   }
 
-  const envFile = readFileSync(envPath, 'utf8');
-
-  for (const rawLine of envFile.split(/\r?\n/)) {
-    const line = rawLine.trim();
-
-    if (!line || line.startsWith('#')) {
-      continue;
-    }
-
-    const separatorIndex = line.indexOf('=');
-
-    if (separatorIndex === -1) {
-      continue;
-    }
-
-    const key = line.slice(0, separatorIndex).trim();
-    const rawValue = line.slice(separatorIndex + 1).trim();
-    const value = rawValue.replace(/^['"]|['"]$/g, '');
-
-    if (key && process.env[key] === undefined) {
-      process.env[key] = value;
-    }
-  }
+  return {
+    businessName: preview.businessName,
+    programName: preview.programName,
+    rewardName: preview.rewardName,
+    stampCount: preview.stampCount,
+    stampGoal: preview.stampGoal,
+    presetKey: preview.presetKey,
+    backgroundColor: theme.recommendedPalette.imageBackgroundColor,
+    accentColor: theme.recommendedPalette.imageAccentColor,
+    textColor: theme.recommendedPalette.imageTextColor,
+    ...theme.recommendedPalette,
+    themePreset: preview.themePreset,
+    layoutVariant: preview.layoutVariant
+  };
 }
 
 main().catch((error) => {
-  console.error(error);
+  console.error(
+    error instanceof Error ? error.message : 'Wallet preview rendering failed'
+  );
   process.exitCode = 1;
 });

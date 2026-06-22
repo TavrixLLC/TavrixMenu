@@ -163,6 +163,12 @@ describe('AppleWalletUpdateService', () => {
     assert.equal(result.status, 'UPDATED');
     assert.equal(result.pass?.toString(), 'signed-updated-pass');
     assert.equal(setup.state.generateInputs[0].updateAuthenticationToken, setup.rawToken);
+    assert.equal(setup.state.generateInputs[0].businessName, 'Waflo Test Business');
+    assert.equal(setup.state.generateInputs[0].visualStyle.presetKey, 'STAR');
+    assert.equal(
+      setup.state.generateInputs[0].visualStyle.walletBackgroundColor,
+      '#111827'
+    );
     assert.equal(setup.state.walletPassUpdates.length, 1);
     assert.equal(
       setup.state.walletPassUpdates[0].data.scanTokenHash,
@@ -338,11 +344,17 @@ function createSetup() {
     membership: {
       stampCount: 4,
       updatedAt: membershipUpdatedAt,
+      business: {
+        name: 'Waflo Test Business'
+      },
       loyaltyProgram: {
         name: 'Waflo Loyalty',
         stampGoal: 10,
         rewardName: 'Reward',
         rewardDescription: 'Reward after ten stamps',
+        cardColor: '#111827',
+        accentColor: '#f59e0b',
+        stampStyle: null,
         updatedAt: programUpdatedAt
       }
     }

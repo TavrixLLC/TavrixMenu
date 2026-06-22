@@ -9,6 +9,7 @@ import {
   StampImageRenderInput
 } from './stamp-image-renderer.service';
 import { StampImageStorageService } from './stamp-image-storage.service';
+import { resolveLoyaltyVisualStyle } from './loyalty-visual-style';
 
 describe('StampImageRendererService', () => {
   it('generates a PNG buffer', async () => {
@@ -81,6 +82,136 @@ describe('StampImageRendererService', () => {
     assert.notEqual(empty.equals(full), true);
   });
 
+  it('renders a balanced Apple 10-stamp grid at Wallet strip dimensions', async () => {
+    const renderer = new StampImageRendererService();
+    const layout = renderer.getAppleStripLayout(10);
+    const svg = renderer.buildAppleStripSvg(
+      baseInput({
+        stampCount: 7,
+        stampGoal: 10,
+        presetKey: 'STAR'
+      })
+    );
+    const png = await renderer.renderAppleStripPng(
+      baseInput({
+        stampCount: 7,
+        stampGoal: 10
+      })
+    );
+    const metadata = await sharp(png).metadata();
+
+    assert.equal(layout.columns, 5);
+    assert.equal(layout.rows, 2);
+    assert.equal(layout.gridX >= 0, true);
+    assert.equal(layout.gridY >= 0, true);
+    assert.equal(layout.gridX + layout.gridWidth <= layout.width, true);
+    assert.equal(layout.gridY + layout.gridHeight < 309, true);
+    assert.equal((svg.match(/data-apple-stamp=/g) ?? []).length, 10);
+    assert.match(svg, /data-stamp-preset="STAR"/);
+    assert.equal(metadata.width, 1125);
+    assert.equal(metadata.height, 369);
+  });
+
+  it('supports balanced Apple grids for 5, 8, and 12 stamps', () => {
+    const renderer = new StampImageRendererService();
+
+    assert.deepEqual(
+      [5, 8, 12].map((goal) => {
+        const layout = renderer.getAppleStripLayout(goal);
+
+        return [goal, layout.columns, layout.rows];
+      }),
+      [
+        [5, 5, 1],
+        [8, 4, 2],
+        [12, 6, 2]
+      ]
+    );
+  });
+
+  it('uses deterministic vector presets and removes emoji from rendered text', () => {
+    const renderer = new StampImageRendererService();
+    const cookie = renderer.buildAppleStripSvg(
+      baseInput({
+        presetKey: 'COOKIE',
+        businessName: 'Cookie 🍪 Cafe',
+        programName: 'Sweet 🎂 Rewards',
+        rewardName: 'Free 🍪 box'
+      })
+    );
+    const coffee = renderer.buildAppleStripSvg(
+      baseInput({
+        presetKey: 'COFFEE'
+      })
+    );
+
+    assert.match(cookie, /data-stamp-preset="COOKIE"/);
+    assert.match(cookie, /#6b3f16/);
+    assert.match(coffee, /data-stamp-preset="COFFEE"/);
+    assert.match(coffee, /C /);
+    assert.doesNotMatch(cookie, /🍪|🎂|\u200d|\ufe0f/u);
+    assert.match(cookie, /DejaVu Sans, Noto Sans, Arial, sans-serif/);
+  });
+
+  for (const presetKey of [
+    'STAR',
+    'COOKIE',
+    'COFFEE',
+    'BOWL',
+    'BURGER',
+    'PIZZA',
+    'HEART',
+    'CUPCAKE'
+  ] as const) {
+    it(`renders the ${presetKey} vector preset visibly`, () => {
+      const renderer = new StampImageRendererService();
+      const svg = renderer.buildAppleStripSvg(
+        baseInput({
+          presetKey,
+          stampCount: 1,
+          stampGoal: 5
+        })
+      );
+
+      assert.match(svg, new RegExp(`data-stamp-preset="${presetKey}"`));
+      assert.doesNotMatch(svg, /undefined|null/);
+    });
+  }
+
+  it('uses the resolved preset palette consistently across Wallet surfaces', () => {
+    const defaultStyle = resolveLoyaltyVisualStyle({
+      stampStyle: {
+        ...baseStoredStyle(),
+        presetKey: 'STAR',
+        themePreset: 'DEFAULT',
+        colorMode: 'PRESET'
+      }
+    });
+    const coffeeStyle = resolveLoyaltyVisualStyle({
+      stampStyle: {
+        ...baseStoredStyle(),
+        presetKey: 'COFFEE',
+        themePreset: 'COFFEE',
+        colorMode: 'PRESET'
+      }
+    });
+    const legacyStyle = resolveLoyaltyVisualStyle({
+      cardColor: '#111827',
+      accentColor: '#f59e0b',
+      stampStyle: null
+    });
+
+    assert.equal(defaultStyle.walletBackgroundColor, '#2563eb');
+    assert.equal(defaultStyle.imageBackgroundColor, '#1d4ed8');
+    assert.equal(defaultStyle.rewardBannerColor, '#1e40af');
+    assert.equal(coffeeStyle.walletBackgroundColor, '#7c2d12');
+    assert.equal(coffeeStyle.imageBackgroundColor, '#7c2d12');
+    assert.equal(coffeeStyle.presetKey, 'COFFEE');
+    assert.equal(legacyStyle.walletBackgroundColor, '#111827');
+    assert.equal(legacyStyle.imageBackgroundColor, '#111827');
+    assert.equal(legacyStyle.imageAccentColor, '#f59e0b');
+  });
+
   it('uses stamp filled and empty colors in the SVG render path', () => {
     const renderer = new StampImageRendererService() as unknown as {
       renderSvg(input: StampImageRenderInput): string;
@@ -138,7 +269,7 @@ describe('StampImageRendererService', () => {
     }
   });
 
-  it('rejects invalid preset, colors, and stamp goals above 10', async () => {
+  it('rejects invalid preset, colors, and stamp goals above 12', async () => {
     const renderer = new StampImageRendererService();
 
     await assert.rejects(
@@ -181,7 +312,7 @@ describe('StampImageRendererService', () => {
       () =>
         renderer.renderPng(
           baseInput({
-            stampGoal: 11
+            stampGoal: 13
           })
         ),
       BadRequestException
@@ -277,5 +408,25 @@ function baseInput(
     themePreset: 'COFFEE',
     layoutVariant: 'MODERN',
     ...overrides
+  };
+}
+
+function baseStoredStyle() {
+  return {
+    presetKey: 'STAR' as const,
+    backgroundColor: '#111827',
+    accentColor: '#f59e0b',
+    textColor: '#ffffff',
+    walletBackgroundColor: '#111827',
+    imageBackgroundColor: '#111827',
+    imageSurfaceColor: '#1f2937',
+    imageAccentColor: '#f59e0b',
+    imageTextColor: '#ffffff',
+    stampFilledColor: '#f59e0b',
+    stampEmptyColor: '#d6d3d1',
+    rewardBannerColor: '#92400e',
+    themePreset: 'MINIMAL' as const,
+    colorMode: 'CUSTOM' as const,
+    layoutVariant: 'MODERN' as const
   };
 }

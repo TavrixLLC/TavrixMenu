@@ -22,6 +22,7 @@ import {
   WalletPassStatus
 } from '../../generated/prisma';
 import { WalletScanTokenService } from '../google-wallet/wallet-scan-token.service';
+import { StampImageRendererService } from '../loyalty/stamp-image-renderer.service';
 import { AppleWalletPassBuilderService } from './apple-wallet-pass-builder.service';
 import { AppleWalletSignerService } from './apple-wallet-signer.service';
 import { AppleWalletService } from './apple-wallet.service';
@@ -146,6 +147,8 @@ describe('PublicAppleWalletPassService token safety', () => {
       >;
       assert.equal(passPayload.webServiceURL, undefined);
       assert.equal(passPayload.authenticationToken, undefined);
+      assert.equal(setup.signer.payload?.logoText, 'Waflo Test Business');
+      assert.equal(setup.signer.payload?.backgroundColor, 'rgb(17, 24, 39)');
       assert.equal(JSON.stringify(result).includes(barcodeValue), false);
       assert.equal(logs.join('\n').includes(barcodeValue), false);
       assert.equal(setup.state.upserts[0]?.create.platform, WalletPassPlatform.APPLE_WALLET);
@@ -355,7 +358,7 @@ function createSetup(options: {
   const signer = new RecordingSigner();
   const appleWalletService = new AppleWalletService(
     config,
-    new AppleWalletPassBuilderService(),
+    new AppleWalletPassBuilderService(new StampImageRendererService()),
     signer as unknown as AppleWalletSignerService,
     createTokenService()
   );

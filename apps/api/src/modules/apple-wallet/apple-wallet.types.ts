@@ -1,4 +1,5 @@
 import { WalletScanTokenPassFields } from '../google-wallet/wallet-scan-token.service';
+import { ResolvedLoyaltyVisualStyle } from '../loyalty/loyalty-visual-style';
 
 export type AppleWalletReadiness =
   | 'DISABLED'
@@ -48,10 +49,13 @@ export type BuildAppleWalletPassInput = {
   teamIdentifier: string;
   organizationName: string;
   barcodeValue: string;
+  businessName?: string;
   programName?: string;
   stampCount: number;
   stampGoal: number;
+  rewardName?: string;
   rewardDescription?: string;
+  visualStyle?: ResolvedLoyaltyVisualStyle;
   webServiceURL?: string;
   authenticationToken?: string;
 };

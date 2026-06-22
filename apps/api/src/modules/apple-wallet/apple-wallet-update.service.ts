@@ -11,6 +11,7 @@ import {
   WalletPassStatus
 } from '../../generated/prisma';
 import { PrismaService } from '../../prisma/prisma.service';
+import { resolveLoyaltyVisualStyle } from '../loyalty/loyalty-visual-style';
 import { AppleWalletService } from './apple-wallet.service';
 import { AppleWalletUpdateAuthTokenService } from './apple-wallet-update-auth-token.service';
 
@@ -109,7 +110,11 @@ export class AppleWalletUpdateService {
             include: {
               membership: {
                 include: {
-                  loyaltyProgram: true
+                  loyaltyProgram: {
+                    include: {
+                      stampStyle: true
+                    }
+                  }
                 }
               }
             }
@@ -159,12 +164,17 @@ export class AppleWalletUpdateService {
     try {
       const generated = await this.appleWalletService.generatePass({
         serialNumber: input.serialNumber,
+        businessName: pass.membership.business.name,
         programName: pass.membership.loyaltyProgram.name,
         stampCount: pass.membership.stampCount,
         stampGoal: pass.membership.loyaltyProgram.stampGoal,
+        rewardName: pass.membership.loyaltyProgram.rewardName,
         rewardDescription:
           pass.membership.loyaltyProgram.rewardDescription ??
           pass.membership.loyaltyProgram.rewardName,
+        visualStyle: resolveLoyaltyVisualStyle(
+          pass.membership.loyaltyProgram
+        ),
         updateAuthenticationToken: rawToken,
         scanTokenPass: pass
       });
@@ -243,11 +253,16 @@ export class AppleWalletUpdateService {
         status: WalletPassStatus.ACTIVE
       },
       include: {
-        membership: {
-          include: {
-            loyaltyProgram: true
+          membership: {
+            include: {
+              business: true,
+              loyaltyProgram: {
+                include: {
+                  stampStyle: true
+                }
+              }
+            }
           }
-        }
       }
     });
 
@@ -311,6 +326,9 @@ export class AppleWalletUpdateService {
       updatedAt: Date;
       loyaltyProgram: {
         updatedAt: Date;
+        stampStyle?: {
+          updatedAt: Date;
+        } | null;
       };
     };
   }) {
@@ -318,7 +336,8 @@ export class AppleWalletUpdateService {
       Math.max(
         pass.applePassUpdatedAt?.getTime() ?? 0,
         pass.membership.updatedAt.getTime(),
-        pass.membership.loyaltyProgram.updatedAt.getTime()
+        pass.membership.loyaltyProgram.updatedAt.getTime(),
+        pass.membership.loyaltyProgram.stampStyle?.updatedAt.getTime() ?? 0
       )
     );
   }
