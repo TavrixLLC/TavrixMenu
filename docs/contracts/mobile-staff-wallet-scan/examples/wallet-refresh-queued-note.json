@@ -1,0 +1,9 @@
+{
+  "walletRefreshStatusExposed": false,
+  "appliesAfter": [
+    "POST /businesses/{businessId}/loyalty/memberships/{membershipId}/stamps",
+    "POST /businesses/{businessId}/loyalty/memberships/{membershipId}/redeem"
+  ],
+  "backendBehavior": "After the membership transaction succeeds, the backend attempts to enqueue an asynchronous Google Wallet refresh job. Queue status is not included in the API response, and an enqueue failure does not fail the completed loyalty mutation.",
+  "mobileBehavior": "Render the returned membership and cardState immediately. Do not wait for, poll, or claim completion of the external wallet refresh."
+}

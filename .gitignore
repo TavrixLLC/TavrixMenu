@@ -29,6 +29,17 @@ out/
 
 # NestJS
 *.local
+apps/api/public/generated/
+apps/api/public/generated/apple-wallet/
+
+# Local credentials and Wallet artifacts
+*.p12
+*.pem
+*.key
+*.cer
+*.csr
+*.dns_csr
+*.pkpass
 
 # Prisma
 apps/api/prisma/migrations/*/migration_lock.toml

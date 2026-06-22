@@ -1,36 +1,46 @@
+import { AdminAuthBoundary } from '../components/AuthState';
 import { AdminShell } from '../components/AdminShell';
+import { isClerkConfigured } from '../lib/config';
 import { subscriptions } from '../mock-data';
 
 export default function SubscriptionsPage() {
+  const clerkConfigured = isClerkConfigured();
+
   return (
     <AdminShell>
-      <section className="rounded-lg border border-neutral-200 bg-white">
-        <div className="border-b border-neutral-200 p-4">
-          <h2 className="text-xl font-bold text-ink">Subscriptions</h2>
-        </div>
-        <div className="overflow-x-auto">
-          <table className="w-full min-w-[640px] text-left text-sm">
-            <thead className="bg-neutral-50 text-neutral-500">
-              <tr>
-                <th className="px-4 py-3">Business</th>
-                <th className="px-4 py-3">Plan</th>
-                <th className="px-4 py-3">Status</th>
-                <th className="px-4 py-3">Current period end</th>
-              </tr>
-            </thead>
-            <tbody>
-              {subscriptions.map((subscription) => (
-                <tr key={subscription.business} className="border-t border-neutral-100">
-                  <td className="px-4 py-3 font-semibold text-ink">{subscription.business}</td>
-                  <td className="px-4 py-3 text-neutral-600">{subscription.plan}</td>
-                  <td className="px-4 py-3 text-neutral-600">{subscription.status}</td>
-                  <td className="px-4 py-3 text-neutral-600">{subscription.periodEnd}</td>
+      <AdminAuthBoundary clerkConfigured={clerkConfigured}>
+        <section className="rounded-lg border border-neutral-200 bg-white">
+          <div className="border-b border-neutral-200 p-4">
+            <p className="text-sm font-semibold uppercase text-accent">Mock/dev shell</p>
+            <h2 className="mt-2 text-xl font-bold text-ink">Subscriptions pending Sprint 6 backend</h2>
+            <p className="mt-2 text-sm text-neutral-600">
+              This route is an internal placeholder only. No billing actions are wired.
+            </p>
+          </div>
+          <div className="overflow-x-auto">
+            <table className="w-full min-w-[640px] text-left text-sm">
+              <thead className="bg-neutral-50 text-neutral-500">
+                <tr>
+                  <th className="px-4 py-3">Business</th>
+                  <th className="px-4 py-3">Plan</th>
+                  <th className="px-4 py-3">Status</th>
+                  <th className="px-4 py-3">Current period end</th>
                 </tr>
-              ))}
-            </tbody>
-          </table>
-        </div>
-      </section>
+              </thead>
+              <tbody>
+                {subscriptions.map((subscription) => (
+                  <tr key={subscription.business} className="border-t border-neutral-100">
+                    <td className="px-4 py-3 font-semibold text-ink">{subscription.business}</td>
+                    <td className="px-4 py-3 text-neutral-600">{subscription.plan}</td>
+                    <td className="px-4 py-3 text-neutral-600">{subscription.status}</td>
+                    <td className="px-4 py-3 text-neutral-600">{subscription.periodEnd}</td>
+                  </tr>
+                ))}
+              </tbody>
+            </table>
+          </div>
+        </section>
+      </AdminAuthBoundary>
     </AdminShell>
   );
 }

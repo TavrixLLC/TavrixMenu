@@ -1,0 +1,1 @@
+ALTER TYPE "WalletPassPlatform" ADD VALUE 'APPLE_WALLET';

@@ -1,32 +1,29 @@
 # Tavrix Menu Mobile
 
-Flutter app foundation for Tavrix Menu business owners, managers, and staff.
+Flutter app for Tavrix Menu business owners, managers, and staff.
 
-Customers do not use this app and do not need to download anything to browse menus.
+Customers do not use this app. Customers browse menus through customer-web. Customer ordering, cart, and checkout are not part of the Flutter app.
 
-## Install
+## Architecture
 
-```bash
-flutter pub get
-```
+The mobile app uses Clean Architecture with BLoC/Cubit state management. Use Cubit for simple feature state and Bloc only for complex event-driven flows.
+
+## Documentation
+
+- [Mobile Design System](docs/mobile-design-system.md)
+- [Mobile Clean Architecture](docs/mobile-clean-architecture.md)
+- [Raw Design Reference](docs/reference/design-raw.md)
 
 ## Run
 
 ```bash
+flutter pub get
+flutter analyze
+flutter test
 flutter run
 ```
 
-## Environment
+## Environment variables
 
-Copy the example env file:
-
-```bash
-cp .env.example .env
-```
-
-Configure:
-
-- `API_BASE_URL` for the NestJS API base URL.
-- `CLERK_PUBLISHABLE_KEY` for the future Clerk Flutter SDK setup.
-
-Clerk Flutter SDK integration will be added under `lib/core/auth` for business owners, managers, and staff auth.
+- `API_BASE_URL`
+- `CLERK_PUBLISHABLE_KEY`

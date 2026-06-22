@@ -1,0 +1,5 @@
+{
+  "statusCode": 403,
+  "message": "Wallet pass belongs to another business",
+  "error": "Forbidden"
+}
