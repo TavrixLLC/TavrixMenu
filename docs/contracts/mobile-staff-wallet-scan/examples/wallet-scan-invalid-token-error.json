@@ -1,0 +1,5 @@
+{
+  "statusCode": 400,
+  "message": "Invalid wallet scan token",
+  "error": "Bad Request"
+}

@@ -122,6 +122,8 @@ Rules:
 - Update docs/05-api-contract.md.
 
 Run backend checks before final.
+Seed demo data with:
+- corepack pnpm --filter tavrix-menu-api prisma:seed
 ```
 
 ## E. Sprint 1 Flutter Prompt

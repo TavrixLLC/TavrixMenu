@@ -1,0 +1,21 @@
+{
+  "membershipId": "membership_demo_001",
+  "customer": {
+    "name": "Demo Customer",
+    "phone": "+9647700000000"
+  },
+  "program": {
+    "name": "Demo Cafe Stamp Card",
+    "stampGoal": 10,
+    "rewardName": "Free coffee"
+  },
+  "progress": {
+    "stamps": 3,
+    "goal": 10,
+    "canRedeem": false
+  },
+  "walletPass": {
+    "platform": "GOOGLE_WALLET",
+    "status": "ACTIVE"
+  }
+}

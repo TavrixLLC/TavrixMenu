@@ -1,0 +1,3473 @@
+{
+  "openapi": "3.0.0",
+  "paths": {
+    "/health": {
+      "get": {
+        "operationId": "HealthController_getHealth",
+        "parameters": [],
+        "responses": {
+          "200": {
+            "description": "",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "example": {
+                    "status": "ok",
+                    "service": "tavrix-menu-api"
+                  }
+                }
+              }
+            }
+          }
+        },
+        "tags": [
+          "health"
+        ]
+      }
+    },
+    "/me": {
+      "get": {
+        "operationId": "AuthController_getMe",
+        "parameters": [],
+        "responses": {
+          "200": {
+            "description": "Current user and business memberships.",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "example": {
+                    "user": {
+                      "id": "usr_123",
+                      "clerkUserId": "user_tavrix_owner",
+                      "name": "Tavrix Owner",
+                      "email": "owner@tavrix.local",
+                      "phone": null,
+                      "status": "ACTIVE",
+                      "createdAt": "2026-06-10T00:00:00.000Z",
+                      "updatedAt": "2026-06-10T00:00:00.000Z"
+                    },
+                    "memberships": [
+                      {
+                        "id": "mem_123",
+                        "role": "OWNER",
+                        "isActive": true,
+                        "business": {
+                          "id": "bus_123",
+                          "name": "Tavrix Cafe",
+                          "slug": "tavrix-cafe",
+                          "type": "cafe",
+                          "city": "Baghdad",
+                          "currency": "IQD",
+                          "language": "ar",
+                          "logoUrl": null,
+                          "coverUrl": null
+                        }
+                      }
+                    ],
+                    "onboarding": {
+                      "hasBusiness": true,
+                      "activeBusinessCount": 1,
+                      "recommendedNextStep": "OPEN_DASHBOARD"
+                    },
+                    "businesses": [
+                      {
+                        "id": "bus_123",
+                        "name": "Tavrix Cafe",
+                        "slug": "tavrix-cafe",
+                        "type": "cafe",
+                        "role": "OWNER"
+                      }
+                    ]
+                  }
+                }
+              }
+            }
+          }
+        },
+        "security": [
+          {
+            "bearer": []
+          }
+        ],
+        "tags": [
+          "auth/me"
+        ]
+      }
+    },
+    "/businesses": {
+      "post": {
+        "operationId": "BusinessesController_createBusiness",
+        "parameters": [],
+        "requestBody": {
+          "required": true,
+          "content": {
+            "application/json": {
+              "schema": {
+                "$ref": "#/components/schemas/CreateBusinessDto"
+              }
+            }
+          }
+        },
+        "responses": {
+          "201": {
+            "description": "Business created and current user assigned OWNER membership.",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "example": {
+                    "business": {
+                      "id": "bus_123",
+                      "name": "Tavrix Cafe",
+                      "slug": "tavrix-cafe",
+                      "type": "cafe",
+                      "logoUrl": null,
+                      "coverUrl": null,
+                      "currency": "IQD",
+                      "language": "ar",
+                      "city": "Baghdad",
+                      "status": "ACTIVE"
+                    },
+                    "currentMembership": {
+                      "id": "mem_123",
+                      "role": "OWNER",
+                      "isActive": true
+                    },
+                    "appContext": {
+                      "business": {
+                        "id": "bus_123",
+                        "name": "Tavrix Cafe",
+                        "slug": "tavrix-cafe",
+                        "type": "cafe",
+                        "city": "Baghdad",
+                        "currency": "IQD",
+                        "language": "ar",
+                        "logoUrl": null,
+                        "coverUrl": null
+                      },
+                      "currentMembership": {
+                        "id": "mem_123",
+                        "role": "OWNER",
+                        "isActive": true
+                      },
+                      "permissions": {
+                        "canManageBusiness": true,
+                        "canManageMenu": true,
+                        "canManageMembers": true,
+                        "canViewMembers": true,
+                        "canViewPublicLink": true
+                      },
+                      "publicMenu": {
+                        "slug": "tavrix-cafe",
+                        "path": "/m/tavrix-cafe",
+                        "url": "http://localhost:3001/m/tavrix-cafe",
+                        "qrPayload": "http://localhost:3001/m/tavrix-cafe"
+                      }
+                    }
+                  }
+                }
+              }
+            }
+          }
+        },
+        "security": [
+          {
+            "bearer": []
+          }
+        ],
+        "tags": [
+          "businesses"
+        ]
+      }
+    },
+    "/businesses/me": {
+      "get": {
+        "operationId": "BusinessesController_getMyBusinesses",
+        "parameters": [],
+        "responses": {
+          "200": {
+            "description": "Businesses for the current user.",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "example": [
+                    {
+                      "id": "bus_123",
+                      "name": "Tavrix Cafe",
+                      "slug": "tavrix-cafe",
+                      "type": "cafe",
+                      "logoUrl": null,
+                      "coverUrl": null,
+                      "currency": "IQD",
+                      "language": "ar",
+                      "city": "Baghdad",
+                      "status": "ACTIVE",
+                      "role": "OWNER"
+                    }
+                  ]
+                }
+              }
+            }
+          }
+        },
+        "security": [
+          {
+            "bearer": []
+          }
+        ],
+        "tags": [
+          "businesses"
+        ]
+      }
+    },
+    "/businesses/{id}/app-context": {
+      "get": {
+        "operationId": "BusinessesController_getAppContext",
+        "parameters": [
+          {
+            "name": "id",
+            "required": true,
+            "in": "path",
+            "schema": {
+              "type": "string"
+            }
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": "Business app context for the Flutter business app.",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "example": {
+                    "business": {
+                      "id": "bus_123",
+                      "name": "Tavrix Cafe",
+                      "slug": "tavrix-cafe",
+                      "type": "cafe",
+                      "city": "Baghdad",
+                      "currency": "IQD",
+                      "language": "ar",
+                      "logoUrl": null,
+                      "coverUrl": null
+                    },
+                    "currentMembership": {
+                      "id": "mem_123",
+                      "role": "OWNER",
+                      "isActive": true
+                    },
+                    "permissions": {
+                      "canManageBusiness": true,
+                      "canManageMenu": true,
+                      "canManageMembers": true,
+                      "canViewMembers": true,
+                      "canViewPublicLink": true
+                    },
+                    "publicMenu": {
+                      "slug": "tavrix-cafe",
+                      "path": "/m/tavrix-cafe",
+                      "url": "http://localhost:3001/m/tavrix-cafe",
+                      "qrPayload": "http://localhost:3001/m/tavrix-cafe"
+                    }
+                  }
+                }
+              }
+            }
+          }
+        },
+        "security": [
+          {
+            "bearer": []
+          }
+        ],
+        "tags": [
+          "businesses"
+        ]
+      }
+    },
+    "/businesses/{id}/dashboard-summary": {
+      "get": {
+        "operationId": "BusinessesController_getDashboardSummary",
+        "parameters": [
+          {
+            "name": "id",
+            "required": true,
+            "in": "path",
+            "schema": {
+              "type": "string"
+            }
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": "Owner workflow dashboard summary. OWNER, MANAGER, and STAFF can view when actively assigned to this business.",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "example": {
+                    "business": {
+                      "id": "bus_123",
+                      "name": "Tavrix Cafe",
+                      "slug": "tavrix-cafe",
+                      "type": "cafe",
+                      "city": "Baghdad",
+                      "currency": "IQD",
+                      "language": "ar",
+                      "logoUrl": null,
+                      "coverUrl": null
+                    },
+                    "currentUser": {
+                      "role": "OWNER",
+                      "permissions": {
+                        "canManageBusiness": true,
+                        "canManageMenu": true,
+                        "canManageMembers": true,
+                        "canViewMembers": true,
+                        "canViewPublicLink": true
+                      }
+                    },
+                    "counts": {
+                      "activeCategories": 2,
+                      "inactiveCategories": 0,
+                      "activeItems": 3,
+                      "inactiveItems": 0,
+                      "availableItems": 3,
+                      "unavailableItems": 0,
+                      "activeMembers": 1
+                    },
+                    "publicMenu": {
+                      "path": "/m/tavrix-cafe",
+                      "url": "http://localhost:3001/m/tavrix-cafe",
+                      "qrPayload": "http://localhost:3001/m/tavrix-cafe"
+                    },
+                    "onboardingHints": {
+                      "hasCategories": true,
+                      "hasItems": true,
+                      "hasPublicMenuReady": true,
+                      "recommendedNextStep": "SHARE_PUBLIC_MENU"
+                    }
+                  }
+                }
+              }
+            }
+          }
+        },
+        "security": [
+          {
+            "bearer": []
+          }
+        ],
+        "tags": [
+          "businesses"
+        ]
+      }
+    },
+    "/businesses/{id}/public-link": {
+      "get": {
+        "operationId": "BusinessesController_getPublicLink",
+        "parameters": [
+          {
+            "name": "id",
+            "required": true,
+            "in": "path",
+            "schema": {
+              "type": "string"
+            }
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": "Public menu link and QR payload for a business.",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "example": {
+                    "businessId": "bus_123",
+                    "slug": "tavrix-cafe",
+                    "publicMenuPath": "/m/tavrix-cafe",
+                    "publicMenuUrl": "http://localhost:3001/m/tavrix-cafe",
+                    "qrPayload": "http://localhost:3001/m/tavrix-cafe"
+                  }
+                }
+              }
+            }
+          }
+        },
+        "security": [
+          {
+            "bearer": []
+          }
+        ],
+        "tags": [
+          "businesses"
+        ]
+      }
+    },
+    "/businesses/{id}/members": {
+      "get": {
+        "operationId": "BusinessesController_getMembers",
+        "parameters": [
+          {
+            "name": "id",
+            "required": true,
+            "in": "path",
+            "schema": {
+              "type": "string"
+            }
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": "Active and inactive business members.",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "example": [
+                    {
+                      "id": "mem_123",
+                      "userId": "usr_123",
+                      "clerkUserId": "user_tavrix_owner",
+                      "email": "owner@tavrix.local",
+                      "name": "Tavrix Owner",
+                      "phone": null,
+                      "role": "OWNER",
+                      "isActive": true,
+                      "createdAt": "2026-06-10T00:00:00.000Z",
+                      "updatedAt": "2026-06-10T00:00:00.000Z"
+                    }
+                  ]
+                }
+              }
+            }
+          }
+        },
+        "security": [
+          {
+            "bearer": []
+          }
+        ],
+        "tags": [
+          "businesses"
+        ]
+      },
+      "post": {
+        "operationId": "BusinessesController_createMember",
+        "parameters": [
+          {
+            "name": "id",
+            "required": true,
+            "in": "path",
+            "schema": {
+              "type": "string"
+            }
+          }
+        ],
+        "requestBody": {
+          "required": true,
+          "content": {
+            "application/json": {
+              "schema": {
+                "$ref": "#/components/schemas/CreateMemberDto"
+              }
+            }
+          }
+        },
+        "responses": {
+          "201": {
+            "description": "Business member created or reactivated."
+          }
+        },
+        "security": [
+          {
+            "bearer": []
+          }
+        ],
+        "tags": [
+          "businesses"
+        ]
+      }
+    },
+    "/businesses/{id}/members/{memberId}": {
+      "patch": {
+        "operationId": "BusinessesController_updateMember",
+        "parameters": [
+          {
+            "name": "id",
+            "required": true,
+            "in": "path",
+            "schema": {
+              "type": "string"
+            }
+          },
+          {
+            "name": "memberId",
+            "required": true,
+            "in": "path",
+            "schema": {
+              "type": "string"
+            }
+          }
+        ],
+        "requestBody": {
+          "required": true,
+          "content": {
+            "application/json": {
+              "schema": {
+                "$ref": "#/components/schemas/UpdateMemberDto"
+              }
+            }
+          }
+        },
+        "responses": {
+          "200": {
+            "description": "Business member updated."
+          }
+        },
+        "security": [
+          {
+            "bearer": []
+          }
+        ],
+        "tags": [
+          "businesses"
+        ]
+      },
+      "delete": {
+        "operationId": "BusinessesController_deleteMember",
+        "parameters": [
+          {
+            "name": "id",
+            "required": true,
+            "in": "path",
+            "schema": {
+              "type": "string"
+            }
+          },
+          {
+            "name": "memberId",
+            "required": true,
+            "in": "path",
+            "schema": {
+              "type": "string"
+            }
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": "Business member deactivated."
+          }
+        },
+        "security": [
+          {
+            "bearer": []
+          }
+        ],
+        "tags": [
+          "businesses"
+        ]
+      }
+    },
+    "/businesses/{id}": {
+      "patch": {
+        "operationId": "BusinessesController_updateBusiness",
+        "parameters": [
+          {
+            "name": "id",
+            "required": true,
+            "in": "path",
+            "schema": {
+              "type": "string"
+            }
+          }
+        ],
+        "requestBody": {
+          "required": true,
+          "content": {
+            "application/json": {
+              "schema": {
+                "$ref": "#/components/schemas/UpdateBusinessDto"
+              }
+            }
+          }
+        },
+        "responses": {
+          "200": {
+            "description": "Business profile updated. OWNER only. Supported fields: name, type, city, currency, language, logoUrl, coverUrl."
+          }
+        },
+        "security": [
+          {
+            "bearer": []
+          }
+        ],
+        "tags": [
+          "businesses"
+        ]
+      }
+    },
+    "/businesses/{id}/categories": {
+      "post": {
+        "operationId": "MenuController_createCategory",
+        "parameters": [
+          {
+            "name": "id",
+            "required": true,
+            "in": "path",
+            "schema": {
+              "type": "string"
+            }
+          }
+        ],
+        "requestBody": {
+          "required": true,
+          "content": {
+            "application/json": {
+              "schema": {
+                "$ref": "#/components/schemas/CreateCategoryDto"
+              }
+            }
+          }
+        },
+        "responses": {
+          "201": {
+            "description": "Category created."
+          }
+        },
+        "security": [
+          {
+            "bearer": []
+          }
+        ],
+        "tags": [
+          "menu"
+        ]
+      },
+      "get": {
+        "operationId": "MenuController_getCategories",
+        "parameters": [
+          {
+            "name": "id",
+            "required": true,
+            "in": "path",
+            "schema": {
+              "type": "string"
+            }
+          },
+          {
+            "name": "includeInactive",
+            "required": false,
+            "in": "query",
+            "description": "Set true to include archived/inactive categories. Defaults to false.",
+            "schema": {
+              "type": "boolean"
+            }
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": "Categories for a business."
+          }
+        },
+        "security": [
+          {
+            "bearer": []
+          }
+        ],
+        "tags": [
+          "menu"
+        ]
+      }
+    },
+    "/businesses/{id}/categories/reorder": {
+      "patch": {
+        "operationId": "MenuController_reorderCategories",
+        "parameters": [
+          {
+            "name": "id",
+            "required": true,
+            "in": "path",
+            "schema": {
+              "type": "string"
+            }
+          }
+        ],
+        "requestBody": {
+          "required": true,
+          "content": {
+            "application/json": {
+              "schema": {
+                "$ref": "#/components/schemas/ReorderMenuRecordsDto"
+              }
+            }
+          }
+        },
+        "responses": {
+          "200": {
+            "description": "Categories reordered. OWNER and MANAGER only; supports active and inactive categories.",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "example": [
+                    {
+                      "id": "cat_123",
+                      "businessId": "bus_123",
+                      "nameAr": "Hot Drinks",
+                      "nameEn": null,
+                      "sortOrder": 0,
+                      "isActive": true
+                    },
+                    {
+                      "id": "cat_456",
+                      "businessId": "bus_123",
+                      "nameAr": "Desserts",
+                      "nameEn": null,
+                      "sortOrder": 1,
+                      "isActive": false
+                    }
+                  ]
+                }
+              }
+            }
+          }
+        },
+        "security": [
+          {
+            "bearer": []
+          }
+        ],
+        "tags": [
+          "menu"
+        ]
+      }
+    },
+    "/categories/{id}": {
+      "patch": {
+        "operationId": "MenuController_updateCategory",
+        "parameters": [
+          {
+            "name": "id",
+            "required": true,
+            "in": "path",
+            "schema": {
+              "type": "string"
+            }
+          }
+        ],
+        "requestBody": {
+          "required": true,
+          "content": {
+            "application/json": {
+              "schema": {
+                "$ref": "#/components/schemas/UpdateCategoryDto"
+              }
+            }
+          }
+        },
+        "responses": {
+          "200": {
+            "description": "Category updated. OWNER and MANAGER only. Restore an archived category by setting isActive to true.",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "example": {
+                    "id": "cat_123",
+                    "businessId": "bus_123",
+                    "nameAr": "Hot Drinks",
+                    "nameEn": null,
+                    "sortOrder": 0,
+                    "isActive": true
+                  }
+                }
+              }
+            }
+          }
+        },
+        "security": [
+          {
+            "bearer": []
+          }
+        ],
+        "tags": [
+          "menu"
+        ]
+      },
+      "delete": {
+        "operationId": "MenuController_deleteCategory",
+        "parameters": [
+          {
+            "name": "id",
+            "required": true,
+            "in": "path",
+            "schema": {
+              "type": "string"
+            }
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": "Category archived."
+          }
+        },
+        "security": [
+          {
+            "bearer": []
+          }
+        ],
+        "tags": [
+          "menu"
+        ]
+      }
+    },
+    "/businesses/{id}/items": {
+      "post": {
+        "operationId": "MenuController_createItem",
+        "parameters": [
+          {
+            "name": "id",
+            "required": true,
+            "in": "path",
+            "schema": {
+              "type": "string"
+            }
+          }
+        ],
+        "requestBody": {
+          "required": true,
+          "content": {
+            "application/json": {
+              "schema": {
+                "$ref": "#/components/schemas/CreateItemDto"
+              }
+            }
+          }
+        },
+        "responses": {
+          "201": {
+            "description": "Item created."
+          }
+        },
+        "security": [
+          {
+            "bearer": []
+          }
+        ],
+        "tags": [
+          "menu"
+        ]
+      },
+      "get": {
+        "operationId": "MenuController_getItems",
+        "parameters": [
+          {
+            "name": "id",
+            "required": true,
+            "in": "path",
+            "schema": {
+              "type": "string"
+            }
+          },
+          {
+            "name": "includeInactive",
+            "required": false,
+            "in": "query",
+            "description": "Set true to include archived/unavailable items. Defaults to false.",
+            "schema": {
+              "type": "boolean"
+            }
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": "Items for a business."
+          }
+        },
+        "security": [
+          {
+            "bearer": []
+          }
+        ],
+        "tags": [
+          "menu"
+        ]
+      }
+    },
+    "/businesses/{id}/items/reorder": {
+      "patch": {
+        "operationId": "MenuController_reorderItems",
+        "parameters": [
+          {
+            "name": "id",
+            "required": true,
+            "in": "path",
+            "schema": {
+              "type": "string"
+            }
+          }
+        ],
+        "requestBody": {
+          "required": true,
+          "content": {
+            "application/json": {
+              "schema": {
+                "$ref": "#/components/schemas/ReorderMenuRecordsDto"
+              }
+            }
+          }
+        },
+        "responses": {
+          "200": {
+            "description": "Items reordered. OWNER and MANAGER only; supports available and unavailable items.",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "example": [
+                    {
+                      "id": "item_123",
+                      "businessId": "bus_123",
+                      "categoryId": "cat_123",
+                      "nameAr": "Turkish Coffee",
+                      "nameEn": null,
+                      "descriptionAr": "Traditional strong coffee.",
+                      "descriptionEn": null,
+                      "price": "3000",
+                      "imageUrl": null,
+                      "isAvailable": true,
+                      "sortOrder": 0
+                    },
+                    {
+                      "id": "item_456",
+                      "businessId": "bus_123",
+                      "categoryId": "cat_123",
+                      "nameAr": "Tamriya",
+                      "nameEn": null,
+                      "descriptionAr": null,
+                      "descriptionEn": null,
+                      "price": "2500",
+                      "imageUrl": null,
+                      "isAvailable": false,
+                      "sortOrder": 1
+                    }
+                  ]
+                }
+              }
+            }
+          }
+        },
+        "security": [
+          {
+            "bearer": []
+          }
+        ],
+        "tags": [
+          "menu"
+        ]
+      }
+    },
+    "/items/{id}": {
+      "patch": {
+        "operationId": "MenuController_updateItem",
+        "parameters": [
+          {
+            "name": "id",
+            "required": true,
+            "in": "path",
+            "schema": {
+              "type": "string"
+            }
+          }
+        ],
+        "requestBody": {
+          "required": true,
+          "content": {
+            "application/json": {
+              "schema": {
+                "$ref": "#/components/schemas/UpdateItemDto"
+              }
+            }
+          }
+        },
+        "responses": {
+          "200": {
+            "description": "Item updated. OWNER and MANAGER only. Restore an archived/unavailable item by setting isAvailable to true.",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "example": {
+                    "id": "item_123",
+                    "businessId": "bus_123",
+                    "categoryId": "cat_123",
+                    "nameAr": "Turkish Coffee",
+                    "nameEn": null,
+                    "descriptionAr": "Traditional strong coffee.",
+                    "descriptionEn": null,
+                    "price": "3000",
+                    "imageUrl": null,
+                    "isAvailable": true,
+                    "sortOrder": 0
+                  }
+                }
+              }
+            }
+          }
+        },
+        "security": [
+          {
+            "bearer": []
+          }
+        ],
+        "tags": [
+          "menu"
+        ]
+      },
+      "delete": {
+        "operationId": "MenuController_deleteItem",
+        "parameters": [
+          {
+            "name": "id",
+            "required": true,
+            "in": "path",
+            "schema": {
+              "type": "string"
+            }
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": "Item archived."
+          }
+        },
+        "security": [
+          {
+            "bearer": []
+          }
+        ],
+        "tags": [
+          "menu"
+        ]
+      }
+    },
+    "/public/m/{slug}": {
+      "get": {
+        "operationId": "PublicMenuController_getPublicMenu",
+        "parameters": [
+          {
+            "name": "slug",
+            "required": true,
+            "in": "path",
+            "schema": {
+              "type": "string"
+            }
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": "Public active menu by business slug.",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "example": {
+                    "business": {
+                      "id": "bus_123",
+                      "name": "Tavrix Cafe",
+                      "slug": "tavrix-cafe",
+                      "type": "cafe",
+                      "logoUrl": null,
+                      "coverUrl": null,
+                      "currency": "IQD",
+                      "language": "ar",
+                      "city": "Baghdad"
+                    },
+                    "categories": [
+                      {
+                        "id": "cat_123",
+                        "nameAr": "Hot Drinks",
+                        "nameEn": null,
+                        "sortOrder": 0,
+                        "items": [
+                          {
+                            "id": "item_123",
+                            "nameAr": "Turkish Coffee",
+                            "nameEn": null,
+                            "descriptionAr": "Traditional strong coffee.",
+                            "descriptionEn": null,
+                            "price": "3000",
+                            "imageUrl": null,
+                            "isAvailable": true,
+                            "sortOrder": 0
+                          }
+                        ]
+                      }
+                    ]
+                  }
+                }
+              }
+            }
+          }
+        },
+        "tags": [
+          "public menu"
+        ]
+      }
+    },
+    "/public/m/{slug}/items/{itemId}": {
+      "get": {
+        "operationId": "PublicMenuController_getPublicItem",
+        "parameters": [
+          {
+            "name": "slug",
+            "required": true,
+            "in": "path",
+            "schema": {
+              "type": "string"
+            }
+          },
+          {
+            "name": "itemId",
+            "required": true,
+            "in": "path",
+            "schema": {
+              "type": "string"
+            }
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": "Public available item by business slug."
+          }
+        },
+        "tags": [
+          "public menu"
+        ]
+      }
+    },
+    "/businesses/{id}/loyalty/program": {
+      "get": {
+        "operationId": "LoyaltyController_getActiveProgram",
+        "parameters": [
+          {
+            "name": "id",
+            "required": true,
+            "in": "path",
+            "schema": {
+              "type": "string"
+            }
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": "Active stamp-card loyalty program for a business, or null. OWNER, MANAGER, and STAFF can view.",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "example": {
+                    "id": "loyalty_program_id",
+                    "businessId": "bus_123",
+                    "name": "Tavrix Cafe Stamp Card",
+                    "description": "Collect stamps on coffee visits.",
+                    "stampGoal": 5,
+                    "rewardName": "Free coffee",
+                    "rewardDescription": "One free Turkish Coffee after 5 stamps.",
+                    "isActive": true,
+                    "cardColor": "#111827",
+                    "accentColor": "#f59e0b",
+                    "logoUrl": null,
+                    "terms": "Reward is valid for dine-in orders only.",
+                    "createdAt": "2026-06-13T00:00:00.000Z",
+                    "updatedAt": "2026-06-13T00:00:00.000Z"
+                  }
+                }
+              }
+            }
+          },
+          "401": {
+            "description": "Missing or invalid bearer token."
+          },
+          "403": {
+            "description": "Active business membership or required role is missing."
+          }
+        },
+        "security": [
+          {
+            "bearer": []
+          }
+        ],
+        "tags": [
+          "loyalty"
+        ]
+      },
+      "post": {
+        "operationId": "LoyaltyController_createProgram",
+        "parameters": [
+          {
+            "name": "id",
+            "required": true,
+            "in": "path",
+            "schema": {
+              "type": "string"
+            }
+          }
+        ],
+        "requestBody": {
+          "required": true,
+          "content": {
+            "application/json": {
+              "schema": {
+                "$ref": "#/components/schemas/CreateLoyaltyProgramDto"
+              }
+            }
+          }
+        },
+        "responses": {
+          "201": {
+            "description": "Stamp-card loyalty program created. OWNER and MANAGER only. Sprint 5 allows one active program per business.",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "example": {
+                    "id": "loyalty_program_id",
+                    "businessId": "bus_123",
+                    "name": "Tavrix Cafe Stamp Card",
+                    "stampGoal": 5,
+                    "rewardName": "Free coffee",
+                    "isActive": true
+                  }
+                }
+              }
+            }
+          },
+          "401": {
+            "description": "Missing or invalid bearer token."
+          },
+          "403": {
+            "description": "Active business membership or required role is missing."
+          },
+          "409": {
+            "description": "A duplicate active loyalty program already exists."
+          }
+        },
+        "security": [
+          {
+            "bearer": []
+          }
+        ],
+        "tags": [
+          "loyalty"
+        ]
+      }
+    },
+    "/businesses/{id}/loyalty/program/{programId}": {
+      "patch": {
+        "operationId": "LoyaltyController_updateProgram",
+        "parameters": [
+          {
+            "name": "id",
+            "required": true,
+            "in": "path",
+            "schema": {
+              "type": "string"
+            }
+          },
+          {
+            "name": "programId",
+            "required": true,
+            "in": "path",
+            "schema": {
+              "type": "string"
+            }
+          }
+        ],
+        "requestBody": {
+          "required": true,
+          "content": {
+            "application/json": {
+              "schema": {
+                "$ref": "#/components/schemas/UpdateLoyaltyProgramDto"
+              }
+            }
+          }
+        },
+        "responses": {
+          "200": {
+            "description": "Stamp-card loyalty program updated. OWNER and MANAGER only; program must belong to the business.",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "example": {
+                    "id": "loyalty_program_id",
+                    "businessId": "bus_123",
+                    "name": "Tavrix Cafe Stamp Card",
+                    "stampGoal": 6,
+                    "rewardName": "Free coffee",
+                    "isActive": true
+                  }
+                }
+              }
+            }
+          },
+          "401": {
+            "description": "Missing or invalid bearer token."
+          },
+          "403": {
+            "description": "Active business membership or required role is missing."
+          },
+          "404": {
+            "description": "Loyalty program not found."
+          },
+          "409": {
+            "description": "Another active loyalty program already exists."
+          }
+        },
+        "security": [
+          {
+            "bearer": []
+          }
+        ],
+        "tags": [
+          "loyalty"
+        ]
+      }
+    },
+    "/businesses/{id}/loyalty/stamp-style": {
+      "get": {
+        "operationId": "LoyaltyController_getStampStyle",
+        "parameters": [
+          {
+            "name": "id",
+            "required": true,
+            "in": "path",
+            "schema": {
+              "type": "string"
+            }
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": "Active loyalty program stamp visual style. OWNER, MANAGER, and STAFF can view.",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "example": {
+                    "id": "stamp_style_id",
+                    "loyaltyProgramId": "loyalty_program_id",
+                    "styleType": "PRESET",
+                    "presetKey": "STAR",
+                    "backgroundColor": "#111827",
+                    "accentColor": "#f59e0b",
+                    "textColor": "#ffffff",
+                    "layoutVariant": "MODERN",
+                    "isDefault": false,
+                    "createdAt": "2026-06-15T00:00:00.000Z",
+                    "updatedAt": "2026-06-15T00:00:00.000Z"
+                  }
+                }
+              }
+            }
+          },
+          "401": {
+            "description": "Missing or invalid bearer token."
+          },
+          "403": {
+            "description": "Active business membership or required role is missing."
+          },
+          "404": {
+            "description": "No active loyalty program found."
+          }
+        },
+        "security": [
+          {
+            "bearer": []
+          }
+        ],
+        "tags": [
+          "loyalty"
+        ]
+      },
+      "patch": {
+        "operationId": "LoyaltyController_updateStampStyle",
+        "parameters": [
+          {
+            "name": "id",
+            "required": true,
+            "in": "path",
+            "schema": {
+              "type": "string"
+            }
+          }
+        ],
+        "requestBody": {
+          "required": true,
+          "content": {
+            "application/json": {
+              "schema": {
+                "$ref": "#/components/schemas/UpdateLoyaltyStampStyleDto"
+              }
+            }
+          }
+        },
+        "responses": {
+          "200": {
+            "description": "Creates or updates the active loyalty program stamp visual style. OWNER and MANAGER only.",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "example": {
+                    "id": "stamp_style_id",
+                    "loyaltyProgramId": "loyalty_program_id",
+                    "styleType": "PRESET",
+                    "presetKey": "COFFEE",
+                    "backgroundColor": "#111827",
+                    "accentColor": "#f59e0b",
+                    "textColor": "#ffffff",
+                    "layoutVariant": "MODERN",
+                    "isDefault": false,
+                    "createdAt": "2026-06-15T00:00:00.000Z",
+                    "updatedAt": "2026-06-15T00:00:00.000Z"
+                  }
+                }
+              }
+            }
+          },
+          "401": {
+            "description": "Missing or invalid bearer token."
+          },
+          "403": {
+            "description": "Active business membership or required role is missing."
+          },
+          "404": {
+            "description": "No active loyalty program found."
+          }
+        },
+        "security": [
+          {
+            "bearer": []
+          }
+        ],
+        "tags": [
+          "loyalty"
+        ]
+      }
+    },
+    "/businesses/{id}/loyalty/enroll": {
+      "post": {
+        "operationId": "LoyaltyController_enrollCustomer",
+        "parameters": [
+          {
+            "name": "id",
+            "required": true,
+            "in": "path",
+            "schema": {
+              "type": "string"
+            }
+          }
+        ],
+        "requestBody": {
+          "required": true,
+          "content": {
+            "application/json": {
+              "schema": {
+                "$ref": "#/components/schemas/EnrollLoyaltyCustomerDto"
+              }
+            }
+          }
+        },
+        "responses": {
+          "201": {
+            "description": "Customer enrolled or existing membership returned. OWNER, MANAGER, and STAFF allowed. Requires phone or email.",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "example": {
+                    "customer": {
+                      "id": "customer_id",
+                      "phone": "+9647700000000",
+                      "email": "customer@example.com",
+                      "name": "Demo Customer"
+                    },
+                    "membership": {
+                      "id": "membership_id",
+                      "businessId": "bus_123",
+                      "loyaltyProgramId": "loyalty_program_id",
+                      "customerId": "customer_id",
+                      "stampCount": 0,
+                      "rewardReady": false,
+                      "totalStampsEarned": 0,
+                      "totalRewardsRedeemed": 0,
+                      "status": "ACTIVE"
+                    },
+                    "program": {
+                      "id": "loyalty_program_id",
+                      "name": "Tavrix Cafe Stamp Card",
+                      "stampGoal": 5,
+                      "rewardName": "Free coffee"
+                    },
+                    "cardState": {
+                      "stampCount": 3,
+                      "stampGoal": 7,
+                      "rewardReady": false,
+                      "progressPercent": 42,
+                      "rewardName": "Free meal",
+                      "programName": "Abdullah Grill Rewards"
+                    }
+                  }
+                }
+              }
+            }
+          },
+          "401": {
+            "description": "Missing or invalid bearer token."
+          },
+          "403": {
+            "description": "Active business membership or required role is missing."
+          },
+          "404": {
+            "description": "No active loyalty program found."
+          }
+        },
+        "security": [
+          {
+            "bearer": []
+          }
+        ],
+        "tags": [
+          "loyalty"
+        ]
+      }
+    },
+    "/businesses/{id}/loyalty/memberships": {
+      "get": {
+        "operationId": "LoyaltyController_listMemberships",
+        "parameters": [
+          {
+            "name": "id",
+            "required": true,
+            "in": "path",
+            "schema": {
+              "type": "string"
+            }
+          },
+          {
+            "name": "search",
+            "required": false,
+            "in": "query",
+            "description": "Searches customer name, email, or phone.",
+            "schema": {
+              "example": "customer@example.com",
+              "type": "string"
+            }
+          },
+          {
+            "name": "status",
+            "required": false,
+            "in": "query",
+            "schema": {
+              "type": "string",
+              "enum": [
+                "ACTIVE",
+                "INACTIVE"
+              ]
+            }
+          },
+          {
+            "name": "rewardReady",
+            "required": false,
+            "in": "query",
+            "schema": {
+              "example": "true",
+              "type": "string"
+            }
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": "Loyalty memberships with customer and program summary. OWNER, MANAGER, and STAFF allowed.",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "example": [
+                    {
+                      "id": "membership_id",
+                      "businessId": "bus_123",
+                      "loyaltyProgramId": "loyalty_program_id",
+                      "customerId": "customer_id",
+                      "stampCount": 3,
+                      "rewardReady": false,
+                      "status": "ACTIVE",
+                      "customer": {
+                        "id": "customer_id",
+                        "phone": "+9647700000000",
+                        "email": "customer@example.com",
+                        "name": "Demo Customer"
+                      },
+                      "program": {
+                        "id": "loyalty_program_id",
+                        "name": "Tavrix Cafe Stamp Card",
+                        "stampGoal": 5,
+                        "rewardName": "Free coffee",
+                        "isActive": true
+                      },
+                      "cardState": {
+                        "stampCount": 3,
+                        "stampGoal": 7,
+                        "rewardReady": false,
+                        "progressPercent": 42,
+                        "rewardName": "Free meal",
+                        "programName": "Abdullah Grill Rewards"
+                      }
+                    }
+                  ]
+                }
+              }
+            }
+          },
+          "401": {
+            "description": "Missing or invalid bearer token."
+          },
+          "403": {
+            "description": "Active business membership or required role is missing."
+          }
+        },
+        "security": [
+          {
+            "bearer": []
+          }
+        ],
+        "tags": [
+          "loyalty"
+        ]
+      }
+    },
+    "/businesses/{id}/loyalty/memberships/{membershipId}": {
+      "get": {
+        "operationId": "LoyaltyController_getMembership",
+        "parameters": [
+          {
+            "name": "id",
+            "required": true,
+            "in": "path",
+            "schema": {
+              "type": "string"
+            }
+          },
+          {
+            "name": "membershipId",
+            "required": true,
+            "in": "path",
+            "schema": {
+              "type": "string"
+            }
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": "Full loyalty membership state with recent transactions. Must belong to the business.",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "example": {
+                    "id": "membership_id",
+                    "stampCount": 3,
+                    "rewardReady": false,
+                    "customer": {
+                      "id": "customer_id",
+                      "phone": "+9647700000000",
+                      "email": "customer@example.com",
+                      "name": "Demo Customer"
+                    },
+                    "cardState": {
+                      "stampCount": 3,
+                      "stampGoal": 7,
+                      "rewardReady": false,
+                      "progressPercent": 42,
+                      "rewardName": "Free meal",
+                      "programName": "Abdullah Grill Rewards"
+                    },
+                    "transactions": [
+                      {
+                        "id": "txn_123",
+                        "type": "STAMP_ADDED",
+                        "stampsDelta": 1,
+                        "reason": "Coffee purchase",
+                        "createdAt": "2026-06-13T00:00:00.000Z"
+                      }
+                    ]
+                  }
+                }
+              }
+            }
+          },
+          "401": {
+            "description": "Missing or invalid bearer token."
+          },
+          "403": {
+            "description": "Active business membership or required role is missing."
+          },
+          "404": {
+            "description": "Loyalty membership not found."
+          }
+        },
+        "security": [
+          {
+            "bearer": []
+          }
+        ],
+        "tags": [
+          "loyalty"
+        ]
+      }
+    },
+    "/businesses/{id}/loyalty/memberships/{membershipId}/stamps": {
+      "post": {
+        "operationId": "LoyaltyController_addStamps",
+        "parameters": [
+          {
+            "name": "id",
+            "required": true,
+            "in": "path",
+            "schema": {
+              "type": "string"
+            }
+          },
+          {
+            "name": "membershipId",
+            "required": true,
+            "in": "path",
+            "schema": {
+              "type": "string"
+            }
+          }
+        ],
+        "requestBody": {
+          "required": true,
+          "content": {
+            "application/json": {
+              "schema": {
+                "$ref": "#/components/schemas/AddStampsDto"
+              }
+            }
+          }
+        },
+        "responses": {
+          "201": {
+            "description": "Adds stamps and returns updated cardState. OWNER, MANAGER, and STAFF allowed.",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "example": {
+                    "membership": {
+                      "id": "membership_id",
+                      "stampCount": 4,
+                      "rewardReady": false,
+                      "totalStampsEarned": 4
+                    },
+                    "cardState": {
+                      "stampCount": 4,
+                      "stampGoal": 7,
+                      "rewardReady": false,
+                      "progressPercent": 57,
+                      "rewardName": "Free meal",
+                      "programName": "Abdullah Grill Rewards"
+                    }
+                  }
+                }
+              }
+            }
+          },
+          "401": {
+            "description": "Missing or invalid bearer token."
+          },
+          "403": {
+            "description": "Active business membership or required role is missing."
+          },
+          "404": {
+            "description": "Loyalty membership not found."
+          }
+        },
+        "security": [
+          {
+            "bearer": []
+          }
+        ],
+        "tags": [
+          "loyalty"
+        ]
+      }
+    },
+    "/businesses/{id}/loyalty/memberships/{membershipId}/redeem": {
+      "post": {
+        "operationId": "LoyaltyController_redeemReward",
+        "parameters": [
+          {
+            "name": "id",
+            "required": true,
+            "in": "path",
+            "schema": {
+              "type": "string"
+            }
+          },
+          {
+            "name": "membershipId",
+            "required": true,
+            "in": "path",
+            "schema": {
+              "type": "string"
+            }
+          }
+        ],
+        "requestBody": {
+          "required": true,
+          "content": {
+            "application/json": {
+              "schema": {
+                "$ref": "#/components/schemas/RedeemRewardDto"
+              }
+            }
+          }
+        },
+        "responses": {
+          "201": {
+            "description": "Redeems a ready reward, resets stampCount to 0, and returns updated cardState.",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "example": {
+                    "membership": {
+                      "id": "membership_id",
+                      "stampCount": 0,
+                      "rewardReady": false,
+                      "totalRewardsRedeemed": 1
+                    },
+                    "cardState": {
+                      "stampCount": 0,
+                      "stampGoal": 7,
+                      "rewardReady": false,
+                      "progressPercent": 0,
+                      "rewardName": "Free meal",
+                      "programName": "Abdullah Grill Rewards"
+                    }
+                  }
+                }
+              }
+            }
+          },
+          "401": {
+            "description": "Missing or invalid bearer token."
+          },
+          "403": {
+            "description": "Active business membership or required role is missing."
+          },
+          "404": {
+            "description": "Loyalty membership not found."
+          }
+        },
+        "security": [
+          {
+            "bearer": []
+          }
+        ],
+        "tags": [
+          "loyalty"
+        ]
+      }
+    },
+    "/businesses/{id}/loyalty/memberships/{membershipId}/transactions": {
+      "get": {
+        "operationId": "LoyaltyController_listTransactions",
+        "parameters": [
+          {
+            "name": "id",
+            "required": true,
+            "in": "path",
+            "schema": {
+              "type": "string"
+            }
+          },
+          {
+            "name": "membershipId",
+            "required": true,
+            "in": "path",
+            "schema": {
+              "type": "string"
+            }
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": "Loyalty transactions newest first.",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "example": [
+                    {
+                      "id": "txn_123",
+                      "businessId": "bus_123",
+                      "loyaltyProgramId": "loyalty_program_id",
+                      "membershipId": "membership_id",
+                      "customerId": "customer_id",
+                      "actorUserId": "usr_123",
+                      "type": "STAMP_ADDED",
+                      "stampsDelta": 1,
+                      "reason": "Coffee purchase",
+                      "createdAt": "2026-06-13T00:00:00.000Z"
+                    }
+                  ]
+                }
+              }
+            }
+          },
+          "401": {
+            "description": "Missing or invalid bearer token."
+          },
+          "403": {
+            "description": "Active business membership or required role is missing."
+          },
+          "404": {
+            "description": "Loyalty membership not found."
+          }
+        },
+        "security": [
+          {
+            "bearer": []
+          }
+        ],
+        "tags": [
+          "loyalty"
+        ]
+      }
+    },
+    "/loyalty/stamp-presets": {
+      "get": {
+        "operationId": "LoyaltyStampPresetsController_getStampPresets",
+        "parameters": [],
+        "responses": {
+          "200": {
+            "description": "Available loyalty stamp preset shapes and layout options for authenticated business app users.",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "example": {
+                    "presets": [
+                      {
+                        "key": "STAR",
+                        "label": "Star"
+                      },
+                      {
+                        "key": "COFFEE",
+                        "label": "Coffee"
+                      }
+                    ],
+                    "styleTypes": [
+                      "PRESET"
+                    ],
+                    "layoutVariants": [
+                      "MODERN",
+                      "COMPACT"
+                    ]
+                  }
+                }
+              }
+            }
+          }
+        },
+        "security": [
+          {
+            "bearer": []
+          }
+        ],
+        "tags": [
+          "loyalty"
+        ]
+      }
+    },
+    "/public/m/{slug}/loyalty": {
+      "get": {
+        "operationId": "PublicLoyaltyController_getEnrollmentContext",
+        "parameters": [
+          {
+            "name": "slug",
+            "required": true,
+            "in": "path",
+            "schema": {
+              "type": "string"
+            }
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": "Public loyalty enrollment context for an active business with an active loyalty program.",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "example": {
+                    "business": {
+                      "id": "bus_123",
+                      "name": "Tavrix Cafe",
+                      "slug": "tavrix-cafe",
+                      "type": "cafe",
+                      "city": "Baghdad",
+                      "logoUrl": null,
+                      "coverUrl": null,
+                      "currency": "IQD",
+                      "language": "ar"
+                    },
+                    "loyaltyProgram": {
+                      "id": "loyalty_program_id",
+                      "name": "Tavrix Cafe Stamp Card",
+                      "description": "Collect stamps on coffee visits.",
+                      "stampGoal": 5,
+                      "rewardName": "Free coffee",
+                      "rewardDescription": "One free Turkish Coffee after 5 stamps.",
+                      "cardColor": "#111827",
+                      "accentColor": "#f59e0b",
+                      "logoUrl": null,
+                      "terms": "Reward is valid for dine-in orders only."
+                    },
+                    "enrollment": {
+                      "acceptsPhone": true,
+                      "acceptsEmail": true,
+                      "requiresOtp": false
+                    }
+                  }
+                }
+              }
+            }
+          },
+          "404": {
+            "description": "Business is inactive/missing or has no active loyalty program.",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "example": {
+                    "message": "Public loyalty program not found",
+                    "error": "Not Found",
+                    "statusCode": 404
+                  }
+                }
+              }
+            }
+          }
+        },
+        "tags": [
+          "public loyalty"
+        ]
+      }
+    },
+    "/public/m/{slug}/loyalty/enroll": {
+      "post": {
+        "operationId": "PublicLoyaltyController_enrollCustomer",
+        "parameters": [
+          {
+            "name": "slug",
+            "required": true,
+            "in": "path",
+            "schema": {
+              "type": "string"
+            }
+          }
+        ],
+        "requestBody": {
+          "required": true,
+          "content": {
+            "application/json": {
+              "schema": {
+                "$ref": "#/components/schemas/PublicLoyaltyEnrollDto"
+              }
+            }
+          }
+        },
+        "responses": {
+          "201": {
+            "description": "Public no-OTP pilot enrollment. Reuses or creates a customer, activates membership, and returns a one-time plaintext card token.",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "example": {
+                    "customer": {
+                      "name": "Demo Customer"
+                    },
+                    "business": {
+                      "name": "Tavrix Cafe",
+                      "slug": "tavrix-cafe",
+                      "logoUrl": null,
+                      "coverUrl": null
+                    },
+                    "program": {
+                      "name": "Tavrix Cafe Stamp Card",
+                      "stampGoal": 5,
+                      "rewardName": "Free coffee",
+                      "rewardDescription": "One free Turkish Coffee after 5 stamps."
+                    },
+                    "cardState": {
+                      "stampCount": 3,
+                      "stampGoal": 5,
+                      "rewardReady": false,
+                      "progressPercent": 60,
+                      "rewardName": "Free coffee",
+                      "programName": "Tavrix Cafe Stamp Card",
+                      "totalStampsEarned": 3,
+                      "totalRewardsRedeemed": 0
+                    },
+                    "cardAccess": {
+                      "token": "public_card_token",
+                      "cardUrlPath": "/public/loyalty/cards/public_card_token"
+                    }
+                  }
+                }
+              }
+            }
+          },
+          "400": {
+            "description": "Validation failed or phone/email is missing.",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "example": {
+                    "message": "Enrollment requires phone or email",
+                    "error": "Bad Request",
+                    "statusCode": 400
+                  }
+                }
+              }
+            }
+          },
+          "404": {
+            "description": "Business is inactive/missing or has no active loyalty program."
+          },
+          "409": {
+            "description": "Phone and email belong to different customer records.",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "example": {
+                    "message": "Phone and email belong to different customers",
+                    "error": "Conflict",
+                    "statusCode": 409
+                  }
+                }
+              }
+            }
+          }
+        },
+        "tags": [
+          "public loyalty"
+        ]
+      }
+    },
+    "/public/loyalty/cards/{token}": {
+      "get": {
+        "operationId": "PublicLoyaltyController_getPublicCard",
+        "parameters": [
+          {
+            "name": "token",
+            "required": true,
+            "in": "path",
+            "description": "Opaque public card access token returned by enrollment.",
+            "schema": {
+              "example": "public_card_token",
+              "type": "string"
+            }
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": "Public web fallback loyalty card by token. Returns limited card state only; no raw phone/email or internal IDs.",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "example": {
+                    "business": {
+                      "name": "Tavrix Cafe",
+                      "slug": "tavrix-cafe",
+                      "logoUrl": null,
+                      "coverUrl": null
+                    },
+                    "program": {
+                      "name": "Tavrix Cafe Stamp Card",
+                      "stampGoal": 5,
+                      "rewardName": "Free coffee",
+                      "rewardDescription": "One free Turkish Coffee after 5 stamps.",
+                      "terms": "Reward is valid for dine-in orders only."
+                    },
+                    "customer": {
+                      "name": "Demo Customer"
+                    },
+                    "cardState": {
+                      "stampCount": 3,
+                      "stampGoal": 5,
+                      "rewardReady": false,
+                      "progressPercent": 60,
+                      "rewardName": "Free coffee",
+                      "programName": "Tavrix Cafe Stamp Card",
+                      "totalStampsEarned": 3,
+                      "totalRewardsRedeemed": 0
+                    }
+                  }
+                }
+              }
+            }
+          },
+          "400": {
+            "description": "Token parameter failed validation.",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "example": {
+                    "message": [
+                      "token must be longer than or equal to 32 characters"
+                    ],
+                    "error": "Bad Request",
+                    "statusCode": 400
+                  }
+                }
+              }
+            }
+          },
+          "404": {
+            "description": "Invalid, inactive, or expired public card token.",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "example": {
+                    "message": "Loyalty card not found",
+                    "error": "Not Found",
+                    "statusCode": 404
+                  }
+                }
+              }
+            }
+          }
+        },
+        "tags": [
+          "public loyalty"
+        ]
+      }
+    },
+    "/businesses/{businessId}/loyalty/memberships/{membershipId}/google-wallet": {
+      "post": {
+        "operationId": "WalletPassController_syncGoogleWalletPass",
+        "parameters": [
+          {
+            "name": "businessId",
+            "required": true,
+            "in": "path",
+            "schema": {
+              "type": "string"
+            }
+          },
+          {
+            "name": "membershipId",
+            "required": true,
+            "in": "path",
+            "schema": {
+              "type": "string"
+            }
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": "Creates, syncs, or reuses a Google Wallet pass for a real loyalty membership and returns a Save URL.",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "example": {
+                    "platform": "GOOGLE_WALLET",
+                    "membershipId": "membership_id",
+                    "googleClassId": "3388000000023161301.business_bus_123_loyalty_program_1",
+                    "googleObjectId": "3388000000023161301.membership_membership_id",
+                    "saveUrl": "https://pay.google.com/gp/v/save/signed.jwt",
+                    "status": "ACTIVE",
+                    "lastSyncedAt": "2026-06-16T09:00:00.000Z"
+                  }
+                }
+              }
+            }
+          },
+          "401": {
+            "description": "Missing or invalid bearer token."
+          },
+          "403": {
+            "description": "Active OWNER, MANAGER, or STAFF membership is required."
+          },
+          "404": {
+            "description": "Loyalty membership not found."
+          },
+          "502": {
+            "description": "Google Wallet sync failed."
+          }
+        },
+        "security": [
+          {
+            "bearer": []
+          }
+        ],
+        "tags": [
+          "google wallet"
+        ]
+      }
+    },
+    "/public/loyalty/cards/{token}/google-wallet": {
+      "post": {
+        "operationId": "PublicWalletPassController_syncGoogleWalletPass",
+        "parameters": [
+          {
+            "name": "token",
+            "required": true,
+            "in": "path",
+            "description": "Opaque public card access token returned by enrollment.",
+            "schema": {
+              "example": "public_card_token",
+              "type": "string"
+            }
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": "Creates, syncs, or reuses a Google Wallet pass for an active public loyalty card token and returns a public-safe Save URL response.",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "example": {
+                    "platform": "GOOGLE_WALLET",
+                    "saveUrl": "https://pay.google.com/gp/v/save/signed.jwt",
+                    "status": "ACTIVE",
+                    "businessName": "Tavrix Cafe",
+                    "programName": "Tavrix Cafe Stamp Card",
+                    "lastSyncedAt": "2026-06-16T09:00:00.000Z"
+                  }
+                }
+              }
+            }
+          },
+          "404": {
+            "description": "Invalid, inactive, or expired public card token."
+          },
+          "502": {
+            "description": "Google Wallet sync failed."
+          }
+        },
+        "tags": [
+          "public loyalty"
+        ]
+      }
+    },
+    "/businesses/{businessId}/loyalty/wallet-scan": {
+      "post": {
+        "operationId": "WalletScanController_scanGoogleWalletPass",
+        "parameters": [
+          {
+            "name": "businessId",
+            "required": true,
+            "in": "path",
+            "schema": {
+              "type": "string"
+            }
+          }
+        ],
+        "requestBody": {
+          "required": true,
+          "content": {
+            "application/json": {
+              "schema": {
+                "$ref": "#/components/schemas/WalletScanDto"
+              }
+            }
+          }
+        },
+        "responses": {
+          "200": {
+            "description": "Validates an Apple Wallet or Google Wallet loyalty barcode token and returns safe staff scan data.",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "example": {
+                    "membershipId": "membership_id",
+                    "customer": {
+                      "name": "Demo Customer",
+                      "phone": "+9647700000000"
+                    },
+                    "program": {
+                      "name": "Tavrix Cafe Stamp Card",
+                      "stampGoal": 10,
+                      "rewardName": "Free coffee"
+                    },
+                    "progress": {
+                      "stamps": 3,
+                      "goal": 10,
+                      "canRedeem": false
+                    },
+                    "walletPass": {
+                      "platform": "GOOGLE_WALLET",
+                      "status": "ACTIVE"
+                    }
+                  }
+                }
+              }
+            }
+          },
+          "400": {
+            "description": "Malformed, invalid, inactive, or rotated wallet scan token.",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "example": {
+                    "statusCode": 400,
+                    "message": "Invalid wallet scan token",
+                    "error": "Bad Request"
+                  }
+                }
+              }
+            }
+          },
+          "401": {
+            "description": "Missing or invalid bearer token.",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "example": {
+                    "statusCode": 401,
+                    "message": "Missing bearer token",
+                    "error": "Unauthorized"
+                  }
+                }
+              }
+            }
+          },
+          "403": {
+            "description": "Active OWNER, MANAGER, or STAFF membership is required, and the pass must belong to the requested business.",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "example": {
+                    "statusCode": 403,
+                    "message": "Wallet pass belongs to another business",
+                    "error": "Forbidden"
+                  }
+                }
+              }
+            }
+          }
+        },
+        "security": [
+          {
+            "bearer": []
+          }
+        ],
+        "tags": [
+          "loyalty"
+        ]
+      }
+    },
+    "/public/loyalty/cards/{token}/apple-wallet": {
+      "post": {
+        "operationId": "PublicAppleWalletPassController_generateAppleWalletPass",
+        "parameters": [
+          {
+            "name": "token",
+            "required": true,
+            "in": "path",
+            "description": "Opaque public card access token returned by enrollment.",
+            "schema": {
+              "example": "public_card_token",
+              "type": "string"
+            }
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": "Returns a signed Apple Wallet loyalty pass package.",
+            "headers": {
+              "Content-Disposition": {
+                "description": "Safe attachment filename for the generated pass.",
+                "schema": {
+                  "type": "string",
+                  "example": "attachment; filename=\"waflo-loyalty.pkpass\""
+                }
+              }
+            },
+            "content": {
+              "application/vnd.apple.pkpass": {
+                "schema": {
+                  "type": "string",
+                  "format": "binary"
+                }
+              }
+            }
+          },
+          "404": {
+            "description": "The public loyalty card token is invalid or inactive.",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "example": {
+                    "statusCode": 404,
+                    "code": "PUBLIC_LOYALTY_CARD_NOT_FOUND",
+                    "message": "Loyalty card not found"
+                  }
+                }
+              }
+            }
+          },
+          "502": {
+            "description": "Apple Wallet signing failed.",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "example": {
+                    "statusCode": 502,
+                    "code": "APPLE_WALLET_SIGNING_FAILED",
+                    "message": "Apple Wallet pass generation failed"
+                  }
+                }
+              }
+            }
+          },
+          "503": {
+            "description": "Apple Wallet is disabled or signing is not configured.",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "oneOf": [
+                    {
+                      "example": {
+                        "statusCode": 503,
+                        "code": "APPLE_WALLET_DISABLED",
+                        "message": "Apple Wallet is unavailable"
+                      }
+                    },
+                    {
+                      "example": {
+                        "statusCode": 503,
+                        "code": "APPLE_WALLET_NOT_CONFIGURED",
+                        "message": "Apple Wallet is unavailable"
+                      }
+                    }
+                  ]
+                }
+              }
+            }
+          }
+        },
+        "tags": [
+          "public loyalty"
+        ]
+      }
+    },
+    "/apple-wallet/v1/devices/{deviceLibraryIdentifier}/registrations/{passTypeIdentifier}/{serialNumber}": {
+      "post": {
+        "operationId": "AppleWalletUpdateController_registerDevice",
+        "parameters": [
+          {
+            "name": "passTypeIdentifier",
+            "required": true,
+            "in": "path",
+            "description": "Apple Pass Type Identifier.",
+            "schema": {
+              "type": "string"
+            }
+          },
+          {
+            "name": "serialNumber",
+            "required": true,
+            "in": "path",
+            "description": "Opaque Apple pass serial number.",
+            "schema": {
+              "type": "string"
+            }
+          },
+          {
+            "name": "deviceLibraryIdentifier",
+            "required": true,
+            "in": "path",
+            "description": "Opaque device library identifier.",
+            "schema": {
+              "type": "string"
+            }
+          },
+          {
+            "name": "Authorization",
+            "in": "header",
+            "description": "ApplePass authentication token embedded in the signed pass.",
+            "required": true,
+            "schema": {
+              "type": "string"
+            }
+          }
+        ],
+        "requestBody": {
+          "required": true,
+          "content": {
+            "application/json": {
+              "schema": {
+                "$ref": "#/components/schemas/AppleWalletRegistrationDto"
+              }
+            }
+          }
+        },
+        "responses": {
+          "200": {
+            "description": "Existing device registration updated."
+          },
+          "201": {
+            "description": "Device registration created."
+          },
+          "401": {
+            "description": "Invalid pass authorization."
+          }
+        },
+        "tags": [
+          "apple wallet web service"
+        ]
+      },
+      "delete": {
+        "operationId": "AppleWalletUpdateController_unregisterDevice",
+        "parameters": [
+          {
+            "name": "passTypeIdentifier",
+            "required": true,
+            "in": "path",
+            "description": "Apple Pass Type Identifier.",
+            "schema": {
+              "type": "string"
+            }
+          },
+          {
+            "name": "serialNumber",
+            "required": true,
+            "in": "path",
+            "description": "Opaque Apple pass serial number.",
+            "schema": {
+              "type": "string"
+            }
+          },
+          {
+            "name": "deviceLibraryIdentifier",
+            "required": true,
+            "in": "path",
+            "description": "Opaque device library identifier.",
+            "schema": {
+              "type": "string"
+            }
+          },
+          {
+            "name": "Authorization",
+            "in": "header",
+            "description": "ApplePass authentication token embedded in the signed pass.",
+            "required": true,
+            "schema": {
+              "type": "string"
+            }
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": "Device registration removed."
+          },
+          "401": {
+            "description": "Invalid pass authorization."
+          }
+        },
+        "tags": [
+          "apple wallet web service"
+        ]
+      }
+    },
+    "/apple-wallet/v1/devices/{deviceLibraryIdentifier}/registrations/{passTypeIdentifier}": {
+      "get": {
+        "operationId": "AppleWalletUpdateController_listUpdatedPasses",
+        "parameters": [
+          {
+            "name": "deviceLibraryIdentifier",
+            "required": true,
+            "in": "path",
+            "description": "Opaque device library identifier.",
+            "schema": {
+              "type": "string"
+            }
+          },
+          {
+            "name": "passTypeIdentifier",
+            "required": true,
+            "in": "path",
+            "description": "Apple Pass Type Identifier.",
+            "schema": {
+              "type": "string"
+            }
+          },
+          {
+            "name": "passesUpdatedSince",
+            "required": false,
+            "in": "query",
+            "description": "Opaque numeric update tag returned by the previous request.",
+            "schema": {
+              "type": "string"
+            }
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": "Serial numbers for passes changed after the supplied tag.",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "example": {
+                    "serialNumbers": [
+                      "waflo-apple-pass"
+                    ],
+                    "lastUpdated": "1781956800000"
+                  }
+                }
+              }
+            }
+          },
+          "204": {
+            "description": "No registered passes changed."
+          }
+        },
+        "tags": [
+          "apple wallet web service"
+        ]
+      }
+    },
+    "/apple-wallet/v1/passes/{passTypeIdentifier}/{serialNumber}": {
+      "get": {
+        "operationId": "AppleWalletUpdateController_getUpdatedPass",
+        "parameters": [
+          {
+            "name": "passTypeIdentifier",
+            "required": true,
+            "in": "path",
+            "description": "Apple Pass Type Identifier.",
+            "schema": {
+              "type": "string"
+            }
+          },
+          {
+            "name": "serialNumber",
+            "required": true,
+            "in": "path",
+            "description": "Opaque Apple pass serial number.",
+            "schema": {
+              "type": "string"
+            }
+          },
+          {
+            "name": "If-Modified-Since",
+            "in": "header",
+            "description": "Optional HTTP date for conditional pass delivery.",
+            "required": false,
+            "schema": {
+              "type": "string"
+            }
+          },
+          {
+            "name": "Authorization",
+            "in": "header",
+            "description": "ApplePass authentication token embedded in the signed pass.",
+            "required": true,
+            "schema": {
+              "type": "string"
+            }
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": "Latest signed Apple Wallet pass.",
+            "content": {
+              "application/vnd.apple.pkpass": {
+                "schema": {
+                  "type": "string",
+                  "format": "binary"
+                }
+              }
+            }
+          },
+          "304": {
+            "description": "The pass has not changed since If-Modified-Since."
+          },
+          "401": {
+            "description": "Invalid pass authorization."
+          }
+        },
+        "tags": [
+          "apple wallet web service"
+        ]
+      }
+    },
+    "/apple-wallet/v1/log": {
+      "post": {
+        "operationId": "AppleWalletUpdateController_acceptLogs",
+        "parameters": [],
+        "requestBody": {
+          "required": true,
+          "content": {
+            "application/json": {
+              "schema": {
+                "$ref": "#/components/schemas/AppleWalletLogDto"
+              }
+            }
+          }
+        },
+        "responses": {
+          "200": {
+            "description": "Diagnostic messages accepted safely."
+          }
+        },
+        "tags": [
+          "apple wallet web service"
+        ]
+      }
+    }
+  },
+  "info": {
+    "title": "Tavrix Menu API",
+    "description": "Tavrix Menu backend API.\n\nProduction and staging clients must send real Clerk JWTs with Authorization: Bearer <clerk-jwt>.\n\nDevelopment can use dev tokens only when NODE_ENV=development.\n\nDevelopment auth header example:\n\nAuthorization: Bearer dev:user_tavrix_owner;email=owner@tavrix.local;name=Tavrix%20Owner",
+    "version": "0.1.0",
+    "contact": {}
+  },
+  "tags": [],
+  "servers": [
+    {
+      "url": "http://localhost:3000"
+    }
+  ],
+  "components": {
+    "securitySchemes": {
+      "bearer": {
+        "scheme": "bearer",
+        "bearerFormat": "JWT",
+        "type": "http"
+      }
+    },
+    "schemas": {
+      "CreateBusinessDto": {
+        "type": "object",
+        "properties": {
+          "name": {
+            "type": "string",
+            "example": "Royal Cup"
+          },
+          "type": {
+            "type": "string",
+            "example": "cafe"
+          },
+          "city": {
+            "type": "string",
+            "example": "Baghdad"
+          },
+          "currency": {
+            "type": "string",
+            "example": "IQD",
+            "default": "IQD"
+          },
+          "language": {
+            "type": "string",
+            "example": "ar",
+            "default": "ar"
+          }
+        },
+        "required": [
+          "name",
+          "type"
+        ]
+      },
+      "CreateMemberDto": {
+        "type": "object",
+        "properties": {
+          "clerkUserId": {
+            "type": "string",
+            "example": "user_tavrix_staff"
+          },
+          "role": {
+            "type": "string",
+            "enum": [
+              "OWNER",
+              "MANAGER",
+              "STAFF"
+            ],
+            "example": "STAFF"
+          },
+          "email": {
+            "type": "string",
+            "example": "staff@tavrix.local"
+          },
+          "name": {
+            "type": "string",
+            "example": "Tavrix Staff"
+          },
+          "phone": {
+            "type": "string",
+            "example": "+9647700000000"
+          }
+        },
+        "required": [
+          "clerkUserId",
+          "role"
+        ]
+      },
+      "UpdateMemberDto": {
+        "type": "object",
+        "properties": {
+          "role": {
+            "type": "string",
+            "enum": [
+              "OWNER",
+              "MANAGER",
+              "STAFF"
+            ],
+            "example": "MANAGER"
+          },
+          "isActive": {
+            "type": "boolean",
+            "example": true
+          }
+        }
+      },
+      "UpdateBusinessDto": {
+        "type": "object",
+        "properties": {
+          "name": {
+            "type": "string",
+            "example": "Royal Cup"
+          },
+          "type": {
+            "type": "string",
+            "example": "cafe"
+          },
+          "city": {
+            "type": "string",
+            "example": "Baghdad",
+            "nullable": true
+          },
+          "currency": {
+            "type": "string",
+            "example": "IQD"
+          },
+          "language": {
+            "type": "string",
+            "example": "ar"
+          },
+          "logoUrl": {
+            "type": "string",
+            "example": "https://example.com/logo.png",
+            "nullable": true
+          },
+          "coverUrl": {
+            "type": "string",
+            "example": "https://example.com/cover.png",
+            "nullable": true
+          }
+        }
+      },
+      "CreateCategoryDto": {
+        "type": "object",
+        "properties": {
+          "nameAr": {
+            "type": "string",
+            "example": "Hot Drinks"
+          },
+          "nameEn": {
+            "type": "string",
+            "example": "Hot Drinks",
+            "nullable": true
+          },
+          "sortOrder": {
+            "type": "number",
+            "example": 0,
+            "default": 0
+          },
+          "isActive": {
+            "type": "boolean",
+            "example": true,
+            "default": true
+          }
+        },
+        "required": [
+          "nameAr"
+        ]
+      },
+      "ReorderMenuRecordDto": {
+        "type": "object",
+        "properties": {
+          "id": {
+            "type": "string",
+            "example": "cat_123"
+          },
+          "sortOrder": {
+            "type": "number",
+            "example": 0,
+            "minimum": 0
+          }
+        },
+        "required": [
+          "id",
+          "sortOrder"
+        ]
+      },
+      "ReorderMenuRecordsDto": {
+        "type": "object",
+        "properties": {
+          "orders": {
+            "example": [
+              {
+                "id": "cat_123",
+                "sortOrder": 0
+              },
+              {
+                "id": "cat_456",
+                "sortOrder": 1
+              }
+            ],
+            "type": "array",
+            "items": {
+              "$ref": "#/components/schemas/ReorderMenuRecordDto"
+            }
+          }
+        },
+        "required": [
+          "orders"
+        ]
+      },
+      "UpdateCategoryDto": {
+        "type": "object",
+        "properties": {
+          "nameAr": {
+            "type": "string",
+            "example": "Desserts"
+          },
+          "nameEn": {
+            "type": "string",
+            "example": "Desserts",
+            "nullable": true
+          },
+          "sortOrder": {
+            "type": "number",
+            "example": 1
+          },
+          "isActive": {
+            "type": "boolean",
+            "example": true
+          }
+        }
+      },
+      "CreateItemDto": {
+        "type": "object",
+        "properties": {
+          "categoryId": {
+            "type": "string",
+            "example": "category_id"
+          },
+          "nameAr": {
+            "type": "string",
+            "example": "Turkish Coffee"
+          },
+          "nameEn": {
+            "type": "string",
+            "example": "Turkish Coffee",
+            "nullable": true
+          },
+          "descriptionAr": {
+            "type": "string",
+            "example": "Traditional strong coffee.",
+            "nullable": true
+          },
+          "descriptionEn": {
+            "type": "string",
+            "example": "Traditional strong coffee.",
+            "nullable": true
+          },
+          "price": {
+            "type": "string",
+            "example": "3000"
+          },
+          "imageUrl": {
+            "type": "string",
+            "example": "https://example.com/item.png",
+            "nullable": true
+          },
+          "isAvailable": {
+            "type": "boolean",
+            "example": true,
+            "default": true
+          },
+          "sortOrder": {
+            "type": "number",
+            "example": 0,
+            "default": 0
+          }
+        },
+        "required": [
+          "categoryId",
+          "nameAr",
+          "price"
+        ]
+      },
+      "UpdateItemDto": {
+        "type": "object",
+        "properties": {
+          "categoryId": {
+            "type": "string",
+            "example": "category_id"
+          },
+          "nameAr": {
+            "type": "string",
+            "example": "Turkish Coffee"
+          },
+          "nameEn": {
+            "type": "string",
+            "example": "Turkish Coffee",
+            "nullable": true
+          },
+          "descriptionAr": {
+            "type": "string",
+            "example": "Traditional strong coffee.",
+            "nullable": true
+          },
+          "descriptionEn": {
+            "type": "string",
+            "example": "Traditional strong coffee.",
+            "nullable": true
+          },
+          "price": {
+            "type": "string",
+            "example": "3000"
+          },
+          "imageUrl": {
+            "type": "string",
+            "example": "https://example.com/item.png",
+            "nullable": true
+          },
+          "isAvailable": {
+            "type": "boolean",
+            "example": true
+          },
+          "sortOrder": {
+            "type": "number",
+            "example": 0
+          }
+        }
+      },
+      "CreateLoyaltyProgramDto": {
+        "type": "object",
+        "properties": {
+          "name": {
+            "type": "string",
+            "example": "Tavrix Cafe Stamp Card"
+          },
+          "description": {
+            "type": "object",
+            "example": "Collect stamps on coffee visits.",
+            "nullable": true
+          },
+          "stampGoal": {
+            "type": "number",
+            "example": 5,
+            "minimum": 1,
+            "maximum": 50
+          },
+          "rewardName": {
+            "type": "string",
+            "example": "Free coffee"
+          },
+          "rewardDescription": {
+            "type": "object",
+            "example": "One free Turkish Coffee after 5 stamps.",
+            "nullable": true
+          },
+          "isActive": {
+            "type": "boolean",
+            "example": true,
+            "default": true
+          },
+          "cardColor": {
+            "type": "object",
+            "example": "#111827",
+            "nullable": true
+          },
+          "accentColor": {
+            "type": "object",
+            "example": "#f59e0b",
+            "nullable": true
+          },
+          "logoUrl": {
+            "type": "object",
+            "example": "https://example.com/logo.png",
+            "nullable": true
+          },
+          "terms": {
+            "type": "object",
+            "example": "Reward is valid for dine-in orders only.",
+            "nullable": true
+          }
+        },
+        "required": [
+          "name",
+          "stampGoal",
+          "rewardName"
+        ]
+      },
+      "UpdateLoyaltyProgramDto": {
+        "type": "object",
+        "properties": {
+          "name": {
+            "type": "string",
+            "example": "Tavrix Cafe Stamp Card"
+          },
+          "description": {
+            "type": "object",
+            "example": "Collect stamps on coffee visits.",
+            "nullable": true
+          },
+          "stampGoal": {
+            "type": "number",
+            "example": 5,
+            "minimum": 1,
+            "maximum": 50
+          },
+          "rewardName": {
+            "type": "string",
+            "example": "Free coffee"
+          },
+          "rewardDescription": {
+            "type": "object",
+            "example": "One free Turkish Coffee after 5 stamps.",
+            "nullable": true
+          },
+          "isActive": {
+            "type": "boolean",
+            "example": true,
+            "default": true
+          },
+          "cardColor": {
+            "type": "object",
+            "example": "#111827",
+            "nullable": true
+          },
+          "accentColor": {
+            "type": "object",
+            "example": "#f59e0b",
+            "nullable": true
+          },
+          "logoUrl": {
+            "type": "object",
+            "example": "https://example.com/logo.png",
+            "nullable": true
+          },
+          "terms": {
+            "type": "object",
+            "example": "Reward is valid for dine-in orders only.",
+            "nullable": true
+          }
+        }
+      },
+      "UpdateLoyaltyStampStyleDto": {
+        "type": "object",
+        "properties": {
+          "styleType": {
+            "type": "string",
+            "enum": [
+              "PRESET"
+            ],
+            "example": "PRESET"
+          },
+          "presetKey": {
+            "type": "string",
+            "enum": [
+              "STAR",
+              "COOKIE",
+              "COFFEE",
+              "BOWL",
+              "BURGER",
+              "PIZZA",
+              "HEART",
+              "CUPCAKE"
+            ],
+            "example": "COFFEE"
+          },
+          "themePreset": {
+            "type": "string",
+            "enum": [
+              "DEFAULT",
+              "COFFEE",
+              "RESTAURANT",
+              "DESSERT",
+              "MINIMAL",
+              "CUSTOM"
+            ],
+            "example": "COFFEE"
+          },
+          "colorMode": {
+            "type": "string",
+            "enum": [
+              "PRESET",
+              "CUSTOM"
+            ],
+            "example": "PRESET"
+          },
+          "backgroundColor": {
+            "type": "string",
+            "example": "#111827"
+          },
+          "accentColor": {
+            "type": "string",
+            "example": "#f59e0b"
+          },
+          "textColor": {
+            "type": "string",
+            "example": "#ffffff"
+          },
+          "walletBackgroundColor": {
+            "type": "string",
+            "example": "#2563eb"
+          },
+          "imageBackgroundColor": {
+            "type": "string",
+            "example": "#7c2d12"
+          },
+          "imageSurfaceColor": {
+            "type": "string",
+            "example": "#92400e"
+          },
+          "imageAccentColor": {
+            "type": "string",
+            "example": "#facc15"
+          },
+          "imageTextColor": {
+            "type": "string",
+            "example": "#ffffff"
+          },
+          "stampFilledColor": {
+            "type": "string",
+            "example": "#facc15"
+          },
+          "stampEmptyColor": {
+            "type": "string",
+            "example": "#d6d3d1"
+          },
+          "rewardBannerColor": {
+            "type": "string",
+            "example": "#a16207"
+          },
+          "layoutVariant": {
+            "type": "string",
+            "enum": [
+              "MODERN",
+              "COMPACT"
+            ],
+            "example": "MODERN"
+          }
+        }
+      },
+      "EnrollLoyaltyCustomerDto": {
+        "type": "object",
+        "properties": {
+          "phone": {
+            "type": "object",
+            "example": "+9647700000000",
+            "nullable": true
+          },
+          "email": {
+            "type": "object",
+            "example": "customer@example.com",
+            "nullable": true
+          },
+          "name": {
+            "type": "object",
+            "example": "Demo Customer",
+            "nullable": true
+          },
+          "programId": {
+            "type": "string",
+            "example": "loyalty_program_id",
+            "description": "Optional when the business has exactly one active program."
+          }
+        }
+      },
+      "AddStampsDto": {
+        "type": "object",
+        "properties": {
+          "count": {
+            "type": "number",
+            "example": 1,
+            "default": 1,
+            "minimum": 1,
+            "maximum": 10
+          },
+          "reason": {
+            "type": "string",
+            "example": "Coffee purchase",
+            "nullable": true
+          }
+        }
+      },
+      "RedeemRewardDto": {
+        "type": "object",
+        "properties": {
+          "reason": {
+            "type": "string",
+            "example": "Free coffee redeemed",
+            "nullable": true
+          }
+        }
+      },
+      "PublicLoyaltyEnrollDto": {
+        "type": "object",
+        "properties": {
+          "phone": {
+            "type": "object",
+            "example": "+9647700000000",
+            "nullable": true
+          },
+          "email": {
+            "type": "object",
+            "example": "customer@example.com",
+            "nullable": true
+          },
+          "name": {
+            "type": "object",
+            "example": "Demo Customer",
+            "nullable": true
+          }
+        }
+      },
+      "WalletScanDto": {
+        "type": "object",
+        "properties": {
+          "token": {
+            "type": "string",
+            "example": "<paste-wallet-qr-token-here>",
+            "description": "Opaque value read from a supported loyalty wallet barcode."
+          }
+        },
+        "required": [
+          "token"
+        ]
+      },
+      "AppleWalletRegistrationDto": {
+        "type": "object",
+        "properties": {
+          "pushToken": {
+            "type": "string",
+            "description": "Sensitive APNs push token supplied by Apple Wallet.",
+            "writeOnly": true
+          }
+        },
+        "required": [
+          "pushToken"
+        ]
+      },
+      "AppleWalletLogDto": {
+        "type": "object",
+        "properties": {
+          "logs": {
+            "description": "Apple Wallet diagnostic messages. Values are sanitized.",
+            "type": "array",
+            "items": {
+              "type": "string"
+            }
+          }
+        },
+        "required": [
+          "logs"
+        ]
+      }
+    }
+  }
+}

@@ -1,0 +1,670 @@
+{
+  "contractVersion": "1.0.0",
+  "generatedAt": "2026-06-18T14:00:32Z",
+  "sourceOpenApiPath": "docs/openapi/waflo-openapi-current.json",
+  "authentication": {
+    "type": "httpBearer",
+    "required": true,
+    "headerExample": "Authorization: Bearer <staff-bearer-token>"
+  },
+  "businessSelection": {
+    "endpoint": "GET /businesses/me",
+    "rule": "Use the selected active business object's id as businessId for loyalty requests. Do not assume the response is non-empty."
+  },
+  "endpoints": [
+    {
+      "id": "getCurrentBusinesses",
+      "method": "GET",
+      "path": "/businesses/me",
+      "authRequired": true,
+      "pathParameters": {},
+      "requestSchema": null,
+      "success": {
+        "status": 200,
+        "schemaRef": "#/schemas/CurrentBusinessesResponse"
+      },
+      "errors": [
+        {
+          "status": 401,
+          "schemaRef": "#/schemas/ErrorResponse"
+        }
+      ]
+    },
+    {
+      "id": "scanWalletPass",
+      "method": "POST",
+      "path": "/businesses/{businessId}/loyalty/wallet-scan",
+      "authRequired": true,
+      "allowedRoles": [
+        "OWNER",
+        "MANAGER",
+        "STAFF"
+      ],
+      "pathParameters": {
+        "businessId": {
+          "type": "string",
+          "required": true,
+          "source": "Selected item from GET /businesses/me"
+        }
+      },
+      "requestSchema": {
+        "$ref": "#/schemas/WalletScanRequest"
+      },
+      "success": {
+        "status": 200,
+        "schemaRef": "#/schemas/WalletScanSuccess",
+        "exampleFile": "examples/wallet-scan-success.json"
+      },
+      "errors": [
+        {
+          "status": 400,
+          "schemaRef": "#/schemas/ErrorResponse",
+          "exampleFile": "examples/wallet-scan-invalid-token-error.json"
+        },
+        {
+          "status": 401,
+          "schemaRef": "#/schemas/ErrorResponse",
+          "exampleFile": "examples/wallet-scan-unauthorized-error.json"
+        },
+        {
+          "status": 403,
+          "schemaRef": "#/schemas/ErrorResponse",
+          "exampleFile": "examples/wallet-scan-cross-business-error.json"
+        }
+      ]
+    },
+    {
+      "id": "addStamps",
+      "method": "POST",
+      "path": "/businesses/{businessId}/loyalty/memberships/{membershipId}/stamps",
+      "sourceOpenApiPathTemplate": "/businesses/{id}/loyalty/memberships/{membershipId}/stamps",
+      "authRequired": true,
+      "allowedRoles": [
+        "OWNER",
+        "MANAGER",
+        "STAFF"
+      ],
+      "pathParameters": {
+        "businessId": {
+          "type": "string",
+          "required": true
+        },
+        "membershipId": {
+          "type": "string",
+          "required": true,
+          "source": "membershipId from a successful wallet scan"
+        }
+      },
+      "requestSchema": {
+        "$ref": "#/schemas/AddStampsRequest"
+      },
+      "success": {
+        "status": 201,
+        "schemaRef": "#/schemas/LoyaltyMutationSuccess",
+        "exampleFile": "examples/add-stamp-success.json"
+      },
+      "errors": [
+        {
+          "status": 400,
+          "schemaRef": "#/schemas/ErrorResponse"
+        },
+        {
+          "status": 401,
+          "schemaRef": "#/schemas/ErrorResponse"
+        },
+        {
+          "status": 403,
+          "schemaRef": "#/schemas/ErrorResponse"
+        },
+        {
+          "status": 404,
+          "schemaRef": "#/schemas/ErrorResponse"
+        }
+      ],
+      "walletRefresh": {
+        "queuedAsynchronously": true,
+        "queueStatusReturned": false,
+        "noteFile": "examples/wallet-refresh-queued-note.json"
+      }
+    },
+    {
+      "id": "redeemReward",
+      "method": "POST",
+      "path": "/businesses/{businessId}/loyalty/memberships/{membershipId}/redeem",
+      "sourceOpenApiPathTemplate": "/businesses/{id}/loyalty/memberships/{membershipId}/redeem",
+      "authRequired": true,
+      "allowedRoles": [
+        "OWNER",
+        "MANAGER",
+        "STAFF"
+      ],
+      "pathParameters": {
+        "businessId": {
+          "type": "string",
+          "required": true
+        },
+        "membershipId": {
+          "type": "string",
+          "required": true,
+          "source": "membershipId from a successful wallet scan"
+        }
+      },
+      "requestSchema": {
+        "$ref": "#/schemas/RedeemRewardRequest"
+      },
+      "success": {
+        "status": 201,
+        "schemaRef": "#/schemas/LoyaltyMutationSuccess",
+        "exampleFile": "examples/redeem-success.json"
+      },
+      "errors": [
+        {
+          "status": 400,
+          "schemaRef": "#/schemas/ErrorResponse"
+        },
+        {
+          "status": 401,
+          "schemaRef": "#/schemas/ErrorResponse"
+        },
+        {
+          "status": 403,
+          "schemaRef": "#/schemas/ErrorResponse"
+        },
+        {
+          "status": 404,
+          "schemaRef": "#/schemas/ErrorResponse"
+        }
+      ],
+      "walletRefresh": {
+        "queuedAsynchronously": true,
+        "queueStatusReturned": false,
+        "noteFile": "examples/wallet-refresh-queued-note.json"
+      }
+    }
+  ],
+  "schemas": {
+    "CurrentBusinessesResponse": {
+      "type": "array",
+      "items": {
+        "$ref": "#/schemas/CurrentBusiness"
+      }
+    },
+    "CurrentBusiness": {
+      "type": "object",
+      "required": [
+        "id",
+        "name",
+        "slug",
+        "type",
+        "currency",
+        "language",
+        "status",
+        "role"
+      ],
+      "properties": {
+        "id": {
+          "type": "string"
+        },
+        "name": {
+          "type": "string"
+        },
+        "slug": {
+          "type": "string"
+        },
+        "type": {
+          "type": "string"
+        },
+        "logoUrl": {
+          "type": [
+            "string",
+            "null"
+          ]
+        },
+        "coverUrl": {
+          "type": [
+            "string",
+            "null"
+          ]
+        },
+        "currency": {
+          "type": "string"
+        },
+        "language": {
+          "type": "string"
+        },
+        "city": {
+          "type": [
+            "string",
+            "null"
+          ]
+        },
+        "status": {
+          "type": "string"
+        },
+        "role": {
+          "type": "string",
+          "enum": [
+            "OWNER",
+            "MANAGER",
+            "STAFF"
+          ]
+        }
+      }
+    },
+    "WalletScanRequest": {
+      "type": "object",
+      "additionalProperties": false,
+      "required": [
+        "token"
+      ],
+      "properties": {
+        "token": {
+          "type": "string",
+          "minLength": 1,
+          "maxLength": 256,
+          "example": "<paste-wallet-qr-token-here>"
+        }
+      }
+    },
+    "WalletScanSuccess": {
+      "type": "object",
+      "required": [
+        "membershipId",
+        "customer",
+        "program",
+        "progress",
+        "walletPass"
+      ],
+      "properties": {
+        "membershipId": {
+          "type": "string"
+        },
+        "customer": {
+          "type": "object",
+          "required": [
+            "name",
+            "phone"
+          ],
+          "properties": {
+            "name": {
+              "type": [
+                "string",
+                "null"
+              ]
+            },
+            "phone": {
+              "type": [
+                "string",
+                "null"
+              ]
+            }
+          }
+        },
+        "program": {
+          "type": "object",
+          "required": [
+            "name",
+            "stampGoal",
+            "rewardName"
+          ],
+          "properties": {
+            "name": {
+              "type": "string"
+            },
+            "stampGoal": {
+              "type": "integer"
+            },
+            "rewardName": {
+              "type": "string"
+            }
+          }
+        },
+        "progress": {
+          "type": "object",
+          "required": [
+            "stamps",
+            "goal",
+            "canRedeem"
+          ],
+          "properties": {
+            "stamps": {
+              "type": "integer"
+            },
+            "goal": {
+              "type": "integer"
+            },
+            "canRedeem": {
+              "type": "boolean"
+            }
+          }
+        },
+        "walletPass": {
+          "type": "object",
+          "required": [
+            "platform",
+            "status"
+          ],
+          "properties": {
+            "platform": {
+              "type": "string",
+              "enum": [
+                "GOOGLE_WALLET"
+              ]
+            },
+            "status": {
+              "type": "string",
+              "enum": [
+                "ACTIVE"
+              ]
+            }
+          }
+        }
+      }
+    },
+    "AddStampsRequest": {
+      "type": "object",
+      "additionalProperties": false,
+      "properties": {
+        "count": {
+          "type": "integer",
+          "minimum": 1,
+          "maximum": 10,
+          "default": 1
+        },
+        "reason": {
+          "type": [
+            "string",
+            "null"
+          ],
+          "maxLength": 500
+        }
+      }
+    },
+    "RedeemRewardRequest": {
+      "type": "object",
+      "additionalProperties": false,
+      "properties": {
+        "reason": {
+          "type": [
+            "string",
+            "null"
+          ],
+          "maxLength": 500
+        }
+      }
+    },
+    "LoyaltyMutationSuccess": {
+      "type": "object",
+      "required": [
+        "membership",
+        "customer",
+        "program",
+        "cardState"
+      ],
+      "properties": {
+        "membership": {
+          "$ref": "#/schemas/LoyaltyMembership"
+        },
+        "customer": {
+          "$ref": "#/schemas/LoyaltyCustomer"
+        },
+        "program": {
+          "$ref": "#/schemas/LoyaltyProgram"
+        },
+        "cardState": {
+          "$ref": "#/schemas/LoyaltyCardState"
+        }
+      }
+    },
+    "LoyaltyMembership": {
+      "type": "object",
+      "required": [
+        "id",
+        "businessId",
+        "loyaltyProgramId",
+        "customerId",
+        "stampCount",
+        "rewardReady",
+        "totalStampsEarned",
+        "totalRewardsRedeemed",
+        "status",
+        "createdAt",
+        "updatedAt"
+      ],
+      "properties": {
+        "id": {
+          "type": "string"
+        },
+        "businessId": {
+          "type": "string"
+        },
+        "loyaltyProgramId": {
+          "type": "string"
+        },
+        "customerId": {
+          "type": "string"
+        },
+        "stampCount": {
+          "type": "integer"
+        },
+        "rewardReady": {
+          "type": "boolean"
+        },
+        "totalStampsEarned": {
+          "type": "integer"
+        },
+        "totalRewardsRedeemed": {
+          "type": "integer"
+        },
+        "status": {
+          "type": "string"
+        },
+        "createdAt": {
+          "type": "string",
+          "format": "date-time"
+        },
+        "updatedAt": {
+          "type": "string",
+          "format": "date-time"
+        }
+      }
+    },
+    "LoyaltyCustomer": {
+      "type": "object",
+      "required": [
+        "id",
+        "phone",
+        "email",
+        "name",
+        "createdAt",
+        "updatedAt"
+      ],
+      "properties": {
+        "id": {
+          "type": "string"
+        },
+        "phone": {
+          "type": [
+            "string",
+            "null"
+          ]
+        },
+        "email": {
+          "type": [
+            "string",
+            "null"
+          ]
+        },
+        "name": {
+          "type": [
+            "string",
+            "null"
+          ]
+        },
+        "createdAt": {
+          "type": "string",
+          "format": "date-time"
+        },
+        "updatedAt": {
+          "type": "string",
+          "format": "date-time"
+        }
+      }
+    },
+    "LoyaltyProgram": {
+      "type": "object",
+      "required": [
+        "id",
+        "businessId",
+        "name",
+        "description",
+        "stampGoal",
+        "rewardName",
+        "rewardDescription",
+        "isActive",
+        "cardColor",
+        "accentColor",
+        "logoUrl",
+        "terms",
+        "createdAt",
+        "updatedAt"
+      ],
+      "properties": {
+        "id": {
+          "type": "string"
+        },
+        "businessId": {
+          "type": "string"
+        },
+        "name": {
+          "type": "string"
+        },
+        "description": {
+          "type": [
+            "string",
+            "null"
+          ]
+        },
+        "stampGoal": {
+          "type": "integer"
+        },
+        "rewardName": {
+          "type": "string"
+        },
+        "rewardDescription": {
+          "type": [
+            "string",
+            "null"
+          ]
+        },
+        "isActive": {
+          "type": "boolean"
+        },
+        "cardColor": {
+          "type": [
+            "string",
+            "null"
+          ]
+        },
+        "accentColor": {
+          "type": [
+            "string",
+            "null"
+          ]
+        },
+        "logoUrl": {
+          "type": [
+            "string",
+            "null"
+          ]
+        },
+        "terms": {
+          "type": [
+            "string",
+            "null"
+          ]
+        },
+        "createdAt": {
+          "type": "string",
+          "format": "date-time"
+        },
+        "updatedAt": {
+          "type": "string",
+          "format": "date-time"
+        }
+      }
+    },
+    "LoyaltyCardState": {
+      "type": "object",
+      "required": [
+        "stampCount",
+        "stampGoal",
+        "rewardReady",
+        "progressPercent",
+        "rewardName",
+        "programName"
+      ],
+      "properties": {
+        "stampCount": {
+          "type": "integer"
+        },
+        "stampGoal": {
+          "type": "integer"
+        },
+        "rewardReady": {
+          "type": "boolean"
+        },
+        "progressPercent": {
+          "type": "integer",
+          "minimum": 0,
+          "maximum": 100
+        },
+        "rewardName": {
+          "type": "string"
+        },
+        "programName": {
+          "type": "string"
+        }
+      }
+    },
+    "ErrorResponse": {
+      "type": "object",
+      "required": [
+        "statusCode",
+        "message"
+      ],
+      "properties": {
+        "statusCode": {
+          "type": "integer"
+        },
+        "message": {
+          "oneOf": [
+            {
+              "type": "string"
+            },
+            {
+              "type": "array",
+              "items": {
+                "type": "string"
+              }
+            }
+          ]
+        },
+        "error": {
+          "type": "string"
+        }
+      }
+    }
+  },
+  "mobileImplementationNotes": [
+    "Never log, persist, cache, or include the wallet QR value in analytics or crash reports.",
+    "Clear the manual input after a successful scan; retain no token in application state.",
+    "Use membershipId from WalletScanSuccess for add-stamp and redeem paths.",
+    "Render customer.phone only when non-null and non-empty.",
+    "Use progress.canRedeem as the scan-time reward status.",
+    "Disable duplicate submissions while a request is in flight.",
+    "Treat 401 as a session/authentication failure, 403 as a business access mismatch, and 400 as invalid scan input.",
+    "Add-stamp and redeem return updated membership/card data but no wallet refresh queue field.",
+    "Do not poll or block UI waiting for Google Wallet after add-stamp or redeem."
+  ]
+}
