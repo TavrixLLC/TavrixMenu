@@ -1,5 +1,5 @@
 import { WalletScanTokenPassFields } from '../google-wallet/wallet-scan-token.service';
-import { ResolvedLoyaltyVisualStyle } from '../loyalty/loyalty-visual-style';
+import { WalletPassVisualTheme } from '../loyalty/wallet-pass-visual.resolver';
 
 export type AppleWalletReadiness =
   | 'DISABLED'
@@ -10,6 +10,7 @@ export type AppleWalletPassField = {
   key: string;
   label: string;
   value: string | number;
+  textAlignment?: 'PKTextAlignmentLeft' | 'PKTextAlignmentRight';
 };
 
 export type AppleWalletBarcode = {
@@ -30,6 +31,7 @@ export type AppleWalletPassPayload = {
   foregroundColor: string;
   backgroundColor: string;
   labelColor: string;
+  suppressStripShine: true;
   sharingProhibited: true;
   webServiceURL?: string;
   authenticationToken?: string;
@@ -51,14 +53,18 @@ export type BuildAppleWalletPassInput = {
   barcodeValue: string;
   businessName?: string;
   programName?: string;
+  programDescription?: string;
   stampCount: number;
   stampGoal: number;
   rewardName?: string;
   rewardDescription?: string;
-  visualStyle?: ResolvedLoyaltyVisualStyle;
+  terms?: string;
+  theme?: AppleWalletPassTheme;
   webServiceURL?: string;
   authenticationToken?: string;
 };
+
+export type AppleWalletPassTheme = Partial<WalletPassVisualTheme>;
 
 export type AppleWalletPassAssets = Record<string, Buffer>;
 

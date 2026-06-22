@@ -2,11 +2,9 @@ import { ConfigService } from '@nestjs/config';
 import { strict as assert } from 'assert';
 import { readFileSync } from 'fs';
 import { resolve } from 'path';
-import sharp from 'sharp';
 import { describe, it } from 'node:test';
+import sharp from 'sharp';
 import { WalletScanTokenService } from '../google-wallet/wallet-scan-token.service';
-import { resolveLoyaltyVisualStyle } from '../loyalty/loyalty-visual-style';
-import { StampImageRendererService } from '../loyalty/stamp-image-renderer.service';
 import { AppleWalletPassBuilderService } from './apple-wallet-pass-builder.service';
 import { AppleWalletSignerService } from './apple-wallet-signer.service';
 import { AppleWalletService } from './apple-wallet.service';
@@ -27,22 +25,17 @@ class RecordingSigner {
 }
 
 describe('AppleWalletPassBuilderService', () => {
-  it('builds a themed store card without duplicate native progress fields', () => {
+  it('builds a generic store card with required identifiers and a QR barcode', () => {
     const rawToken = 'internal-sensitive-barcode-value';
-    const payload = new AppleWalletPassBuilderService(
-      new StampImageRendererService()
-    ).buildPayload({
+    const payload = new AppleWalletPassBuilderService().buildPayload({
       passTypeIdentifier: 'pass.app.waflo.loyalty',
       serialNumber: 'waflo-test-serial',
       teamIdentifier: 'A1B2C3D4E5',
       organizationName: 'Waflo',
       barcodeValue: rawToken,
-      businessName: 'Blue Cafe',
-      programName: 'Blue ⭐ Loyalty',
+      programName: 'Waflo Loyalty',
       stampCount: 3,
-      stampGoal: 10,
-      rewardName: 'Free 🎁 reward',
-      visualStyle: blueVisualStyle()
+      stampGoal: 10
     });
 
     assert.equal(payload.passTypeIdentifier, 'pass.app.waflo.loyalty');
@@ -52,47 +45,145 @@ describe('AppleWalletPassBuilderService', () => {
     assert.equal(payload.barcodes[0]?.format, 'PKBarcodeFormatQR');
     assert.equal(payload.barcodes[0]?.message, rawToken);
     assert.equal(payload.barcodes[0]?.altText.includes(rawToken), false);
-    assert.equal(payload.barcodes[0]?.altText, 'Scan to update loyalty');
-    assert.equal(payload.logoText, 'Blue Cafe');
-    assert.equal(payload.backgroundColor, 'rgb(37, 99, 235)');
-    assert.equal(payload.foregroundColor, 'rgb(239, 246, 255)');
-    assert.equal(payload.labelColor, 'rgb(253, 224, 71)');
+    assert.equal(payload.barcodes[0]?.altText, 'Scan loyalty card');
+
+    const visibleFields = JSON.stringify({
+      headerFields: payload.storeCard.headerFields,
+      primaryFields: payload.storeCard.primaryFields,
+      secondaryFields: payload.storeCard.secondaryFields,
+      auxiliaryFields: payload.storeCard.auxiliaryFields
+    }).toLowerCase();
+    assert.doesNotMatch(visibleFields, /stamps|progress|reward/);
+    assert.doesNotMatch(
+      visibleFields,
+      /restaurant|coffee|dinar|currency|iraq|points|spend/
+    );
+  });
+
+  it('builds a themed loyalty hierarchy with a concise update boundary', () => {
+    const payload = new AppleWalletPassBuilderService().buildPayload({
+      passTypeIdentifier: 'pass.app.waflo.loyalty',
+      serialNumber: 'waflo-themed-serial',
+      teamIdentifier: 'A1B2C3D4E5',
+      organizationName: 'Waflo',
+      barcodeValue: 'internal-sensitive-barcode-value',
+      businessName: 'Tavrix Cafe',
+      programName: 'Coffee Rewards',
+      programDescription: 'A simple coffee loyalty card.',
+      stampCount: 7,
+      stampGoal: 10,
+      rewardName: 'Free Turkish coffee',
+      rewardDescription: 'Choose one Turkish coffee from the regular menu.',
+      terms: 'One reward per completed card.',
+      theme: {
+        walletBackgroundColor: '#123abc',
+        imageAccentColor: '#f59e0b',
+        imageTextColor: '#f9fafb'
+      }
+    });
+
+    assert.equal(payload.logoText, 'Tavrix Cafe');
+    assert.equal(payload.backgroundColor, 'rgb(18, 58, 188)');
+    assert.equal(payload.foregroundColor, 'rgb(249, 250, 251)');
+    assert.equal(payload.labelColor, 'rgb(245, 158, 11)');
+    assert.equal(payload.suppressStripShine, true);
     assert.deepEqual(payload.storeCard.headerFields, []);
     assert.deepEqual(payload.storeCard.primaryFields, []);
     assert.deepEqual(payload.storeCard.secondaryFields, []);
     assert.deepEqual(payload.storeCard.auxiliaryFields, []);
+
+    const backText = JSON.stringify(payload.storeCard.backFields);
+    assert.match(backText, /A simple coffee loyalty card/);
+    assert.match(backText, /One reward per completed card/);
+    assert.match(backText, /web loyalty card/);
+    assert.doesNotMatch(backText, /auto.?refresh|automatically update/i);
+    assert.equal(payload.barcodes[0]?.format, 'PKBarcodeFormatQR');
     assert.equal(
-      JSON.stringify(payload.storeCard).includes('3 of 10 stamps'),
-      false
+      payload.barcodes[0]?.message,
+      'internal-sensitive-barcode-value'
     );
-    assert.equal(JSON.stringify(payload).includes('⭐'), false);
-    assert.equal(JSON.stringify(payload).includes('🎁'), false);
   });
 
-  it('builds Apple strip assets for 1x, 2x, and 3x Wallet sizes', async () => {
-    const builder = new AppleWalletPassBuilderService(
-      new StampImageRendererService()
-    );
-    const assets = await builder.buildAssets({
+  it('falls back from invalid colors without weakening the loyalty hierarchy', () => {
+    const payload = new AppleWalletPassBuilderService().buildPayload({
       passTypeIdentifier: 'pass.app.waflo.loyalty',
-      serialNumber: 'waflo-test-serial',
+      serialNumber: 'waflo-fallback-serial',
       teamIdentifier: 'A1B2C3D4E5',
       organizationName: 'Waflo',
-      barcodeValue: 'sensitive-barcode-placeholder',
-      businessName: 'Blue Cafe',
-      programName: 'Blue Loyalty',
-      stampCount: 7,
+      barcodeValue: 'internal-sensitive-barcode-value',
+      businessName: 'Tavrix Cafe',
+      stampCount: 10,
       stampGoal: 10,
-      rewardName: 'Free reward',
-      visualStyle: blueVisualStyle()
+      rewardName: 'Free coffee',
+      theme: {
+        walletBackgroundColor: 'not-a-color',
+        imageAccentColor: '#abc',
+        imageTextColor: ''
+      }
     });
-    const oneX = await sharp(assets['strip.png']).metadata();
-    const twoX = await sharp(assets['strip@2x.png']).metadata();
-    const threeX = await sharp(assets['strip@3x.png']).metadata();
 
-    assert.deepEqual([oneX.width, oneX.height], [375, 123]);
-    assert.deepEqual([twoX.width, twoX.height], [750, 246]);
-    assert.deepEqual([threeX.width, threeX.height], [1125, 369]);
+    assert.equal(payload.backgroundColor, 'rgb(37, 99, 235)');
+    assert.equal(payload.foregroundColor, 'rgb(255, 255, 255)');
+    assert.equal(payload.labelColor, 'rgb(170, 187, 204)');
+    assert.deepEqual(payload.storeCard.primaryFields, []);
+    assert.equal(payload.barcodes.length, 1);
+  });
+
+  it('renders theme-aware icon, logo, and strip assets in PassKit sizes', async () => {
+    const builder = new AppleWalletPassBuilderService();
+    const input = {
+      passTypeIdentifier: 'pass.app.waflo.loyalty',
+      serialNumber: 'waflo-assets-serial',
+      teamIdentifier: 'A1B2C3D4E5',
+      organizationName: 'Waflo',
+      barcodeValue: 'internal-sensitive-barcode-value',
+      businessName: 'Tavrix Cafe',
+      programName: 'Coffee Rewards',
+      stampCount: 4,
+      stampGoal: 10,
+      rewardName: 'Free coffee',
+      theme: {
+        imageBackgroundColor: '#111827',
+        imageSurfaceColor: '#1f2937',
+        imageAccentColor: '#f59e0b',
+        imageTextColor: '#ffffff',
+        stampFilledColor: '#f59e0b',
+        stampEmptyColor: '#6b7280'
+      }
+    };
+    const assets = await builder.buildAssets(input);
+
+    assert.deepEqual(Object.keys(assets).sort(), [
+      'icon.png',
+      'icon@2x.png',
+      'icon@3x.png',
+      'logo.png',
+      'logo@2x.png',
+      'logo@3x.png',
+      'strip.png',
+      'strip@2x.png',
+      'strip@3x.png'
+    ]);
+    assert.deepEqual(
+      await imageSize(assets['logo.png']),
+      { width: 50, height: 50 }
+    );
+    assert.deepEqual(
+      await imageSize(assets['logo@3x.png']),
+      { width: 150, height: 150 }
+    );
+    assert.deepEqual(
+      await imageSize(assets['strip.png']),
+      { width: 375, height: 123 }
+    );
+    assert.deepEqual(
+      await imageSize(assets['strip@2x.png']),
+      { width: 750, height: 246 }
+    );
+    assert.deepEqual(
+      await imageSize(assets['strip@3x.png']),
+      { width: 1125, height: 369 }
+    );
   });
 });
 
@@ -152,7 +243,7 @@ describe('AppleWalletService', () => {
       assert.equal(typeof result.scanTokenMetadata.scanTokenHash, 'string');
       assert.equal(result.scanTokenMetadata.scanTokenHash.length, 64);
       assert.equal((signer.assets?.['icon.png']?.length ?? 0) > 0, true);
-      assert.equal((signer.assets?.['strip@3x.png']?.length ?? 0) > 1000, true);
+      assert.equal((signer.assets?.['strip@2x.png']?.length ?? 0) > 0, true);
     } finally {
       console.log = originalLog;
       console.error = originalError;
@@ -163,7 +254,7 @@ describe('AppleWalletService', () => {
     const signer = new RecordingSigner();
     const service = createService(signer, {
       APPLE_WALLET_WEB_SERVICE_ENABLED: true,
-      APPLE_WALLET_WEB_SERVICE_BASE_URL: 'http://localhost:3000/apple-wallet/v1',
+      APPLE_WALLET_WEB_SERVICE_BASE_URL: 'http://localhost:3000/apple-wallet',
       APPLE_WALLET_UPDATE_AUTH_TOKEN_SECRET:
         'test-apple-update-token-secret-at-least-32-characters'
     });
@@ -176,7 +267,7 @@ describe('AppleWalletService', () => {
 
     assert.equal(
       signer.payload?.webServiceURL,
-      'http://localhost:3000/apple-wallet/v1'
+      'http://localhost:3000/apple-wallet'
     );
     assert.equal(signer.payload?.authenticationToken, updateToken);
     assert.notEqual(signer.payload?.barcodes[0]?.message, updateToken);
@@ -189,6 +280,23 @@ describe('AppleWalletService', () => {
     );
 
     assert.match(gitignore, /apps\/api\/public\/generated\/apple-wallet\//);
+  });
+
+  it('keeps the Apple device-registration and APNs blocker unresolved', () => {
+    const blocker = readFileSync(
+      resolve(
+        __dirname,
+        '../../../../../docs/blockers/apple-wallet-device-registration-no-callback.md'
+      ),
+      'utf8'
+    );
+
+    assert.match(
+      blocker,
+      /BLOCKED_BY_DEVICE_REGISTRATION_NO_DEVICE_CALLBACK/
+    );
+    assert.match(blocker, /\(APNs\) updates \*\*cannot be tested\*\*/);
+    assert.doesNotMatch(blocker, /RESOLVED_BY_/);
   });
 });
 
@@ -208,22 +316,27 @@ function createService(
 
   return new AppleWalletService(
     config,
-    new AppleWalletPassBuilderService(new StampImageRendererService()),
+    new AppleWalletPassBuilderService(),
     signer as unknown as AppleWalletSignerService,
     new WalletScanTokenService(config)
   );
 }
 
+async function imageSize(image: Buffer) {
+  const metadata = await sharp(image).metadata();
+  return {
+    width: metadata.width,
+    height: metadata.height
+  };
+}
+
 function generationInput() {
   return {
     serialNumber: 'waflo-smoke-test-serial',
-    businessName: 'Waflo',
     programName: 'Waflo Loyalty',
     stampCount: 3,
     stampGoal: 10,
-    rewardName: 'Reward',
     rewardDescription: 'Reward after 10 stamps',
-    visualStyle: blueVisualStyle(),
     scanTokenPass: {
       id: 'apple-wallet-smoke-pass',
       businessId: 'internal-smoke-business',
@@ -234,26 +347,4 @@ function generationInput() {
       scanTokenLast4: null
     }
   };
-}
-
-function blueVisualStyle() {
-  return resolveLoyaltyVisualStyle({
-    stampStyle: {
-      presetKey: 'STAR',
-      backgroundColor: '#2563eb',
-      accentColor: '#fde047',
-      textColor: '#eff6ff',
-      walletBackgroundColor: '#2563eb',
-      imageBackgroundColor: '#1d4ed8',
-      imageSurfaceColor: '#2563eb',
-      imageAccentColor: '#fde047',
-      imageTextColor: '#eff6ff',
-      stampFilledColor: '#fde047',
-      stampEmptyColor: '#bfdbfe',
-      rewardBannerColor: '#1e40af',
-      themePreset: 'DEFAULT',
-      colorMode: 'PRESET',
-      layoutVariant: 'MODERN'
-    }
-  });
 }

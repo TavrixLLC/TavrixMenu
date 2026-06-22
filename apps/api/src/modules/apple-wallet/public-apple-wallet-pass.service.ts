@@ -12,7 +12,7 @@ import {
 } from '../../generated/prisma';
 import { PrismaService } from '../../prisma/prisma.service';
 import { PublicLoyaltyService } from '../loyalty/public-loyalty.service';
-import { resolveLoyaltyVisualStyle } from '../loyalty/loyalty-visual-style';
+import { resolveAppleWalletPassTheme } from './apple-wallet-pass-theme';
 import { AppleWalletService } from './apple-wallet.service';
 import {
   AppleUpdateAuthTokenMetadata,
@@ -84,20 +84,20 @@ export class PublicAppleWalletPassService {
 
     try {
       const updateToken = this.buildUpdateToken(walletPass);
-      const visualStyle = resolveLoyaltyVisualStyle(
-        membership.loyaltyProgram
-      );
       const generated = await this.appleWalletService.generatePass({
         serialNumber: this.buildSerialNumber(walletPass.id),
         businessName: membership.business.name,
         programName: membership.loyaltyProgram.name,
+        programDescription:
+          membership.loyaltyProgram.description ?? undefined,
         stampCount: membership.stampCount,
         stampGoal: membership.loyaltyProgram.stampGoal,
         rewardName: membership.loyaltyProgram.rewardName,
         rewardDescription:
           membership.loyaltyProgram.rewardDescription ??
           membership.loyaltyProgram.rewardName,
-        visualStyle,
+        terms: membership.loyaltyProgram.terms ?? undefined,
+        theme: resolveAppleWalletPassTheme(membership.loyaltyProgram),
         updateAuthenticationToken: updateToken?.rawToken,
         scanTokenPass: {
           id: walletPass.id,

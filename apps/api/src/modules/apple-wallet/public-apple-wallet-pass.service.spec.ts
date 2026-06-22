@@ -22,7 +22,6 @@ import {
   WalletPassStatus
 } from '../../generated/prisma';
 import { WalletScanTokenService } from '../google-wallet/wallet-scan-token.service';
-import { StampImageRendererService } from '../loyalty/stamp-image-renderer.service';
 import { AppleWalletPassBuilderService } from './apple-wallet-pass-builder.service';
 import { AppleWalletSignerService } from './apple-wallet-signer.service';
 import { AppleWalletService } from './apple-wallet.service';
@@ -148,7 +147,15 @@ describe('PublicAppleWalletPassService token safety', () => {
       assert.equal(passPayload.webServiceURL, undefined);
       assert.equal(passPayload.authenticationToken, undefined);
       assert.equal(setup.signer.payload?.logoText, 'Waflo Test Business');
-      assert.equal(setup.signer.payload?.backgroundColor, 'rgb(17, 24, 39)');
+      assert.equal(
+        setup.signer.payload?.backgroundColor,
+        'rgb(17, 24, 39)'
+      );
+      assert.equal(setup.signer.payload?.labelColor, 'rgb(245, 158, 11)');
+      assert.deepEqual(setup.signer.payload?.storeCard.headerFields, []);
+      assert.deepEqual(setup.signer.payload?.storeCard.primaryFields, []);
+      assert.deepEqual(setup.signer.payload?.storeCard.secondaryFields, []);
+      assert.deepEqual(setup.signer.payload?.storeCard.auxiliaryFields, []);
       assert.equal(JSON.stringify(result).includes(barcodeValue), false);
       assert.equal(logs.join('\n').includes(barcodeValue), false);
       assert.equal(setup.state.upserts[0]?.create.platform, WalletPassPlatform.APPLE_WALLET);
@@ -358,7 +365,7 @@ function createSetup(options: {
   const signer = new RecordingSigner();
   const appleWalletService = new AppleWalletService(
     config,
-    new AppleWalletPassBuilderService(new StampImageRendererService()),
+    new AppleWalletPassBuilderService(),
     signer as unknown as AppleWalletSignerService,
     createTokenService()
   );

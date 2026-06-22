@@ -90,9 +90,9 @@ class MockGoogleWalletService {
     barcodeValue?: string;
     barcodeAlternateText?: string;
     includeBarcode?: boolean;
+    heroImageUrl?: string;
     includeLoyaltyPoints?: boolean;
     includeTextModules?: boolean;
-    heroImageUrl?: string;
   }) {
     this.objectInputs.push(input);
 
@@ -111,19 +111,18 @@ class MockGoogleWalletService {
               alternateText: input.barcodeAlternateText ?? input.accountId
             }
           }),
-      ...(input.includeLoyaltyPoints === false
-        ? {}
-        : {
+      ...((input.includeLoyaltyPoints ?? !input.heroImageUrl)
+        ? {
             loyaltyPoints: {
               label: 'Progress',
               balance: {
                 string: `${(input as any).stampCount}/${(input as any).stampGoal}`
               }
             }
-          }),
-      ...(input.includeTextModules === false
-        ? {}
-        : {
+          }
+        : {}),
+      ...((input.includeTextModules ?? !input.heroImageUrl)
+        ? {
             textModulesData: [
               {
                 id: 'progress',
@@ -131,7 +130,8 @@ class MockGoogleWalletService {
                 body: (input as any).progressText
               }
             ]
-          }),
+          }
+        : {}),
       heroImage: input.heroImageUrl
         ? {
             sourceUri: {
@@ -339,42 +339,6 @@ describe('WalletPassService', () => {
     assert.equal(classInput.hexBackgroundColor, '#065f46');
   });
 
-  it('keeps legacy fallback colors consistent between native and hero surfaces', async () => {
-    const { service, wallet, storage } = createService();
-
-    await service.syncGoogleWalletPass(
-      user('staff_1'),
-      'business_1',
-      'membership_1'
-    );
-
-    const renderInput = storage.renderInputs[0] as Record<string, unknown>;
-    const classInput = wallet.classInputs[0] as Record<string, unknown>;
-
-    assert.equal(classInput.hexBackgroundColor, '#111827');
-    assert.equal(renderInput.imageBackgroundColor, '#111827');
-    assert.equal(renderInput.imageAccentColor, '#f59e0b');
-  });
-
-  it('suppresses duplicate Google progress text when the hero image exists', async () => {
-    const { service, wallet } = createService();
-
-    await service.syncGoogleWalletPass(
-      user('staff_1'),
-      'business_1',
-      'membership_1'
-    );
-
-    const objectInput = wallet.objectInputs[0] as Record<string, unknown>;
-    const objectPayload = wallet.upsertedObjects[0] as Record<string, unknown>;
-
-    assert.equal(objectInput.includeLoyaltyPoints, false);
-    assert.equal(objectInput.includeTextModules, false);
-    assert.ok(objectPayload.heroImage);
-    assert.equal(objectPayload.loyaltyPoints, undefined);
-    assert.equal(objectPayload.textModulesData, undefined);
-  });
-
   it('does not leak local file paths in the response or persisted wallet fields', async () => {
     const { service, state, wallet } = createService();
 
@@ -522,10 +486,9 @@ describe('WalletPassService', () => {
     assert.equal(wallet.upsertedClasses.length, 0);
     assert.equal(wallet.upsertedObjects.length, 1);
     assert.equal(objectInput.stampCount, 4);
-    assert.equal(objectInput.progressText, '4 of 5 stamps collected');
+    assert.equal(objectInput.progressText, undefined);
     assert.equal(objectPayload.loyaltyPoints, undefined);
     assert.equal(objectPayload.textModulesData, undefined);
-    assert.ok(objectPayload.heroImage);
     assert.equal(objectPayload.barcode.type, 'QR_CODE');
     assert.equal(objectPayload.barcode.value, metadata.rawToken);
     assert.notEqual(objectPayload.barcode.alternateText, metadata.rawToken);

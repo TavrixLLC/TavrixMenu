@@ -9,7 +9,10 @@ import {
   StampImageRenderInput
 } from './stamp-image-renderer.service';
 import { StampImageStorageService } from './stamp-image-storage.service';
-import { resolveLoyaltyVisualStyle } from './loyalty-visual-style';
+import {
+  resolveWalletPassVisual,
+  resolveWalletPassVisualTheme
+} from './wallet-pass-visual.resolver';
 
 describe('StampImageRendererService', () => {
   it('generates a PNG buffer', async () => {
@@ -178,39 +181,7 @@ describe('StampImageRendererService', () => {
     });
   }
 
-  it('uses the resolved preset palette consistently across Wallet surfaces', () => {
-    const defaultStyle = resolveLoyaltyVisualStyle({
-      stampStyle: {
-        ...baseStoredStyle(),
-        presetKey: 'STAR',
-        themePreset: 'DEFAULT',
-        colorMode: 'PRESET'
-      }
-    });
-    const coffeeStyle = resolveLoyaltyVisualStyle({
-      stampStyle: {
-        ...baseStoredStyle(),
-        presetKey: 'COFFEE',
-        themePreset: 'COFFEE',
-        colorMode: 'PRESET'
-      }
-    });
-    const legacyStyle = resolveLoyaltyVisualStyle({
-      cardColor: '#111827',
-      accentColor: '#f59e0b',
-      stampStyle: null
-    });
 
-    assert.equal(defaultStyle.walletBackgroundColor, '#2563eb');
-    assert.equal(defaultStyle.imageBackgroundColor, '#1d4ed8');
-    assert.equal(defaultStyle.rewardBannerColor, '#1e40af');
-    assert.equal(coffeeStyle.walletBackgroundColor, '#7c2d12');
-    assert.equal(coffeeStyle.imageBackgroundColor, '#7c2d12');
-    assert.equal(coffeeStyle.presetKey, 'COFFEE');
-    assert.equal(legacyStyle.walletBackgroundColor, '#111827');
-    assert.equal(legacyStyle.imageBackgroundColor, '#111827');
-    assert.equal(legacyStyle.imageAccentColor, '#f59e0b');
-  });
 
   it('uses stamp filled and empty colors in the SVG render path', () => {
     const renderer = new StampImageRendererService() as unknown as {
@@ -228,6 +199,36 @@ describe('StampImageRendererService', () => {
 
     assert.match(svg, /#abcdef/);
     assert.match(svg, /#123456/);
+  });
+
+  it('uses one content structure and deterministic font stack for Apple and Google images', () => {
+    const renderer = new StampImageRendererService() as unknown as {
+      renderSvg(
+        input: StampImageRenderInput,
+        target?: 'GOOGLE_HERO' | 'APPLE_STRIP'
+      ): string;
+      normalizeInput(input: StampImageRenderInput): StampImageRenderInput;
+    };
+    const normalized = renderer.normalizeInput(
+      baseInput({
+        businessName: 'Cafe & Co ☕',
+        programName: 'Rewards ★',
+        rewardName: 'Free coffee ☕'
+      })
+    );
+    const googleSvg = renderer.renderSvg(normalized, 'GOOGLE_HERO');
+    const appleSvg = renderer.renderSvg(normalized, 'APPLE_STRIP');
+
+    for (const svg of [googleSvg, appleSvg]) {
+      assert.match(svg, /Cafe &amp; Co ☕/);
+      assert.match(svg, /Rewards ★/);
+      assert.match(svg, /3 \/ 10/);
+      assert.match(svg, /Reward: Free coffee ☕/);
+      assert.match(svg, /Noto Sans/);
+      assert.match(svg, /Noto Color Emoji/);
+      assert.doesNotMatch(svg, /Inter|Arial/);
+      assert.doesNotMatch(svg, /waflo_scan_v1|authenticationToken/);
+    }
   });
 
   it('keeps the progress badge inside the hero image safe area', () => {
@@ -382,6 +383,59 @@ describe('StampImageRendererService', () => {
     );
 
     assert.match(gitignore, /apps\/api\/public\/generated\//);
+  });
+});
+
+describe('wallet pass visual resolver', () => {
+  it('keeps native and generated colors in one custom theme', () => {
+    const theme = resolveWalletPassVisualTheme({
+      cardColor: '#123abc',
+      accentColor: '#facc15',
+      stampStyle: null
+    });
+    const visual = resolveWalletPassVisual({
+      businessName: 'Tavrix Cafe',
+      programName: 'Coffee Rewards',
+      rewardName: 'Free coffee',
+      stampCount: 3,
+      stampGoal: 5,
+      theme
+    });
+
+    assert.equal(visual.theme.walletBackgroundColor, '#123abc');
+    assert.equal(visual.theme.imageBackgroundColor, '#123abc');
+    assert.equal(visual.theme.imageAccentColor, '#facc15');
+    assert.equal(visual.theme.stampFilledColor, '#facc15');
+    assert.equal(visual.progressText, '3 / 5');
+    assert.equal(visual.progressHeadline, '2 stamps to reward');
+  });
+
+  it('normalizes the legacy split default palette to the coherent default palette', () => {
+    const theme = resolveWalletPassVisualTheme({
+      cardColor: null,
+      accentColor: null,
+      stampStyle: {
+        presetKey: 'STAR',
+        backgroundColor: '#111827',
+        accentColor: '#f59e0b',
+        textColor: '#ffffff',
+        walletBackgroundColor: '#2563eb',
+        imageBackgroundColor: '#7c2d12',
+        imageSurfaceColor: '#92400e',
+        imageAccentColor: '#facc15',
+        imageTextColor: '#ffffff',
+        stampFilledColor: '#facc15',
+        stampEmptyColor: '#d6d3d1',
+        rewardBannerColor: '#a16207',
+        themePreset: 'DEFAULT',
+        layoutVariant: 'MODERN'
+      }
+    });
+
+    assert.equal(theme.walletBackgroundColor, '#2563eb');
+    assert.equal(theme.imageBackgroundColor, '#1d4ed8');
+    assert.equal(theme.imageSurfaceColor, '#2563eb');
+    assert.equal(theme.rewardBannerColor, '#1e40af');
   });
 });
 

@@ -19,7 +19,7 @@ import {
   LoyaltyWalletColorModeValue,
   LoyaltyWalletThemePresetValue
 } from './loyalty-stamp-style.constants';
-import { resolveLoyaltyVisualStyle } from './loyalty-visual-style';
+import { resolveWalletPassVisualTheme } from './wallet-pass-visual.resolver';
 
 type ProgramWithStampStyle = LoyaltyProgram & {
   stampStyle: LoyaltyStampStyle | null;
@@ -166,13 +166,27 @@ export class LoyaltyStampStyleService {
       return this.mapPersistedStyle(program.stampStyle);
     }
 
-    const visualStyle = resolveLoyaltyVisualStyle(program);
+    const theme = resolveWalletPassVisualTheme(program);
 
     return {
       id: null,
       loyaltyProgramId: program.id,
       styleType: DEFAULT_LOYALTY_STAMP_STYLE.styleType,
-      ...visualStyle,
+      presetKey: DEFAULT_LOYALTY_STAMP_STYLE.presetKey,
+      backgroundColor: theme.backgroundColor,
+      accentColor: theme.accentColor,
+      textColor: theme.textColor,
+      walletBackgroundColor: theme.walletBackgroundColor,
+      imageBackgroundColor: theme.imageBackgroundColor,
+      imageSurfaceColor: theme.imageSurfaceColor,
+      imageAccentColor: theme.imageAccentColor,
+      imageTextColor: theme.imageTextColor,
+      stampFilledColor: theme.stampFilledColor,
+      stampEmptyColor: theme.stampEmptyColor,
+      rewardBannerColor: theme.rewardBannerColor,
+      themePreset: theme.themePreset,
+      colorMode: DEFAULT_LOYALTY_STAMP_STYLE.colorMode,
+      layoutVariant: theme.layoutVariant,
       isDefault: true,
       createdAt: null,
       updatedAt: null
@@ -204,4 +218,5 @@ export class LoyaltyStampStyleService {
       updatedAt: style.updatedAt
     };
   }
+
 }

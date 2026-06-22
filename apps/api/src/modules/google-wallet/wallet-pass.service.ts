@@ -17,8 +17,12 @@ import {
 import { PrismaService } from '../../prisma/prisma.service';
 import { AuthenticatedUser } from '../auth/interfaces/authenticated-user.interface';
 import { BusinessAccessService } from '../businesses/business-access.service';
-import { resolveLoyaltyVisualStyle } from '../loyalty/loyalty-visual-style';
 import { StampImageStorageService } from '../loyalty/stamp-image-storage.service';
+import {
+  resolveWalletPassVisual,
+  resolveWalletPassVisualTheme,
+  WalletPassVisualModel
+} from '../loyalty/wallet-pass-visual.resolver';
 import { GoogleWalletApiError } from './google-wallet-api.client';
 import { GoogleWalletService } from './google-wallet.service';
 import {
@@ -109,41 +113,34 @@ export class WalletPassService {
       const barcodeToken = await this.ensureScanToken(pass);
       pass = barcodeToken.pass;
 
-      const heroImageUrl = await this.renderHeroImage(membership);
+      const visual = this.resolveVisual(membership);
+      const heroImageUrl = await this.renderHeroImage(membership, visual);
       const classSuffix = this.buildClassSuffix(membership);
       const objectSuffix = this.buildObjectSuffix(membership);
       const classPayload = this.googleWalletService.buildLoyaltyClassPayload({
         classSuffix,
-        issuerName: membership.business.name,
-        programName: membership.loyaltyProgram.name,
-        logoUrl: this.httpsUrlOrUndefined(
-          membership.loyaltyProgram.logoUrl ?? membership.business.logoUrl
-        ),
+        issuerName: visual.businessName,
+        programName: visual.programName,
+        logoUrl: visual.logoUrl ?? undefined,
         rewardDescription:
           membership.loyaltyProgram.rewardDescription ??
           membership.loyaltyProgram.rewardName,
-        hexBackgroundColor: this.resolveStampStyle(membership).walletBackgroundColor
+        hexBackgroundColor: visual.theme.walletBackgroundColor
       });
       const objectPayload = this.googleWalletService.buildLoyaltyObjectPayload({
         classSuffix,
         objectSuffix,
         accountName: this.buildAccountName(membership),
         accountId: this.buildAccountId(pass),
-        stampCount: membership.stampCount,
-        stampGoal: membership.loyaltyProgram.stampGoal,
-        rewardName: membership.loyaltyProgram.rewardName,
+        stampCount: visual.stampCount,
+        stampGoal: visual.stampGoal,
+        rewardName: visual.rewardName,
         barcodeValue: barcodeToken.metadata.rawToken,
         barcodeAlternateText: this.buildBarcodeAlternateText(
           barcodeToken.metadata.scanTokenLast4
         ),
         heroImageUrl,
-        heroImageDescription: `${membership.loyaltyProgram.name} stamp progress`,
-        progressText: `${Math.min(
-          membership.stampCount,
-          membership.loyaltyProgram.stampGoal
-        )} of ${membership.loyaltyProgram.stampGoal} stamps collected`,
-        includeLoyaltyPoints: false,
-        includeTextModules: false
+        heroImageDescription: `${visual.programName} stamp progress`
       });
 
       await this.googleWalletService.upsertLoyaltyClass(classPayload);
@@ -224,7 +221,8 @@ export class WalletPassService {
       const barcodeToken = await this.ensureScanToken(pass);
       pass = barcodeToken.pass;
 
-      const heroImageUrl = await this.renderHeroImage(membership);
+      const visual = this.resolveVisual(membership);
+      const heroImageUrl = await this.renderHeroImage(membership, visual);
       const classSuffix = this.buildClassSuffix(membership);
       const objectSuffix = this.buildObjectSuffix(membership);
       const objectPayload = this.googleWalletService.buildLoyaltyObjectPayload({
@@ -232,21 +230,15 @@ export class WalletPassService {
         objectSuffix,
         accountName: this.buildAccountName(membership),
         accountId: this.buildAccountId(pass),
-        stampCount: membership.stampCount,
-        stampGoal: membership.loyaltyProgram.stampGoal,
-        rewardName: membership.loyaltyProgram.rewardName,
+        stampCount: visual.stampCount,
+        stampGoal: visual.stampGoal,
+        rewardName: visual.rewardName,
         barcodeValue: barcodeToken.metadata.rawToken,
         barcodeAlternateText: this.buildBarcodeAlternateText(
           barcodeToken.metadata.scanTokenLast4
         ),
         heroImageUrl,
-        heroImageDescription: `${membership.loyaltyProgram.name} stamp progress`,
-        progressText: `${Math.min(
-          membership.stampCount,
-          membership.loyaltyProgram.stampGoal
-        )} of ${membership.loyaltyProgram.stampGoal} stamps collected`,
-        includeLoyaltyPoints: false,
-        includeTextModules: false
+        heroImageDescription: `${visual.programName} stamp progress`
       });
 
       await this.googleWalletService.upsertLoyaltyObject(objectPayload);
@@ -418,35 +410,34 @@ export class WalletPassService {
     };
   }
 
-  private async renderHeroImage(membership: WalletMembership) {
-    const style = this.resolveStampStyle(membership);
+  private async renderHeroImage(
+    membership: WalletMembership,
+    visual: WalletPassVisualModel
+  ) {
     const storedImage = await this.stampImageStorageService.renderAndStore({
       membershipId: this.buildObjectSuffix(membership),
-      businessName: membership.business.name,
-      programName: membership.loyaltyProgram.name,
-      rewardName: membership.loyaltyProgram.rewardName,
-      stampCount: membership.stampCount,
-      stampGoal: membership.loyaltyProgram.stampGoal,
-      presetKey: style.presetKey,
-      backgroundColor: style.backgroundColor,
-      accentColor: style.accentColor,
-      textColor: style.textColor,
-      imageBackgroundColor: style.imageBackgroundColor,
-      imageSurfaceColor: style.imageSurfaceColor,
-      imageAccentColor: style.imageAccentColor,
-      imageTextColor: style.imageTextColor,
-      stampFilledColor: style.stampFilledColor,
-      stampEmptyColor: style.stampEmptyColor,
-      rewardBannerColor: style.rewardBannerColor,
-      themePreset: style.themePreset,
-      layoutVariant: style.layoutVariant
+      businessName: visual.businessName,
+      programName: visual.programName,
+      rewardName: visual.rewardName,
+      stampCount: visual.stampCount,
+      stampGoal: visual.stampGoal,
+      ...visual.theme
     });
 
     return this.stampImageStorageService.requirePublicUrl(storedImage);
   }
 
-  private resolveStampStyle(membership: WalletMembership) {
-    return resolveLoyaltyVisualStyle(membership.loyaltyProgram);
+  private resolveVisual(membership: WalletMembership) {
+    return resolveWalletPassVisual({
+      businessName: membership.business.name,
+      programName: membership.loyaltyProgram.name,
+      rewardName: membership.loyaltyProgram.rewardName,
+      logoUrl:
+        membership.loyaltyProgram.logoUrl ?? membership.business.logoUrl,
+      stampCount: membership.stampCount,
+      stampGoal: membership.loyaltyProgram.stampGoal,
+      theme: resolveWalletPassVisualTheme(membership.loyaltyProgram)
+    });
   }
 
   private buildClassSuffix(membership: WalletMembership) {
@@ -476,20 +467,6 @@ export class WalletPassService {
 
   private stableOpaqueSegment(...values: string[]) {
     return createHash('sha256').update(values.join(':')).digest('hex').slice(0, 24);
-  }
-
-  private httpsUrlOrUndefined(value: string | null) {
-    if (!value) {
-      return undefined;
-    }
-
-    try {
-      const parsed = new URL(value);
-
-      return parsed.protocol === 'https:' ? parsed.toString() : undefined;
-    } catch {
-      return undefined;
-    }
   }
 
   private sanitizeSyncError(error: unknown) {

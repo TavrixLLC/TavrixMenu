@@ -178,6 +178,27 @@ describe('GoogleWalletService', () => {
     assert.equal(classPayload.hexBackgroundColor, '#7c2d12');
   });
 
+  it('lets a generated hero image own progress while preserving the native barcode', () => {
+    const rawToken = 'waflo_scan_v1.test-only-token';
+    const payload = createService().buildLoyaltyObjectPayload({
+      classSuffix: 'waflo_test_class',
+      objectSuffix: 'waflo_test_object',
+      accountName: 'Waflo Member',
+      accountId: 'WAFLO-001',
+      stampCount: 3,
+      stampGoal: 5,
+      rewardName: 'Free coffee',
+      barcodeValue: rawToken,
+      barcodeAlternateText: 'Scan code ending KEN',
+      heroImageUrl: 'https://api.waflo.app/generated/wallet-stamps/test.png'
+    });
+
+    assert.equal(payload.loyaltyPoints, undefined);
+    assert.equal(payload.textModulesData, undefined);
+    assert.equal(payload.barcode?.value, rawToken);
+    assert.equal(payload.barcode?.alternateText?.includes(rawToken), false);
+  });
+
   it('upserts classes and objects with mocked Google Wallet API calls', async () => {
     const classPayload = createService().buildLoyaltyClassPayload({
       classSuffix: 'waflo_test_class',

@@ -11,7 +11,7 @@ import {
   WalletPassStatus
 } from '../../generated/prisma';
 import { PrismaService } from '../../prisma/prisma.service';
-import { resolveLoyaltyVisualStyle } from '../loyalty/loyalty-visual-style';
+import { resolveAppleWalletPassTheme } from './apple-wallet-pass-theme';
 import { AppleWalletService } from './apple-wallet.service';
 import { AppleWalletUpdateAuthTokenService } from './apple-wallet-update-auth-token.service';
 
@@ -32,56 +32,76 @@ export class AppleWalletUpdateService {
     serialNumber: string;
     pushToken: string;
   }) {
-    const { pass } = await this.findAuthorizedPass(input);
-    const deviceHash = this.updateAuthTokenService.hashDeviceLibraryIdentifier(
-      input.deviceLibraryIdentifier
-    );
-    const existing = await this.prisma.appleWalletDeviceRegistration.findUnique({
-      where: {
-        walletPassId_deviceLibraryIdentifierHash: {
-          walletPassId: pass.id,
-          deviceLibraryIdentifierHash: deviceHash
-        }
-      },
-      select: {
-        id: true
-      }
+    const context = this.registrationContext(input);
+    this.logUpdateEvent('registration_received', {
+      ...context,
+      authorizationPresent: Boolean(input.authorization),
+      pushTokenPresent: Boolean(input.pushToken)
     });
 
-    await this.prisma.appleWalletDeviceRegistration.upsert({
-      where: {
-        walletPassId_deviceLibraryIdentifierHash: {
-          walletPassId: pass.id,
-          deviceLibraryIdentifierHash: deviceHash
-        }
-      },
-      create: {
-        walletPassId: pass.id,
-        passTypeIdentifier: input.passTypeIdentifier,
-        serialNumber: input.serialNumber,
-        deviceLibraryIdentifierHash: deviceHash,
-        deviceLibraryIdentifierLast4: this.last4(
+    try {
+      const { pass } = await this.findAuthorizedPass(input);
+      this.logUpdateEvent('registration_authorized', context);
+      const deviceHash =
+        this.updateAuthTokenService.hashDeviceLibraryIdentifier(
           input.deviceLibraryIdentifier
-        ),
-        pushToken: input.pushToken,
-        pushTokenLast4: this.last4(input.pushToken),
-        unregisteredAt: null
-      },
-      update: {
-        passTypeIdentifier: input.passTypeIdentifier,
-        serialNumber: input.serialNumber,
-        deviceLibraryIdentifierLast4: this.last4(
-          input.deviceLibraryIdentifier
-        ),
-        pushToken: input.pushToken,
-        pushTokenLast4: this.last4(input.pushToken),
-        unregisteredAt: null
-      }
-    });
+        );
+      const existing =
+        await this.prisma.appleWalletDeviceRegistration.findUnique({
+          where: {
+            walletPassId_deviceLibraryIdentifierHash: {
+              walletPassId: pass.id,
+              deviceLibraryIdentifierHash: deviceHash
+            }
+          },
+          select: {
+            id: true
+          }
+        });
 
-    return {
-      created: !existing
-    };
+      await this.prisma.appleWalletDeviceRegistration.upsert({
+        where: {
+          walletPassId_deviceLibraryIdentifierHash: {
+            walletPassId: pass.id,
+            deviceLibraryIdentifierHash: deviceHash
+          }
+        },
+        create: {
+          walletPassId: pass.id,
+          passTypeIdentifier: input.passTypeIdentifier,
+          serialNumber: input.serialNumber,
+          deviceLibraryIdentifierHash: deviceHash,
+          deviceLibraryIdentifierLast4: this.last4(
+            input.deviceLibraryIdentifier
+          ),
+          pushToken: input.pushToken,
+          pushTokenLast4: this.last4(input.pushToken),
+          unregisteredAt: null
+        },
+        update: {
+          passTypeIdentifier: input.passTypeIdentifier,
+          serialNumber: input.serialNumber,
+          deviceLibraryIdentifierLast4: this.last4(
+            input.deviceLibraryIdentifier
+          ),
+          pushToken: input.pushToken,
+          pushTokenLast4: this.last4(input.pushToken),
+          unregisteredAt: null
+        }
+      });
+      const created = !existing;
+      this.logUpdateEvent('registration_persisted', {
+        ...context,
+        created
+      });
+
+      return {
+        created
+      };
+    } catch (error) {
+      this.logUpdateEvent('registration_rejected', context, 'warn');
+      throw error;
+    }
   }
 
   async listUpdatedPasses(input: {
@@ -89,6 +109,16 @@ export class AppleWalletUpdateService {
     passTypeIdentifier: string;
     passesUpdatedSince?: string;
   }) {
+    const context = {
+      deviceLibraryIdentifierSuffix: this.last4(
+        input.deviceLibraryIdentifier
+      ),
+      passTypeIdentifierSuffix: this.identifierSuffix(
+        input.passTypeIdentifier
+      ),
+      updateTagPresent: input.passesUpdatedSince !== undefined
+    };
+    this.logUpdateEvent('serial_list_requested', context);
     this.assertUpdateServiceReady();
     const since = this.parseUpdateTag(input.passesUpdatedSince);
     const deviceHash = this.updateAuthTokenService.hashDeviceLibraryIdentifier(
@@ -110,11 +140,7 @@ export class AppleWalletUpdateService {
             include: {
               membership: {
                 include: {
-                  loyaltyProgram: {
-                    include: {
-                      stampStyle: true
-                    }
-                  }
+                  loyaltyProgram: true
                 }
               }
             }
@@ -129,15 +155,26 @@ export class AppleWalletUpdateService {
       .filter((entry) => since === null || entry.updatedAt.getTime() > since);
 
     if (changed.length === 0) {
+      this.logUpdateEvent('serial_list_no_changes', context);
       return null;
     }
 
-    return {
+    const result = {
       serialNumbers: [...new Set(changed.map((entry) => entry.serialNumber))],
       lastUpdated: String(
         Math.max(...changed.map((entry) => entry.updatedAt.getTime()))
       )
     };
+    this.logUpdateEvent('serial_list_returned', {
+      ...context,
+      serialCount: result.serialNumbers.length,
+      serialNumberSuffixes: result.serialNumbers.map((serialNumber) =>
+        this.valueSuffix(serialNumber, 8)
+      ),
+      lastUpdated: result.lastUpdated
+    });
+
+    return result;
   }
 
   async getUpdatedPass(input: {
@@ -146,6 +183,15 @@ export class AppleWalletUpdateService {
     serialNumber: string;
     ifModifiedSince?: string;
   }) {
+    const context = {
+      passTypeIdentifierSuffix: this.identifierSuffix(
+        input.passTypeIdentifier
+      ),
+      serialNumberSuffix: this.valueSuffix(input.serialNumber, 8),
+      authorizationPresent: Boolean(input.authorization),
+      ifModifiedSincePresent: Boolean(input.ifModifiedSince)
+    };
+    this.logUpdateEvent('updated_pass_requested', context);
     const { pass, rawToken } = await this.findAuthorizedPass(input);
     const lastModified = this.passChangeTime(pass);
     const conditionalDate = this.parseHttpDate(input.ifModifiedSince);
@@ -155,6 +201,7 @@ export class AppleWalletUpdateService {
       Math.floor(conditionalDate.getTime() / 1000) >=
         Math.floor(lastModified.getTime() / 1000)
     ) {
+      this.logUpdateEvent('updated_pass_not_modified', context);
       return {
         status: 'NOT_MODIFIED' as const,
         lastModified
@@ -166,13 +213,16 @@ export class AppleWalletUpdateService {
         serialNumber: input.serialNumber,
         businessName: pass.membership.business.name,
         programName: pass.membership.loyaltyProgram.name,
+        programDescription:
+          pass.membership.loyaltyProgram.description ?? undefined,
         stampCount: pass.membership.stampCount,
         stampGoal: pass.membership.loyaltyProgram.stampGoal,
         rewardName: pass.membership.loyaltyProgram.rewardName,
         rewardDescription:
           pass.membership.loyaltyProgram.rewardDescription ??
           pass.membership.loyaltyProgram.rewardName,
-        visualStyle: resolveLoyaltyVisualStyle(
+        terms: pass.membership.loyaltyProgram.terms ?? undefined,
+        theme: resolveAppleWalletPassTheme(
           pass.membership.loyaltyProgram
         ),
         updateAuthenticationToken: rawToken,
@@ -191,6 +241,11 @@ export class AppleWalletUpdateService {
           lastSyncedAt: new Date(),
           syncError: null
         }
+      });
+      this.logUpdateEvent('updated_pass_served', {
+        ...context,
+        stampCount: pass.membership.stampCount,
+        stampGoal: pass.membership.loyaltyProgram.stampGoal
       });
 
       return {
@@ -253,16 +308,16 @@ export class AppleWalletUpdateService {
         status: WalletPassStatus.ACTIVE
       },
       include: {
-          membership: {
-            include: {
-              business: true,
-              loyaltyProgram: {
-                include: {
-                  stampStyle: true
-                }
+        membership: {
+          include: {
+            business: true,
+            loyaltyProgram: {
+              include: {
+                stampStyle: true
               }
             }
           }
+        }
       }
     });
 
@@ -326,9 +381,6 @@ export class AppleWalletUpdateService {
       updatedAt: Date;
       loyaltyProgram: {
         updatedAt: Date;
-        stampStyle?: {
-          updatedAt: Date;
-        } | null;
       };
     };
   }) {
@@ -336,8 +388,7 @@ export class AppleWalletUpdateService {
       Math.max(
         pass.applePassUpdatedAt?.getTime() ?? 0,
         pass.membership.updatedAt.getTime(),
-        pass.membership.loyaltyProgram.updatedAt.getTime(),
-        pass.membership.loyaltyProgram.stampStyle?.updatedAt.getTime() ?? 0
+        pass.membership.loyaltyProgram.updatedAt.getTime()
       )
     );
   }
@@ -346,14 +397,67 @@ export class AppleWalletUpdateService {
     return value.trim().slice(-4);
   }
 
+  private registrationContext(input: {
+    deviceLibraryIdentifier: string;
+    passTypeIdentifier: string;
+    serialNumber: string;
+  }) {
+    return {
+      deviceLibraryIdentifierSuffix: this.last4(
+        input.deviceLibraryIdentifier
+      ),
+      passTypeIdentifierSuffix: this.identifierSuffix(
+        input.passTypeIdentifier
+      ),
+      serialNumberSuffix: this.valueSuffix(input.serialNumber, 8)
+    };
+  }
+
+  private identifierSuffix(value: string) {
+    return value.split('.').filter(Boolean).at(-1)?.slice(-24) ?? 'unknown';
+  }
+
+  private valueSuffix(value: string, length: number) {
+    return value.trim().slice(-length);
+  }
+
+  private logUpdateEvent(
+    event: string,
+    details: Record<string, unknown>,
+    level: 'log' | 'warn' = 'log'
+  ) {
+    this.logger[level](
+      JSON.stringify({
+        event: `apple_wallet.${event}`,
+        ...details
+      })
+    );
+  }
+
   private sanitizeLogMessage(value: string) {
     return value
       .replace(/ApplePass\s+\S+/gi, 'ApplePass [redacted]')
       .replace(/waflo_scan_v1\.\S+/gi, '[redacted-scan-token]')
       .replace(/waflo_apple_update_v1\.\S+/gi, '[redacted-update-token]')
       .replace(
+        /\/(?:apple-wallet\/)?(?:v1\/)+devices\/[^/\s?]+\/registrations\/[^/\s?]+(?:\/[^/\s?]+)?/gi,
+        '/apple-wallet/v1/devices/[redacted]/registrations/[redacted]/[redacted]'
+      )
+      .replace(
+        /\/(?:apple-wallet\/)?(?:v1\/)+passes\/[^/\s?]+\/[^/\s?]+/gi,
+        '/apple-wallet/v1/passes/[redacted]/[redacted]'
+      )
+      .replace(
         /(pushToken|authenticationToken)\s*[:=]\s*\S+/gi,
         '$1=[redacted]'
+      )
+      .replace(
+        /\b[A-Z0-9._%+-]+@[A-Z0-9.-]+\.[A-Z]{2,}\b/gi,
+        '[redacted-email]'
+      )
+      .replace(
+        /(?:\+?\d[\d\s().-]{7,}\d)/g,
+        '[redacted-phone]'
       )
       .replace(/eyJ[A-Za-z0-9_-]+\.eyJ[A-Za-z0-9_-]+\.[A-Za-z0-9_-]+/g, '[redacted-jwt]')
       .replace(/[A-Za-z0-9_-]{64,}/g, '[redacted-value]')

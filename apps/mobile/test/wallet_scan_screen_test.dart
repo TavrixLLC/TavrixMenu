@@ -9,6 +9,12 @@ import 'package:tavrix_menu_mobile/core/network/network_info.dart';
 import 'package:tavrix_menu_mobile/features/business_setup/domain/entities/business.dart';
 import 'package:tavrix_menu_mobile/features/business_setup/domain/repositories/business_repository.dart';
 import 'package:tavrix_menu_mobile/features/business_setup/domain/usecases/get_my_business.dart';
+import 'package:tavrix_menu_mobile/features/loyalty/domain/entities/loyalty_action_result.dart';
+import 'package:tavrix_menu_mobile/features/loyalty/domain/entities/loyalty_card_state.dart';
+import 'package:tavrix_menu_mobile/features/loyalty/domain/entities/loyalty_membership.dart';
+import 'package:tavrix_menu_mobile/features/loyalty/domain/entities/loyalty_requests.dart';
+import 'package:tavrix_menu_mobile/features/loyalty/domain/repositories/loyalty_repository.dart';
+import 'package:tavrix_menu_mobile/features/loyalty/domain/usecases/add_loyalty_stamps.dart';
 import 'package:tavrix_menu_mobile/features/staff_scanner/data/datasources/wallet_scan_remote_data_source.dart';
 import 'package:tavrix_menu_mobile/features/staff_scanner/data/repositories/wallet_scan_repository_impl.dart';
 import 'package:tavrix_menu_mobile/features/staff_scanner/domain/entities/wallet_scan_result.dart';
@@ -314,12 +320,235 @@ void main() {
     expect(repository.receivedTokens, ['manual-fallback-token']);
     expect(_tokenField(tester).controller?.text, isEmpty);
   });
+
+  // ── Add-stamp tests ──────────────────────────────────────────────────────
+
+  testWidgets(
+    'addStamp success updates stamp count and shows confirmation banner',
+    (tester) async {
+      final scanRepo = _FakeWalletScanRepository(
+        (_) async => const Right(_scanResult),
+      );
+      final stampRepo = _FakeLoyaltyRepository(
+        (_) async => Right(
+          LoyaltyActionResult(
+            membership: const LoyaltyMembership(
+              id: 'membership_id',
+              stampCount: 4,
+            ),
+            cardState: const LoyaltyCardState(
+              stampCount: 4,
+              stampGoal: 10,
+              rewardReady: false,
+              progressPercent: 40,
+              rewardName: 'Free coffee',
+              programName: 'Tavrix Cafe Stamp Card',
+            ),
+          ),
+        ),
+      );
+      final cubit = _cubitWithStamp(scanRepo, stampRepo);
+      addTearDown(cubit.close);
+
+      await tester.pumpWidget(_screen(cubit));
+      await tester.pumpAndSettle();
+
+      // Scan to get result
+      await tester.enterText(
+        find.byKey(const ValueKey('walletScanTokenField')),
+        'valid-token',
+      );
+      await tester.tap(find.byKey(const ValueKey('walletScanButton')));
+      await tester.pumpAndSettle();
+
+      expect(find.text('3 of 10 stamps'), findsOneWidget);
+      expect(
+        find.byKey(const ValueKey('walletAddStampButton')),
+        findsOneWidget,
+      );
+
+      // Add stamp — scroll into view first (scrollable screen)
+      await tester.ensureVisible(
+        find.byKey(const ValueKey('walletAddStampButton')),
+      );
+      await tester.pumpAndSettle();
+      await tester.tap(find.byKey(const ValueKey('walletAddStampButton')));
+      await tester.pumpAndSettle();
+
+      expect(stampRepo.addStampsCalls, 1);
+      expect(
+        find.byKey(const ValueKey('walletStampSuccessBanner')),
+        findsOneWidget,
+      );
+      expect(find.text('Stamp added!'), findsOneWidget);
+      // Progress bar and count should update to 4/10
+      expect(find.text('4 of 10 stamps'), findsOneWidget);
+      // Button disabled after success
+      final btn = tester.widget<AppButton>(
+        find.byKey(const ValueKey('walletAddStampButton')),
+      );
+      expect(btn.onPressed, isNull);
+    },
+  );
+
+  testWidgets('addStamp prevents duplicate tap', (tester) async {
+    final completer = Completer<Either<Failure, LoyaltyActionResult>>();
+    final scanRepo = _FakeWalletScanRepository(
+      (_) async => const Right(_scanResult),
+    );
+    final stampRepo = _FakeLoyaltyRepository((_) => completer.future);
+    final cubit = _cubitWithStamp(scanRepo, stampRepo);
+    addTearDown(cubit.close);
+
+    await tester.pumpWidget(_screen(cubit));
+    await tester.pumpAndSettle();
+    await tester.enterText(
+      find.byKey(const ValueKey('walletScanTokenField')),
+      'valid-token',
+    );
+    await tester.tap(find.byKey(const ValueKey('walletScanButton')));
+    await tester.pumpAndSettle();
+
+    // First tap — scroll into view first
+    await tester.ensureVisible(
+      find.byKey(const ValueKey('walletAddStampButton')),
+    );
+    await tester.pumpAndSettle();
+    await tester.tap(find.byKey(const ValueKey('walletAddStampButton')));
+    await tester.pump();
+
+    expect(find.byKey(const ValueKey('walletAddStampLoading')), findsOneWidget);
+    expect(find.text('Adding stamp...'), findsOneWidget);
+
+    // Second tap while loading — button is disabled so tap does nothing
+    await tester.tap(
+      find.byKey(const ValueKey('walletAddStampButton')),
+      warnIfMissed: false,
+    );
+    await tester.pump();
+
+    expect(stampRepo.addStampsCalls, 1);
+
+    completer.complete(
+      Right(
+        LoyaltyActionResult(
+          membership: const LoyaltyMembership(
+            id: 'membership_id',
+            stampCount: 4,
+          ),
+          cardState: const LoyaltyCardState(
+            stampCount: 4,
+            stampGoal: 10,
+            rewardReady: false,
+            progressPercent: 40,
+            rewardName: 'Free coffee',
+            programName: 'Tavrix Cafe Stamp Card',
+          ),
+        ),
+      ),
+    );
+    await tester.pumpAndSettle();
+    expect(stampRepo.addStampsCalls, 1);
+  });
+
+  testWidgets('addStamp shows error on server failure', (tester) async {
+    final scanRepo = _FakeWalletScanRepository(
+      (_) async => const Right(_scanResult),
+    );
+    final stampRepo = _FakeLoyaltyRepository(
+      (_) async => const Left(ServerFailure()),
+    );
+    final cubit = _cubitWithStamp(scanRepo, stampRepo);
+    addTearDown(cubit.close);
+
+    await tester.pumpWidget(_screen(cubit));
+    await tester.pumpAndSettle();
+    await tester.enterText(
+      find.byKey(const ValueKey('walletScanTokenField')),
+      'valid-token',
+    );
+    await tester.tap(find.byKey(const ValueKey('walletScanButton')));
+    await tester.pumpAndSettle();
+
+    await tester.ensureVisible(
+      find.byKey(const ValueKey('walletAddStampButton')),
+    );
+    await tester.pumpAndSettle();
+    await tester.tap(find.byKey(const ValueKey('walletAddStampButton')));
+    await tester.pumpAndSettle();
+
+    expect(
+      find.text('The server could not complete this request.'),
+      findsOneWidget,
+    );
+    expect(
+      find.byKey(const ValueKey('walletStampSuccessBanner')),
+      findsNothing,
+    );
+    // Button should be re-enabled after error so staff can retry
+    final btn = tester.widget<AppButton>(
+      find.byKey(const ValueKey('walletAddStampButton')),
+    );
+    expect(btn.onPressed, isNotNull);
+  });
+
+  testWidgets('addStamp shows conflict error on 409 (already rewarded)', (
+    tester,
+  ) async {
+    final scanRepo = _FakeWalletScanRepository(
+      (_) async => const Right(_scanResult),
+    );
+    final stampRepo = _FakeLoyaltyRepository(
+      (_) async => const Left(
+        ConflictFailure('Membership has already received maximum stamps.'),
+      ),
+    );
+    final cubit = _cubitWithStamp(scanRepo, stampRepo);
+    addTearDown(cubit.close);
+
+    await tester.pumpWidget(_screen(cubit));
+    await tester.pumpAndSettle();
+    await tester.enterText(
+      find.byKey(const ValueKey('walletScanTokenField')),
+      'valid-token',
+    );
+    await tester.tap(find.byKey(const ValueKey('walletScanButton')));
+    await tester.pumpAndSettle();
+
+    await tester.ensureVisible(
+      find.byKey(const ValueKey('walletAddStampButton')),
+    );
+    await tester.pumpAndSettle();
+    await tester.tap(find.byKey(const ValueKey('walletAddStampButton')));
+    await tester.pumpAndSettle();
+
+    expect(
+      find.text('Membership has already received maximum stamps.'),
+      findsOneWidget,
+    );
+  });
 }
+
+// ── Helpers ──────────────────────────────────────────────────────────────────
 
 WalletScanCubit _cubit(WalletScanRepository repository) {
   return WalletScanCubit(
     getMyBusiness: GetMyBusiness(_FakeBusinessRepository()),
     scanWalletPass: ScanWalletPass(repository),
+    addLoyaltyStamps: AddLoyaltyStamps(
+      _FakeLoyaltyRepository((_) async => const Left(ServerFailure())),
+    ),
+  );
+}
+
+WalletScanCubit _cubitWithStamp(
+  WalletScanRepository scanRepository,
+  LoyaltyRepository loyaltyRepository,
+) {
+  return WalletScanCubit(
+    getMyBusiness: GetMyBusiness(_FakeBusinessRepository()),
+    scanWalletPass: ScanWalletPass(scanRepository),
+    addLoyaltyStamps: AddLoyaltyStamps(loyaltyRepository),
   );
 }
 
@@ -377,6 +606,34 @@ class _FakeWalletScanRepository implements WalletScanRepository {
     expect(businessId, _business.id);
     return response(token);
   }
+}
+
+class _FakeLoyaltyRepository implements LoyaltyRepository {
+  _FakeLoyaltyRepository(this.addStampsResponse);
+
+  final Future<Either<Failure, LoyaltyActionResult>> Function(
+    String membershipId,
+  )
+  addStampsResponse;
+  int addStampsCalls = 0;
+
+  @override
+  Future<Either<Failure, LoyaltyActionResult>> addStamps({
+    required String businessId,
+    required String membershipId,
+    required AddStampsRequest request,
+  }) {
+    addStampsCalls += 1;
+    expect(businessId, _business.id);
+    expect(membershipId, _scanResult.membershipId);
+    return addStampsResponse(membershipId);
+  }
+
+  // Unimplemented stubs — not needed for scanner tests
+  @override
+  dynamic noSuchMethod(Invocation invocation) => throw UnimplementedError(
+    '${invocation.memberName} not implemented in _FakeLoyaltyRepository',
+  );
 }
 
 class _FakeCameraScanner extends StatelessWidget {

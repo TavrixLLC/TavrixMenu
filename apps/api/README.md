@@ -144,9 +144,14 @@ Configure the update service in the backend environment only:
 
 ```dotenv
 APPLE_WALLET_WEB_SERVICE_ENABLED=true
-APPLE_WALLET_WEB_SERVICE_BASE_URL=https://api.example.test/apple-wallet/v1
+APPLE_WALLET_WEB_SERVICE_BASE_URL=https://api.example.test/apple-wallet
 APPLE_WALLET_UPDATE_AUTH_TOKEN_SECRET=<local-secret-at-least-32-characters>
 ```
+
+Apple treats `webServiceURL` as a base URL and appends `/v1` to it. Do not
+include `/v1` in this setting. The API accepts a legacy trailing `/v1` and
+removes it before signing so existing local configuration does not produce
+duplicated `/v1/v1` callback paths.
 
 Production deployments, including staging deployments run with
 `NODE_ENV=production`, require a public HTTPS base URL and reject localhost or

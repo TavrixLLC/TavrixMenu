@@ -153,7 +153,7 @@ describe('validateEnvironment Apple Wallet update web service config', () => {
     assert.equal(incomplete.APPLE_WALLET_UPDATE_AUTH_TOKEN_SECRET, '');
   });
 
-  it('accepts local HTTP only outside production and removes a trailing slash', () => {
+  it('accepts local HTTP only outside production and removes the Apple-owned v1 suffix', () => {
     const config = validateEnvironment({
       NODE_ENV: 'development',
       APPLE_WALLET_WEB_SERVICE_ENABLED: 'true',
@@ -165,7 +165,7 @@ describe('validateEnvironment Apple Wallet update web service config', () => {
 
     assert.equal(
       config.APPLE_WALLET_WEB_SERVICE_BASE_URL,
-      'http://localhost:3000/apple-wallet/v1'
+      'http://localhost:3000/apple-wallet'
     );
   });
 
@@ -221,7 +221,7 @@ describe('validateEnvironment Apple Wallet update web service config', () => {
 
     assert.equal(
       config.APPLE_WALLET_WEB_SERVICE_BASE_URL,
-      'https://api.example.test/apple-wallet/v1'
+      'https://api.example.test/apple-wallet'
     );
   });
 });

@@ -56,10 +56,10 @@ export const DEFAULT_LOYALTY_WALLET_THEME_PALETTE = {
   walletBackgroundColor: '#2563eb',
   imageBackgroundColor: '#1d4ed8',
   imageSurfaceColor: '#2563eb',
-  imageAccentColor: '#fde047',
-  imageTextColor: '#eff6ff',
-  stampFilledColor: '#fde047',
-  stampEmptyColor: '#bfdbfe',
+  imageAccentColor: '#facc15',
+  imageTextColor: '#ffffff',
+  stampFilledColor: '#facc15',
+  stampEmptyColor: '#93c5fd',
   rewardBannerColor: '#1e40af'
 } as const satisfies LoyaltyWalletThemePalette;
 

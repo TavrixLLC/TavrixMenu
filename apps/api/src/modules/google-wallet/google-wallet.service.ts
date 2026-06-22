@@ -117,6 +117,11 @@ export class GoogleWalletService {
     const progressText =
       input.progressText?.trim() ||
       `${stampCount} of ${input.stampGoal} stamps collected`;
+    const imageCarriesVisualSummary = Boolean(input.heroImageUrl);
+    const includeLoyaltyPoints =
+      input.includeLoyaltyPoints ?? !imageCarriesVisualSummary;
+    const includeTextModules =
+      input.includeTextModules ?? !imageCarriesVisualSummary;
 
     const payload: GoogleWalletLoyaltyObjectPayload = {
       id: this.buildResourceId(input.objectSuffix),
@@ -134,7 +139,7 @@ export class GoogleWalletService {
       };
     }
 
-    if (input.includeLoyaltyPoints !== false) {
+    if (includeLoyaltyPoints) {
       payload.loyaltyPoints = {
         label: 'Progress',
         balance: {
@@ -143,7 +148,7 @@ export class GoogleWalletService {
       };
     }
 
-    if (input.includeTextModules !== false) {
+    if (includeTextModules) {
       payload.textModulesData = [
         {
           id: 'reward',
