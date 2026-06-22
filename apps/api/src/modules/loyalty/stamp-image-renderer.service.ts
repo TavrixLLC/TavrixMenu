@@ -334,8 +334,10 @@ export class StampImageRendererService {
 
   private renderAppleStripSvg(input: NormalizedStampImageRenderInput) {
     const layout = this.getAppleStripLayout(input.stampGoal);
-    const titleSize = this.fitFontSize(input.programName, 52, 38, 24);
-    const rewardText = this.truncate(`Reward: ${input.rewardName}`, 46);
+    const sanitizedProgramName = this.sanitizeDisplayText(input.programName);
+    const sanitizedRewardName = this.sanitizeDisplayText(input.rewardName);
+    const titleSize = this.fitFontSize(sanitizedProgramName, 52, 38, 24);
+    const rewardText = this.truncate(`Reward: ${sanitizedRewardName}`, 46);
     const rewardSize = this.fitFontSize(rewardText, 31, 23, 38);
 
     return [
@@ -346,7 +348,7 @@ export class StampImageRendererService {
       '</defs>',
       '<rect width="1125" height="369" fill="url(#apple-bg)"/>',
       `<circle cx="64" cy="330" r="170" fill="${this.hexToRgba(input.imageTextColor, 0.07)}"/>`,
-      `<text x="48" y="76" fill="${input.imageTextColor}" font-family="${this.fontFamily()}" font-size="${titleSize}" font-weight="800">${this.escapeXml(this.truncate(input.programName, 34))}</text>`,
+      `<text x="48" y="76" fill="${input.imageTextColor}" font-family="${this.fontFamily()}" font-size="${titleSize}" font-weight="800">${this.escapeXml(this.truncate(sanitizedProgramName, 34))}</text>`,
       `<rect x="914" y="32" width="163" height="66" rx="33" fill="${this.hexToRgba(input.imageSurfaceColor, 0.92)}" stroke="${this.hexToRgba(input.imageAccentColor, 0.5)}" stroke-width="3"/>`,
       `<text x="995.5" y="58" fill="${this.hexToRgba(input.imageTextColor, 0.74)}" text-anchor="middle" font-family="${this.fontFamily()}" font-size="18" font-weight="700">STAMPS</text>`,
       `<text x="995.5" y="87" fill="${input.imageTextColor}" text-anchor="middle" font-family="${this.fontFamily()}" font-size="30" font-weight="800">${input.stampCount} / ${input.stampGoal}</text>`,
@@ -736,7 +738,6 @@ export class StampImageRendererService {
       .replace(/'/g, '&apos;');
   }
 
-<<<<<<< HEAD
   private sanitizeDisplayText(value: string) {
     return value
       .replace(/[\u0000-\u001f\u007f]/g, ' ')
