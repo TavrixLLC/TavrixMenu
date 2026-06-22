@@ -91,6 +91,8 @@ class MockGoogleWalletService {
     barcodeAlternateText?: string;
     includeBarcode?: boolean;
     heroImageUrl?: string;
+    includeLoyaltyPoints?: boolean;
+    includeTextModules?: boolean;
   }) {
     this.objectInputs.push(input);
 
@@ -109,19 +111,27 @@ class MockGoogleWalletService {
               alternateText: input.barcodeAlternateText ?? input.accountId
             }
           }),
-      loyaltyPoints: {
-        label: 'Progress',
-        balance: {
-          string: `${(input as any).stampCount}/${(input as any).stampGoal}`
-        }
-      },
-      textModulesData: [
-        {
-          id: 'progress',
-          header: 'Progress',
-          body: (input as any).progressText
-        }
-      ],
+      ...((input.includeLoyaltyPoints ?? !input.heroImageUrl)
+        ? {
+            loyaltyPoints: {
+              label: 'Progress',
+              balance: {
+                string: `${(input as any).stampCount}/${(input as any).stampGoal}`
+              }
+            }
+          }
+        : {}),
+      ...((input.includeTextModules ?? !input.heroImageUrl)
+        ? {
+            textModulesData: [
+              {
+                id: 'progress',
+                header: 'Progress',
+                body: (input as any).progressText
+              }
+            ]
+          }
+        : {}),
       heroImage: input.heroImageUrl
         ? {
             sourceUri: {
@@ -476,8 +486,9 @@ describe('WalletPassService', () => {
     assert.equal(wallet.upsertedClasses.length, 0);
     assert.equal(wallet.upsertedObjects.length, 1);
     assert.equal(objectInput.stampCount, 4);
-    assert.equal(objectInput.progressText, '4 of 5 stamps collected');
-    assert.equal(objectPayload.loyaltyPoints.balance.string, '4/5');
+    assert.equal(objectInput.progressText, undefined);
+    assert.equal(objectPayload.loyaltyPoints, undefined);
+    assert.equal(objectPayload.textModulesData, undefined);
     assert.equal(objectPayload.barcode.type, 'QR_CODE');
     assert.equal(objectPayload.barcode.value, metadata.rawToken);
     assert.notEqual(objectPayload.barcode.alternateText, metadata.rawToken);

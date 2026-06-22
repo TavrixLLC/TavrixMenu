@@ -10,7 +10,6 @@ import { BusinessAccessService } from '../businesses/business-access.service';
 import { UpdateLoyaltyStampStyleDto } from './dto/update-loyalty-stamp-style.dto';
 import {
   DEFAULT_LOYALTY_STAMP_STYLE,
-  HEX_COLOR_PATTERN,
   LOYALTY_STAMP_PRESETS,
   LOYALTY_WALLET_COLOR_MODES,
   LOYALTY_WALLET_THEME_PRESET_CATALOG,
@@ -20,6 +19,7 @@ import {
   LoyaltyWalletColorModeValue,
   LoyaltyWalletThemePresetValue
 } from './loyalty-stamp-style.constants';
+import { resolveWalletPassVisualTheme } from './wallet-pass-visual.resolver';
 
 type ProgramWithStampStyle = LoyaltyProgram & {
   stampStyle: LoyaltyStampStyle | null;
@@ -166,38 +166,27 @@ export class LoyaltyStampStyleService {
       return this.mapPersistedStyle(program.stampStyle);
     }
 
-    const backgroundColor = this.normalizeColorOrDefault(
-      program.cardColor,
-      DEFAULT_LOYALTY_STAMP_STYLE.backgroundColor
-    );
-    const accentColor = this.normalizeColorOrDefault(
-      program.accentColor,
-      DEFAULT_LOYALTY_STAMP_STYLE.accentColor
-    );
-    const textColor = DEFAULT_LOYALTY_STAMP_STYLE.textColor;
+    const theme = resolveWalletPassVisualTheme(program);
 
     return {
       id: null,
       loyaltyProgramId: program.id,
       styleType: DEFAULT_LOYALTY_STAMP_STYLE.styleType,
       presetKey: DEFAULT_LOYALTY_STAMP_STYLE.presetKey,
-      backgroundColor,
-      accentColor,
-      textColor,
-      walletBackgroundColor: this.normalizeColorOrDefault(
-        program.cardColor,
-        DEFAULT_LOYALTY_STAMP_STYLE.walletBackgroundColor
-      ),
-      imageBackgroundColor: backgroundColor,
-      imageSurfaceColor: DEFAULT_LOYALTY_STAMP_STYLE.imageSurfaceColor,
-      imageAccentColor: accentColor,
-      imageTextColor: textColor,
-      stampFilledColor: accentColor,
-      stampEmptyColor: DEFAULT_LOYALTY_STAMP_STYLE.stampEmptyColor,
-      rewardBannerColor: DEFAULT_LOYALTY_STAMP_STYLE.rewardBannerColor,
-      themePreset: DEFAULT_LOYALTY_STAMP_STYLE.themePreset,
+      backgroundColor: theme.backgroundColor,
+      accentColor: theme.accentColor,
+      textColor: theme.textColor,
+      walletBackgroundColor: theme.walletBackgroundColor,
+      imageBackgroundColor: theme.imageBackgroundColor,
+      imageSurfaceColor: theme.imageSurfaceColor,
+      imageAccentColor: theme.imageAccentColor,
+      imageTextColor: theme.imageTextColor,
+      stampFilledColor: theme.stampFilledColor,
+      stampEmptyColor: theme.stampEmptyColor,
+      rewardBannerColor: theme.rewardBannerColor,
+      themePreset: theme.themePreset,
       colorMode: DEFAULT_LOYALTY_STAMP_STYLE.colorMode,
-      layoutVariant: DEFAULT_LOYALTY_STAMP_STYLE.layoutVariant,
+      layoutVariant: theme.layoutVariant,
       isDefault: true,
       createdAt: null,
       updatedAt: null
@@ -230,11 +219,4 @@ export class LoyaltyStampStyleService {
     };
   }
 
-  private normalizeColorOrDefault(value: string | null, fallback: string) {
-    const normalized = value?.trim();
-
-    return normalized && HEX_COLOR_PATTERN.test(normalized)
-      ? normalized
-      : fallback;
-  }
 }

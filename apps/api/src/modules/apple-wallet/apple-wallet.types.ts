@@ -1,4 +1,5 @@
 import { WalletScanTokenPassFields } from '../google-wallet/wallet-scan-token.service';
+import { WalletPassVisualTheme } from '../loyalty/wallet-pass-visual.resolver';
 
 export type AppleWalletReadiness =
   | 'DISABLED'
@@ -63,15 +64,7 @@ export type BuildAppleWalletPassInput = {
   authenticationToken?: string;
 };
 
-export type AppleWalletPassTheme = {
-  walletBackgroundColor?: string;
-  imageBackgroundColor?: string;
-  imageSurfaceColor?: string;
-  imageAccentColor?: string;
-  imageTextColor?: string;
-  stampFilledColor?: string;
-  stampEmptyColor?: string;
-};
+export type AppleWalletPassTheme = Partial<WalletPassVisualTheme>;
 
 export type AppleWalletPassAssets = Record<string, Buffer>;
 

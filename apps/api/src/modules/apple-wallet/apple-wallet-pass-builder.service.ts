@@ -1,44 +1,48 @@
-import { Injectable } from '@nestjs/common';
+import { Injectable, Optional } from '@nestjs/common';
 import sharp from 'sharp';
 import {
   AppleWalletPassAssets,
   AppleWalletPassPayload,
   BuildAppleWalletPassInput
 } from './apple-wallet.types';
-import { DEFAULT_LOYALTY_STAMP_STYLE } from '../loyalty/loyalty-stamp-style.constants';
+import { StampImageRendererService } from '../loyalty/stamp-image-renderer.service';
+import {
+  resolveWalletPassVisual,
+  WalletPassVisualModel
+} from '../loyalty/wallet-pass-visual.resolver';
 
 const qrAltText = 'Scan loyalty card';
 
 @Injectable()
 export class AppleWalletPassBuilderService {
+  constructor(
+    @Optional()
+    private readonly stampImageRenderer = new StampImageRendererService()
+  ) {}
+
   buildPayload(input: BuildAppleWalletPassInput): AppleWalletPassPayload {
     this.assertProgress(input.stampCount, input.stampGoal);
 
-    const businessName = this.safeText(input.businessName, 'Waflo', 36);
-    const programName = this.safeText(input.programName, 'Loyalty Card', 40);
-    const rewardName = this.safeText(
-      input.rewardName,
-      `Reward after ${input.stampGoal} stamps`,
-      42
-    );
+    const visual = this.resolveVisual(input);
+    const businessName = this.safeText(visual.businessName, 'Waflo', 36);
+    const programName = this.safeText(visual.programName, 'Loyalty Card', 40);
+    const rewardName = this.safeText(visual.rewardName, 'Reward', 42);
     const rewardDescription = this.safeText(
       input.rewardDescription,
       rewardName,
       140
     );
-    const rewardReady = input.stampCount >= input.stampGoal;
-    const stampsRemaining = Math.max(input.stampGoal - input.stampCount, 0);
     const backgroundColor = this.toRgb(
-      input.theme?.walletBackgroundColor,
-      DEFAULT_LOYALTY_STAMP_STYLE.walletBackgroundColor
+      visual.theme.walletBackgroundColor,
+      visual.theme.walletBackgroundColor
     );
     const foregroundColor = this.toRgb(
-      input.theme?.imageTextColor,
-      DEFAULT_LOYALTY_STAMP_STYLE.imageTextColor
+      visual.theme.imageTextColor,
+      visual.theme.imageTextColor
     );
     const labelColor = this.toRgb(
-      input.theme?.imageAccentColor,
-      DEFAULT_LOYALTY_STAMP_STYLE.imageAccentColor
+      visual.theme.imageAccentColor,
+      visual.theme.imageAccentColor
     );
     const barcode = {
       format: 'PKBarcodeFormatQR' as const,
@@ -71,37 +75,10 @@ export class AppleWalletPassBuilderService {
           }
         : {}),
       storeCard: {
-        headerFields: [
-          {
-            key: 'stamps',
-            label: 'STAMPS',
-            value: `${input.stampCount} / ${input.stampGoal}`,
-            textAlignment: 'PKTextAlignmentRight'
-          }
-        ],
-        primaryFields: [
-          {
-            key: 'rewardStatus',
-            label: 'NEXT REWARD',
-            value: rewardReady
-              ? 'Reward ready'
-              : `${stampsRemaining} ${stampsRemaining === 1 ? 'stamp' : 'stamps'} to go`
-          }
-        ],
-        secondaryFields: [
-          {
-            key: 'reward',
-            label: 'REWARD',
-            value: rewardName
-          }
-        ],
-        auxiliaryFields: [
-          {
-            key: 'program',
-            label: 'PROGRAM',
-            value: programName
-          }
-        ],
+        headerFields: [],
+        primaryFields: [],
+        secondaryFields: [],
+        auxiliaryFields: [],
         backFields: [
           ...this.buildBackFields({
             businessName,
@@ -122,15 +99,17 @@ export class AppleWalletPassBuilderService {
     input: BuildAppleWalletPassInput
   ): Promise<AppleWalletPassAssets> {
     this.assertProgress(input.stampCount, input.stampGoal);
-    const theme = this.resolveTheme(input);
+    const visual = this.resolveVisual(input);
+    const theme = {
+      background: visual.theme.imageBackgroundColor,
+      accent: visual.theme.imageAccentColor
+    };
     const icon = Buffer.from(
       `<svg xmlns="http://www.w3.org/2000/svg" width="87" height="87" viewBox="0 0 87 87"><rect width="87" height="87" rx="18" fill="${theme.background}"/><path d="M19 24h10l7 35 8-25 8 25 7-35h10L58 66H48l-8-23-8 23H22z" fill="${theme.accent}"/></svg>`
     );
     const logo = Buffer.from(
       `<svg xmlns="http://www.w3.org/2000/svg" width="150" height="150" viewBox="0 0 87 87"><circle cx="43.5" cy="43.5" r="39" fill="${theme.accent}"/><path d="M19 24h10l7 35 8-25 8 25 7-35h10L58 66H48l-8-23-8 23H22z" fill="${theme.background}"/></svg>`
     );
-    const strip = Buffer.from(this.buildStripSvg(input, theme));
-
     const [
       icon1x,
       icon2x,
@@ -148,9 +127,21 @@ export class AppleWalletPassBuilderService {
       this.renderPng(logo, 50, 50),
       this.renderPng(logo, 100, 100),
       this.renderPng(logo, 150, 150),
-      this.renderPng(strip, 375, 123),
-      this.renderPng(strip, 750, 246),
-      this.renderPng(strip, 1125, 369)
+      this.stampImageRenderer.renderPng(this.buildStampImageInput(visual), {
+        target: 'APPLE_STRIP',
+        width: 375,
+        height: 123
+      }),
+      this.stampImageRenderer.renderPng(this.buildStampImageInput(visual), {
+        target: 'APPLE_STRIP',
+        width: 750,
+        height: 246
+      }),
+      this.stampImageRenderer.renderPng(this.buildStampImageInput(visual), {
+        target: 'APPLE_STRIP',
+        width: 1125,
+        height: 369
+      })
     ]);
 
     return {
@@ -205,83 +196,27 @@ export class AppleWalletPassBuilderService {
       : fields;
   }
 
-  private resolveTheme(input: BuildAppleWalletPassInput) {
+  private resolveVisual(input: BuildAppleWalletPassInput) {
+    return resolveWalletPassVisual({
+      businessName: input.businessName,
+      programName: input.programName,
+      rewardName:
+        input.rewardName ?? `Reward after ${input.stampGoal} stamps`,
+      stampCount: input.stampCount,
+      stampGoal: input.stampGoal,
+      theme: input.theme
+    });
+  }
+
+  private buildStampImageInput(visual: WalletPassVisualModel) {
     return {
-      background: this.normalizeHex(
-        input.theme?.imageBackgroundColor ??
-          input.theme?.walletBackgroundColor,
-        DEFAULT_LOYALTY_STAMP_STYLE.imageBackgroundColor
-      ),
-      surface: this.normalizeHex(
-        input.theme?.imageSurfaceColor,
-        DEFAULT_LOYALTY_STAMP_STYLE.imageSurfaceColor
-      ),
-      accent: this.normalizeHex(
-        input.theme?.imageAccentColor,
-        DEFAULT_LOYALTY_STAMP_STYLE.imageAccentColor
-      ),
-      text: this.normalizeHex(
-        input.theme?.imageTextColor,
-        DEFAULT_LOYALTY_STAMP_STYLE.imageTextColor
-      ),
-      filled: this.normalizeHex(
-        input.theme?.stampFilledColor,
-        DEFAULT_LOYALTY_STAMP_STYLE.stampFilledColor
-      ),
-      empty: this.normalizeHex(
-        input.theme?.stampEmptyColor,
-        DEFAULT_LOYALTY_STAMP_STYLE.stampEmptyColor
-      )
+      businessName: visual.businessName,
+      programName: visual.programName,
+      rewardName: visual.rewardName,
+      stampCount: visual.stampCount,
+      stampGoal: visual.stampGoal,
+      ...visual.theme
     };
-  }
-
-  private buildStripSvg(
-    input: BuildAppleWalletPassInput,
-    theme: ReturnType<AppleWalletPassBuilderService['resolveTheme']>
-  ) {
-    const count = Math.min(input.stampCount, input.stampGoal);
-    const markers = this.buildProgressMarkers(
-      count,
-      input.stampGoal,
-      theme
-    );
-
-    return [
-      '<svg xmlns="http://www.w3.org/2000/svg" width="750" height="246" viewBox="0 0 750 246">',
-      '<defs><linearGradient id="bg" x1="0" y1="0" x2="1" y2="1">',
-      `<stop offset="0%" stop-color="${theme.background}"/><stop offset="100%" stop-color="${theme.surface}"/>`,
-      '</linearGradient></defs>',
-      '<rect width="750" height="246" fill="url(#bg)"/>',
-      `<circle cx="690" cy="-35" r="190" fill="${theme.accent}" fill-opacity="0.08"/>`,
-      `<circle cx="48" cy="268" r="155" fill="${theme.text}" fill-opacity="0.04"/>`,
-      `<rect x="30" y="150" width="690" height="84" rx="42" fill="${theme.text}" fill-opacity="0.07"/>`,
-      markers,
-      '</svg>'
-    ].join('');
-  }
-
-  private buildProgressMarkers(
-    count: number,
-    goal: number,
-    theme: ReturnType<AppleWalletPassBuilderService['resolveTheme']>
-  ) {
-    if (goal > 12) {
-      const width = 666;
-      const progress = Math.round((Math.min(count, goal) / goal) * width);
-      return `<rect x="42" y="176" width="${width}" height="32" rx="16" fill="${theme.empty}" fill-opacity="0.48"/><rect x="42" y="176" width="${progress}" height="32" rx="16" fill="${theme.filled}"/>`;
-    }
-
-    const gap = 12;
-    const diameter = Math.min(44, (666 - gap * (goal - 1)) / goal);
-    const radius = diameter / 2;
-    const totalWidth = goal * diameter + (goal - 1) * gap;
-    const startX = (750 - totalWidth) / 2 + radius;
-    return Array.from({ length: goal }, (_, index) => {
-      const x = startX + index * (diameter + gap);
-      const fill = index < count ? theme.filled : theme.empty;
-      const opacity = index < count ? 1 : 0.48;
-      return `<circle cx="${x}" cy="192" r="${radius}" fill="${fill}" fill-opacity="${opacity}" stroke="${theme.text}" stroke-opacity="0.18" stroke-width="2"/>`;
-    }).join('');
   }
 
   private renderPng(source: Buffer, width: number, height: number) {

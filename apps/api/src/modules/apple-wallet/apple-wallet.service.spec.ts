@@ -47,8 +47,13 @@ describe('AppleWalletPassBuilderService', () => {
     assert.equal(payload.barcodes[0]?.altText.includes(rawToken), false);
     assert.equal(payload.barcodes[0]?.altText, 'Scan loyalty card');
 
-    const visibleFields = JSON.stringify(payload.storeCard).toLowerCase();
-    assert.match(visibleFields, /stamps/);
+    const visibleFields = JSON.stringify({
+      headerFields: payload.storeCard.headerFields,
+      primaryFields: payload.storeCard.primaryFields,
+      secondaryFields: payload.storeCard.secondaryFields,
+      auxiliaryFields: payload.storeCard.auxiliaryFields
+    }).toLowerCase();
+    assert.doesNotMatch(visibleFields, /stamps|progress|reward/);
     assert.doesNotMatch(
       visibleFields,
       /restaurant|coffee|dinar|currency|iraq|points|spend/
@@ -82,22 +87,10 @@ describe('AppleWalletPassBuilderService', () => {
     assert.equal(payload.foregroundColor, 'rgb(249, 250, 251)');
     assert.equal(payload.labelColor, 'rgb(245, 158, 11)');
     assert.equal(payload.suppressStripShine, true);
-    assert.deepEqual(payload.storeCard.headerFields[0], {
-      key: 'stamps',
-      label: 'STAMPS',
-      value: '7 / 10',
-      textAlignment: 'PKTextAlignmentRight'
-    });
-    assert.deepEqual(payload.storeCard.primaryFields[0], {
-      key: 'rewardStatus',
-      label: 'NEXT REWARD',
-      value: '3 stamps to go'
-    });
-    assert.equal(
-      payload.storeCard.secondaryFields[0]?.value,
-      'Free Turkish coffee'
-    );
-    assert.equal(payload.storeCard.auxiliaryFields[0]?.value, 'Coffee Rewards');
+    assert.deepEqual(payload.storeCard.headerFields, []);
+    assert.deepEqual(payload.storeCard.primaryFields, []);
+    assert.deepEqual(payload.storeCard.secondaryFields, []);
+    assert.deepEqual(payload.storeCard.auxiliaryFields, []);
 
     const backText = JSON.stringify(payload.storeCard.backFields);
     assert.match(backText, /A simple coffee loyalty card/);
@@ -132,7 +125,7 @@ describe('AppleWalletPassBuilderService', () => {
     assert.equal(payload.backgroundColor, 'rgb(37, 99, 235)');
     assert.equal(payload.foregroundColor, 'rgb(255, 255, 255)');
     assert.equal(payload.labelColor, 'rgb(170, 187, 204)');
-    assert.equal(payload.storeCard.primaryFields[0]?.value, 'Reward ready');
+    assert.deepEqual(payload.storeCard.primaryFields, []);
     assert.equal(payload.barcodes.length, 1);
   });
 

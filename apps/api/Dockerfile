@@ -23,7 +23,7 @@ RUN pnpm build
 
 # Stage 2: Run
 FROM node:20-alpine AS runner
-RUN apk add --no-cache libc6-compat
+RUN apk add --no-cache libc6-compat font-noto font-noto-emoji
 RUN npm install -g pnpm
 
 WORKDIR /app

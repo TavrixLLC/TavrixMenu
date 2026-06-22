@@ -152,10 +152,10 @@ describe('PublicAppleWalletPassService token safety', () => {
         'rgb(17, 24, 39)'
       );
       assert.equal(setup.signer.payload?.labelColor, 'rgb(245, 158, 11)');
-      assert.equal(
-        setup.signer.payload?.storeCard.secondaryFields[0]?.value,
-        'Loyalty reward'
-      );
+      assert.deepEqual(setup.signer.payload?.storeCard.headerFields, []);
+      assert.deepEqual(setup.signer.payload?.storeCard.primaryFields, []);
+      assert.deepEqual(setup.signer.payload?.storeCard.secondaryFields, []);
+      assert.deepEqual(setup.signer.payload?.storeCard.auxiliaryFields, []);
       assert.equal(JSON.stringify(result).includes(barcodeValue), false);
       assert.equal(logs.join('\n').includes(barcodeValue), false);
       assert.equal(setup.state.upserts[0]?.create.platform, WalletPassPlatform.APPLE_WALLET);

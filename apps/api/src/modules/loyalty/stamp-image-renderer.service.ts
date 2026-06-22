@@ -11,6 +11,18 @@ import {
   LoyaltyStampPresetKeyValue,
   LoyaltyWalletThemePresetValue
 } from './loyalty-stamp-style.constants';
+import {
+  resolveWalletPassVisual,
+  WalletPassVisualModel
+} from './wallet-pass-visual.resolver';
+
+export type StampImageRenderTarget = 'GOOGLE_HERO' | 'APPLE_STRIP';
+
+export type StampImageRenderOptions = {
+  target?: StampImageRenderTarget;
+  width?: number;
+  height?: number;
+};
 
 export type StampImageRenderInput = {
   businessName: string;
@@ -45,6 +57,7 @@ type NormalizedStampImageRenderInput = StampImageRenderInput & {
   stampEmptyColor: string;
   rewardBannerColor: string;
   themePreset: LoyaltyWalletThemePresetValue;
+  visual: WalletPassVisualModel;
 };
 
 type IconInput = {
@@ -58,11 +71,17 @@ type IconInput = {
 
 @Injectable()
 export class StampImageRendererService {
-  async renderPng(input: StampImageRenderInput): Promise<Buffer> {
+  async renderPng(
+    input: StampImageRenderInput,
+    options: StampImageRenderOptions = {}
+  ): Promise<Buffer> {
     const normalized = this.normalizeInput(input);
-    const svg = this.renderSvg(normalized);
+    const svg = this.renderSvg(normalized, options.target);
+    const image = sharp(Buffer.from(svg));
 
-    return sharp(Buffer.from(svg)).png().toBuffer();
+    return options.width && options.height
+      ? image.resize(options.width, options.height).png().toBuffer()
+      : image.png().toBuffer();
   }
 
   buildStyleHash(input: StampImageRenderInput) {
@@ -158,10 +177,33 @@ export class StampImageRendererService {
       'rewardBannerColor'
     );
 
+    const visual = resolveWalletPassVisual({
+      businessName: input.businessName,
+      programName: input.programName,
+      rewardName: input.rewardName,
+      stampCount: input.stampCount,
+      stampGoal: input.stampGoal,
+      theme: {
+        presetKey: input.presetKey,
+        backgroundColor,
+        accentColor,
+        textColor,
+        imageBackgroundColor,
+        imageSurfaceColor,
+        imageAccentColor,
+        imageTextColor,
+        stampFilledColor,
+        stampEmptyColor,
+        rewardBannerColor,
+        themePreset,
+        layoutVariant: input.layoutVariant
+      }
+    });
+
     return {
-      businessName: this.truncate(input.businessName.trim() || 'Waflo', 64),
-      programName: this.truncate(input.programName.trim() || 'Loyalty Card', 64),
-      rewardName: this.truncate(input.rewardName.trim() || 'Reward', 72),
+      businessName: visual.businessName,
+      programName: visual.programName,
+      rewardName: visual.rewardName,
       stampCount: Math.min(input.stampCount, input.stampGoal),
       stampGoal: input.stampGoal,
       presetKey: input.presetKey,
@@ -176,17 +218,39 @@ export class StampImageRendererService {
       stampEmptyColor,
       rewardBannerColor,
       themePreset,
-      layoutVariant: input.layoutVariant
+      layoutVariant: input.layoutVariant,
+      visual
     };
   }
 
-  private renderSvg(input: NormalizedStampImageRenderInput) {
-    const layout = this.getLayout(input.layoutVariant);
+  private renderSvg(
+    input: NormalizedStampImageRenderInput,
+    target: StampImageRenderTarget = 'GOOGLE_HERO'
+  ) {
+    const layout = this.getLayout(input.layoutVariant, target);
     const progressBadge = this.getProgressBadge(layout);
-    const subtitle =
-      input.layoutVariant === 'COMPACT' ? input.programName : input.businessName;
-    const headline =
-      input.layoutVariant === 'COMPACT' ? input.businessName : input.programName;
+    const rawSubtitle =
+      input.layoutVariant === 'COMPACT'
+        ? input.visual.programName
+        : input.visual.businessName;
+    const rawHeadline =
+      input.layoutVariant === 'COMPACT'
+        ? input.visual.businessName
+        : input.visual.programName;
+    const subtitle = this.fitText(
+      rawSubtitle,
+      target === 'APPLE_STRIP' ? 38 : 52
+    );
+    const headline = this.fitText(
+      rawHeadline,
+      target === 'APPLE_STRIP' ? 34 : 46
+    );
+    const rewardSummary = this.fitText(
+      input.visual.rewardSummary,
+      target === 'APPLE_STRIP' ? 58 : 82
+    );
+    const fontFamily =
+      "'Noto Sans', 'Noto Color Emoji', 'DejaVu Sans', sans-serif";
 
     return [
       `<svg xmlns="http://www.w3.org/2000/svg" width="${layout.width}" height="${layout.height}" viewBox="0 0 ${layout.width} ${layout.height}">`,
@@ -197,13 +261,13 @@ export class StampImageRendererService {
       `<rect width="100%" height="100%" rx="${layout.radius}" fill="url(#bg)"/>`,
       `<circle cx="${progressBadge.cx}" cy="${progressBadge.cy}" r="${progressBadge.radius}" fill="${this.hexToRgba(input.imageAccentColor, 0.18)}"/>`,
       `<circle cx="76" cy="${layout.height - 40}" r="154" fill="${this.hexToRgba(input.imageTextColor, 0.08)}"/>`,
-      `<text x="${layout.padding}" y="${layout.subtitleY}" fill="${this.hexToRgba(input.imageTextColor, 0.78)}" font-family="Inter, Arial, sans-serif" font-size="${layout.subtitleSize}" font-weight="700">${this.escapeXml(subtitle)}</text>`,
-      `<text x="${layout.padding}" y="${layout.titleY}" fill="${input.imageTextColor}" font-family="Inter, Arial, sans-serif" font-size="${layout.titleSize}" font-weight="800">${this.escapeXml(headline)}</text>`,
-      `<text x="${progressBadge.cx}" y="${progressBadge.labelY}" fill="${this.hexToRgba(input.imageTextColor, 0.78)}" text-anchor="middle" font-family="Inter, Arial, sans-serif" font-size="${layout.subtitleSize}" font-weight="700">stamps</text>`,
-      `<text x="${progressBadge.cx}" y="${progressBadge.valueY}" fill="${input.imageTextColor}" text-anchor="middle" font-family="Inter, Arial, sans-serif" font-size="${layout.progressSize}" font-weight="800">${input.stampCount} / ${input.stampGoal}</text>`,
+      `<text x="${layout.padding}" y="${layout.subtitleY}" fill="${this.hexToRgba(input.imageTextColor, 0.78)}" font-family="${fontFamily}" font-size="${layout.subtitleSize}" font-weight="700">${this.escapeXml(subtitle)}</text>`,
+      `<text x="${layout.padding}" y="${layout.titleY}" fill="${input.imageTextColor}" font-family="${fontFamily}" font-size="${layout.titleSize}" font-weight="800">${this.escapeXml(headline)}</text>`,
+      `<text x="${progressBadge.cx}" y="${progressBadge.labelY}" fill="${this.hexToRgba(input.imageTextColor, 0.78)}" text-anchor="middle" font-family="${fontFamily}" font-size="${layout.subtitleSize}" font-weight="700">${input.visual.progressLabel.toLowerCase()}</text>`,
+      `<text x="${progressBadge.cx}" y="${progressBadge.valueY}" fill="${input.imageTextColor}" text-anchor="middle" font-family="${fontFamily}" font-size="${layout.progressSize}" font-weight="800">${input.visual.progressText}</text>`,
       this.renderIconCells(input, layout),
       `<rect x="${layout.padding}" y="${layout.rewardY}" width="${layout.width - layout.padding * 2}" height="${layout.rewardHeight}" rx="${layout.rewardHeight / 2}" fill="${this.hexToRgba(input.rewardBannerColor, 0.86)}"/>`,
-      `<text x="${layout.padding + 28}" y="${layout.rewardTextY}" fill="${input.imageTextColor}" font-family="Inter, Arial, sans-serif" font-size="${layout.rewardSize}" font-weight="750">${this.escapeXml(`Reward: ${input.rewardName}`)}</text>`,
+      `<text x="${layout.padding + layout.rewardTextInset}" y="${layout.rewardTextY}" fill="${input.imageTextColor}" font-family="${fontFamily}" font-size="${layout.rewardSize}" font-weight="750">${this.escapeXml(rewardSummary)}</text>`,
       '</svg>'
     ].join('');
   }
@@ -212,7 +276,7 @@ export class StampImageRendererService {
     input: NormalizedStampImageRenderInput,
     layout: ReturnType<typeof this.getLayout>
   ) {
-    const columns = input.layoutVariant === 'COMPACT' ? input.stampGoal : 5;
+    const columns = layout.singleRow ? input.stampGoal : 5;
     const rows = Math.ceil(input.stampGoal / columns);
     const gridWidth =
       columns * layout.cellSize + (columns - 1) * layout.iconGap;
@@ -372,7 +436,39 @@ export class StampImageRendererService {
     ].join('');
   }
 
-  private getLayout(variant: LoyaltyStampLayoutVariantValue) {
+  private getLayout(
+    variant: LoyaltyStampLayoutVariantValue,
+    target: StampImageRenderTarget = 'GOOGLE_HERO'
+  ) {
+    if (target === 'APPLE_STRIP') {
+      return {
+        width: 750,
+        height: 246,
+        radius: 0,
+        padding: 28,
+        subtitleY: 29,
+        titleY: 62,
+        subtitleSize: 14,
+        titleSize: 27,
+        progressSize: 27,
+        badgeRadius: 48,
+        badgeTopSafePadding: 8,
+        badgeRightSafePadding: 24,
+        badgeLabelOffset: -12,
+        badgeValueOffset: 21,
+        iconsY: 79,
+        iconBoxHeight: 88,
+        cellSize: 58,
+        iconGap: 6,
+        rewardY: 181,
+        rewardHeight: 40,
+        rewardTextY: 208,
+        rewardSize: 18,
+        rewardTextInset: 20,
+        singleRow: true
+      };
+    }
+
     if (variant === 'COMPACT') {
       return {
         width: 1032,
@@ -396,7 +492,9 @@ export class StampImageRendererService {
         rewardY: 264,
         rewardHeight: 44,
         rewardTextY: 294,
-        rewardSize: 22
+        rewardSize: 22,
+        rewardTextInset: 28,
+        singleRow: true
       };
     }
 
@@ -422,7 +520,9 @@ export class StampImageRendererService {
       rewardY: 520,
       rewardHeight: 58,
       rewardTextY: 558,
-      rewardSize: 28
+      rewardSize: 28,
+      rewardTextInset: 28,
+      singleRow: false
     };
   }
 
@@ -494,9 +594,12 @@ export class StampImageRendererService {
       .replace(/'/g, '&apos;');
   }
 
-  private truncate(value: string, maxLength: number) {
-    return value.length <= maxLength
+  private fitText(value: string, maxCharacters: number) {
+    const characters = Array.from(value);
+
+    return characters.length <= maxCharacters
       ? value
-      : `${value.slice(0, maxLength - 3)}...`;
+      : `${characters.slice(0, maxCharacters - 3).join('')}...`;
   }
+
 }
