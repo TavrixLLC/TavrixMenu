@@ -34,6 +34,8 @@ COPY packages/ ./packages/
 COPY apps/api/package.json ./apps/api/
 COPY --from=builder /app/apps/api/dist ./apps/api/dist
 COPY --from=builder /app/apps/api/prisma ./apps/api/prisma
+COPY apps/api/scripts ./apps/api/scripts
+COPY apps/api/tsconfig.json ./apps/api/tsconfig.json
 
 # Install production dependencies only
 RUN pnpm install --prod --frozen-lockfile
