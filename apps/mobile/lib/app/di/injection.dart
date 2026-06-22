@@ -189,6 +189,7 @@ class AppDependencies {
       walletScanCubit: WalletScanCubit(
         getMyBusiness: getMyBusiness,
         scanWalletPass: scanWalletPass,
+        addLoyaltyStamps: addLoyaltyStamps,
       ),
     );
   }

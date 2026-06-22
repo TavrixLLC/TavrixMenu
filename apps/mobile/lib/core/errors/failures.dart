@@ -44,6 +44,15 @@ class NotFoundFailure extends Failure {
   const NotFoundFailure();
 }
 
+class ConflictFailure extends Failure {
+  const ConflictFailure([this.message]);
+
+  final String? message;
+
+  @override
+  List<Object?> get props => [message];
+}
+
 class UnknownFailure extends Failure {
   const UnknownFailure();
 }

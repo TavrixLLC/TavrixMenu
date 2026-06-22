@@ -28,6 +28,8 @@ Future<Either<Failure, T>> runSafe<T>(
       return const Left(ForbiddenFailure());
     } on NotFoundException {
       return const Left(NotFoundFailure());
+    } on ConflictException catch (error) {
+      return Left(ConflictFailure(error.message));
     } catch (_) {
       return const Left(UnknownFailure());
     }

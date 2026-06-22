@@ -33,3 +33,9 @@ class ForbiddenException implements Exception {
 class NotFoundException implements Exception {
   const NotFoundException();
 }
+
+class ConflictException implements Exception {
+  const ConflictException([this.message]);
+
+  final String? message;
+}

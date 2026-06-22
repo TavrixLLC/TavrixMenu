@@ -12,6 +12,9 @@ String failureMessage(Failure failure) {
     ForbiddenFailure() =>
       'Your role does not allow this action for this business.',
     NotFoundFailure() => 'The requested record could not be found.',
+    ConflictFailure(:final message) =>
+      message ??
+          'This stamp could not be added — the reward may already be at its limit.',
     UnknownFailure() => 'Something unexpected happened.',
     Failure() => 'Something unexpected happened.',
   };

@@ -103,6 +103,9 @@ class ApiClient {
       if (statusCode == 404) {
         throw const NotFoundException();
       }
+      if (statusCode == 409) {
+        throw ConflictException(_responseMessage(error.response?.data));
+      }
       if (validationStatusCodes.contains(statusCode)) {
         throw ValidationException(
           _responseMessage(error.response?.data) ?? 'Validation failed.',
