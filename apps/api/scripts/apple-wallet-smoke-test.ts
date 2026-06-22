@@ -108,6 +108,9 @@ function verifyCertificatePath(path: string, fieldName: string) {
 
 function verifyOutputDirectoryIsSafe(outputDirectory: string) {
   const repositoryRoot = resolve(__dirname, '..', '..', '..');
+  if (!existsSync(join(repositoryRoot, '.git'))) {
+    return;
+  }
   const relativeOutput = relative(repositoryRoot, outputDirectory);
   const isInsideRepository =
     relativeOutput === '' ||
