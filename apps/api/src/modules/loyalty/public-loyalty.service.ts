@@ -10,6 +10,7 @@ import {
   Business,
   BusinessStatus,
   Customer,
+  LoyaltyCardAccessSource,
   LoyaltyMembership,
   LoyaltyMembershipStatus,
   LoyaltyProgram,
@@ -110,7 +111,7 @@ export class PublicLoyaltyService {
           name
         });
 
-        return transaction.loyaltyMembership.create({
+        const membership = await transaction.loyaltyMembership.create({
           data: {
             businessId: business.id,
             loyaltyProgramId: program.id,
@@ -128,6 +129,16 @@ export class PublicLoyaltyService {
             loyaltyProgram: true
           }
         });
+
+        await transaction.loyaltyCardAccess.create({
+          data: {
+            membershipId: membership.id,
+            tokenHash: publicAccessTokenHash,
+            source: LoyaltyCardAccessSource.JOIN
+          }
+        });
+
+        return membership;
       });
     } catch (error) {
       if (
@@ -238,23 +249,15 @@ export class PublicLoyaltyService {
         throw this.transferUnavailable();
       }
 
-      return transaction.loyaltyMembership.update({
-        where: {
-          id: transfer.membershipId
-        },
+      await transaction.loyaltyCardAccess.create({
         data: {
-          publicAccessTokenHash: newCardTokenHash,
-          publicAccessTokenIssuedAt: now,
-          publicAccessTokenLastViewedAt: null
-        },
-        include: {
-          business: {
-            select: this.publicBusinessSelect()
-          },
-          customer: true,
-          loyaltyProgram: true
+          membershipId: transfer.membershipId,
+          tokenHash: newCardTokenHash,
+          source: LoyaltyCardAccessSource.TRANSFER
         }
       });
+
+      return transfer.membership;
     });
 
     return this.mapEnrollmentResponse(membership, newCardToken);
@@ -386,6 +389,66 @@ export class PublicLoyaltyService {
   ): Promise<PublicLoyaltyWalletMembership> {
     const normalizedToken = this.normalizeRequiredToken(token);
     const publicAccessTokenHash = this.hashPublicAccessToken(normalizedToken);
+    const access = await this.prisma.loyaltyCardAccess.findFirst({
+      where: {
+        tokenHash: publicAccessTokenHash,
+        revokedAt: null,
+        membership: {
+          status: LoyaltyMembershipStatus.ACTIVE,
+          business: {
+            status: BusinessStatus.ACTIVE
+          },
+          loyaltyProgram: {
+            isActive: true
+          }
+        }
+      },
+      select: {
+        id: true,
+        membershipId: true
+      }
+    });
+
+    if (access) {
+      return this.prisma.$transaction(async (transaction) => {
+        await transaction.loyaltyCardAccess.update({
+          where: {
+            id: access.id
+          },
+          data: {
+            lastUsedAt: new Date()
+          }
+        });
+
+        return transaction.loyaltyMembership.findUniqueOrThrow({
+          where: {
+            id: access.membershipId
+          },
+          include: {
+            business: true,
+            customer: true,
+            loyaltyProgram: {
+              include: {
+                stampStyle: true
+              }
+            }
+          }
+        });
+      });
+    }
+
+    const knownAccess = await this.prisma.loyaltyCardAccess.findUnique({
+      where: {
+        tokenHash: publicAccessTokenHash
+      },
+      select: {
+        id: true
+      }
+    });
+
+    if (knownAccess) {
+      throw new NotFoundException('Loyalty card not found');
+    }
 
     const existingMembership = await this.prisma.loyaltyMembership.findFirst({
       where: {
@@ -407,25 +470,42 @@ export class PublicLoyaltyService {
       throw new NotFoundException('Loyalty card not found');
     }
 
-    const membership = await this.prisma.loyaltyMembership.update({
-      where: {
-        id: existingMembership.id
-      },
-      data: {
-        publicAccessTokenLastViewedAt: new Date()
-      },
-      include: {
-        business: true,
-        customer: true,
-        loyaltyProgram: {
-          include: {
-            stampStyle: true
+    return this.prisma.$transaction(async (transaction) => {
+      const membership = await transaction.loyaltyMembership.update({
+        where: {
+          id: existingMembership.id
+        },
+        data: {
+          publicAccessTokenLastViewedAt: new Date()
+        },
+        include: {
+          business: true,
+          customer: true,
+          loyaltyProgram: {
+            include: {
+              stampStyle: true
+            }
           }
         }
-      }
-    });
+      });
 
-    return membership;
+      await transaction.loyaltyCardAccess.upsert({
+        where: {
+          tokenHash: publicAccessTokenHash
+        },
+        create: {
+          membershipId: membership.id,
+          tokenHash: publicAccessTokenHash,
+          source: LoyaltyCardAccessSource.JOIN,
+          lastUsedAt: new Date()
+        },
+        update: {
+          lastUsedAt: new Date()
+        }
+      });
+
+      return membership;
+    });
   }
 
   private async findActiveBusinessAndProgram(slug: string) {

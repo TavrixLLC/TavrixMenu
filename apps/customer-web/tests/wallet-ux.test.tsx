@@ -220,9 +220,10 @@ describe('secure card transfer UX', () => {
       />
     );
 
-    assert.match(html, /Transfer to another device/);
-    assert.match(html, /Create transfer QR/);
+    assert.match(html, /Add card to another device/);
+    assert.match(html, /Create add-device QR/);
     assert.match(html, /expires after five minutes/i);
+    assert.match(html, /keeps this device connected/i);
   });
 
   it('builds fragment-only transfer links and extracts links or manual codes', () => {
@@ -337,7 +338,7 @@ describe('secure card transfer UX', () => {
       />
     );
 
-    assert.match(html, /Card transferred securely/);
+    assert.match(html, /Card added securely/);
     assert.match(html, /add-to-apple-wallet\.svg/);
   });
 });
