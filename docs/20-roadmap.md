@@ -132,3 +132,25 @@ Acceptance:
 
 - Wallet passes work for supported platforms.
 - Custom domains are validated and secure.
+
+## Sprint 11: Apple Wallet Visual and APNs Updates
+
+Status: Sprint 11 closed with staff scanner runtime caveat.
+
+Known caveat:
+Real authenticated Flutter staff scanner E2E was not executed on a physical device/emulator. Local bloc/widget tests pass and backend/APNs pipeline passed through controlled DB script.
+
+## Sprint 12: Real Scanner E2E & Production Prep
+
+Goals:
+- Real Flutter staff scanner E2E smoke
+
+Acceptance:
+* authenticated staff session
+* scan wallet QR
+* tap Add stamp
+* success UI shown
+* backend stamp count increases
+* no raw QR/token logs
+* Apple/Google/web behavior remains safe
+
