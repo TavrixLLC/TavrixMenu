@@ -235,7 +235,7 @@ export class PublicLoyaltyController {
   @HttpCode(HttpStatus.OK)
   @ApiOkResponse({
     description:
-      'Atomically consumes a valid transfer credential and returns a newly rotated public card reference for the same membership.',
+      'Atomically consumes a valid transfer credential and returns an additional public card reference for the same membership without revoking existing device access.',
     schema: {
       example: {
         customer: {

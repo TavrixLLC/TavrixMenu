@@ -5,6 +5,7 @@ import { validate } from 'class-validator';
 import { describe, it } from 'node:test';
 import {
   BusinessStatus,
+  LoyaltyCardAccessSource,
   LoyaltyMembershipStatus
 } from '../../generated/prisma';
 import {
@@ -77,11 +78,14 @@ describe('PublicLoyaltyService secure card transfer', () => {
     assert.equal(setup.state.cardTransfers.length, 0);
   });
 
-  it('redeems once, rotates card access, and leaves stamp state unchanged', async () => {
+  it('adds a second card access while keeping the old access and stamp state', async () => {
     const setup = createSetup();
     const enrollment = await enrollFixture(setup);
     setup.state.memberships[0].stampCount = 3;
     setup.state.memberships[0].totalStampsEarned = 7;
+    const oldCardBefore = await setup.service.getPublicCard(
+      enrollment.cardAccess.token
+    );
     const transfer = await setup.service.createCardTransfer(
       enrollment.cardAccess.token
     );
@@ -89,6 +93,20 @@ describe('PublicLoyaltyService secure card transfer', () => {
     const redeemed = await setup.service.redeemCardTransfer(
       transfer.transferToken
     );
+    const oldCardAfter = await setup.service.getPublicCard(
+      enrollment.cardAccess.token
+    );
+    const newCardAfter = await setup.service.getPublicCard(
+      redeemed.cardAccess.token
+    );
+    const oldMembership =
+      await setup.service.findMembershipByPublicCardToken(
+        enrollment.cardAccess.token
+      );
+    const newMembership =
+      await setup.service.findMembershipByPublicCardToken(
+        redeemed.cardAccess.token
+      );
 
     assert.notEqual(
       redeemed.cardAccess.token,
@@ -96,6 +114,14 @@ describe('PublicLoyaltyService secure card transfer', () => {
     );
     assert.equal(redeemed.cardState.stampCount, 3);
     assert.equal(redeemed.cardState.totalStampsEarned, 7);
+    assert.deepEqual(oldCardAfter.cardState, oldCardBefore.cardState);
+    assert.deepEqual(newCardAfter, oldCardAfter);
+    assert.equal(newMembership.id, oldMembership.id);
+    assert.equal(setup.state.cardAccesses.length, 2);
+    assert.equal(
+      setup.state.cardAccesses[1]?.source,
+      LoyaltyCardAccessSource.TRANSFER
+    );
     assert.ok(setup.state.cardTransfers[0]?.usedAt instanceof Date);
 
     await captureTransferUnavailable(
@@ -119,6 +145,23 @@ describe('PublicLoyaltyService secure card transfer', () => {
     );
 
     assert.deepEqual(setup.state.memberships[0], membershipBefore);
+  });
+
+  it('keeps a deployed membership-level token working and backfills access lazily', async () => {
+    const setup = createSetup();
+    const enrollment = await enrollFixture(setup);
+    setup.state.cardAccesses.length = 0;
+
+    const card = await setup.service.getPublicCard(
+      enrollment.cardAccess.token
+    );
+
+    assert.equal(card.business.slug, 'sample-cafe');
+    assert.equal(setup.state.cardAccesses.length, 1);
+    assert.equal(
+      setup.state.cardAccesses[0]?.source,
+      LoyaltyCardAccessSource.JOIN
+    );
   });
 
   it('rejects cashier wallet scan QR values as transfer credentials', async () => {
@@ -385,6 +428,7 @@ function createSetup() {
     customers: [] as Array<any>,
     memberships: [] as Array<any>,
     cardTransfers: [] as Array<any>,
+    cardAccesses: [] as Array<any>,
     transactionCalls: 0
   };
 
@@ -444,6 +488,56 @@ function createSetup() {
         );
         Object.assign(membership, data, { updatedAt: new Date() });
         return membershipWithRelations(membership);
+      },
+      findUniqueOrThrow: async ({ where }: any) => {
+        const membership = state.memberships.find(
+          (item) => item.id === where.id
+        );
+
+        if (!membership) {
+          throw new Error('Membership not found');
+        }
+
+        return membershipWithRelations(membership);
+      }
+    },
+    loyaltyCardAccess: {
+      create: async ({ data }: any) => {
+        const access = {
+          id: `access_${state.cardAccesses.length + 1}`,
+          lastUsedAt: null,
+          revokedAt: null,
+          createdAt: new Date(),
+          ...data
+        };
+        state.cardAccesses.push(access);
+        return access;
+      },
+      update: async ({ where, data }: any) => {
+        const access = state.cardAccesses.find(
+          (item) => item.id === where.id
+        );
+        Object.assign(access, data);
+        return access;
+      },
+      upsert: async ({ where, create, update }: any) => {
+        let access = state.cardAccesses.find(
+          (item) => item.tokenHash === where.tokenHash
+        );
+
+        if (access) {
+          Object.assign(access, update);
+          return access;
+        }
+
+        access = {
+          id: `access_${state.cardAccesses.length + 1}`,
+          revokedAt: null,
+          createdAt: new Date(),
+          ...create
+        };
+        state.cardAccesses.push(access);
+        return access;
       }
     },
     loyaltyCardTransfer: {
@@ -516,6 +610,22 @@ function createSetup() {
         return membership ? { id: membership.id } : null;
       },
       update: transaction.loyaltyMembership.update
+    },
+    loyaltyCardAccess: {
+      findFirst: async ({ where }: any) => {
+        const access = state.cardAccesses.find(
+          (item) =>
+            item.tokenHash === where.tokenHash &&
+            item.revokedAt === where.revokedAt
+        );
+
+        return access
+          ? {
+              id: access.id,
+              membershipId: access.membershipId
+            }
+          : null;
+      }
     },
     $transaction: async (callback: (client: typeof transaction) => unknown) => {
       state.transactionCalls += 1;

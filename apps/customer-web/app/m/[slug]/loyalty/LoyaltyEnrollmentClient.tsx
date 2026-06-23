@@ -150,7 +150,7 @@ export function LoyaltyEnrollmentSuccess({
       <div className="rounded-lg border border-emerald-100 bg-emerald-50 p-4">
         <p className="text-sm font-semibold text-emerald-800">
           {variant === 'transferred'
-            ? 'Card transferred securely'
+            ? 'Card added securely'
             : `You joined ${enrollment.program.name}`}
         </p>
         <p className="mt-2 text-sm leading-6 text-emerald-900">
@@ -306,7 +306,7 @@ export function LoyaltyIdentityForm({
               Scan transfer QR from old device
             </h3>
             <p className="mt-1 text-sm leading-6 text-neutral-600">
-              Open your card on the old phone, choose "Transfer to another
+              Open your card on the old phone, choose "Add card to another
               device", then scan its QR with this phone's Camera. You can also
               paste the one-time code or link below.
             </p>

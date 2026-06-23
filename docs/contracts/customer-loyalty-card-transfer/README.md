@@ -43,7 +43,7 @@ Request:
 }
 ```
 
-A valid token is atomically marked used and returns the existing membership card state with a newly rotated public card reference. Stamp and reward state is unchanged.
+A valid token is atomically marked used and returns the existing membership card state with an additional public card reference. Existing device references remain valid, and stamp and reward state is unchanged.
 
 Invalid, expired, already-used, inactive-card, and staff-wallet-QR inputs return the same safe response:
 
@@ -65,11 +65,35 @@ Invalid, expired, already-used, inactive-card, and staff-wallet-QR inputs return
 - Transfer tokens do not use the `waflo_scan_v1` staff scanner format.
 - Transfer tokens cannot call staff stamp or redeem endpoints.
 - Phone-only and email-only recovery remain blocked.
-- Successful redemption rotates the membership public card reference. The previous device reference becomes invalid on refresh.
+- Successful redemption creates a new `TRANSFER` access record. Existing device references remain valid.
+- All active access records resolve to the same membership, progress, and reward state.
+- Legacy membership-level hashes remain supported and are backfilled as `JOIN` access records during migration.
+
+## Card Access Model
+
+Each trusted browser reference is represented by a `LoyaltyCardAccess` row:
+
+- `membershipId`: shared loyalty membership and progress.
+- `tokenHash`: SHA-256 hash only; raw references are never persisted.
+- `source`: `JOIN`, `TRANSFER`, or reserved `STAFF_RECOVERY`.
+- `createdAt` and optional `lastUsedAt`.
+- optional `revokedAt` for future explicit session revocation.
+
+No customer PII or device fingerprint is stored. The legacy token columns remain on `LoyaltyMembership` for backward compatibility.
+
+## Smoke Expectation
+
+Run `pnpm --filter tavrix-menu-api loyalty:card-add-device-smoke` with a sanitized environment containing `API_BASE_URL` and `LOYALTY_CARD_SMOKE_TOKEN`.
+
+The successful result is:
+
+`OLD_DEVICE_STILL_VALID_AFTER_TRANSFER`
+
+The smoke verifies that the original and newly issued references both return the same unchanged card state.
 
 ## Customer-Web Flow
 
-- The trusted card page exposes "Transfer to another device".
+- The trusted card page exposes "Add card to another device".
 - QR creation is click-only.
 - The QR points to `/m/{slug}/loyalty#transfer=...`; the fragment is not sent in the initial HTTP request.
 - The new phone Camera can open that fragment link and customer-web redeems it automatically.

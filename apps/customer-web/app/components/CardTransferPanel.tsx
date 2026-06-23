@@ -100,11 +100,12 @@ export function CardTransferPanel({
       data-card-transfer
     >
       <h2 className="text-lg font-bold text-ink">
-        Transfer to another device
+        Add card to another device
       </h2>
       <p className="mt-2 text-sm leading-6 text-neutral-600">
         Create a one-time QR from this trusted card. It expires after five
-        minutes and cannot add stamps or redeem rewards.
+        minutes, cannot add stamps or redeem rewards, and keeps this device
+        connected.
       </p>
 
       {state.status === 'idle' || state.status === 'error' ? (
@@ -113,7 +114,7 @@ export function CardTransferPanel({
           onClick={createTransfer}
           className="mt-4 inline-flex h-11 items-center justify-center rounded-md bg-ink px-4 text-sm font-semibold text-white"
         >
-          Create transfer QR
+          Create add-device QR
         </button>
       ) : null}
 
@@ -172,8 +173,8 @@ export function CardTransferPanel({
             ) : null}
             <p className="text-xs leading-5 text-neutral-500">
               Expires at {new Date(state.expiresAt).toLocaleTimeString()}.
-              Successful transfer invalidates this device's previous card
-              reference on refresh.
+              Successful use adds the new device without signing this device
+              out.
             </p>
           </div>
         </div>
