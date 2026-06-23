@@ -45,7 +45,7 @@ describe('AppleWalletPassBuilderService', () => {
     assert.equal(payload.barcodes[0]?.format, 'PKBarcodeFormatQR');
     assert.equal(payload.barcodes[0]?.message, rawToken);
     assert.equal(payload.barcodes[0]?.altText.includes(rawToken), false);
-    assert.equal(payload.barcodes[0]?.altText, 'Scan loyalty card');
+    assert.equal(payload.barcodes[0]?.altText, 'Scan at checkout');
 
     const visibleFields = JSON.stringify({
       headerFields: payload.storeCard.headerFields,
@@ -53,7 +53,7 @@ describe('AppleWalletPassBuilderService', () => {
       secondaryFields: payload.storeCard.secondaryFields,
       auxiliaryFields: payload.storeCard.auxiliaryFields
     }).toLowerCase();
-    assert.doesNotMatch(visibleFields, /stamps|progress|reward/);
+    assert.match(visibleFields, /stamps|reward|status/);
     assert.doesNotMatch(
       visibleFields,
       /restaurant|coffee|dinar|currency|iraq|points|spend/
@@ -83,19 +83,38 @@ describe('AppleWalletPassBuilderService', () => {
     });
 
     assert.equal(payload.logoText, 'Tavrix Cafe');
-    assert.equal(payload.backgroundColor, 'rgb(18, 58, 188)');
-    assert.equal(payload.foregroundColor, 'rgb(249, 250, 251)');
-    assert.equal(payload.labelColor, 'rgb(245, 158, 11)');
+    assert.equal(payload.backgroundColor, 'rgb(14, 46, 150)');
+    assert.equal(payload.foregroundColor, 'rgb(255, 255, 255)');
+    assert.equal(payload.labelColor, 'rgb(163, 176, 215)');
     assert.equal(payload.suppressStripShine, true);
-    assert.deepEqual(payload.storeCard.headerFields, []);
+    assert.deepEqual(payload.storeCard.headerFields, [
+      {
+        key: 'progress',
+        label: 'STAMPS',
+        value: '7 / 10',
+        textAlignment: 'PKTextAlignmentRight'
+      }
+    ]);
     assert.deepEqual(payload.storeCard.primaryFields, []);
-    assert.deepEqual(payload.storeCard.secondaryFields, []);
-    assert.deepEqual(payload.storeCard.auxiliaryFields, []);
+    assert.deepEqual(payload.storeCard.secondaryFields, [
+      {
+        key: 'reward',
+        label: 'REWARD',
+        value: 'Free Turkish coffee'
+      }
+    ]);
+    assert.deepEqual(payload.storeCard.auxiliaryFields, [
+      {
+        key: 'status',
+        label: 'STATUS',
+        value: '3 stamps to reward'
+      }
+    ]);
 
     const backText = JSON.stringify(payload.storeCard.backFields);
     assert.match(backText, /A simple coffee loyalty card/);
     assert.match(backText, /One reward per completed card/);
-    assert.match(backText, /web loyalty card/);
+    assert.doesNotMatch(backText, /web loyalty card/);
     assert.doesNotMatch(backText, /auto.?refresh|automatically update/i);
     assert.equal(payload.barcodes[0]?.format, 'PKBarcodeFormatQR');
     assert.equal(
@@ -122,11 +141,40 @@ describe('AppleWalletPassBuilderService', () => {
       }
     });
 
-    assert.equal(payload.backgroundColor, 'rgb(37, 99, 235)');
+    assert.equal(payload.backgroundColor, 'rgb(30, 79, 188)');
     assert.equal(payload.foregroundColor, 'rgb(255, 255, 255)');
-    assert.equal(payload.labelColor, 'rgb(170, 187, 204)');
+    assert.equal(payload.labelColor, 'rgb(170, 188, 230)');
     assert.deepEqual(payload.storeCard.primaryFields, []);
+    assert.equal(payload.storeCard.headerFields.length, 1);
     assert.equal(payload.barcodes.length, 1);
+  });
+
+  it('keeps the long staging business name native and out of strip content', () => {
+    const payload = new AppleWalletPassBuilderService().buildPayload({
+      passTypeIdentifier: 'pass.app.waflo.loyalty',
+      serialNumber: 'waflo-birthday-serial',
+      teamIdentifier: 'A1B2C3D4E5',
+      organizationName: 'Waflo',
+      barcodeValue: 'internal-sensitive-barcode-value',
+      businessName: 'Happy Birthday Staging',
+      programName: 'Happy Birthday Loyalty',
+      stampCount: 4,
+      stampGoal: 10,
+      rewardName: 'Free Staging Reward'
+    });
+
+    assert.equal(payload.logoText, 'Happy Birthday Staging');
+    assert.equal(payload.storeCard.primaryFields.length, 0);
+    assert.deepEqual(payload.storeCard.headerFields[0], {
+      key: 'progress',
+      label: 'STAMPS',
+      value: '4 / 10',
+      textAlignment: 'PKTextAlignmentRight'
+    });
+    assert.equal(
+      payload.storeCard.secondaryFields[0]?.value,
+      'Free Staging Reward'
+    );
   });
 
   it('renders theme-aware icon, logo, and strip assets in PassKit sizes', async () => {

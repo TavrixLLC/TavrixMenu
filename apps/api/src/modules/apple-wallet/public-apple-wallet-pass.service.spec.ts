@@ -149,13 +149,32 @@ describe('PublicAppleWalletPassService token safety', () => {
       assert.equal(setup.signer.payload?.logoText, 'Waflo Test Business');
       assert.equal(
         setup.signer.payload?.backgroundColor,
-        'rgb(17, 24, 39)'
+        'rgb(14, 19, 31)'
       );
-      assert.equal(setup.signer.payload?.labelColor, 'rgb(245, 158, 11)');
-      assert.deepEqual(setup.signer.payload?.storeCard.headerFields, []);
+      assert.equal(setup.signer.payload?.labelColor, 'rgb(163, 165, 170)');
+      assert.deepEqual(setup.signer.payload?.storeCard.headerFields, [
+        {
+          key: 'progress',
+          label: 'STAMPS',
+          value: '3 / 10',
+          textAlignment: 'PKTextAlignmentRight'
+        }
+      ]);
       assert.deepEqual(setup.signer.payload?.storeCard.primaryFields, []);
-      assert.deepEqual(setup.signer.payload?.storeCard.secondaryFields, []);
-      assert.deepEqual(setup.signer.payload?.storeCard.auxiliaryFields, []);
+      assert.deepEqual(setup.signer.payload?.storeCard.secondaryFields, [
+        {
+          key: 'reward',
+          label: 'REWARD',
+          value: 'Loyalty reward'
+        }
+      ]);
+      assert.deepEqual(setup.signer.payload?.storeCard.auxiliaryFields, [
+        {
+          key: 'status',
+          label: 'STATUS',
+          value: '7 stamps to reward'
+        }
+      ]);
       assert.equal(JSON.stringify(result).includes(barcodeValue), false);
       assert.equal(logs.join('\n').includes(barcodeValue), false);
       assert.equal(setup.state.upserts[0]?.create.platform, WalletPassPlatform.APPLE_WALLET);

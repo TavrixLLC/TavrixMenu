@@ -10,6 +10,7 @@ import {
   StampImageRendererService,
   StampImageRenderInput
 } from '../src/modules/loyalty/stamp-image-renderer.service';
+import { AppleWalletPassBuilderService } from '../src/modules/apple-wallet/apple-wallet-pass-builder.service';
 
 type PreviewDefinition = {
   fileName: string;
@@ -31,6 +32,7 @@ const outputRoot = join(
   'wallet-previews'
 );
 const renderer = new StampImageRendererService();
+const applePassBuilder = new AppleWalletPassBuilderService(renderer);
 
 const previews: PreviewDefinition[] = [
   {
@@ -142,7 +144,21 @@ async function main() {
     const input = renderInput(preview);
     const png =
       preview.platform === 'APPLE'
-        ? await renderer.renderAppleStripPng(input)
+        ? (
+            await applePassBuilder.buildAssets({
+              passTypeIdentifier: 'pass.app.waflo.preview',
+              serialNumber: `preview-${preview.stampGoal}`,
+              teamIdentifier: 'PREVIEW0000',
+              organizationName: 'Waflo',
+              barcodeValue: '<redacted-preview-barcode>',
+              businessName: preview.businessName,
+              programName: preview.programName,
+              rewardName: preview.rewardName,
+              stampCount: preview.stampCount,
+              stampGoal: preview.stampGoal,
+              theme: input
+            })
+          )['strip@3x.png']
         : await renderer.renderPng(input);
     const outputPath = join(outputRoot, preview.fileName);
 

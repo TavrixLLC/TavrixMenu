@@ -8,10 +8,10 @@ import {
 import { StampImageRendererService } from '../loyalty/stamp-image-renderer.service';
 import {
   resolveWalletPassVisual,
-  WalletPassVisualModel
+  WalletPassVisualTheme
 } from '../loyalty/wallet-pass-visual.resolver';
 
-const qrAltText = 'Scan loyalty card';
+const qrAltText = 'Scan at checkout';
 
 @Injectable()
 export class AppleWalletPassBuilderService {
@@ -24,25 +24,31 @@ export class AppleWalletPassBuilderService {
     this.assertProgress(input.stampCount, input.stampGoal);
 
     const visual = this.resolveVisual(input);
-    const businessName = this.safeText(visual.businessName, 'Waflo', 36);
+    const applePalette = this.resolveApplePalette(visual.theme);
+    const businessName = this.safeText(visual.businessName, 'Waflo', 24);
     const programName = this.safeText(visual.programName, 'Loyalty Card', 40);
     const rewardName = this.safeText(visual.rewardName, 'Reward', 42);
+    const remaining = Math.max(input.stampGoal - input.stampCount, 0);
+    const status =
+      remaining === 0
+        ? 'Ready to redeem'
+        : `${remaining} ${remaining === 1 ? 'stamp' : 'stamps'} to reward`;
     const rewardDescription = this.safeText(
       input.rewardDescription,
       rewardName,
       140
     );
     const backgroundColor = this.toRgb(
-      visual.theme.walletBackgroundColor,
-      visual.theme.walletBackgroundColor
+      applePalette.background,
+      applePalette.background
     );
     const foregroundColor = this.toRgb(
-      visual.theme.imageTextColor,
-      visual.theme.imageTextColor
+      applePalette.text,
+      applePalette.text
     );
     const labelColor = this.toRgb(
-      visual.theme.imageAccentColor,
-      visual.theme.imageAccentColor
+      applePalette.label,
+      applePalette.label
     );
     const barcode = {
       format: 'PKBarcodeFormatQR' as const,
@@ -75,10 +81,29 @@ export class AppleWalletPassBuilderService {
           }
         : {}),
       storeCard: {
-        headerFields: [],
+        headerFields: [
+          {
+            key: 'progress',
+            label: 'STAMPS',
+            value: `${Math.min(input.stampCount, input.stampGoal)} / ${input.stampGoal}`,
+            textAlignment: 'PKTextAlignmentRight'
+          }
+        ],
         primaryFields: [],
-        secondaryFields: [],
-        auxiliaryFields: [],
+        secondaryFields: [
+          {
+            key: 'reward',
+            label: 'REWARD',
+            value: rewardName
+          }
+        ],
+        auxiliaryFields: [
+          {
+            key: 'status',
+            label: 'STATUS',
+            value: status
+          }
+        ],
         backFields: [
           ...this.buildBackFields({
             businessName,
@@ -100,12 +125,13 @@ export class AppleWalletPassBuilderService {
   ): Promise<AppleWalletPassAssets> {
     this.assertProgress(input.stampCount, input.stampGoal);
     const visual = this.resolveVisual(input);
+    const applePalette = this.resolveApplePalette(visual.theme);
 
     const icon = Buffer.from(
-      `<svg xmlns="http://www.w3.org/2000/svg" width="87" height="87" viewBox="0 0 87 87"><rect width="87" height="87" rx="18" fill="${visual.theme.walletBackgroundColor}"/><path d="M19 24h10l7 35 8-25 8 25 7-35h10L58 66H48l-8-23-8 23H22z" fill="${visual.theme.imageAccentColor}"/></svg>`
+      `<svg xmlns="http://www.w3.org/2000/svg" width="87" height="87" viewBox="0 0 87 87"><rect width="87" height="87" rx="18" fill="${applePalette.background}"/><path d="M19 24h10l7 35 8-25 8 25 7-35h10L58 66H48l-8-23-8 23H22z" fill="${applePalette.accent}"/></svg>`
     );
     const logo = Buffer.from(
-      `<svg xmlns="http://www.w3.org/2000/svg" width="100" height="100" viewBox="0 0 100 100"><rect width="100" height="100" rx="24" fill="${visual.theme.imageSurfaceColor}"/><path d="M18 22h13l8 43 10-31 10 31 9-43h14L68 79H55L48 54l-8 25H27z" fill="${visual.theme.imageAccentColor}"/></svg>`
+      `<svg xmlns="http://www.w3.org/2000/svg" width="100" height="100" viewBox="0 0 100 100"><rect width="100" height="100" rx="24" fill="${applePalette.surface}"/><path d="M18 22h13l8 43 10-31 10 31 9-43h14L68 79H55L48 54l-8 25H27z" fill="${applePalette.accent}"/></svg>`
     );
 
     const strip3x = await this.stampImageRenderer.renderAppleStripPng({
@@ -126,13 +152,13 @@ export class AppleWalletPassBuilderService {
       backgroundColor: visual.theme.backgroundColor,
       accentColor: visual.theme.accentColor,
       textColor: visual.theme.textColor,
-      imageBackgroundColor: visual.theme.imageBackgroundColor,
-      imageSurfaceColor: visual.theme.imageSurfaceColor,
-      imageAccentColor: visual.theme.imageAccentColor,
-      imageTextColor: visual.theme.imageTextColor,
+      imageBackgroundColor: applePalette.stripBackground,
+      imageSurfaceColor: applePalette.surface,
+      imageAccentColor: applePalette.accent,
+      imageTextColor: applePalette.text,
       stampFilledColor: visual.theme.stampFilledColor,
       stampEmptyColor: visual.theme.stampEmptyColor,
-      rewardBannerColor: visual.theme.rewardBannerColor,
+      rewardBannerColor: applePalette.surface,
       themePreset: visual.theme.themePreset,
       layoutVariant: visual.theme.layoutVariant
     });
@@ -194,12 +220,6 @@ export class AppleWalletPassBuilderService {
         key: 'rewardDetails',
         label: 'REWARD DETAILS',
         value: input.rewardDescription
-      },
-      {
-        key: 'latestProgress',
-        label: 'LATEST PROGRESS',
-        value:
-          'Open your Waflo web loyalty card to see current stamp and reward progress.'
       }
     ];
     const terms = this.safeText(input.terms, '', 500);
@@ -221,19 +241,90 @@ export class AppleWalletPassBuilderService {
     });
   }
 
-  private buildStampImageInput(visual: WalletPassVisualModel) {
+  private renderPng(source: Buffer, width: number, height: number) {
+    return sharp(source).resize(width, height).png().toBuffer();
+  }
+
+  private resolveApplePalette(theme: WalletPassVisualTheme) {
+    const background = this.mixHex(
+      theme.walletBackgroundColor,
+      '#000000',
+      0.2
+    );
+    const stripBackground = this.mixHex(
+      theme.imageBackgroundColor,
+      '#000000',
+      0.14
+    );
+    const surface = this.mixHex(
+      theme.imageSurfaceColor,
+      stripBackground,
+      0.28
+    );
+    const text = this.readableText(background, theme.imageTextColor);
+
     return {
-      businessName: visual.businessName,
-      programName: visual.programName,
-      rewardName: visual.rewardName,
-      stampCount: visual.stampCount,
-      stampGoal: visual.stampGoal,
-      ...visual.theme
+      background,
+      stripBackground,
+      surface,
+      accent: theme.imageAccentColor,
+      text,
+      label: this.mixHex(text, background, 0.38)
     };
   }
 
-  private renderPng(source: Buffer, width: number, height: number) {
-    return sharp(source).resize(width, height).png().toBuffer();
+  private readableText(background: string, preferred: string) {
+    const candidates = [preferred, '#ffffff', '#111827'];
+    return candidates.reduce((best, candidate) =>
+      this.contrastRatio(background, candidate) >
+      this.contrastRatio(background, best)
+        ? candidate
+        : best
+    );
+  }
+
+  private contrastRatio(left: string, right: string) {
+    const leftLuminance = this.relativeLuminance(left);
+    const rightLuminance = this.relativeLuminance(right);
+    const lighter = Math.max(leftLuminance, rightLuminance);
+    const darker = Math.min(leftLuminance, rightLuminance);
+
+    return (lighter + 0.05) / (darker + 0.05);
+  }
+
+  private relativeLuminance(value: string) {
+    const channels = this.hexChannels(value).map((channel) => {
+      const normalized = channel / 255;
+      return normalized <= 0.03928
+        ? normalized / 12.92
+        : Math.pow((normalized + 0.055) / 1.055, 2.4);
+    });
+
+    return channels[0] * 0.2126 + channels[1] * 0.7152 + channels[2] * 0.0722;
+  }
+
+  private mixHex(base: string, overlay: string, amount: number) {
+    const baseChannels = this.hexChannels(base);
+    const overlayChannels = this.hexChannels(overlay);
+
+    return `#${baseChannels
+      .map((channel, index) =>
+        Math.round(
+          channel * (1 - amount) + overlayChannels[index] * amount
+        )
+          .toString(16)
+          .padStart(2, '0')
+      )
+      .join('')}`;
+  }
+
+  private hexChannels(value: string) {
+    const hex = this.normalizeHex(value, '#000000').slice(1);
+    return [
+      Number.parseInt(hex.slice(0, 2), 16),
+      Number.parseInt(hex.slice(2, 4), 16),
+      Number.parseInt(hex.slice(4, 6), 16)
+    ];
   }
 
   private assertProgress(stampCount: number, stampGoal: number) {

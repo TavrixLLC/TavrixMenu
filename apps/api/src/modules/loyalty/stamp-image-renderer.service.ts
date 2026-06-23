@@ -72,6 +72,11 @@ type IconInput = {
 export type AppleStripLayout = {
   width: 1125;
   height: 369;
+  safeInset: number;
+  panelX: number;
+  panelY: number;
+  panelWidth: number;
+  panelHeight: number;
   columns: number;
   rows: number;
   cellSize: number;
@@ -129,16 +134,25 @@ export class StampImageRendererService {
     const gap = rows === 1 ? 24 : columns >= 6 ? 12 : 14;
     const gridWidth = columns * cellSize + (columns - 1) * gap;
     const gridHeight = rows * cellSize + (rows - 1) * gap;
+    const panelX = 120;
+    const panelY = 54;
+    const panelWidth = 885;
+    const panelHeight = 261;
 
     return {
       width: 1125,
       height: 369,
+      safeInset: panelX,
+      panelX,
+      panelY,
+      panelWidth,
+      panelHeight,
       columns,
       rows,
       cellSize,
       gap,
       gridX: Math.round((1125 - gridWidth) / 2),
-      gridY: Math.round(120 + (174 - gridHeight) / 2),
+      gridY: Math.round(panelY + (panelHeight - gridHeight) / 2),
       gridWidth,
       gridHeight
     };
@@ -334,27 +348,18 @@ export class StampImageRendererService {
 
   private renderAppleStripSvg(input: NormalizedStampImageRenderInput) {
     const layout = this.getAppleStripLayout(input.stampGoal);
-    const sanitizedProgramName = this.sanitizeDisplayText(input.programName);
-    const sanitizedRewardName = this.sanitizeDisplayText(input.rewardName);
-    const titleSize = this.fitFontSize(sanitizedProgramName, 52, 38, 24);
-    const rewardText = this.truncate(`Reward: ${sanitizedRewardName}`, 46);
-    const rewardSize = this.fitFontSize(rewardText, 31, 23, 38);
 
     return [
-      `<svg xmlns="http://www.w3.org/2000/svg" width="${layout.width}" height="${layout.height}" viewBox="0 0 ${layout.width} ${layout.height}">`,
+      `<svg xmlns="http://www.w3.org/2000/svg" width="${layout.width}" height="${layout.height}" viewBox="0 0 ${layout.width} ${layout.height}" data-apple-safe-inset="${layout.safeInset}" data-apple-grid="${layout.columns}x${layout.rows}">`,
       '<defs>',
-      `<linearGradient id="apple-bg" x1="0" y1="0" x2="1" y2="1"><stop offset="0%" stop-color="${input.imageBackgroundColor}"/><stop offset="100%" stop-color="${this.mixWithBlack(input.imageBackgroundColor, 0.18)}"/></linearGradient>`,
+      `<linearGradient id="apple-bg" x1="0" y1="0" x2="1" y2="1"><stop offset="0%" stop-color="${input.imageBackgroundColor}"/><stop offset="100%" stop-color="${this.mixWithBlack(input.imageBackgroundColor, 0.24)}"/></linearGradient>`,
+      `<linearGradient id="apple-panel" x1="0" y1="0" x2="0" y2="1"><stop offset="0%" stop-color="${this.hexToRgba(input.imageSurfaceColor, 0.78)}"/><stop offset="100%" stop-color="${this.hexToRgba(input.imageSurfaceColor, 0.46)}"/></linearGradient>`,
       '<filter id="apple-shadow" x="-30%" y="-30%" width="160%" height="160%"><feDropShadow dx="0" dy="6" stdDeviation="7" flood-color="#000000" flood-opacity="0.22"/></filter>',
       '</defs>',
       '<rect width="1125" height="369" fill="url(#apple-bg)"/>',
-      `<circle cx="64" cy="330" r="170" fill="${this.hexToRgba(input.imageTextColor, 0.07)}"/>`,
-      `<text x="48" y="76" fill="${input.imageTextColor}" font-family="${this.fontFamily()}" font-size="${titleSize}" font-weight="800">${this.escapeXml(this.truncate(sanitizedProgramName, 34))}</text>`,
-      `<rect x="914" y="32" width="163" height="66" rx="33" fill="${this.hexToRgba(input.imageSurfaceColor, 0.92)}" stroke="${this.hexToRgba(input.imageAccentColor, 0.5)}" stroke-width="3"/>`,
-      `<text x="995.5" y="58" fill="${this.hexToRgba(input.imageTextColor, 0.74)}" text-anchor="middle" font-family="${this.fontFamily()}" font-size="18" font-weight="700">STAMPS</text>`,
-      `<text x="995.5" y="87" fill="${input.imageTextColor}" text-anchor="middle" font-family="${this.fontFamily()}" font-size="30" font-weight="800">${input.stampCount} / ${input.stampGoal}</text>`,
+      `<circle cx="562.5" cy="184.5" r="430" fill="${this.hexToRgba(input.imageAccentColor, 0.055)}"/>`,
+      `<rect x="${layout.panelX}" y="${layout.panelY}" width="${layout.panelWidth}" height="${layout.panelHeight}" rx="48" fill="url(#apple-panel)" stroke="${this.hexToRgba(input.imageTextColor, 0.14)}" stroke-width="2"/>`,
       this.renderAppleIconCells(input, layout),
-      `<rect x="48" y="309" width="1029" height="42" rx="21" fill="${this.hexToRgba(input.rewardBannerColor, 0.94)}"/>`,
-      `<text x="562.5" y="338" fill="${input.imageTextColor}" text-anchor="middle" font-family="${this.fontFamily()}" font-size="${rewardSize}" font-weight="700">${this.escapeXml(rewardText)}</text>`,
       '</svg>'
     ].join('');
   }
@@ -736,45 +741,6 @@ export class StampImageRendererService {
       .replace(/>/g, '&gt;')
       .replace(/"/g, '&quot;')
       .replace(/'/g, '&apos;');
-  }
-
-  private sanitizeDisplayText(value: string) {
-    return value
-      .replace(/[\u0000-\u001f\u007f]/g, ' ')
-      .replace(/\p{Extended_Pictographic}/gu, ' ')
-      .replace(/[\u200d\ufe0e\ufe0f]/g, '')
-      .replace(/\s+/g, ' ')
-      .trim();
-  }
-
-  private fitFontSize(
-    value: string,
-    preferred: number,
-    minimum: number,
-    preferredLength: number
-  ) {
-    const length = Array.from(value).length;
-
-    if (length <= preferredLength) {
-      return preferred;
-    }
-
-    return Math.max(
-      minimum,
-      Math.floor(preferred * (preferredLength / length))
-    );
-  }
-
-  private fontFamily() {
-    return 'DejaVu Sans, Noto Sans, Arial, sans-serif';
-  }
-
-  private truncate(value: string, maxLength: number) {
-    const characters = Array.from(value);
-
-    return characters.length <= maxLength
-      ? value
-      : `${characters.slice(0, maxLength - 3).join('')}...`;
   }
 
   private fitText(value: string, maxCharacters: number) {

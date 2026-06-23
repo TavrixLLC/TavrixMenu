@@ -108,9 +108,23 @@ describe('StampImageRendererService', () => {
     assert.equal(layout.gridX >= 0, true);
     assert.equal(layout.gridY >= 0, true);
     assert.equal(layout.gridX + layout.gridWidth <= layout.width, true);
-    assert.equal(layout.gridY + layout.gridHeight < 309, true);
+    assert.equal(layout.safeInset, 120);
+    assert.equal(layout.panelX, 120);
+    assert.equal(layout.panelX + layout.panelWidth, 1005);
+    assert.equal(layout.gridX >= layout.panelX, true);
+    assert.equal(
+      layout.gridX + layout.gridWidth <= layout.panelX + layout.panelWidth,
+      true
+    );
+    assert.equal(
+      layout.gridY + layout.gridHeight <= layout.panelY + layout.panelHeight,
+      true
+    );
     assert.equal((svg.match(/data-apple-stamp=/g) ?? []).length, 10);
     assert.match(svg, /data-stamp-preset="STAR"/);
+    assert.match(svg, /data-apple-safe-inset="120"/);
+    assert.match(svg, /data-apple-grid="5x2"/);
+    assert.doesNotMatch(svg, /Tavrix Cafe|Coffee Rewards|Reward:/);
     assert.equal(metadata.width, 1125);
     assert.equal(metadata.height, 369);
   });
@@ -130,6 +144,30 @@ describe('StampImageRendererService', () => {
         [12, 6, 2]
       ]
     );
+  });
+
+  it('keeps Apple strip content inside the crop-safe panel for all layouts', () => {
+    const renderer = new StampImageRendererService();
+
+    for (const goal of [5, 8, 10, 12]) {
+      const layout = renderer.getAppleStripLayout(goal);
+
+      assert.equal(layout.panelX >= layout.safeInset, true);
+      assert.equal(
+        layout.width - (layout.panelX + layout.panelWidth) >= layout.safeInset,
+        true
+      );
+      assert.equal(layout.gridX >= layout.panelX, true);
+      assert.equal(
+        layout.gridX + layout.gridWidth <= layout.panelX + layout.panelWidth,
+        true
+      );
+      assert.equal(layout.gridY >= layout.panelY, true);
+      assert.equal(
+        layout.gridY + layout.gridHeight <= layout.panelY + layout.panelHeight,
+        true
+      );
+    }
   });
 
   it('uses deterministic vector presets and removes emoji from rendered text', () => {
@@ -153,7 +191,7 @@ describe('StampImageRendererService', () => {
     assert.match(coffee, /data-stamp-preset="COFFEE"/);
     assert.match(coffee, /C /);
     assert.doesNotMatch(cookie, /🍪|🎂|\u200d|\ufe0f/u);
-    assert.match(cookie, /DejaVu Sans, Noto Sans, Arial, sans-serif/);
+    assert.doesNotMatch(cookie, /<text|font-family/);
   });
 
   for (const presetKey of [
