@@ -111,18 +111,52 @@ describe('loyalty identity states', () => {
 
   it('explains that cross-device recovery requires verification', () => {
     const html = renderIdentityForm('recover');
+    const trustedDeviceStart = html.indexOf(
+      'data-recovery-path="trusted-device"'
+    );
+    const lostAllDevicesStart = html.indexOf(
+      'data-recovery-path="lost-all-devices"'
+    );
+    const differentPhoneStart = html.indexOf(
+      'data-recovery-path="different-phone"'
+    );
+    const trustedDeviceSection = html.slice(
+      trustedDeviceStart,
+      lostAllDevicesStart
+    );
+    const lostAllDevicesSection = html.slice(
+      lostAllDevicesStart,
+      differentPhoneStart
+    );
+    const differentPhoneSection = html.slice(differentPhoneStart);
 
     assert.match(html, /Recovery needs verification/);
-    assert.match(html, /phone number or email alone cannot open/i);
+    assert.match(html, /phone or email alone cannot unlock/i);
     assert.match(html, /ask staff for help/i);
     assert.equal(/name="phone"/.test(html), false);
     assert.equal(/name="email"/.test(html), false);
     assert.equal(/add-to-apple-wallet\.svg/.test(html), false);
     assert.equal(/add-to-google-wallet\.svg/.test(html), false);
-    assert.match(html, /Scan transfer QR from old device/);
-    assert.match(html, /Transfer code or link/);
-    assert.match(html, /Ask staff for help/);
-    assert.match(html, /Join as a new customer/);
+    assert.ok(trustedDeviceStart >= 0);
+    assert.ok(lostAllDevicesStart > trustedDeviceStart);
+    assert.ok(differentPhoneStart > lostAllDevicesStart);
+    assert.match(
+      trustedDeviceSection,
+      /I have the card on another device/
+    );
+    assert.match(
+      trustedDeviceSection,
+      /Scan transfer QR \/ Enter transfer code/
+    );
+    assert.match(trustedDeviceSection, /name="transferCode"/);
+    assert.match(lostAllDevicesSection, /I lost access to all devices/);
+    assert.match(lostAllDevicesSection, /Ask staff for help/);
+    assert.match(lostAllDevicesSection, /verify the customer in person/);
+    assert.match(lostAllDevicesSection, /short-lived, single-use/);
+    assert.match(lostAllDevicesSection, /log the staff action/);
+    assert.equal(/name="transferCode"/.test(lostAllDevicesSection), false);
+    assert.match(differentPhoneSection, /Join with a different phone/);
+    assert.match(differentPhoneSection, /not already attached to a membership/);
   });
 
   it('loads a valid same-device opaque card reference and clears it on request', async () => {
@@ -515,7 +549,7 @@ function renderIdentityForm(mode: 'join' | 'recover') {
       onEmailChange={() => undefined}
       onNameChange={() => undefined}
       onModeChange={() => undefined}
-      recoveryMessage="For your security, a phone number or email alone cannot open an existing loyalty card. Transfer from your old device or ask staff for help."
+      recoveryMessage="Choose the path that matches your situation. Transfer is available only when at least one trusted old device still has the card. Phone or email alone cannot unlock it."
       transferCode=""
       transferError={null}
       isTransferSubmitting={false}

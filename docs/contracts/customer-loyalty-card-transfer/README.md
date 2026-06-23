@@ -2,7 +2,7 @@
 
 ## Purpose
 
-This contract describes secure cross-device transfer for an existing public loyalty card. The generated source of truth remains [`docs/openapi/waflo-openapi-current.json`](../../openapi/waflo-openapi-current.json).
+This contract describes secure cross-device transfer for an existing public loyalty card when the customer still has access on at least one trusted device. Transfer is an add-device flow, not a universal account-recovery method. The generated source of truth remains [`docs/openapi/waflo-openapi-current.json`](../../openapi/waflo-openapi-current.json).
 
 Phone and email remain identifiers only. They never authorize recovery or card access.
 
@@ -98,4 +98,18 @@ The smoke verifies that the original and newly issued references both return the
 - The QR points to `/m/{slug}/loyalty#transfer=...`; the fragment is not sent in the initial HTTP request.
 - The new phone Camera can open that fragment link and customer-web redeems it automatically.
 - Manual code or link entry is also supported.
-- Without the old device, customer-web shows an "Ask staff for help" placeholder. No staff-assisted backend recovery is included yet.
+- Transfer is shown only as the "I have the card on another device" path.
+- If every trusted device has lost or deleted its card reference, transfer QR creation is impossible.
+- The separate "I lost access to all devices" path shows "Ask staff for help" and does not request a transfer QR, phone, or email.
+- "Join with a different phone" returns to normal enrollment. The API creates a card only when that phone is not already attached to a customer or membership.
+
+## Planned Staff Recovery
+
+Staff-assisted recovery is a placeholder and has no backend endpoint yet. The future flow must:
+
+- require authenticated staff to verify the customer in person;
+- generate a dedicated recovery QR or code, never a cashier/staff wallet QR;
+- expire quickly and work once;
+- issue only a customer card access reference for the verified membership;
+- log the authorized staff action without logging the recovery code or customer PII;
+- never unlock an existing card from phone or email alone.

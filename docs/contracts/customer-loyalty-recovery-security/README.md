@@ -49,7 +49,11 @@ Consumers must not interpret this response as confirmation that a card exists.
 ## Customer-Web Behavior
 
 - A valid same-device opaque reference opens the returning card and existing platform-aware Wallet actions.
-- Without a local reference, "I already joined" explains that verification is required.
+- Without a local reference, "I already joined" presents three separate paths.
+- "I have the card on another device" offers transfer QR scanning or transfer-code entry only when a trusted old device can still open the card.
+- "I lost access to all devices" offers staff help only. It does not ask for a transfer QR, phone, or email.
+- "Join with a different phone" returns to normal enrollment. Existing phones remain blocked and do not receive card access.
+- Transfer is not presented as recovery after all trusted device references have been lost or deleted.
 - The recovery UI does not collect a phone or email and does not call `RECOVER`.
 - A `JOIN` response with `RECOVERY_REQUIRES_VERIFICATION` transitions to the same safe help state.
 
@@ -57,5 +61,8 @@ Consumers must not interpret this response as confirmation that a card exists.
 
 - Add OTP proof through an approved SMS, WhatsApp, or email provider.
 - Bind OTP challenges to the business, normalized identifier, short expiry, attempt limits, and one-time use.
-- Add a staff-assisted pilot recovery flow with authenticated staff authorization and an auditable customer handoff.
+- Add a staff-assisted pilot recovery flow where authenticated staff verifies the customer in person.
+- Generate a dedicated short-lived, single-use recovery QR or code after verification.
+- Log the staff action without logging customer PII or the raw recovery credential.
+- Keep staff recovery separate from cashier wallet QR scanning and phone-only recovery.
 - Do not enable token issuance until the backend verifies one of these proofs.
