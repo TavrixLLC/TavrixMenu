@@ -437,6 +437,19 @@ export class PublicLoyaltyService {
       });
     }
 
+    const knownAccess = await this.prisma.loyaltyCardAccess.findUnique({
+      where: {
+        tokenHash: publicAccessTokenHash
+      },
+      select: {
+        id: true
+      }
+    });
+
+    if (knownAccess) {
+      throw new NotFoundException('Loyalty card not found');
+    }
+
     const existingMembership = await this.prisma.loyaltyMembership.findFirst({
       where: {
         publicAccessTokenHash,

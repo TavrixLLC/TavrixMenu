@@ -164,6 +164,19 @@ describe('PublicLoyaltyService secure card transfer', () => {
     );
   });
 
+  it('does not let a revoked access fall through to the legacy token lookup', async () => {
+    const setup = createSetup();
+    const enrollment = await enrollFixture(setup);
+    setup.state.cardAccesses[0].revokedAt = new Date();
+
+    await assert.rejects(
+      setup.service.getPublicCard(enrollment.cardAccess.token),
+      (error: unknown) =>
+        error instanceof HttpException &&
+        error.getStatus() === HttpStatus.NOT_FOUND
+    );
+  });
+
   it('rejects cashier wallet scan QR values as transfer credentials', async () => {
     const setup = createSetup();
     const enrollment = await enrollFixture(setup);
@@ -623,6 +636,17 @@ function createSetup() {
           ? {
               id: access.id,
               membershipId: access.membershipId
+            }
+          : null;
+      },
+      findUnique: async ({ where }: any) => {
+        const access = state.cardAccesses.find(
+          (item) => item.tokenHash === where.tokenHash
+        );
+
+        return access
+          ? {
+              id: access.id
             }
           : null;
       }
