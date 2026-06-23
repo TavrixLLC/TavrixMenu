@@ -81,7 +81,7 @@ export class PublicLoyaltyController {
   @Post('m/:slug/loyalty/enroll')
   @ApiCreatedResponse({
     description:
-      'Public no-OTP pilot enrollment. Reuses or creates a customer, activates membership, and returns a one-time plaintext card token.',
+      'Public no-OTP pilot join or recovery. JOIN reuses or creates a customer and membership; RECOVER returns only an existing active membership. Both return a newly issued card access token.',
     schema: {
       example: {
         customer: {
@@ -108,10 +108,11 @@ export class PublicLoyaltyController {
     }
   })
   @ApiBadRequestResponse({
-    description: 'Validation failed or phone/email is missing.',
+    description: 'Validation failed or the required Iraqi phone number is invalid.',
     schema: {
       example: {
-        message: 'Enrollment requires phone or email',
+        message:
+          'phone must use Iraqi local 07xxxxxxxxx or international +9647xxxxxxxxx format',
         error: 'Bad Request',
         statusCode: 400
       }
@@ -128,7 +129,8 @@ export class PublicLoyaltyController {
     }
   })
   @ApiNotFoundResponse({
-    description: 'Business is inactive/missing or has no active loyalty program.'
+    description:
+      'Business/program is inactive or missing, or RECOVER did not find an active membership.'
   })
   enrollCustomer(
     @Param('slug') slug: string,

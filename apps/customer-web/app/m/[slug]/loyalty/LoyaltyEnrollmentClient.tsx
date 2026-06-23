@@ -1,9 +1,12 @@
 'use client';
 
 import { FormEvent, useEffect, useState } from 'react';
-import Link from 'next/link';
 import { WalletActions } from '../../../components/WalletActions';
-import { GoogleWalletButton } from '../../../components/GoogleWalletButton';
+import {
+  normalizeIraqiPhone,
+  validateIraqiPhone,
+  validateOptionalEmail
+} from '../../../lib/customer-identity';
 import {
   enrollPublicLoyaltyCustomer,
   fetchPublicLoyaltyCard,
@@ -19,11 +22,13 @@ type LoyaltyEnrollmentClientProps = {
   appleWalletEnabled: boolean;
 };
 
-function getTokenStorageKey(slug: string) {
+type IdentityMode = 'join' | 'recover';
+
+export function getTokenStorageKey(slug: string) {
   return `tavrix.loyalty.${slug}.token`;
 }
 
-function readStoredToken(slug: string): string | null {
+export function readStoredToken(slug: string): string | null {
   try {
     return window.localStorage.getItem(getTokenStorageKey(slug));
   } catch {
@@ -31,7 +36,7 @@ function readStoredToken(slug: string): string | null {
   }
 }
 
-function storeCardToken(slug: string, token: string): boolean {
+export function storeCardToken(slug: string, token: string): boolean {
   try {
     window.localStorage.setItem(getTokenStorageKey(slug), token);
     return true;
@@ -40,10 +45,19 @@ function storeCardToken(slug: string, token: string): boolean {
   }
 }
 
+export function clearStoredToken(slug: string): void {
+  try {
+    window.localStorage.removeItem(getTokenStorageKey(slug));
+  } catch {
+    // Browser storage is best-effort.
+  }
+}
+
 type LoyaltyEnrollmentSuccessProps = LoyaltyEnrollmentClientProps & {
   enrollment: PublicLoyaltyEnrollment;
   platform: WalletPlatform;
   storageUnavailable: boolean;
+  variant?: 'joined' | 'recovered';
 };
 
 export function LoyaltyEnrollmentSuccess({
@@ -52,34 +66,29 @@ export function LoyaltyEnrollmentSuccess({
   appleWalletEnabled,
   enrollment,
   platform,
-  storageUnavailable
+  storageUnavailable,
+  variant = 'joined'
 }: LoyaltyEnrollmentSuccessProps) {
   const cardHref = `/m/${encodeURIComponent(slug)}/loyalty/card?token=${encodeURIComponent(enrollment.cardAccess.token)}`;
 
   return (
     <section className="grid gap-5">
       <div className="rounded-lg border border-emerald-100 bg-emerald-50 p-4">
-        <p className="text-sm font-semibold text-emerald-800">You joined {enrollment.program.name}</p>
+        <p className="text-sm font-semibold text-emerald-800">
+          {variant === 'recovered' ? 'Welcome back' : `You joined ${enrollment.program.name}`}
+        </p>
         <p className="mt-2 text-sm leading-6 text-emerald-900">
           {enrollment.customer.name ? `${enrollment.customer.name}, your` : 'Your'} card is ready.
         </p>
       </div>
 
-      <div className="grid gap-3 rounded-lg border border-neutral-200 bg-neutral-50 p-4">
-        <div>
-          <p className="text-sm font-semibold text-neutral-500">Reward</p>
-          <p className="mt-1 text-lg font-bold text-ink">{enrollment.program.rewardName}</p>
-        </div>
-        <div className="h-3 overflow-hidden rounded-full bg-white">
-          <div
-            className="h-full rounded-full bg-mint"
-            style={{ width: `${enrollment.cardState.progressPercent}%` }}
-          />
-        </div>
-        <p className="text-sm font-semibold text-neutral-700">
-          {enrollment.cardState.stampCount} / {enrollment.cardState.stampGoal} stamps
-        </p>
-      </div>
+      <CardProgress
+        stampCount={enrollment.cardState.stampCount}
+        stampGoal={enrollment.cardState.stampGoal}
+        progressPercent={enrollment.cardState.progressPercent}
+        rewardName={enrollment.program.rewardName}
+        rewardReady={enrollment.cardState.rewardReady}
+      />
 
       <WalletActions
         platform={platform}
@@ -91,47 +100,254 @@ export function LoyaltyEnrollmentSuccess({
 
       {storageUnavailable ? (
         <p className="rounded-md border border-amber-100 bg-amber-50 p-3 text-sm leading-6 text-amber-700">
-          This browser could not save the card for later, but the card link above will still open now.
+          This browser could not remember the card for later. Keep the card link available on this device.
         </p>
       ) : null}
     </section>
   );
 }
 
-function clearStoredToken(slug: string): void {
-  try {
-    window.localStorage.removeItem(getTokenStorageKey(slug));
-  } catch {
-    // ignore — best-effort
-  }
+type ReturningLoyaltyCardViewProps = LoyaltyEnrollmentClientProps & {
+  card: PublicLoyaltyCard;
+  cardToken: string;
+  platform: WalletPlatform | null;
+  onUseAnotherCard: () => void;
+};
+
+export function ReturningLoyaltyCardView({
+  slug,
+  apiBaseUrl,
+  appleWalletEnabled,
+  card,
+  cardToken,
+  platform,
+  onUseAnotherCard
+}: ReturningLoyaltyCardViewProps) {
+  const cardHref = `/m/${encodeURIComponent(slug)}/loyalty/card?token=${encodeURIComponent(cardToken)}`;
+
+  return (
+    <section className="grid gap-5">
+      <div className="rounded-lg border border-emerald-100 bg-emerald-50 p-4">
+        <p className="text-sm font-semibold text-emerald-800">
+          {card.customer.name ? `Welcome back, ${card.customer.name}` : 'Welcome back'}
+        </p>
+        <p className="mt-1 text-sm leading-6 text-emerald-900">
+          Your loyalty card and current progress are ready.
+        </p>
+      </div>
+
+      <CardProgress
+        stampCount={card.cardState.stampCount}
+        stampGoal={card.cardState.stampGoal}
+        progressPercent={card.cardState.progressPercent}
+        rewardName={card.cardState.rewardName}
+        rewardReady={card.cardState.rewardReady}
+      />
+
+      {platform ? (
+        <WalletActions
+          platform={platform}
+          appleWalletEnabled={appleWalletEnabled}
+          apiBaseUrl={apiBaseUrl}
+          cardToken={cardToken}
+          cardHref={cardHref}
+        />
+      ) : (
+        <p role="status" className="text-sm leading-6 text-neutral-600">
+          Preparing the best wallet option for this device...
+        </p>
+      )}
+
+      <button
+        type="button"
+        onClick={onUseAnotherCard}
+        className="text-sm font-medium text-neutral-500 underline hover:text-neutral-700"
+      >
+        Not you? Use another phone or card
+      </button>
+    </section>
+  );
 }
 
-/**
- * Validates that the value looks like a phone number and not an email.
- * Accepts:
- *   - International format: starts with + followed by digits/spaces/hyphens
- *   - Iraqi local format:   starts with 07 followed by digits
- *   - Empty (field is optional)
- * Returns a user-facing error string, or null if valid.
- */
-function validatePhone(value: string): string | null {
-  const v = value.trim();
-  if (!v) return null;
+type LoyaltyIdentityFormProps = {
+  mode: IdentityMode;
+  phone: string;
+  email: string;
+  name: string;
+  phoneError: string | null;
+  emailError: string | null;
+  error: string | null;
+  isSubmitting: boolean;
+  onSubmit: (event: FormEvent<HTMLFormElement>) => void;
+  onPhoneChange: (value: string) => void;
+  onEmailChange: (value: string) => void;
+  onNameChange: (value: string) => void;
+  onModeChange: (mode: IdentityMode) => void;
+};
 
-  if (v.includes('@')) {
-    return 'That looks like an email address. Enter a phone number here (e.g. +9647700000000) or use the Email field below.';
-  }
+export function LoyaltyIdentityForm({
+  mode,
+  phone,
+  email,
+  name,
+  phoneError,
+  emailError,
+  error,
+  isSubmitting,
+  onSubmit,
+  onPhoneChange,
+  onEmailChange,
+  onNameChange,
+  onModeChange
+}: LoyaltyIdentityFormProps) {
+  const isRecovery = mode === 'recover';
 
-  // International: +<digits with optional spaces and hyphens>, min 7 digits total
-  const isInternational = /^\+[\d\s\-()]{6,}$/.test(v);
-  // Iraqi local: 07xx-xxxxxxx, 7 digits+
-  const isIraqiLocal = /^0?7\d{8,9}$/.test(v.replace(/[\s\-]/g, ''));
+  return (
+    <form onSubmit={onSubmit} noValidate className="grid gap-4">
+      <div className="rounded-md bg-neutral-50 p-3">
+        <p className="text-sm font-semibold text-ink">
+          {isRecovery ? 'Find your existing card' : 'Join this loyalty program'}
+        </p>
+        <p className="mt-1 text-sm leading-6 text-neutral-600">
+          {isRecovery
+            ? 'Enter the same phone number you used before. We will not create a new card in recovery mode.'
+            : 'Phone is required so your card can be recognized later. Email and name are optional.'}
+        </p>
+      </div>
 
-  if (!isInternational && !isIraqiLocal) {
-    return 'Enter a valid phone number (e.g. +9647700000000 or 07701234567). Do not use spaces or letters.';
-  }
+      <div className="grid gap-1">
+        <label htmlFor="loyalty-phone" className="text-sm font-semibold text-ink">
+          Phone number
+        </label>
+        <input
+          id="loyalty-phone"
+          name="phone"
+          type="tel"
+          value={phone}
+          onChange={(event) => onPhoneChange(event.target.value)}
+          placeholder="07701234567"
+          autoComplete="tel"
+          required
+          className="h-12 rounded-md border border-neutral-200 bg-white px-3 text-base text-ink outline-none transition focus:border-mint aria-[invalid=true]:border-red-400"
+          aria-invalid={phoneError ? 'true' : undefined}
+          aria-describedby={phoneError ? 'loyalty-phone-error' : undefined}
+          maxLength={24}
+        />
+        <p className="text-xs leading-5 text-neutral-500">
+          Use 07xxxxxxxxx or +9647xxxxxxxxx.
+        </p>
+        {phoneError ? (
+          <p id="loyalty-phone-error" role="alert" className="text-sm leading-5 text-red-600">
+            {phoneError}
+          </p>
+        ) : null}
+      </div>
 
-  return null;
+      {!isRecovery ? (
+        <>
+          <div className="grid gap-1">
+            <label htmlFor="loyalty-email" className="text-sm font-semibold text-ink">
+              Email <span className="font-normal text-neutral-500">(optional)</span>
+            </label>
+            <input
+              id="loyalty-email"
+              name="email"
+              type="email"
+              value={email}
+              onChange={(event) => onEmailChange(event.target.value)}
+              placeholder="you@example.com"
+              autoComplete="email"
+              className="h-12 rounded-md border border-neutral-200 bg-white px-3 text-base text-ink outline-none transition focus:border-mint aria-[invalid=true]:border-red-400"
+              aria-invalid={emailError ? 'true' : undefined}
+              aria-describedby={emailError ? 'loyalty-email-error' : undefined}
+              maxLength={200}
+            />
+            {emailError ? (
+              <p id="loyalty-email-error" role="alert" className="text-sm leading-5 text-red-600">
+                {emailError}
+              </p>
+            ) : null}
+          </div>
+
+          <div className="grid gap-1">
+            <label htmlFor="loyalty-name" className="text-sm font-semibold text-ink">
+              Name <span className="font-normal text-neutral-500">(optional)</span>
+            </label>
+            <input
+              id="loyalty-name"
+              name="name"
+              type="text"
+              value={name}
+              onChange={(event) => onNameChange(event.target.value)}
+              placeholder="Your name"
+              autoComplete="name"
+              className="h-12 rounded-md border border-neutral-200 bg-white px-3 text-base text-ink outline-none transition focus:border-mint"
+              maxLength={160}
+            />
+          </div>
+        </>
+      ) : null}
+
+      {error ? (
+        <p role="alert" className="rounded-md border border-red-100 bg-red-50 p-3 text-sm leading-6 text-red-700">
+          {error}
+        </p>
+      ) : null}
+
+      <button
+        type="submit"
+        disabled={isSubmitting}
+        className="h-12 rounded-md bg-ink px-5 text-sm font-semibold text-white transition hover:bg-neutral-800 disabled:cursor-not-allowed disabled:bg-neutral-400"
+      >
+        {isSubmitting
+          ? isRecovery
+            ? 'Finding your card...'
+            : 'Creating your card...'
+          : isRecovery
+            ? 'Recover my card'
+            : 'Join and get your card'}
+      </button>
+
+      <button
+        type="button"
+        onClick={() => onModeChange(isRecovery ? 'join' : 'recover')}
+        className="text-sm font-medium text-neutral-600 underline hover:text-ink"
+      >
+        {isRecovery ? 'Join as a new customer' : 'I already joined'}
+      </button>
+    </form>
+  );
+}
+
+function CardProgress({
+  stampCount,
+  stampGoal,
+  progressPercent,
+  rewardName,
+  rewardReady
+}: {
+  stampCount: number;
+  stampGoal: number;
+  progressPercent: number;
+  rewardName: string;
+  rewardReady: boolean;
+}) {
+  return (
+    <div className="grid gap-3 rounded-lg border border-neutral-200 bg-neutral-50 p-4">
+      <div>
+        <p className="text-sm font-semibold text-neutral-500">Progress</p>
+        <p className="mt-1 text-lg font-bold text-ink">
+          {stampCount} / {stampGoal} stamps
+        </p>
+      </div>
+      <div className="h-3 overflow-hidden rounded-full bg-white">
+        <div className="h-full rounded-full bg-mint" style={{ width: `${progressPercent}%` }} />
+      </div>
+      <p className="text-sm font-semibold text-neutral-700">
+        {rewardReady ? `${rewardName} is ready to redeem` : rewardName}
+      </p>
+    </div>
+  );
 }
 
 export function LoyaltyEnrollmentClient({
@@ -139,65 +355,74 @@ export function LoyaltyEnrollmentClient({
   apiBaseUrl,
   appleWalletEnabled
 }: LoyaltyEnrollmentClientProps) {
+  const [mode, setMode] = useState<IdentityMode>('join');
   const [phone, setPhone] = useState('');
   const [phoneError, setPhoneError] = useState<string | null>(null);
   const [email, setEmail] = useState('');
+  const [emailError, setEmailError] = useState<string | null>(null);
   const [name, setName] = useState('');
   const [error, setError] = useState<string | null>(null);
   const [isSubmitting, setIsSubmitting] = useState(false);
   const [storageUnavailable, setStorageUnavailable] = useState(false);
   const [enrollment, setEnrollment] = useState<PublicLoyaltyEnrollment | null>(null);
-  const platform = useWalletPlatform();
-
-  // ── Returning-customer check ──────────────────────────────────────────────
+  const [successVariant, setSuccessVariant] = useState<'joined' | 'recovered'>('joined');
   const [isCheckingToken, setIsCheckingToken] = useState(true);
   const [returningCard, setReturningCard] = useState<PublicLoyaltyCard | null>(null);
+  const [returningToken, setReturningToken] = useState<string | null>(null);
+  const platform = useWalletPlatform();
 
   useEffect(() => {
     let cancelled = false;
 
     async function checkStoredToken() {
       const stored = readStoredToken(slug);
+
       if (!stored) {
-        if (!cancelled) setIsCheckingToken(false);
+        if (!cancelled) {
+          setIsCheckingToken(false);
+        }
         return;
       }
 
       const result = await fetchPublicLoyaltyCard(stored, apiBaseUrl);
-      if (cancelled) return;
+
+      if (cancelled) {
+        return;
+      }
 
       if (result.status === 'ok') {
         setReturningCard(result.data);
+        setReturningToken(stored);
       } else {
-        // Token is stale (expired, 404, 400) — clear it and show Join form
         clearStoredToken(slug);
       }
+
       setIsCheckingToken(false);
     }
 
-    checkStoredToken();
-    return () => { cancelled = true; };
-  // eslint-disable-next-line react-hooks/exhaustive-deps
-  }, [slug]);
-  // ─────────────────────────────────────────────────────────────────────────
+    void checkStoredToken();
+
+    return () => {
+      cancelled = true;
+    };
+  }, [apiBaseUrl, slug]);
 
   async function handleSubmit(event: FormEvent<HTMLFormElement>) {
     event.preventDefault();
 
-    const trimmedPhone = phone.trim();
-    const trimmedEmail = email.trim();
-    const trimmedName = name.trim();
+    const nextPhoneError = validateIraqiPhone(phone);
+    const nextEmailError = mode === 'join' ? validateOptionalEmail(email) : null;
 
-    // Per-field phone validation
-    const phoneValidationError = validatePhone(trimmedPhone);
-    if (phoneValidationError) {
-      setPhoneError(phoneValidationError);
+    setPhoneError(nextPhoneError);
+    setEmailError(nextEmailError);
+
+    if (nextPhoneError || nextEmailError) {
       return;
     }
-    setPhoneError(null);
 
-    if (!trimmedPhone && !trimmedEmail) {
-      setError('Enter a phone number or email address to join this loyalty card.');
+    const normalizedPhone = normalizeIraqiPhone(phone);
+
+    if (!normalizedPhone) {
       return;
     }
 
@@ -207,11 +432,17 @@ export function LoyaltyEnrollmentClient({
 
     const result = await enrollPublicLoyaltyCustomer(
       slug,
-      {
-        phone: trimmedPhone || undefined,
-        email: trimmedEmail || undefined,
-        name: trimmedName || undefined
-      },
+      mode === 'recover'
+        ? {
+            phone: normalizedPhone,
+            intent: 'RECOVER'
+          }
+        : {
+            phone: normalizedPhone,
+            email: email.trim() || undefined,
+            name: name.trim() || undefined,
+            intent: 'JOIN'
+          },
       apiBaseUrl
     );
 
@@ -222,82 +453,51 @@ export function LoyaltyEnrollmentClient({
       return;
     }
 
-    const token = result.data.cardAccess.token;
-    const stored = storeCardToken(slug, token);
+    const stored = storeCardToken(slug, result.data.cardAccess.token);
 
     if (!stored) {
       setStorageUnavailable(true);
     }
 
+    setSuccessVariant(mode === 'recover' ? 'recovered' : 'joined');
     setEnrollment(result.data);
   }
 
-  // ── Returning customer state ──────────────────────────────────────────────
+  function changeMode(nextMode: IdentityMode) {
+    setMode(nextMode);
+    setError(null);
+    setPhoneError(null);
+    setEmailError(null);
+  }
+
   if (isCheckingToken) {
     return (
       <div className="flex items-center gap-2 text-sm text-neutral-500">
         <span className="inline-block h-4 w-4 animate-spin rounded-full border-2 border-neutral-300 border-t-transparent" />
-        Loading your card…
+        Loading your card...
       </div>
     );
   }
 
-  if (returningCard) {
-    const cardHref = `/m/${encodeURIComponent(slug)}/loyalty/card?token=${encodeURIComponent(readStoredToken(slug) ?? '')}`;
-    const cardState = returningCard.cardState;
-
+  if (returningCard && returningToken) {
     return (
-      <section className="grid gap-4">
-        <div className="rounded-lg border border-emerald-100 bg-emerald-50 p-4">
-          <p className="text-sm font-semibold text-emerald-800">
-            {returningCard.customer.name ? `Welcome back, ${returningCard.customer.name}!` : 'Welcome back!'}
-          </p>
-          <p className="mt-1 text-sm leading-6 text-emerald-900">
-            You already have a loyalty card for this program.
-          </p>
-        </div>
-
-        <div className="grid gap-3 rounded-lg border border-neutral-200 bg-neutral-50 p-4">
-          <div>
-            <p className="text-sm font-semibold text-neutral-500">Progress</p>
-            <p className="mt-1 text-lg font-bold text-ink">
-              {cardState.stampCount} / {cardState.stampGoal} stamps
-            </p>
-          </div>
-          <div className="h-3 overflow-hidden rounded-full bg-white">
-            <div
-              className="h-full rounded-full bg-mint"
-              style={{ width: `${cardState.progressPercent}%` }}
-            />
-          </div>
-          <p className="text-sm font-semibold text-neutral-700">
-            {cardState.rewardReady ? `🎉 ${cardState.rewardName} is ready to redeem!` : cardState.rewardName}
-          </p>
-        </div>
-
-        <Link
-          href={cardHref}
-          className="inline-flex h-12 items-center justify-center rounded-md bg-ink px-5 text-sm font-semibold text-white transition hover:bg-neutral-800"
-        >
-          View your card →
-        </Link>
-
-        <button
-          type="button"
-          onClick={() => {
-            clearStoredToken(slug);
-            setReturningCard(null);
-          }}
-          className="text-sm text-neutral-500 underline hover:text-neutral-700"
-        >
-          Not you? Join with a different contact
-        </button>
-      </section>
+      <ReturningLoyaltyCardView
+        slug={slug}
+        apiBaseUrl={apiBaseUrl}
+        appleWalletEnabled={appleWalletEnabled}
+        card={returningCard}
+        cardToken={returningToken}
+        platform={platform}
+        onUseAnotherCard={() => {
+          clearStoredToken(slug);
+          setReturningCard(null);
+          setReturningToken(null);
+          changeMode('recover');
+        }}
+      />
     );
   }
-  // ─────────────────────────────────────────────────────────────────────────
 
-  // ── Post-enrollment success state ─────────────────────────────────────────
   if (enrollment) {
     if (!platform) {
       return (
@@ -318,93 +518,32 @@ export function LoyaltyEnrollmentClient({
         enrollment={enrollment}
         platform={platform}
         storageUnavailable={storageUnavailable}
+        variant={successVariant}
       />
     );
   }
-  // ─────────────────────────────────────────────────────────────────────────
 
   return (
-    <form onSubmit={handleSubmit} className="grid gap-4">
-      <p className="rounded-md bg-neutral-50 p-3 text-sm leading-6 text-neutral-600">
-        Use either a phone number or email so staff can find your card. Your name is optional.
-      </p>
-      <div className="grid gap-1">
-        <label htmlFor="loyalty-phone" className="text-sm font-semibold text-ink">
-          Phone number
-        </label>
-        <input
-          id="loyalty-phone"
-          name="phone"
-          type="tel"
-          value={phone}
-          onChange={(event) => {
-            setPhone(event.target.value);
-            if (phoneError) setPhoneError(null);
-          }}
-          placeholder="+9647700000000"
-          autoComplete="tel"
-          className="h-12 rounded-md border border-neutral-200 bg-white px-3 text-base text-ink outline-none transition focus:border-mint aria-[invalid=true]:border-red-400"
-          aria-invalid={phoneError ? 'true' : undefined}
-          maxLength={40}
-        />
-        {phoneError ? (
-          <p id="loyalty-phone-error" className="text-sm leading-5 text-red-600">
-            {phoneError}
-          </p>
-        ) : null}
-      </div>
-
-      <div className="grid gap-1">
-        <label htmlFor="loyalty-email" className="text-sm font-semibold text-ink">
-          Email
-        </label>
-        <input
-          id="loyalty-email"
-          name="email"
-          type="email"
-          value={email}
-          onChange={(event) => setEmail(event.target.value)}
-          placeholder="you@example.com"
-          autoComplete="email"
-          className="h-12 rounded-md border border-neutral-200 bg-white px-3 text-base text-ink outline-none transition focus:border-mint"
-          maxLength={200}
-        />
-      </div>
-
-      <div className="grid gap-1">
-        <label htmlFor="loyalty-name" className="text-sm font-semibold text-ink">
-          Name <span className="font-normal text-neutral-500">(optional)</span>
-        </label>
-        <input
-          id="loyalty-name"
-          name="name"
-          type="text"
-          value={name}
-          onChange={(event) => setName(event.target.value)}
-          placeholder="Your name"
-          autoComplete="name"
-          className="h-12 rounded-md border border-neutral-200 bg-white px-3 text-base text-ink outline-none transition focus:border-mint"
-          maxLength={160}
-        />
-      </div>
-
-      {error ? (
-        <p className="rounded-md border border-red-100 bg-red-50 p-3 text-sm leading-6 text-red-700">{error}</p>
-      ) : null}
-
-      {storageUnavailable ? (
-        <p className="rounded-md border border-amber-100 bg-amber-50 p-3 text-sm leading-6 text-amber-700">
-          This browser could not save the card token for later, but this card link will still open now.
-        </p>
-      ) : null}
-
-      <button
-        type="submit"
-        disabled={isSubmitting}
-        className="h-12 rounded-md bg-ink px-5 text-sm font-semibold text-white transition hover:bg-neutral-800 disabled:cursor-not-allowed disabled:bg-neutral-400"
-      >
-        {isSubmitting ? 'Creating your card...' : 'Join and get your card'}
-      </button>
-    </form>
+    <LoyaltyIdentityForm
+      mode={mode}
+      phone={phone}
+      email={email}
+      name={name}
+      phoneError={phoneError}
+      emailError={emailError}
+      error={error}
+      isSubmitting={isSubmitting}
+      onSubmit={handleSubmit}
+      onPhoneChange={(value) => {
+        setPhone(value);
+        setPhoneError(null);
+      }}
+      onEmailChange={(value) => {
+        setEmail(value);
+        setEmailError(null);
+      }}
+      onNameChange={setName}
+      onModeChange={changeMode}
+    />
   );
 }

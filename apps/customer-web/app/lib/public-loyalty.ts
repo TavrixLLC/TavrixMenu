@@ -36,9 +36,10 @@ export type PublicLoyaltyContext = {
 };
 
 export type PublicLoyaltyEnrollRequest = {
-  phone?: string | null;
+  phone: string;
   email?: string | null;
   name?: string | null;
+  intent?: 'JOIN' | 'RECOVER';
 };
 
 export type PublicLoyaltyCardState = {
@@ -435,7 +436,7 @@ export async function enrollPublicLoyaltyCustomer(
       return {
         status: 'bad-request',
         apiUrl,
-        message: parseApiMessage(body, 'Please enter a phone number or email address.')
+        message: parseApiMessage(body, 'Please enter a valid Iraqi phone number.')
       };
     }
 
@@ -443,7 +444,10 @@ export async function enrollPublicLoyaltyCustomer(
       return {
         status: 'not-found',
         apiUrl,
-        message: 'This business does not have an active loyalty card right now.'
+        message:
+          request.intent === 'RECOVER'
+            ? 'We could not recover a card for that number. Check the number or join as a new customer.'
+            : 'This business does not have an active loyalty card right now.'
       };
     }
 

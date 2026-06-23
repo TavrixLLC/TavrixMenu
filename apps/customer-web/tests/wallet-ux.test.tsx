@@ -2,8 +2,23 @@ import { strict as assert } from 'assert';
 import { describe, it } from 'node:test';
 import { renderToStaticMarkup } from 'react-dom/server';
 import { WalletActions } from '../app/components/WalletActions';
-import { LoyaltyEnrollmentSuccess } from '../app/m/[slug]/loyalty/LoyaltyEnrollmentClient';
-import type { PublicLoyaltyEnrollment } from '../app/lib/public-loyalty';
+import {
+  clearStoredToken,
+  LoyaltyEnrollmentSuccess,
+  LoyaltyIdentityForm,
+  readStoredToken,
+  ReturningLoyaltyCardView,
+  storeCardToken
+} from '../app/m/[slug]/loyalty/LoyaltyEnrollmentClient';
+import {
+  normalizeIraqiPhone,
+  validateIraqiPhone,
+  validateOptionalEmail
+} from '../app/lib/customer-identity';
+import type {
+  PublicLoyaltyCard,
+  PublicLoyaltyEnrollment
+} from '../app/lib/public-loyalty';
 import { detectWalletPlatform, type WalletPlatform } from '../app/lib/wallet-platform';
 
 const enrollmentFixture: PublicLoyaltyEnrollment = {
@@ -37,6 +52,96 @@ const enrollmentFixture: PublicLoyaltyEnrollment = {
     cardUrlPath: '/public/loyalty/cards/card-token-placeholder'
   }
 };
+
+const returningCardFixture: PublicLoyaltyCard = {
+  business: {
+    id: null,
+    name: 'Sample cafe',
+    slug: 'sample-cafe',
+    logoUrl: null,
+    coverUrl: null
+  },
+  program: {
+    name: 'Sample rewards',
+    stampGoal: 8,
+    rewardName: 'Sample reward',
+    rewardDescription: null,
+    terms: null
+  },
+  customer: {
+    name: 'Sample customer'
+  },
+  cardState: enrollmentFixture.cardState
+};
+
+describe('customer identity validation', () => {
+  it('normalizes supported Iraqi local and international phone formats', () => {
+    assert.equal(normalizeIraqiPhone('07701234567'), '+9647701234567');
+    assert.equal(normalizeIraqiPhone('+9647701234567'), '+9647701234567');
+    assert.equal(normalizeIraqiPhone('0770 123 4567'), '+9647701234567');
+  });
+
+  it('rejects invalid phone and malformed email values', () => {
+    assert.match(validateIraqiPhone('') ?? '', /phone number/i);
+    assert.match(validateIraqiPhone('12345') ?? '', /Iraqi number/i);
+    assert.match(validateOptionalEmail('not-an-email') ?? '', /valid email/i);
+    assert.equal(validateOptionalEmail(''), null);
+    assert.equal(validateOptionalEmail('customer@example.com'), null);
+  });
+});
+
+describe('loyalty identity states', () => {
+  it('shows first-time enrollment with required phone and optional email', () => {
+    const html = renderIdentityForm('join');
+
+    assert.match(html, /Join this loyalty program/);
+    assert.match(html, /Phone is required/);
+    assert.match(html, /<input[^>]*required=""[^>]*name="phone"/);
+    assert.match(html, /Email <span[^>]*>\(optional\)/);
+    assert.match(html, /I already joined/);
+  });
+
+  it('shows phone-only recovery without creating a new-card promise', () => {
+    const html = renderIdentityForm('recover');
+
+    assert.match(html, /Find your existing card/);
+    assert.match(html, /will not create a new card/i);
+    assert.match(html, /Recover my card/);
+    assert.equal(/name="email"/.test(html), false);
+    assert.match(html, /Join as a new customer/);
+  });
+
+  it('stores only the opaque card reference for same-device return and clears it', () => {
+    const originalWindow = Object.getOwnPropertyDescriptor(globalThis, 'window');
+    const values = new Map<string, string>();
+
+    Object.defineProperty(globalThis, 'window', {
+      configurable: true,
+      value: {
+        localStorage: {
+          getItem: (key: string) => values.get(key) ?? null,
+          setItem: (key: string, value: string) => values.set(key, value),
+          removeItem: (key: string) => values.delete(key)
+        }
+      }
+    });
+
+    try {
+      assert.equal(storeCardToken('sample-cafe', 'opaque-card-reference'), true);
+      assert.equal(readStoredToken('sample-cafe'), 'opaque-card-reference');
+      assert.deepEqual([...values.keys()], ['tavrix.loyalty.sample-cafe.token']);
+
+      clearStoredToken('sample-cafe');
+      assert.equal(readStoredToken('sample-cafe'), null);
+    } finally {
+      if (originalWindow) {
+        Object.defineProperty(globalThis, 'window', originalWindow);
+      } else {
+        delete (globalThis as { window?: unknown }).window;
+      }
+    }
+  });
+});
 
 describe('wallet platform detection', () => {
   it('detects iPhone and iPad-class devices as iOS', () => {
@@ -145,6 +250,30 @@ describe('enrollment success wallet handoff', () => {
   });
 });
 
+describe('returning customer wallet handoff', () => {
+  it('shows Apple first on the returning iPhone view', () => {
+    const html = renderReturningCard('ios');
+
+    assert.match(html, /Welcome back/);
+    assert.match(html, /add-to-apple-wallet\.svg/);
+    assert.equal(/add-to-google-wallet\.svg/.test(html), false);
+  });
+
+  it('shows Google first on the returning Android view', () => {
+    const html = renderReturningCard('android');
+
+    assert.match(html, /add-to-google-wallet\.svg/);
+    assert.equal(/add-to-apple-wallet\.svg/.test(html), false);
+  });
+
+  it('shows phone guidance on the returning desktop view', () => {
+    const html = renderReturningCard('desktop');
+
+    assert.match(html, /Open this link on your phone/);
+    assert.match(html, /Not you\? Use another phone or card/);
+  });
+});
+
 function renderActions(platform: WalletPlatform, appleWalletEnabled = true) {
   return renderToStaticMarkup(
     <WalletActions
@@ -166,6 +295,40 @@ function renderEnrollmentSuccess(platform: WalletPlatform) {
       enrollment={enrollmentFixture}
       platform={platform}
       storageUnavailable={false}
+    />
+  );
+}
+
+function renderIdentityForm(mode: 'join' | 'recover') {
+  return renderToStaticMarkup(
+    <LoyaltyIdentityForm
+      mode={mode}
+      phone=""
+      email=""
+      name=""
+      phoneError={null}
+      emailError={null}
+      error={null}
+      isSubmitting={false}
+      onSubmit={() => undefined}
+      onPhoneChange={() => undefined}
+      onEmailChange={() => undefined}
+      onNameChange={() => undefined}
+      onModeChange={() => undefined}
+    />
+  );
+}
+
+function renderReturningCard(platform: WalletPlatform) {
+  return renderToStaticMarkup(
+    <ReturningLoyaltyCardView
+      slug="sample-cafe"
+      apiBaseUrl="https://api.example.test"
+      appleWalletEnabled
+      card={returningCardFixture}
+      cardToken="opaque-card-reference"
+      platform={platform}
+      onUseAnotherCard={() => undefined}
     />
   );
 }

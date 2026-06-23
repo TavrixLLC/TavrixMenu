@@ -15,7 +15,10 @@ import {
   Prisma
 } from '../../generated/prisma';
 import { PrismaService } from '../../prisma/prisma.service';
-import { PublicLoyaltyEnrollDto } from './dto/public-loyalty-enroll.dto';
+import {
+  PublicLoyaltyEnrollDto,
+  PublicLoyaltyEnrollmentIntent
+} from './dto/public-loyalty-enroll.dto';
 
 type PublicBusiness = Pick<
   Business,
@@ -68,13 +71,10 @@ export class PublicLoyaltyService {
   }
 
   async enrollCustomer(slug: string, dto: PublicLoyaltyEnrollDto) {
-    const phone = this.normalizeNullableString(dto.phone);
+    const phone = this.normalizeIraqiPhone(dto.phone);
     const email = this.normalizeNullableString(dto.email)?.toLowerCase() ?? null;
     const name = this.normalizeNullableString(dto.name);
-
-    if (!phone && !email) {
-      throw new BadRequestException('Enrollment requires phone or email');
-    }
+    const intent = dto.intent ?? PublicLoyaltyEnrollmentIntent.JOIN;
 
     const { business, program } = await this.findActiveBusinessAndProgram(slug);
     const publicAccessToken = this.generatePublicAccessToken();
@@ -82,6 +82,16 @@ export class PublicLoyaltyService {
     const issuedAt = new Date();
 
     const membership = await this.prisma.$transaction(async (transaction) => {
+      if (intent === PublicLoyaltyEnrollmentIntent.RECOVER) {
+        return this.recoverExistingMembership(transaction, {
+          businessId: business.id,
+          loyaltyProgramId: program.id,
+          phone,
+          publicAccessTokenHash,
+          issuedAt
+        });
+      }
+
       const customer = await this.findOrCreateCustomer(transaction, {
         phone,
         email,
@@ -120,6 +130,13 @@ export class PublicLoyaltyService {
       });
     });
 
+    return this.mapEnrollmentResponse(membership, publicAccessToken);
+  }
+
+  private mapEnrollmentResponse(
+    membership: PublicMembership,
+    publicAccessToken: string
+  ) {
     return {
       customer: {
         name: membership.customer.name
@@ -249,18 +266,15 @@ export class PublicLoyaltyService {
   private async findOrCreateCustomer(
     transaction: Prisma.TransactionClient,
     customerInput: {
-      phone: string | null;
+      phone: string;
       email: string | null;
       name: string | null;
     }
   ) {
-    const phoneCustomer = customerInput.phone
-      ? await transaction.customer.findUnique({
-          where: {
-            phone: customerInput.phone
-          }
-        })
-      : null;
+    const phoneCustomer = await this.findCustomerByPhone(
+      transaction,
+      customerInput.phone
+    );
     const emailCustomer = customerInput.email
       ? await transaction.customer.findUnique({
           where: {
@@ -295,6 +309,80 @@ export class PublicLoyaltyService {
         name: customerInput.name
       }
     });
+  }
+
+  private async recoverExistingMembership(
+    transaction: Prisma.TransactionClient,
+    input: {
+      businessId: string;
+      loyaltyProgramId: string;
+      phone: string;
+      publicAccessTokenHash: string;
+      issuedAt: Date;
+    }
+  ): Promise<PublicMembership> {
+    const customer = await this.findCustomerByPhone(transaction, input.phone);
+
+    if (!customer) {
+      throw new NotFoundException('Loyalty card not found');
+    }
+
+    const existingMembership = await transaction.loyaltyMembership.findFirst({
+      where: {
+        businessId: input.businessId,
+        loyaltyProgramId: input.loyaltyProgramId,
+        customerId: customer.id,
+        status: LoyaltyMembershipStatus.ACTIVE
+      },
+      select: {
+        id: true
+      }
+    });
+
+    if (!existingMembership) {
+      throw new NotFoundException('Loyalty card not found');
+    }
+
+    return transaction.loyaltyMembership.update({
+      where: {
+        id: existingMembership.id
+      },
+      data: {
+        publicAccessTokenHash: input.publicAccessTokenHash,
+        publicAccessTokenIssuedAt: input.issuedAt,
+        publicAccessTokenLastViewedAt: null
+      },
+      include: {
+        business: {
+          select: this.publicBusinessSelect()
+        },
+        customer: true,
+        loyaltyProgram: true
+      }
+    });
+  }
+
+  private async findCustomerByPhone(
+    transaction: Prisma.TransactionClient,
+    canonicalPhone: string
+  ) {
+    const matches = await transaction.customer.findMany({
+      where: {
+        phone: {
+          in: this.getIraqiPhoneAliases(canonicalPhone)
+        }
+      },
+      orderBy: [{ createdAt: 'asc' }, { id: 'asc' }],
+      take: 2
+    });
+
+    if (matches.length > 1) {
+      throw new ConflictException(
+        'Multiple customer records require staff assistance'
+      );
+    }
+
+    return matches[0] ?? null;
   }
 
   private publicBusinessSelect() {
@@ -367,6 +455,26 @@ export class PublicLoyaltyService {
     const normalized = value.trim();
 
     return normalized || null;
+  }
+
+  private normalizeIraqiPhone(value: string) {
+    const normalized = value.trim();
+
+    if (/^07\d{9}$/.test(normalized)) {
+      return `+964${normalized.slice(1)}`;
+    }
+
+    if (/^\+9647\d{9}$/.test(normalized)) {
+      return normalized;
+    }
+
+    throw new BadRequestException(
+      'Phone must use Iraqi local or international format'
+    );
+  }
+
+  private getIraqiPhoneAliases(canonicalPhone: string) {
+    return [canonicalPhone, `0${canonicalPhone.slice(4)}`];
   }
 
   private normalizeRequiredToken(value: string) {

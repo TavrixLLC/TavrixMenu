@@ -1,21 +1,34 @@
-import { ApiPropertyOptional } from '@nestjs/swagger';
+import { ApiProperty, ApiPropertyOptional } from '@nestjs/swagger';
 import {
   IsEmail,
+  IsEnum,
   IsOptional,
   IsString,
+  Matches,
   MaxLength,
-  ValidateIf
 } from 'class-validator';
 
+export enum PublicLoyaltyEnrollmentIntent {
+  JOIN = 'JOIN',
+  RECOVER = 'RECOVER'
+}
+
 export class PublicLoyaltyEnrollDto {
-  @ApiPropertyOptional({ example: '+9647700000000', nullable: true })
-  @ValidateIf((dto: PublicLoyaltyEnrollDto) => dto.phone !== undefined || !dto.email)
+  @ApiProperty({
+    example: '+9647700000000',
+    pattern: '^(?:07\\d{9}|\\+9647\\d{9})$',
+    description:
+      'Required Iraqi mobile number in local 07xxxxxxxxx or international +9647xxxxxxxxx format.'
+  })
   @IsString()
-  @MaxLength(40)
-  phone?: string | null;
+  @Matches(/^(?:07\d{9}|\+9647\d{9})$/, {
+    message:
+      'phone must use Iraqi local 07xxxxxxxxx or international +9647xxxxxxxxx format'
+  })
+  phone!: string;
 
   @ApiPropertyOptional({ example: 'customer@example.com', nullable: true })
-  @ValidateIf((dto: PublicLoyaltyEnrollDto) => dto.email !== undefined || !dto.phone)
+  @IsOptional()
   @IsEmail()
   @MaxLength(200)
   email?: string | null;
@@ -25,4 +38,14 @@ export class PublicLoyaltyEnrollDto {
   @IsString()
   @MaxLength(160)
   name?: string | null;
+
+  @ApiPropertyOptional({
+    enum: PublicLoyaltyEnrollmentIntent,
+    default: PublicLoyaltyEnrollmentIntent.JOIN,
+    description:
+      'JOIN creates or reuses a customer and membership. RECOVER returns only an existing active membership.'
+  })
+  @IsOptional()
+  @IsEnum(PublicLoyaltyEnrollmentIntent)
+  intent?: PublicLoyaltyEnrollmentIntent;
 }
