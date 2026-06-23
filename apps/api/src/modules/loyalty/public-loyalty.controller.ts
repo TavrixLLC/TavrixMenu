@@ -1,14 +1,27 @@
-import { Body, Controller, Get, Param, Post } from '@nestjs/common';
+import {
+  Body,
+  Controller,
+  Get,
+  HttpCode,
+  HttpStatus,
+  Param,
+  Post
+} from '@nestjs/common';
 import {
   ApiBadRequestResponse,
   ApiCreatedResponse,
   ApiForbiddenResponse,
   ApiNotFoundResponse,
   ApiOkResponse,
+  ApiResponse,
   ApiTags
 } from '@nestjs/swagger';
 import { PublicLoyaltyCardTokenParamDto } from './dto/public-loyalty-card-token-param.dto';
 import { PublicLoyaltyEnrollDto } from './dto/public-loyalty-enroll.dto';
+import {
+  CreatePublicLoyaltyTransferDto,
+  RedeemPublicLoyaltyTransferDto
+} from './dto/public-loyalty-transfer.dto';
 import { PublicLoyaltyService } from './public-loyalty.service';
 
 const publicCardStateExample = {
@@ -187,5 +200,81 @@ export class PublicLoyaltyController {
   })
   getPublicCard(@Param() params: PublicLoyaltyCardTokenParamDto) {
     return this.publicLoyaltyService.getPublicCard(params.token);
+  }
+
+  @Post('loyalty/card-transfers')
+  @ApiCreatedResponse({
+    description:
+      'Creates a dedicated five-minute, one-time transfer credential after validating the trusted browser card reference.',
+    schema: {
+      example: {
+        transferToken: '<short-lived-transfer-code>',
+        expiresAt: '2026-06-23T13:05:00.000Z'
+      }
+    }
+  })
+  @ApiNotFoundResponse({
+    description: 'The trusted public card reference is invalid or inactive.'
+  })
+  @ApiResponse({
+    status: HttpStatus.TOO_MANY_REQUESTS,
+    description: 'Transfer creation rate limit reached for this membership.',
+    schema: {
+      example: {
+        statusCode: 429,
+        code: 'LOYALTY_TRANSFER_RATE_LIMITED',
+        message: 'Please wait before creating another transfer code.'
+      }
+    }
+  })
+  createCardTransfer(@Body() dto: CreatePublicLoyaltyTransferDto) {
+    return this.publicLoyaltyService.createCardTransfer(dto.cardToken);
+  }
+
+  @Post('loyalty/card-transfers/redeem')
+  @HttpCode(HttpStatus.OK)
+  @ApiOkResponse({
+    description:
+      'Atomically consumes a valid transfer credential and returns a newly rotated public card reference for the same membership.',
+    schema: {
+      example: {
+        customer: {
+          name: 'Demo Customer'
+        },
+        business: {
+          name: 'Tavrix Cafe',
+          slug: 'tavrix-cafe',
+          logoUrl: null,
+          coverUrl: null
+        },
+        program: {
+          name: 'Tavrix Cafe Stamp Card',
+          stampGoal: 5,
+          rewardName: 'Free coffee',
+          rewardDescription: 'One free Turkish Coffee after 5 stamps.'
+        },
+        cardState: publicCardStateExample,
+        cardAccess: {
+          token: '<new-public-card-reference>',
+          cardUrlPath:
+            '/public/loyalty/cards/<new-public-card-reference>'
+        }
+      }
+    }
+  })
+  @ApiResponse({
+    status: HttpStatus.GONE,
+    description:
+      'The transfer credential is invalid, expired, already used, or not scoped to an active card.',
+    schema: {
+      example: {
+        statusCode: 410,
+        code: 'LOYALTY_TRANSFER_UNAVAILABLE',
+        message: 'This transfer code is invalid, expired, or already used.'
+      }
+    }
+  })
+  redeemCardTransfer(@Body() dto: RedeemPublicLoyaltyTransferDto) {
+    return this.publicLoyaltyService.redeemCardTransfer(dto.transferToken);
   }
 }

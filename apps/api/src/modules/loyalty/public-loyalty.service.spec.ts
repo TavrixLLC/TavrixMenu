@@ -3,7 +3,10 @@ import { HttpException, HttpStatus } from '@nestjs/common';
 import { strict as assert } from 'assert';
 import { validate } from 'class-validator';
 import { describe, it } from 'node:test';
-import { LoyaltyMembershipStatus } from '../../generated/prisma';
+import {
+  BusinessStatus,
+  LoyaltyMembershipStatus
+} from '../../generated/prisma';
 import {
   PublicLoyaltyEnrollDto,
   PublicLoyaltyEnrollmentIntent
@@ -11,6 +14,9 @@ import {
 import {
   PUBLIC_LOYALTY_RECOVERY_REQUIRED_CODE,
   PUBLIC_LOYALTY_RECOVERY_REQUIRED_MESSAGE,
+  PUBLIC_LOYALTY_TRANSFER_RATE_LIMIT,
+  PUBLIC_LOYALTY_TRANSFER_RATE_LIMITED_CODE,
+  PUBLIC_LOYALTY_TRANSFER_UNAVAILABLE_CODE,
   PublicLoyaltyService
 } from './public-loyalty.service';
 
@@ -34,6 +40,151 @@ describe('PublicLoyaltyEnrollDto validation', () => {
     assert.ok((await validate(invalidPhone)).length > 0);
     assert.ok((await validate(invalidEmail)).length > 0);
     assert.ok((await validate(emailOnly)).length > 0);
+  });
+});
+
+describe('PublicLoyaltyService secure card transfer', () => {
+  it('creates a short-lived hash-only transfer from a trusted card session', async () => {
+    const setup = createSetup();
+    const enrollment = await enrollFixture(setup);
+
+    const transfer = await setup.service.createCardTransfer(
+      enrollment.cardAccess.token
+    );
+
+    assert.equal(setup.state.cardTransfers.length, 1);
+    assert.equal(
+      setup.state.cardTransfers[0]?.tokenHash.includes(transfer.transferToken),
+      false
+    );
+    assert.equal(setup.state.cardTransfers[0]?.tokenHash.length, 64);
+    assert.doesNotMatch(transfer.transferToken, /^waflo_scan_v1\./);
+    assert.ok(
+      new Date(transfer.expiresAt).getTime() > Date.now()
+    );
+  });
+
+  it('rejects transfer creation without a valid trusted card session', async () => {
+    const setup = createSetup();
+
+    await assert.rejects(
+      setup.service.createCardTransfer('x'.repeat(43)),
+      (error: unknown) =>
+        error instanceof HttpException &&
+        error.getStatus() === HttpStatus.NOT_FOUND
+    );
+
+    assert.equal(setup.state.cardTransfers.length, 0);
+  });
+
+  it('redeems once, rotates card access, and leaves stamp state unchanged', async () => {
+    const setup = createSetup();
+    const enrollment = await enrollFixture(setup);
+    setup.state.memberships[0].stampCount = 3;
+    setup.state.memberships[0].totalStampsEarned = 7;
+    const transfer = await setup.service.createCardTransfer(
+      enrollment.cardAccess.token
+    );
+
+    const redeemed = await setup.service.redeemCardTransfer(
+      transfer.transferToken
+    );
+
+    assert.notEqual(
+      redeemed.cardAccess.token,
+      enrollment.cardAccess.token
+    );
+    assert.equal(redeemed.cardState.stampCount, 3);
+    assert.equal(redeemed.cardState.totalStampsEarned, 7);
+    assert.ok(setup.state.cardTransfers[0]?.usedAt instanceof Date);
+
+    await captureTransferUnavailable(
+      setup.service.redeemCardTransfer(transfer.transferToken)
+    );
+  });
+
+  it('rejects expired transfer credentials without rotating card access', async () => {
+    const setup = createSetup();
+    const enrollment = await enrollFixture(setup);
+    const transfer = await setup.service.createCardTransfer(
+      enrollment.cardAccess.token
+    );
+    const membershipBefore = {
+      ...setup.state.memberships[0]
+    };
+    setup.state.cardTransfers[0].expiresAt = new Date(Date.now() - 1);
+
+    await captureTransferUnavailable(
+      setup.service.redeemCardTransfer(transfer.transferToken)
+    );
+
+    assert.deepEqual(setup.state.memberships[0], membershipBefore);
+  });
+
+  it('rejects cashier wallet scan QR values as transfer credentials', async () => {
+    const setup = createSetup();
+    const enrollment = await enrollFixture(setup);
+    const membershipBefore = {
+      ...setup.state.memberships[0]
+    };
+
+    await captureTransferUnavailable(
+      setup.service.redeemCardTransfer(
+        `waflo_scan_v1.${'x'.repeat(48)}`
+      )
+    );
+
+    assert.deepEqual(setup.state.memberships[0], membershipBefore);
+    assert.equal(enrollment.cardState.stampCount, 0);
+  });
+
+  it('rate-limits repeated transfer creation for one membership', async () => {
+    const setup = createSetup();
+    const enrollment = await enrollFixture(setup);
+
+    for (let index = 0; index < PUBLIC_LOYALTY_TRANSFER_RATE_LIMIT; index += 1) {
+      await setup.service.createCardTransfer(enrollment.cardAccess.token);
+    }
+
+    await assert.rejects(
+      setup.service.createCardTransfer(enrollment.cardAccess.token),
+      (error: unknown) => {
+        if (!(error instanceof HttpException)) {
+          return false;
+        }
+
+        const response = error.getResponse() as { code?: string };
+        return (
+          error.getStatus() === HttpStatus.TOO_MANY_REQUESTS &&
+          response.code === PUBLIC_LOYALTY_TRANSFER_RATE_LIMITED_CODE
+        );
+      }
+    );
+  });
+
+  it('does not log card or transfer credentials', async () => {
+    const setup = createSetup();
+    const logs: string[] = [];
+    const originalLog = console.log;
+    const originalError = console.error;
+    console.log = (...values: unknown[]) => logs.push(values.join(' '));
+    console.error = (...values: unknown[]) => logs.push(values.join(' '));
+
+    try {
+      const enrollment = await enrollFixture(setup);
+      const transfer = await setup.service.createCardTransfer(
+        enrollment.cardAccess.token
+      );
+      await setup.service.redeemCardTransfer(transfer.transferToken);
+
+      const output = logs.join('\n');
+      assert.equal(output.includes(enrollment.cardAccess.token), false);
+      assert.equal(output.includes(transfer.transferToken), false);
+      assert.equal(output.includes('customer@example.test'), false);
+    } finally {
+      console.log = originalLog;
+      console.error = originalError;
+    }
   });
 });
 
@@ -177,6 +328,29 @@ async function captureVerificationRequired(promise: Promise<unknown>) {
   }
 }
 
+async function captureTransferUnavailable(promise: Promise<unknown>) {
+  try {
+    await promise;
+    assert.fail('Expected transfer credential to be unavailable');
+  } catch (error) {
+    assert.ok(error instanceof HttpException);
+    assert.equal(error.getStatus(), HttpStatus.GONE);
+    assert.deepEqual(error.getResponse(), {
+      statusCode: HttpStatus.GONE,
+      code: PUBLIC_LOYALTY_TRANSFER_UNAVAILABLE_CODE,
+      message: 'This transfer code is invalid, expired, or already used.'
+    });
+  }
+}
+
+function enrollFixture(setup: ReturnType<typeof createSetup>) {
+  return setup.service.enrollCustomer('sample-cafe', {
+    phone: '07701234567',
+    email: 'customer@example.test',
+    intent: PublicLoyaltyEnrollmentIntent.JOIN
+  });
+}
+
 function createSetup() {
   const now = new Date('2026-06-23T00:00:00.000Z');
   const business = {
@@ -188,7 +362,8 @@ function createSetup() {
     logoUrl: null,
     coverUrl: null,
     currency: 'IQD',
-    language: 'en'
+    language: 'en',
+    status: BusinessStatus.ACTIVE
   };
   const program = {
     id: 'program_1',
@@ -209,8 +384,23 @@ function createSetup() {
   const state = {
     customers: [] as Array<any>,
     memberships: [] as Array<any>,
+    cardTransfers: [] as Array<any>,
     transactionCalls: 0
   };
+
+  function membershipWithRelations(membership: any) {
+    return {
+      ...membership,
+      business,
+      loyaltyProgram: {
+        ...program,
+        stampStyle: null
+      },
+      customer: state.customers.find(
+        (customer) => customer.id === membership.customerId
+      )
+    };
+  }
 
   const transaction = {
     customer: {
@@ -246,14 +436,65 @@ function createSetup() {
         };
         state.memberships.push(membership);
 
+        return membershipWithRelations(membership);
+      },
+      update: async ({ where, data }: any) => {
+        const membership = state.memberships.find(
+          (item) => item.id === where.id
+        );
+        Object.assign(membership, data, { updatedAt: new Date() });
+        return membershipWithRelations(membership);
+      }
+    },
+    loyaltyCardTransfer: {
+      count: async ({ where }: any) =>
+        state.cardTransfers.filter(
+          (transfer) =>
+            transfer.membershipId === where.membershipId &&
+            transfer.createdAt >= where.createdAt.gte
+        ).length,
+      create: async ({ data }: any) => {
+        const transfer = {
+          id: `transfer_${state.cardTransfers.length + 1}`,
+          usedAt: null,
+          createdAt: new Date(),
+          ...data
+        };
+        state.cardTransfers.push(transfer);
+        return transfer;
+      },
+      findUnique: async ({ where }: any) => {
+        const transfer = state.cardTransfers.find(
+          (item) => item.tokenHash === where.tokenHash
+        );
+
+        if (!transfer) {
+          return null;
+        }
+
         return {
-          ...membership,
-          business,
-          loyaltyProgram: program,
-          customer: state.customers.find(
-            (customer) => customer.id === membership.customerId
+          ...transfer,
+          membership: membershipWithRelations(
+            state.memberships.find(
+              (membership) => membership.id === transfer.membershipId
+            )
           )
         };
+      },
+      updateMany: async ({ where, data }: any) => {
+        const transfer = state.cardTransfers.find(
+          (item) =>
+            item.id === where.id &&
+            item.usedAt === null &&
+            item.expiresAt > where.expiresAt.gt
+        );
+
+        if (!transfer) {
+          return { count: 0 };
+        }
+
+        Object.assign(transfer, data);
+        return { count: 1 };
       }
     }
   };
@@ -264,6 +505,17 @@ function createSetup() {
         ...business,
         loyaltyPrograms: [program]
       })
+    },
+    loyaltyMembership: {
+      findFirst: async ({ where }: any) => {
+        const membership = state.memberships.find(
+          (item) =>
+            item.publicAccessTokenHash === where.publicAccessTokenHash &&
+            item.status === where.status
+        );
+        return membership ? { id: membership.id } : null;
+      },
+      update: transaction.loyaltyMembership.update
     },
     $transaction: async (callback: (client: typeof transaction) => unknown) => {
       state.transactionCalls += 1;

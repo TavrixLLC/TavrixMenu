@@ -76,6 +76,11 @@ export type PublicLoyaltyEnrollment = {
   };
 };
 
+export type PublicLoyaltyCardTransfer = {
+  transferToken: string;
+  expiresAt: string;
+};
+
 export type PublicLoyaltyCard = {
   business: {
     id: string | null;
@@ -147,6 +152,30 @@ export type PublicLoyaltyCardResult =
     }
   | {
       status: 'error';
+      apiUrl: string;
+      message: string;
+    };
+
+export type PublicLoyaltyTransferCreateResult =
+  | {
+      status: 'ok';
+      data: PublicLoyaltyCardTransfer;
+      apiUrl: string;
+    }
+  | {
+      status: 'not-found' | 'rate-limited' | 'error';
+      apiUrl: string;
+      message: string;
+    };
+
+export type PublicLoyaltyTransferRedeemResult =
+  | {
+      status: 'ok';
+      data: PublicLoyaltyEnrollment;
+      apiUrl: string;
+    }
+  | {
+      status: 'unavailable' | 'error';
       apiUrl: string;
       message: string;
     };
@@ -329,6 +358,21 @@ function parseEnrollment(value: unknown): PublicLoyaltyEnrollment | null {
       token,
       cardUrlPath
     }
+  };
+}
+
+function parseCardTransfer(value: unknown): PublicLoyaltyCardTransfer | null {
+  const record = asRecord(value);
+  const transferToken = readString(record?.transferToken);
+  const expiresAt = readString(record?.expiresAt);
+
+  if (!transferToken || !expiresAt) {
+    return null;
+  }
+
+  return {
+    transferToken,
+    expiresAt
   };
 }
 
@@ -566,6 +610,132 @@ export async function fetchPublicLoyaltyCard(
       status: 'error',
       apiUrl,
       message: error instanceof Error ? error.message : 'Unable to reach the public loyalty card API'
+    };
+  }
+}
+
+export async function createPublicLoyaltyCardTransfer(
+  cardToken: string,
+  apiBaseUrl = getApiBaseUrl()
+): Promise<PublicLoyaltyTransferCreateResult> {
+  const apiUrl = `${apiBaseUrl}/public/loyalty/card-transfers`;
+
+  try {
+    const response = await fetch(apiUrl, {
+      method: 'POST',
+      headers: {
+        Accept: 'application/json',
+        'Content-Type': 'application/json'
+      },
+      body: JSON.stringify({
+        cardToken
+      })
+    });
+    const body = await response.json().catch(() => null);
+
+    if (response.status === 404) {
+      return {
+        status: 'not-found',
+        apiUrl,
+        message: 'This card is no longer available. Reopen your current card before transferring.'
+      };
+    }
+
+    if (response.status === 429) {
+      return {
+        status: 'rate-limited',
+        apiUrl,
+        message: 'Too many transfer codes were created recently. Please wait a few minutes.'
+      };
+    }
+
+    if (!response.ok) {
+      return {
+        status: 'error',
+        apiUrl,
+        message: 'A transfer code could not be created right now.'
+      };
+    }
+
+    const data = parseCardTransfer(body);
+
+    if (!data) {
+      return {
+        status: 'error',
+        apiUrl,
+        message: 'The transfer service returned an unexpected response.'
+      };
+    }
+
+    return {
+      status: 'ok',
+      data,
+      apiUrl
+    };
+  } catch {
+    return {
+      status: 'error',
+      apiUrl,
+      message: 'The transfer service could not be reached right now.'
+    };
+  }
+}
+
+export async function redeemPublicLoyaltyCardTransfer(
+  transferToken: string,
+  apiBaseUrl = getApiBaseUrl()
+): Promise<PublicLoyaltyTransferRedeemResult> {
+  const apiUrl = `${apiBaseUrl}/public/loyalty/card-transfers/redeem`;
+
+  try {
+    const response = await fetch(apiUrl, {
+      method: 'POST',
+      headers: {
+        Accept: 'application/json',
+        'Content-Type': 'application/json'
+      },
+      body: JSON.stringify({
+        transferToken
+      })
+    });
+    const body = await response.json().catch(() => null);
+
+    if (response.status === 400 || response.status === 410) {
+      return {
+        status: 'unavailable',
+        apiUrl,
+        message: 'This transfer code is invalid, expired, or already used.'
+      };
+    }
+
+    if (!response.ok) {
+      return {
+        status: 'error',
+        apiUrl,
+        message: 'The card transfer could not be completed right now.'
+      };
+    }
+
+    const data = parseEnrollment(body);
+
+    if (!data) {
+      return {
+        status: 'error',
+        apiUrl,
+        message: 'The transfer service returned an unexpected card response.'
+      };
+    }
+
+    return {
+      status: 'ok',
+      data,
+      apiUrl
+    };
+  } catch {
+    return {
+      status: 'error',
+      apiUrl,
+      message: 'The transfer service could not be reached right now.'
     };
   }
 }

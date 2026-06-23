@@ -2,6 +2,7 @@
 
 import { FormEvent, useEffect, useState } from 'react';
 import { WalletActions } from '../../../components/WalletActions';
+import { extractLoyaltyTransferToken } from '../../../lib/card-transfer';
 import {
   normalizeIraqiPhone,
   validateIraqiPhone,
@@ -10,6 +11,7 @@ import {
 import {
   enrollPublicLoyaltyCustomer,
   fetchPublicLoyaltyCard,
+  redeemPublicLoyaltyCardTransfer,
   type PublicLoyaltyCard,
   type PublicLoyaltyEnrollment
 } from '../../../lib/public-loyalty';
@@ -79,10 +81,57 @@ export async function loadStoredLoyaltyCard(
   return null;
 }
 
+export async function redeemAndStoreLoyaltyTransfer(
+  slug: string,
+  apiBaseUrl: string,
+  value: string
+): Promise<
+  | {
+      status: 'ok';
+      enrollment: PublicLoyaltyEnrollment;
+      storageUnavailable: boolean;
+    }
+  | {
+      status: 'error';
+      message: string;
+    }
+> {
+  const transferToken = extractLoyaltyTransferToken(value);
+
+  if (!transferToken) {
+    return {
+      status: 'error',
+      message: 'Enter a valid one-time transfer code or link.'
+    };
+  }
+
+  const result = await redeemPublicLoyaltyCardTransfer(
+    transferToken,
+    apiBaseUrl
+  );
+
+  if (result.status !== 'ok') {
+    return {
+      status: 'error',
+      message: result.message
+    };
+  }
+
+  return {
+    status: 'ok',
+    enrollment: result.data,
+    storageUnavailable: !storeCardToken(
+      slug,
+      result.data.cardAccess.token
+    )
+  };
+}
+
 type LoyaltyEnrollmentSuccessProps = LoyaltyEnrollmentClientProps & {
   enrollment: PublicLoyaltyEnrollment;
   platform: WalletPlatform;
   storageUnavailable: boolean;
+  variant?: 'joined' | 'transferred';
 };
 
 export function LoyaltyEnrollmentSuccess({
@@ -91,7 +140,8 @@ export function LoyaltyEnrollmentSuccess({
   appleWalletEnabled,
   enrollment,
   platform,
-  storageUnavailable
+  storageUnavailable,
+  variant = 'joined'
 }: LoyaltyEnrollmentSuccessProps) {
   const cardHref = `/m/${encodeURIComponent(slug)}/loyalty/card?token=${encodeURIComponent(enrollment.cardAccess.token)}`;
 
@@ -99,7 +149,9 @@ export function LoyaltyEnrollmentSuccess({
     <section className="grid gap-5">
       <div className="rounded-lg border border-emerald-100 bg-emerald-50 p-4">
         <p className="text-sm font-semibold text-emerald-800">
-          You joined {enrollment.program.name}
+          {variant === 'transferred'
+            ? 'Card transferred securely'
+            : `You joined ${enrollment.program.name}`}
         </p>
         <p className="mt-2 text-sm leading-6 text-emerald-900">
           {enrollment.customer.name ? `${enrollment.customer.name}, your` : 'Your'} card is ready.
@@ -207,6 +259,12 @@ type LoyaltyIdentityFormProps = {
   onEmailChange: (value: string) => void;
   onNameChange: (value: string) => void;
   onModeChange: (mode: IdentityMode) => void;
+  recoveryMessage: string;
+  transferCode: string;
+  transferError: string | null;
+  isTransferSubmitting: boolean;
+  onTransferCodeChange: (value: string) => void;
+  onTransferSubmit: (event: FormEvent<HTMLFormElement>) => void;
 };
 
 export function LoyaltyIdentityForm({
@@ -222,7 +280,13 @@ export function LoyaltyIdentityForm({
   onPhoneChange,
   onEmailChange,
   onNameChange,
-  onModeChange
+  onModeChange,
+  recoveryMessage,
+  transferCode,
+  transferError,
+  isTransferSubmitting,
+  onTransferCodeChange,
+  onTransferSubmit
 }: LoyaltyIdentityFormProps) {
   const isRecovery = mode === 'recover';
 
@@ -232,10 +296,58 @@ export function LoyaltyIdentityForm({
         <div className="rounded-lg border border-amber-100 bg-amber-50 p-4">
           <p className="text-sm font-semibold text-amber-900">Recovery needs verification</p>
           <p className="mt-2 text-sm leading-6 text-amber-800">
-            For your security, a phone number or email alone cannot open an existing loyalty
-            card. Phone verification is not available yet, so please ask staff for help.
+            {recoveryMessage}
           </p>
         </div>
+
+        <form onSubmit={onTransferSubmit} className="grid gap-3 rounded-lg border border-neutral-200 bg-white p-4">
+          <div>
+            <h3 className="text-base font-bold text-ink">
+              Scan transfer QR from old device
+            </h3>
+            <p className="mt-1 text-sm leading-6 text-neutral-600">
+              Open your card on the old phone, choose "Transfer to another
+              device", then scan its QR with this phone's Camera. You can also
+              paste the one-time code or link below.
+            </p>
+          </div>
+          <label
+            htmlFor="loyalty-transfer-redeem"
+            className="text-sm font-semibold text-ink"
+          >
+            Transfer code or link
+          </label>
+          <input
+            id="loyalty-transfer-redeem"
+            name="transferCode"
+            value={transferCode}
+            onChange={(event) => onTransferCodeChange(event.target.value)}
+            autoComplete="off"
+            spellCheck={false}
+            className="h-12 rounded-md border border-neutral-200 bg-white px-3 font-mono text-sm text-ink outline-none focus:border-mint"
+          />
+          {transferError ? (
+            <p role="alert" className="text-sm leading-6 text-red-700">
+              {transferError}
+            </p>
+          ) : null}
+          <button
+            type="submit"
+            disabled={isTransferSubmitting}
+            className="h-12 rounded-md bg-ink px-5 text-sm font-semibold text-white disabled:bg-neutral-400"
+          >
+            {isTransferSubmitting ? 'Transferring card...' : 'Transfer this card'}
+          </button>
+        </form>
+
+        <div className="rounded-md bg-neutral-50 p-3">
+          <p className="text-sm font-semibold text-ink">No old device?</p>
+          <p className="mt-1 text-sm leading-6 text-neutral-600">
+            Ask staff for help. Staff-assisted recovery is not available in the
+            app yet and will never use phone number alone.
+          </p>
+        </div>
+
         <button
           type="button"
           onClick={() => onModeChange('join')}
@@ -397,9 +509,16 @@ export function LoyaltyEnrollmentClient({
   const [isSubmitting, setIsSubmitting] = useState(false);
   const [storageUnavailable, setStorageUnavailable] = useState(false);
   const [enrollment, setEnrollment] = useState<PublicLoyaltyEnrollment | null>(null);
+  const [successVariant, setSuccessVariant] = useState<'joined' | 'transferred'>('joined');
   const [isCheckingToken, setIsCheckingToken] = useState(true);
   const [returningCard, setReturningCard] = useState<PublicLoyaltyCard | null>(null);
   const [returningToken, setReturningToken] = useState<string | null>(null);
+  const [recoveryMessage, setRecoveryMessage] = useState(
+    'For your security, a phone number or email alone cannot open an existing loyalty card. Transfer from your old device or ask staff for help.'
+  );
+  const [transferCode, setTransferCode] = useState('');
+  const [transferError, setTransferError] = useState<string | null>(null);
+  const [isTransferSubmitting, setIsTransferSubmitting] = useState(false);
   const platform = useWalletPlatform();
 
   useEffect(() => {
@@ -415,6 +534,36 @@ export function LoyaltyEnrollmentClient({
       if (result) {
         setReturningCard(result.card);
         setReturningToken(result.token);
+        setIsCheckingToken(false);
+        return;
+      }
+
+      const hashTransfer = extractLoyaltyTransferToken(window.location.hash);
+
+      if (hashTransfer) {
+        const transfer = await redeemAndStoreLoyaltyTransfer(
+          slug,
+          apiBaseUrl,
+          hashTransfer
+        );
+
+        if (cancelled) {
+          return;
+        }
+
+        if (transfer.status === 'ok') {
+          setStorageUnavailable(transfer.storageUnavailable);
+          setSuccessVariant('transferred');
+          setEnrollment(transfer.enrollment);
+          window.history.replaceState(
+            null,
+            '',
+            `${window.location.pathname}${window.location.search}`
+          );
+        } else {
+          setMode('recover');
+          setTransferError(transfer.message);
+        }
       }
 
       setIsCheckingToken(false);
@@ -465,6 +614,9 @@ export function LoyaltyEnrollmentClient({
 
     if (result.status !== 'ok') {
       if (result.status === 'verification-required') {
+        setRecoveryMessage(
+          'This phone already has a card. For your security, transfer from your old device or ask staff for help.'
+        );
         changeMode('recover');
         return;
       }
@@ -480,6 +632,29 @@ export function LoyaltyEnrollmentClient({
     }
 
     setEnrollment(result.data);
+  }
+
+  async function handleTransferSubmit(event: FormEvent<HTMLFormElement>) {
+    event.preventDefault();
+    setTransferError(null);
+    setIsTransferSubmitting(true);
+
+    const result = await redeemAndStoreLoyaltyTransfer(
+      slug,
+      apiBaseUrl,
+      transferCode
+    );
+
+    setIsTransferSubmitting(false);
+
+    if (result.status === 'error') {
+      setTransferError(result.message);
+      return;
+    }
+
+    setStorageUnavailable(result.storageUnavailable);
+    setSuccessVariant('transferred');
+    setEnrollment(result.enrollment);
   }
 
   function changeMode(nextMode: IdentityMode) {
@@ -537,6 +712,7 @@ export function LoyaltyEnrollmentClient({
         enrollment={enrollment}
         platform={platform}
         storageUnavailable={storageUnavailable}
+        variant={successVariant}
       />
     );
   }
@@ -561,7 +737,23 @@ export function LoyaltyEnrollmentClient({
         setEmailError(null);
       }}
       onNameChange={setName}
-      onModeChange={changeMode}
+      onModeChange={(nextMode) => {
+        if (nextMode === 'recover') {
+          setRecoveryMessage(
+            'Phone recovery is unavailable without verification. Transfer from your old device or ask staff for help.'
+          );
+        }
+        changeMode(nextMode);
+      }}
+      recoveryMessage={recoveryMessage}
+      transferCode={transferCode}
+      transferError={transferError}
+      isTransferSubmitting={isTransferSubmitting}
+      onTransferCodeChange={(value) => {
+        setTransferCode(value);
+        setTransferError(null);
+      }}
+      onTransferSubmit={handleTransferSubmit}
     />
   );
 }

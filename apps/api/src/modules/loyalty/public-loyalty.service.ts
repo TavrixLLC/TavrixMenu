@@ -44,6 +44,13 @@ export const PUBLIC_LOYALTY_RECOVERY_REQUIRED_CODE =
   'RECOVERY_REQUIRES_VERIFICATION';
 export const PUBLIC_LOYALTY_RECOVERY_REQUIRED_MESSAGE =
   'Recovery requires phone verification or staff help.';
+export const PUBLIC_LOYALTY_TRANSFER_TTL_MS = 5 * 60 * 1000;
+export const PUBLIC_LOYALTY_TRANSFER_RATE_WINDOW_MS = 10 * 60 * 1000;
+export const PUBLIC_LOYALTY_TRANSFER_RATE_LIMIT = 3;
+export const PUBLIC_LOYALTY_TRANSFER_UNAVAILABLE_CODE =
+  'LOYALTY_TRANSFER_UNAVAILABLE';
+export const PUBLIC_LOYALTY_TRANSFER_RATE_LIMITED_CODE =
+  'LOYALTY_TRANSFER_RATE_LIMITED';
 
 export type PublicLoyaltyWalletMembership =
   Prisma.LoyaltyMembershipGetPayload<{
@@ -136,6 +143,123 @@ export class PublicLoyaltyService {
     return this.mapEnrollmentResponse(membership, publicAccessToken);
   }
 
+  async createCardTransfer(cardToken: string) {
+    const membership = await this.findMembershipByPublicCardToken(cardToken);
+    const transferToken = this.generatePublicAccessToken();
+    const tokenHash = this.hashPublicAccessToken(transferToken);
+    const now = new Date();
+    const expiresAt = new Date(now.getTime() + PUBLIC_LOYALTY_TRANSFER_TTL_MS);
+    const rateWindowStart = new Date(
+      now.getTime() - PUBLIC_LOYALTY_TRANSFER_RATE_WINDOW_MS
+    );
+
+    await this.prisma.$transaction(
+      async (transaction) => {
+        const recentTransfers = await transaction.loyaltyCardTransfer.count({
+          where: {
+            membershipId: membership.id,
+            createdAt: {
+              gte: rateWindowStart
+            }
+          }
+        });
+
+        if (recentTransfers >= PUBLIC_LOYALTY_TRANSFER_RATE_LIMIT) {
+          throw this.transferRateLimited();
+        }
+
+        await transaction.loyaltyCardTransfer.create({
+          data: {
+            membershipId: membership.id,
+            tokenHash,
+            expiresAt
+          }
+        });
+      },
+      {
+        isolationLevel: Prisma.TransactionIsolationLevel.Serializable
+      }
+    );
+
+    return {
+      transferToken,
+      expiresAt: expiresAt.toISOString()
+    };
+  }
+
+  async redeemCardTransfer(transferToken: string) {
+    const normalizedTransferToken = this.normalizeTransferToken(transferToken);
+    const tokenHash = this.hashPublicAccessToken(normalizedTransferToken);
+    const newCardToken = this.generatePublicAccessToken();
+    const newCardTokenHash = this.hashPublicAccessToken(newCardToken);
+    const now = new Date();
+
+    const membership = await this.prisma.$transaction(async (transaction) => {
+      const transfer = await transaction.loyaltyCardTransfer.findUnique({
+        where: {
+          tokenHash
+        },
+        include: {
+          membership: {
+            include: {
+              business: true,
+              customer: true,
+              loyaltyProgram: true
+            }
+          }
+        }
+      });
+
+      if (
+        !transfer ||
+        transfer.usedAt ||
+        transfer.expiresAt.getTime() <= now.getTime() ||
+        transfer.membership.status !== LoyaltyMembershipStatus.ACTIVE ||
+        transfer.membership.business.status !== BusinessStatus.ACTIVE ||
+        !transfer.membership.loyaltyProgram.isActive
+      ) {
+        throw this.transferUnavailable();
+      }
+
+      const consumed = await transaction.loyaltyCardTransfer.updateMany({
+        where: {
+          id: transfer.id,
+          usedAt: null,
+          expiresAt: {
+            gt: now
+          }
+        },
+        data: {
+          usedAt: now
+        }
+      });
+
+      if (consumed.count !== 1) {
+        throw this.transferUnavailable();
+      }
+
+      return transaction.loyaltyMembership.update({
+        where: {
+          id: transfer.membershipId
+        },
+        data: {
+          publicAccessTokenHash: newCardTokenHash,
+          publicAccessTokenIssuedAt: now,
+          publicAccessTokenLastViewedAt: null
+        },
+        include: {
+          business: {
+            select: this.publicBusinessSelect()
+          },
+          customer: true,
+          loyaltyProgram: true
+        }
+      });
+    });
+
+    return this.mapEnrollmentResponse(membership, newCardToken);
+  }
+
   private async createNewCustomer(
     transaction: Prisma.TransactionClient,
     customerInput: {
@@ -180,6 +304,28 @@ export class PublicLoyaltyService {
         message: PUBLIC_LOYALTY_RECOVERY_REQUIRED_MESSAGE
       },
       HttpStatus.FORBIDDEN
+    );
+  }
+
+  private transferUnavailable() {
+    return new HttpException(
+      {
+        statusCode: HttpStatus.GONE,
+        code: PUBLIC_LOYALTY_TRANSFER_UNAVAILABLE_CODE,
+        message: 'This transfer code is invalid, expired, or already used.'
+      },
+      HttpStatus.GONE
+    );
+  }
+
+  private transferRateLimited() {
+    return new HttpException(
+      {
+        statusCode: HttpStatus.TOO_MANY_REQUESTS,
+        code: PUBLIC_LOYALTY_TRANSFER_RATE_LIMITED_CODE,
+        message: 'Please wait before creating another transfer code.'
+      },
+      HttpStatus.TOO_MANY_REQUESTS
     );
   }
 
@@ -426,6 +572,20 @@ export class PublicLoyaltyService {
 
     if (normalizedToken.length < 32 || normalizedToken.length > 128) {
       throw new NotFoundException('Loyalty card not found');
+    }
+
+    return normalizedToken;
+  }
+
+  private normalizeTransferToken(value: string) {
+    const normalizedToken = value.trim();
+
+    if (
+      normalizedToken.startsWith('waflo_scan_v1.') ||
+      normalizedToken.length < 32 ||
+      normalizedToken.length > 128
+    ) {
+      throw this.transferUnavailable();
     }
 
     return normalizedToken;

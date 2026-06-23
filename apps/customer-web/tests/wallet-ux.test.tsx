@@ -1,6 +1,7 @@
 import { strict as assert } from 'assert';
 import { describe, it } from 'node:test';
 import { renderToStaticMarkup } from 'react-dom/server';
+import { CardTransferPanel } from '../app/components/CardTransferPanel';
 import { WalletActions } from '../app/components/WalletActions';
 import {
   clearStoredToken,
@@ -8,6 +9,7 @@ import {
   LoyaltyEnrollmentSuccess,
   LoyaltyIdentityForm,
   readStoredToken,
+  redeemAndStoreLoyaltyTransfer,
   ReturningLoyaltyCardView,
   storeCardToken
 } from '../app/m/[slug]/loyalty/LoyaltyEnrollmentClient';
@@ -16,6 +18,10 @@ import {
   validateIraqiPhone,
   validateOptionalEmail
 } from '../app/lib/customer-identity';
+import {
+  buildLoyaltyTransferUrl,
+  extractLoyaltyTransferToken
+} from '../app/lib/card-transfer';
 import {
   enrollPublicLoyaltyCustomer,
   type PublicLoyaltyCard,
@@ -113,6 +119,9 @@ describe('loyalty identity states', () => {
     assert.equal(/name="email"/.test(html), false);
     assert.equal(/add-to-apple-wallet\.svg/.test(html), false);
     assert.equal(/add-to-google-wallet\.svg/.test(html), false);
+    assert.match(html, /Scan transfer QR from old device/);
+    assert.match(html, /Transfer code or link/);
+    assert.match(html, /Ask staff for help/);
     assert.match(html, /Join as a new customer/);
   });
 
@@ -198,6 +207,138 @@ describe('loyalty identity states', () => {
     } finally {
       globalThis.fetch = originalFetch;
     }
+  });
+});
+
+describe('secure card transfer UX', () => {
+  it('shows transfer creation only on a trusted card view', () => {
+    const html = renderToStaticMarkup(
+      <CardTransferPanel
+        slug="sample-cafe"
+        apiBaseUrl="https://api.example.test"
+        cardToken="trusted-card-reference"
+      />
+    );
+
+    assert.match(html, /Transfer to another device/);
+    assert.match(html, /Create transfer QR/);
+    assert.match(html, /expires after five minutes/i);
+  });
+
+  it('builds fragment-only transfer links and extracts links or manual codes', () => {
+    const transferUrl = buildLoyaltyTransferUrl(
+      'https://card.example.test',
+      'sample-cafe',
+      'one-time-transfer-code'
+    );
+
+    assert.equal(
+      transferUrl,
+      'https://card.example.test/m/sample-cafe/loyalty#transfer=one-time-transfer-code'
+    );
+    assert.equal(
+      extractLoyaltyTransferToken(transferUrl),
+      'one-time-transfer-code'
+    );
+    assert.equal(
+      extractLoyaltyTransferToken('one-time-transfer-code'),
+      'one-time-transfer-code'
+    );
+  });
+
+  it('redeems a transfer into the new device local opaque reference', async () => {
+    const originalWindow = Object.getOwnPropertyDescriptor(globalThis, 'window');
+    const originalFetch = globalThis.fetch;
+    const values = new Map<string, string>();
+
+    Object.defineProperty(globalThis, 'window', {
+      configurable: true,
+      value: {
+        localStorage: {
+          getItem: (key: string) => values.get(key) ?? null,
+          setItem: (key: string, value: string) => values.set(key, value),
+          removeItem: (key: string) => values.delete(key)
+        }
+      }
+    });
+    globalThis.fetch = (async () =>
+      new Response(JSON.stringify(enrollmentFixture), {
+        status: 200,
+        headers: {
+          'Content-Type': 'application/json'
+        }
+      })) as typeof fetch;
+
+    try {
+      const result = await redeemAndStoreLoyaltyTransfer(
+        'sample-cafe',
+        'https://api.example.test',
+        'https://card.example.test/m/sample-cafe/loyalty#transfer=one-time-transfer-code'
+      );
+
+      assert.equal(result.status, 'ok');
+      assert.equal(
+        values.get('tavrix.loyalty.sample-cafe.token'),
+        enrollmentFixture.cardAccess.token
+      );
+    } finally {
+      globalThis.fetch = originalFetch;
+      if (originalWindow) {
+        Object.defineProperty(globalThis, 'window', originalWindow);
+      } else {
+        delete (globalThis as { window?: unknown }).window;
+      }
+    }
+  });
+
+  it('shows a friendly failure for invalid, expired, or used transfer codes', async () => {
+    const originalFetch = globalThis.fetch;
+    globalThis.fetch = (async () =>
+      new Response(
+        JSON.stringify({
+          statusCode: 410,
+          code: 'LOYALTY_TRANSFER_UNAVAILABLE',
+          message: 'This transfer code is invalid, expired, or already used.'
+        }),
+        {
+          status: 410,
+          headers: {
+            'Content-Type': 'application/json'
+          }
+        }
+      )) as typeof fetch;
+
+    try {
+      const result = await redeemAndStoreLoyaltyTransfer(
+        'sample-cafe',
+        'https://api.example.test',
+        'unavailable-transfer-code-placeholder'
+      );
+
+      assert.deepEqual(result, {
+        status: 'error',
+        message: 'This transfer code is invalid, expired, or already used.'
+      });
+    } finally {
+      globalThis.fetch = originalFetch;
+    }
+  });
+
+  it('shows the transferred card with the correct wallet action', () => {
+    const html = renderToStaticMarkup(
+      <LoyaltyEnrollmentSuccess
+        slug="sample-cafe"
+        apiBaseUrl="https://api.example.test"
+        appleWalletEnabled
+        enrollment={enrollmentFixture}
+        platform="ios"
+        storageUnavailable={false}
+        variant="transferred"
+      />
+    );
+
+    assert.match(html, /Card transferred securely/);
+    assert.match(html, /add-to-apple-wallet\.svg/);
   });
 });
 
@@ -373,6 +514,12 @@ function renderIdentityForm(mode: 'join' | 'recover') {
       onEmailChange={() => undefined}
       onNameChange={() => undefined}
       onModeChange={() => undefined}
+      recoveryMessage="For your security, a phone number or email alone cannot open an existing loyalty card. Transfer from your old device or ask staff for help."
+      transferCode=""
+      transferError={null}
+      isTransferSubmitting={false}
+      onTransferCodeChange={() => undefined}
+      onTransferSubmit={() => undefined}
     />
   );
 }

@@ -2,6 +2,7 @@
 
 import Link from 'next/link';
 import { useEffect, useState } from 'react';
+import { CardTransferPanel } from '../../../../components/CardTransferPanel';
 import { WalletActions } from '../../../../components/WalletActions';
 import { fetchPublicLoyaltyCard, type PublicLoyaltyCard } from '../../../../lib/public-loyalty';
 import { useWalletPlatform } from '../../../../lib/use-wallet-platform';
@@ -200,6 +201,12 @@ function CardView({
                 />
               </div>
             </div>
+
+            <CardTransferPanel
+              slug={slug}
+              apiBaseUrl={apiBaseUrl}
+              cardToken={cardToken}
+            />
 
             {card.program.terms ? (
               <p className="mt-5 rounded-md bg-neutral-50 p-4 text-sm leading-6 text-neutral-600">

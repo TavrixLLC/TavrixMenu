@@ -239,12 +239,27 @@ model LoyaltyMembership {
   transactions          LoyaltyTransaction[]
   walletPasses          WalletPass[]
   walletRefreshJobs     WalletRefreshJob[]
+  cardTransfers         LoyaltyCardTransfer[]
 
   @@unique([customerId, loyaltyProgramId])
   @@index([businessId])
   @@index([loyaltyProgramId])
   @@index([customerId])
   @@map("loyalty_memberships")
+}
+
+model LoyaltyCardTransfer {
+  id           String            @id @default(cuid())
+  membershipId String            @map("membership_id")
+  tokenHash    String            @unique @map("token_hash")
+  expiresAt    DateTime          @map("expires_at")
+  usedAt       DateTime?         @map("used_at")
+  createdAt    DateTime          @default(now()) @map("created_at")
+  membership   LoyaltyMembership @relation(fields: [membershipId], references: [id], onDelete: Cascade)
+
+  @@index([membershipId, createdAt])
+  @@index([tokenHash, usedAt, expiresAt])
+  @@map("loyalty_card_transfers")
 }
 
 model WalletPass {

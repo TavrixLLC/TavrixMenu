@@ -2240,6 +2240,132 @@
         ]
       }
     },
+    "/public/loyalty/card-transfers": {
+      "post": {
+        "operationId": "PublicLoyaltyController_createCardTransfer",
+        "parameters": [],
+        "requestBody": {
+          "required": true,
+          "content": {
+            "application/json": {
+              "schema": {
+                "$ref": "#/components/schemas/CreatePublicLoyaltyTransferDto"
+              }
+            }
+          }
+        },
+        "responses": {
+          "201": {
+            "description": "Creates a dedicated five-minute, one-time transfer credential after validating the trusted browser card reference.",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "example": {
+                    "transferToken": "<short-lived-transfer-code>",
+                    "expiresAt": "2026-06-23T13:05:00.000Z"
+                  }
+                }
+              }
+            }
+          },
+          "404": {
+            "description": "The trusted public card reference is invalid or inactive."
+          },
+          "429": {
+            "description": "Transfer creation rate limit reached for this membership.",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "example": {
+                    "statusCode": 429,
+                    "code": "LOYALTY_TRANSFER_RATE_LIMITED",
+                    "message": "Please wait before creating another transfer code."
+                  }
+                }
+              }
+            }
+          }
+        },
+        "tags": [
+          "public loyalty"
+        ]
+      }
+    },
+    "/public/loyalty/card-transfers/redeem": {
+      "post": {
+        "operationId": "PublicLoyaltyController_redeemCardTransfer",
+        "parameters": [],
+        "requestBody": {
+          "required": true,
+          "content": {
+            "application/json": {
+              "schema": {
+                "$ref": "#/components/schemas/RedeemPublicLoyaltyTransferDto"
+              }
+            }
+          }
+        },
+        "responses": {
+          "200": {
+            "description": "Atomically consumes a valid transfer credential and returns a newly rotated public card reference for the same membership.",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "example": {
+                    "customer": {
+                      "name": "Demo Customer"
+                    },
+                    "business": {
+                      "name": "Tavrix Cafe",
+                      "slug": "tavrix-cafe",
+                      "logoUrl": null,
+                      "coverUrl": null
+                    },
+                    "program": {
+                      "name": "Tavrix Cafe Stamp Card",
+                      "stampGoal": 5,
+                      "rewardName": "Free coffee",
+                      "rewardDescription": "One free Turkish Coffee after 5 stamps."
+                    },
+                    "cardState": {
+                      "stampCount": 3,
+                      "stampGoal": 5,
+                      "rewardReady": false,
+                      "progressPercent": 60,
+                      "rewardName": "Free coffee",
+                      "programName": "Tavrix Cafe Stamp Card",
+                      "totalStampsEarned": 3,
+                      "totalRewardsRedeemed": 0
+                    },
+                    "cardAccess": {
+                      "token": "<new-public-card-reference>",
+                      "cardUrlPath": "/public/loyalty/cards/<new-public-card-reference>"
+                    }
+                  }
+                }
+              }
+            }
+          },
+          "410": {
+            "description": "The transfer credential is invalid, expired, already used, or not scoped to an active card.",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "example": {
+                    "statusCode": 410,
+                    "code": "LOYALTY_TRANSFER_UNAVAILABLE",
+                    "message": "This transfer code is invalid, expired, or already used."
+                  }
+                }
+              }
+            }
+          }
+        },
+        "tags": [
+          "public loyalty"
+        ]
+      }
+    },
     "/businesses/{businessId}/loyalty/memberships/{membershipId}/google-wallet": {
       "post": {
         "operationId": "WalletPassController_syncGoogleWalletPass",
@@ -3438,6 +3564,36 @@
         },
         "required": [
           "phone"
+        ]
+      },
+      "CreatePublicLoyaltyTransferDto": {
+        "type": "object",
+        "properties": {
+          "cardToken": {
+            "type": "string",
+            "example": "<trusted-public-card-reference>",
+            "minLength": 32,
+            "maxLength": 128,
+            "description": "Opaque public card reference already held by the trusted browser. It is validated but never logged or stored in plaintext."
+          }
+        },
+        "required": [
+          "cardToken"
+        ]
+      },
+      "RedeemPublicLoyaltyTransferDto": {
+        "type": "object",
+        "properties": {
+          "transferToken": {
+            "type": "string",
+            "example": "<short-lived-transfer-code>",
+            "minLength": 32,
+            "maxLength": 128,
+            "description": "Dedicated one-time loyalty card transfer token. Staff wallet scan QR values are not accepted."
+          }
+        },
+        "required": [
+          "transferToken"
         ]
       },
       "WalletScanDto": {
