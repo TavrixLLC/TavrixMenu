@@ -140,17 +140,34 @@ Status: Sprint 11 closed with staff scanner runtime caveat.
 Known caveat:
 Real authenticated Flutter staff scanner E2E was not executed on a physical device/emulator. Local bloc/widget tests pass and backend/APNs pipeline passed through controlled DB script.
 
-## Sprint 12: Real Scanner E2E & Production Prep
+## Sprint 12: Launch Readiness
 
-Goals:
-- Real Flutter staff scanner E2E smoke
+Status: Scope locked. Implementation not started.
 
-Acceptance:
-* authenticated staff session
-* scan wallet QR
-* tap Add stamp
-* success UI shown
-* backend stamp count increases
-* no raw QR/token logs
-* Apple/Google/web behavior remains safe
+Goal: Prepare Waflo for the first real restaurant pilot.
+
+Full scope: [21-sprint-12-launch-readiness.md](21-sprint-12-launch-readiness.md)
+
+### In Scope
+
+1. Real Flutter staff scanner E2E smoke (Sprint 11 carryover)
+2. Owner/admin setup polish
+3. Customer-web final QA
+4. Pilot restaurant setup checklist
+5. Minimum ops readiness
+6. Go/No-Go checklist for first real restaurant pilot
+
+### Out of Scope
+
+- Loyalty v2
+- Multi-branch
+- Global pricing
+- Custom domains
+- AI recommendations
+- APNs in production
+- New OpenAPI contract changes
+
+### First Acceptance Gate
+
+Staff scanner E2E smoke must pass before pilot restaurant onboarding begins.
 
