@@ -1,6 +1,7 @@
 import {
   BadRequestException,
-  ConflictException,
+  HttpException,
+  HttpStatus,
   Injectable,
   NotFoundException
 } from '@nestjs/common';
@@ -38,6 +39,11 @@ type PublicMembership = LoyaltyMembership & {
   customer: Customer;
   loyaltyProgram: LoyaltyProgram;
 };
+
+export const PUBLIC_LOYALTY_RECOVERY_REQUIRED_CODE =
+  'RECOVERY_REQUIRES_VERIFICATION';
+export const PUBLIC_LOYALTY_RECOVERY_REQUIRED_MESSAGE =
+  'Recovery requires phone verification or staff help.';
 
 export type PublicLoyaltyWalletMembership =
   Prisma.LoyaltyMembershipGetPayload<{
@@ -77,60 +83,104 @@ export class PublicLoyaltyService {
     const intent = dto.intent ?? PublicLoyaltyEnrollmentIntent.JOIN;
 
     const { business, program } = await this.findActiveBusinessAndProgram(slug);
+
+    if (intent === PublicLoyaltyEnrollmentIntent.RECOVER) {
+      // TODO: Replace this only when the request carries server-verified OTP or staff proof.
+      throw this.recoveryRequiresVerification();
+    }
+
     const publicAccessToken = this.generatePublicAccessToken();
     const publicAccessTokenHash = this.hashPublicAccessToken(publicAccessToken);
     const issuedAt = new Date();
 
-    const membership = await this.prisma.$transaction(async (transaction) => {
-      if (intent === PublicLoyaltyEnrollmentIntent.RECOVER) {
-        return this.recoverExistingMembership(transaction, {
-          businessId: business.id,
-          loyaltyProgramId: program.id,
+    let membership: PublicMembership;
+
+    try {
+      membership = await this.prisma.$transaction(async (transaction) => {
+        const customer = await this.createNewCustomer(transaction, {
           phone,
-          publicAccessTokenHash,
-          issuedAt
+          email,
+          name
         });
+
+        return transaction.loyaltyMembership.create({
+          data: {
+            businessId: business.id,
+            loyaltyProgramId: program.id,
+            customerId: customer.id,
+            status: LoyaltyMembershipStatus.ACTIVE,
+            publicAccessTokenHash,
+            publicAccessTokenIssuedAt: issuedAt,
+            publicAccessTokenLastViewedAt: null
+          },
+          include: {
+            business: {
+              select: this.publicBusinessSelect()
+            },
+            customer: true,
+            loyaltyProgram: true
+          }
+        });
+      });
+    } catch (error) {
+      if (
+        error instanceof Prisma.PrismaClientKnownRequestError &&
+        error.code === 'P2002'
+      ) {
+        throw this.recoveryRequiresVerification();
       }
 
-      const customer = await this.findOrCreateCustomer(transaction, {
-        phone,
-        email,
-        name
-      });
-
-      return transaction.loyaltyMembership.upsert({
-        where: {
-          customerId_loyaltyProgramId: {
-            customerId: customer.id,
-            loyaltyProgramId: program.id
-          }
-        },
-        create: {
-          businessId: business.id,
-          loyaltyProgramId: program.id,
-          customerId: customer.id,
-          status: LoyaltyMembershipStatus.ACTIVE,
-          publicAccessTokenHash,
-          publicAccessTokenIssuedAt: issuedAt,
-          publicAccessTokenLastViewedAt: null
-        },
-        update: {
-          status: LoyaltyMembershipStatus.ACTIVE,
-          publicAccessTokenHash,
-          publicAccessTokenIssuedAt: issuedAt,
-          publicAccessTokenLastViewedAt: null
-        },
-        include: {
-          business: {
-            select: this.publicBusinessSelect()
-          },
-          customer: true,
-          loyaltyProgram: true
-        }
-      });
-    });
+      throw error;
+    }
 
     return this.mapEnrollmentResponse(membership, publicAccessToken);
+  }
+
+  private async createNewCustomer(
+    transaction: Prisma.TransactionClient,
+    customerInput: {
+      phone: string;
+      email: string | null;
+      name: string | null;
+    }
+  ) {
+    const phoneCustomer = await this.findCustomerByPhone(
+      transaction,
+      customerInput.phone
+    );
+    const emailCustomer = customerInput.email
+      ? await transaction.customer.findUnique({
+          where: {
+            email: customerInput.email
+          },
+          select: {
+            id: true
+          }
+        })
+      : null;
+
+    if (phoneCustomer || emailCustomer) {
+      throw this.recoveryRequiresVerification();
+    }
+
+    return transaction.customer.create({
+      data: {
+        phone: customerInput.phone,
+        email: customerInput.email,
+        name: customerInput.name
+      }
+    });
+  }
+
+  private recoveryRequiresVerification() {
+    return new HttpException(
+      {
+        statusCode: HttpStatus.FORBIDDEN,
+        code: PUBLIC_LOYALTY_RECOVERY_REQUIRED_CODE,
+        message: PUBLIC_LOYALTY_RECOVERY_REQUIRED_MESSAGE
+      },
+      HttpStatus.FORBIDDEN
+    );
   }
 
   private mapEnrollmentResponse(
@@ -263,126 +313,20 @@ export class PublicLoyaltyService {
     };
   }
 
-  private async findOrCreateCustomer(
-    transaction: Prisma.TransactionClient,
-    customerInput: {
-      phone: string;
-      email: string | null;
-      name: string | null;
-    }
-  ) {
-    const phoneCustomer = await this.findCustomerByPhone(
-      transaction,
-      customerInput.phone
-    );
-    const emailCustomer = customerInput.email
-      ? await transaction.customer.findUnique({
-          where: {
-            email: customerInput.email
-          }
-        })
-      : null;
-
-    if (phoneCustomer && emailCustomer && phoneCustomer.id !== emailCustomer.id) {
-      throw new ConflictException('Phone and email belong to different customers');
-    }
-
-    const existingCustomer = phoneCustomer ?? emailCustomer;
-
-    if (existingCustomer) {
-      return transaction.customer.update({
-        where: {
-          id: existingCustomer.id
-        },
-        data: {
-          phone: customerInput.phone ?? existingCustomer.phone,
-          email: customerInput.email ?? existingCustomer.email,
-          name: customerInput.name ?? existingCustomer.name
-        }
-      });
-    }
-
-    return transaction.customer.create({
-      data: {
-        phone: customerInput.phone,
-        email: customerInput.email,
-        name: customerInput.name
-      }
-    });
-  }
-
-  private async recoverExistingMembership(
-    transaction: Prisma.TransactionClient,
-    input: {
-      businessId: string;
-      loyaltyProgramId: string;
-      phone: string;
-      publicAccessTokenHash: string;
-      issuedAt: Date;
-    }
-  ): Promise<PublicMembership> {
-    const customer = await this.findCustomerByPhone(transaction, input.phone);
-
-    if (!customer) {
-      throw new NotFoundException('Loyalty card not found');
-    }
-
-    const existingMembership = await transaction.loyaltyMembership.findFirst({
-      where: {
-        businessId: input.businessId,
-        loyaltyProgramId: input.loyaltyProgramId,
-        customerId: customer.id,
-        status: LoyaltyMembershipStatus.ACTIVE
-      },
-      select: {
-        id: true
-      }
-    });
-
-    if (!existingMembership) {
-      throw new NotFoundException('Loyalty card not found');
-    }
-
-    return transaction.loyaltyMembership.update({
-      where: {
-        id: existingMembership.id
-      },
-      data: {
-        publicAccessTokenHash: input.publicAccessTokenHash,
-        publicAccessTokenIssuedAt: input.issuedAt,
-        publicAccessTokenLastViewedAt: null
-      },
-      include: {
-        business: {
-          select: this.publicBusinessSelect()
-        },
-        customer: true,
-        loyaltyProgram: true
-      }
-    });
-  }
-
   private async findCustomerByPhone(
     transaction: Prisma.TransactionClient,
     canonicalPhone: string
   ) {
-    const matches = await transaction.customer.findMany({
+    return transaction.customer.findFirst({
       where: {
         phone: {
           in: this.getIraqiPhoneAliases(canonicalPhone)
         }
       },
-      orderBy: [{ createdAt: 'asc' }, { id: 'asc' }],
-      take: 2
+      select: {
+        id: true
+      }
     });
-
-    if (matches.length > 1) {
-      throw new ConflictException(
-        'Multiple customer records require staff assistance'
-      );
-    }
-
-    return matches[0] ?? null;
   }
 
   private publicBusinessSelect() {

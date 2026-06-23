@@ -1,5 +1,5 @@
 import 'reflect-metadata';
-import { NotFoundException } from '@nestjs/common';
+import { HttpException, HttpStatus } from '@nestjs/common';
 import { strict as assert } from 'assert';
 import { validate } from 'class-validator';
 import { describe, it } from 'node:test';
@@ -8,7 +8,11 @@ import {
   PublicLoyaltyEnrollDto,
   PublicLoyaltyEnrollmentIntent
 } from './dto/public-loyalty-enroll.dto';
-import { PublicLoyaltyService } from './public-loyalty.service';
+import {
+  PUBLIC_LOYALTY_RECOVERY_REQUIRED_CODE,
+  PUBLIC_LOYALTY_RECOVERY_REQUIRED_MESSAGE,
+  PublicLoyaltyService
+} from './public-loyalty.service';
 
 describe('PublicLoyaltyEnrollDto validation', () => {
   it('requires a supported Iraqi phone and keeps email optional', async () => {
@@ -22,64 +26,156 @@ describe('PublicLoyaltyEnrollDto validation', () => {
       phone: '+9647701234567',
       email: 'not-an-email'
     });
+    const emailOnly = Object.assign(new PublicLoyaltyEnrollDto(), {
+      email: 'customer@example.test'
+    });
 
     assert.equal((await validate(valid)).length, 0);
     assert.ok((await validate(invalidPhone)).length > 0);
     assert.ok((await validate(invalidEmail)).length > 0);
+    assert.ok((await validate(emailOnly)).length > 0);
   });
 });
 
-describe('PublicLoyaltyService customer identity', () => {
-  it('normalizes local and international numbers to one customer and membership', async () => {
+describe('PublicLoyaltyService secure customer identity', () => {
+  it('creates a card only for a new phone and optional new email', async () => {
     const setup = createSetup();
 
-    const first = await setup.service.enrollCustomer('sample-cafe', {
+    const enrollment = await setup.service.enrollCustomer('sample-cafe', {
       phone: '07701234567',
-      intent: PublicLoyaltyEnrollmentIntent.JOIN
-    });
-    const second = await setup.service.enrollCustomer('sample-cafe', {
-      phone: '+9647701234567',
+      email: 'new.customer@example.test',
       intent: PublicLoyaltyEnrollmentIntent.JOIN
     });
 
     assert.equal(setup.state.customers.length, 1);
     assert.equal(setup.state.customers[0]?.phone, '+9647701234567');
     assert.equal(setup.state.memberships.length, 1);
-    assert.equal(first.cardState.stampCount, second.cardState.stampCount);
+    assert.equal(typeof enrollment.cardAccess.token, 'string');
   });
 
-  it('recovers an existing active membership without creating a duplicate', async () => {
-    const setup = createSetup();
+  it('returns the same verification response for existing and unknown recovery requests', async () => {
+    const existing = createSetup();
+    await existing.service.enrollCustomer('sample-cafe', {
+      phone: '07701234567',
+      intent: PublicLoyaltyEnrollmentIntent.JOIN
+    });
 
+    const existingResponse = await captureVerificationRequired(
+      existing.service.enrollCustomer('sample-cafe', {
+        phone: '+9647701234567',
+        intent: PublicLoyaltyEnrollmentIntent.RECOVER
+      })
+    );
+
+    const unknown = createSetup();
+    const unknownResponse = await captureVerificationRequired(
+      unknown.service.enrollCustomer('sample-cafe', {
+        phone: '+9647712345678',
+        intent: PublicLoyaltyEnrollmentIntent.RECOVER
+      })
+    );
+
+    assert.deepEqual(existingResponse, unknownResponse);
+    assert.equal(existing.state.transactionCalls, 1);
+    assert.equal(unknown.state.transactionCalls, 0);
+    assert.equal(unknown.state.customers.length, 0);
+    assert.equal(unknown.state.memberships.length, 0);
+  });
+
+  it('blocks JOIN for an existing normalized phone without rotating card access', async () => {
+    const setup = createSetup();
     await setup.service.enrollCustomer('sample-cafe', {
       phone: '07701234567',
       intent: PublicLoyaltyEnrollmentIntent.JOIN
     });
-    const recovered = await setup.service.enrollCustomer('sample-cafe', {
-      phone: '+9647701234567',
-      intent: PublicLoyaltyEnrollmentIntent.RECOVER
-    });
+    const membershipBefore = {
+      ...setup.state.memberships[0]
+    };
+
+    await captureVerificationRequired(
+      setup.service.enrollCustomer('sample-cafe', {
+        phone: '+9647701234567',
+        intent: PublicLoyaltyEnrollmentIntent.JOIN
+      })
+    );
 
     assert.equal(setup.state.customers.length, 1);
     assert.equal(setup.state.memberships.length, 1);
-    assert.equal(recovered.business.slug, 'sample-cafe');
+    assert.deepEqual(setup.state.memberships[0], membershipBefore);
   });
 
-  it('does not create a customer or membership when recovery misses', async () => {
+  it('blocks JOIN when the optional email already belongs to a customer', async () => {
     const setup = createSetup();
+    await setup.service.enrollCustomer('sample-cafe', {
+      phone: '07701234567',
+      email: 'existing.customer@example.test',
+      intent: PublicLoyaltyEnrollmentIntent.JOIN
+    });
 
-    await assert.rejects(
+    await captureVerificationRequired(
       setup.service.enrollCustomer('sample-cafe', {
-        phone: '+9647701234567',
-        intent: PublicLoyaltyEnrollmentIntent.RECOVER
-      }),
-      NotFoundException
+        phone: '+9647712345678',
+        email: 'existing.customer@example.test',
+        intent: PublicLoyaltyEnrollmentIntent.JOIN
+      })
     );
 
-    assert.equal(setup.state.customers.length, 0);
-    assert.equal(setup.state.memberships.length, 0);
+    assert.equal(setup.state.customers.length, 1);
+    assert.equal(setup.state.memberships.length, 1);
+  });
+
+  it('does not log submitted identity or card access material', async () => {
+    const setup = createSetup();
+    const logs: string[] = [];
+    const originalLog = console.log;
+    const originalError = console.error;
+    console.log = (...values: unknown[]) => logs.push(values.join(' '));
+    console.error = (...values: unknown[]) => logs.push(values.join(' '));
+
+    try {
+      await setup.service.enrollCustomer('sample-cafe', {
+        phone: '07701234567',
+        email: 'private.customer@example.test',
+        intent: PublicLoyaltyEnrollmentIntent.JOIN
+      });
+      await captureVerificationRequired(
+        setup.service.enrollCustomer('sample-cafe', {
+          phone: '+9647701234567',
+          intent: PublicLoyaltyEnrollmentIntent.RECOVER
+        })
+      );
+    } finally {
+      console.log = originalLog;
+      console.error = originalError;
+    }
+
+    const output = logs.join('\n');
+    assert.equal(output.includes('07701234567'), false);
+    assert.equal(output.includes('+9647701234567'), false);
+    assert.equal(output.includes('private.customer@example.test'), false);
+    assert.equal(output.includes('cardAccess'), false);
+    assert.equal(output.includes('publicAccessToken'), false);
   });
 });
+
+async function captureVerificationRequired(promise: Promise<unknown>) {
+  try {
+    await promise;
+    assert.fail('Expected recovery verification requirement');
+  } catch (error) {
+    assert.ok(error instanceof HttpException);
+    assert.equal(error.getStatus(), HttpStatus.FORBIDDEN);
+    const response = error.getResponse();
+    assert.deepEqual(response, {
+      statusCode: HttpStatus.FORBIDDEN,
+      code: PUBLIC_LOYALTY_RECOVERY_REQUIRED_CODE,
+      message: PUBLIC_LOYALTY_RECOVERY_REQUIRED_MESSAGE
+    });
+    assert.equal(JSON.stringify(response).includes('cardAccess'), false);
+    assert.equal(JSON.stringify(response).includes('customer'), false);
+    return response;
+  }
+}
 
 function createSetup() {
   const now = new Date('2026-06-23T00:00:00.000Z');
@@ -112,21 +208,19 @@ function createSetup() {
   };
   const state = {
     customers: [] as Array<any>,
-    memberships: [] as Array<any>
+    memberships: [] as Array<any>,
+    transactionCalls: 0
   };
 
   const transaction = {
     customer: {
-      findMany: async ({ where }: any) =>
-        state.customers.filter((customer) =>
-          where.phone.in.includes(customer.phone)
-        ),
-      findUnique: async ({ where }: any) =>
+      findFirst: async ({ where }: any) =>
         state.customers.find((customer) =>
-          where.phone
-            ? customer.phone === where.phone
-            : customer.email === where.email
+          where.phone.in.includes(customer.phone)
         ) ?? null,
+      findUnique: async ({ where }: any) =>
+        state.customers.find((customer) => customer.email === where.email) ??
+        null,
       create: async ({ data }: any) => {
         const customer = {
           id: `customer_${state.customers.length + 1}`,
@@ -136,68 +230,33 @@ function createSetup() {
         };
         state.customers.push(customer);
         return customer;
-      },
-      update: async ({ where, data }: any) => {
-        const customer = state.customers.find((item) => item.id === where.id);
-        Object.assign(customer, data, { updatedAt: now });
-        return customer;
       }
     },
     loyaltyMembership: {
-      upsert: async ({ where, create, update }: any) => {
-        const key = where.customerId_loyaltyProgramId;
-        let membership = state.memberships.find(
-          (item) =>
-            item.customerId === key.customerId &&
-            item.loyaltyProgramId === key.loyaltyProgramId
-        );
+      create: async ({ data }: any) => {
+        const membership = {
+          id: `membership_${state.memberships.length + 1}`,
+          stampCount: 0,
+          rewardReady: false,
+          totalStampsEarned: 0,
+          totalRewardsRedeemed: 0,
+          createdAt: now,
+          updatedAt: now,
+          ...data
+        };
+        state.memberships.push(membership);
 
-        if (membership) {
-          Object.assign(membership, update, { updatedAt: now });
-        } else {
-          membership = {
-            id: `membership_${state.memberships.length + 1}`,
-            stampCount: 0,
-            rewardReady: false,
-            totalStampsEarned: 0,
-            totalRewardsRedeemed: 0,
-            createdAt: now,
-            updatedAt: now,
-            ...create
-          };
-          state.memberships.push(membership);
-        }
-
-        return includeRelations(membership);
-      },
-      findFirst: async ({ where }: any) => {
-        const membership = state.memberships.find(
-          (item) =>
-            item.businessId === where.businessId &&
-            item.loyaltyProgramId === where.loyaltyProgramId &&
-            item.customerId === where.customerId &&
-            item.status === where.status
-        );
-        return membership ? { id: membership.id } : null;
-      },
-      update: async ({ where, data }: any) => {
-        const membership = state.memberships.find((item) => item.id === where.id);
-        Object.assign(membership, data, { updatedAt: now });
-        return includeRelations(membership);
+        return {
+          ...membership,
+          business,
+          loyaltyProgram: program,
+          customer: state.customers.find(
+            (customer) => customer.id === membership.customerId
+          )
+        };
       }
     }
   };
-
-  function includeRelations(membership: any) {
-    return {
-      ...membership,
-      business,
-      loyaltyProgram: program,
-      customer: state.customers.find(
-        (customer) => customer.id === membership.customerId
-      )
-    };
-  }
 
   const prisma = {
     business: {
@@ -206,8 +265,10 @@ function createSetup() {
         loyaltyPrograms: [program]
       })
     },
-    $transaction: async (callback: (client: typeof transaction) => unknown) =>
-      callback(transaction)
+    $transaction: async (callback: (client: typeof transaction) => unknown) => {
+      state.transactionCalls += 1;
+      return callback(transaction);
+    }
   };
 
   return {

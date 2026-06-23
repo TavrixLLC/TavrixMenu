@@ -4,6 +4,7 @@ import { renderToStaticMarkup } from 'react-dom/server';
 import { WalletActions } from '../app/components/WalletActions';
 import {
   clearStoredToken,
+  loadStoredLoyaltyCard,
   LoyaltyEnrollmentSuccess,
   LoyaltyIdentityForm,
   readStoredToken,
@@ -15,9 +16,10 @@ import {
   validateIraqiPhone,
   validateOptionalEmail
 } from '../app/lib/customer-identity';
-import type {
-  PublicLoyaltyCard,
-  PublicLoyaltyEnrollment
+import {
+  enrollPublicLoyaltyCustomer,
+  type PublicLoyaltyCard,
+  type PublicLoyaltyEnrollment
 } from '../app/lib/public-loyalty';
 import { detectWalletPlatform, type WalletPlatform } from '../app/lib/wallet-platform';
 
@@ -95,24 +97,28 @@ describe('loyalty identity states', () => {
     const html = renderIdentityForm('join');
 
     assert.match(html, /Join this loyalty program/);
-    assert.match(html, /Phone is required/);
+    assert.match(html, /Phone is required for the membership record/);
     assert.match(html, /<input[^>]*required=""[^>]*name="phone"/);
     assert.match(html, /Email <span[^>]*>\(optional\)/);
     assert.match(html, /I already joined/);
   });
 
-  it('shows phone-only recovery without creating a new-card promise', () => {
+  it('explains that cross-device recovery requires verification', () => {
     const html = renderIdentityForm('recover');
 
-    assert.match(html, /Find your existing card/);
-    assert.match(html, /will not create a new card/i);
-    assert.match(html, /Recover my card/);
+    assert.match(html, /Recovery needs verification/);
+    assert.match(html, /phone number or email alone cannot open/i);
+    assert.match(html, /ask staff for help/i);
+    assert.equal(/name="phone"/.test(html), false);
     assert.equal(/name="email"/.test(html), false);
+    assert.equal(/add-to-apple-wallet\.svg/.test(html), false);
+    assert.equal(/add-to-google-wallet\.svg/.test(html), false);
     assert.match(html, /Join as a new customer/);
   });
 
-  it('stores only the opaque card reference for same-device return and clears it', () => {
+  it('loads a valid same-device opaque card reference and clears it on request', async () => {
     const originalWindow = Object.getOwnPropertyDescriptor(globalThis, 'window');
+    const originalFetch = globalThis.fetch;
     const values = new Map<string, string>();
 
     Object.defineProperty(globalThis, 'window', {
@@ -125,20 +131,72 @@ describe('loyalty identity states', () => {
         }
       }
     });
+    globalThis.fetch = (async () =>
+      new Response(JSON.stringify(returningCardFixture), {
+        status: 200,
+        headers: {
+          'Content-Type': 'application/json'
+        }
+      })) as typeof fetch;
 
     try {
       assert.equal(storeCardToken('sample-cafe', 'opaque-card-reference'), true);
       assert.equal(readStoredToken('sample-cafe'), 'opaque-card-reference');
       assert.deepEqual([...values.keys()], ['tavrix.loyalty.sample-cafe.token']);
 
+      const loaded = await loadStoredLoyaltyCard(
+        'sample-cafe',
+        'https://api.example.test'
+      );
+      assert.equal(loaded?.card.business.slug, 'sample-cafe');
+      assert.equal(loaded?.token, 'opaque-card-reference');
+
       clearStoredToken('sample-cafe');
       assert.equal(readStoredToken('sample-cafe'), null);
     } finally {
+      globalThis.fetch = originalFetch;
       if (originalWindow) {
         Object.defineProperty(globalThis, 'window', originalWindow);
       } else {
         delete (globalThis as { window?: unknown }).window;
       }
+    }
+  });
+
+  it('maps unverified recovery responses without exposing card data', async () => {
+    const originalFetch = globalThis.fetch;
+    globalThis.fetch = (async () =>
+      new Response(
+        JSON.stringify({
+          statusCode: 403,
+          code: 'RECOVERY_REQUIRES_VERIFICATION',
+          message: 'Recovery requires phone verification or staff help.'
+        }),
+        {
+          status: 403,
+          headers: {
+            'Content-Type': 'application/json'
+          }
+        }
+      )) as typeof fetch;
+
+    try {
+      const result = await enrollPublicLoyaltyCustomer(
+        'sample-cafe',
+        {
+          phone: '+9647701234567',
+          intent: 'RECOVER'
+        },
+        'https://api.example.test'
+      );
+
+      assert.equal(result.status, 'verification-required');
+      assert.equal(
+        JSON.stringify(result).includes('cardAccess'),
+        false
+      );
+    } finally {
+      globalThis.fetch = originalFetch;
     }
   });
 });

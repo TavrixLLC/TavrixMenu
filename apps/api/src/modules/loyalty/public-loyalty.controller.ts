@@ -1,8 +1,8 @@
 import { Body, Controller, Get, Param, Post } from '@nestjs/common';
 import {
   ApiBadRequestResponse,
-  ApiConflictResponse,
   ApiCreatedResponse,
+  ApiForbiddenResponse,
   ApiNotFoundResponse,
   ApiOkResponse,
   ApiTags
@@ -81,7 +81,7 @@ export class PublicLoyaltyController {
   @Post('m/:slug/loyalty/enroll')
   @ApiCreatedResponse({
     description:
-      'Public no-OTP pilot join or recovery. JOIN reuses or creates a customer and membership; RECOVER returns only an existing active membership. Both return a newly issued card access token.',
+      'Public no-OTP pilot join for a new identity. Returns card access only when both the normalized phone and optional email are unused.',
     schema: {
       example: {
         customer: {
@@ -118,19 +118,19 @@ export class PublicLoyaltyController {
       }
     }
   })
-  @ApiConflictResponse({
-    description: 'Phone and email belong to different customer records.',
+  @ApiForbiddenResponse({
+    description:
+      'RECOVER requests and JOIN requests matching an existing phone or email require verified recovery. The response never contains card access or customer data.',
     schema: {
       example: {
-        message: 'Phone and email belong to different customers',
-        error: 'Conflict',
-        statusCode: 409
+        statusCode: 403,
+        code: 'RECOVERY_REQUIRES_VERIFICATION',
+        message: 'Recovery requires phone verification or staff help.'
       }
     }
   })
   @ApiNotFoundResponse({
-    description:
-      'Business/program is inactive or missing, or RECOVER did not find an active membership.'
+    description: 'Business/program is inactive or missing.'
   })
   enrollCustomer(
     @Param('slug') slug: string,

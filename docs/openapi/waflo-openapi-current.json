@@ -2075,7 +2075,7 @@
         },
         "responses": {
           "201": {
-            "description": "Public no-OTP pilot join or recovery. JOIN reuses or creates a customer and membership; RECOVER returns only an existing active membership. Both return a newly issued card access token.",
+            "description": "Public no-OTP pilot join for a new identity. Returns card access only when both the normalized phone and optional email are unused.",
             "content": {
               "application/json": {
                 "schema": {
@@ -2128,22 +2128,22 @@
               }
             }
           },
-          "404": {
-            "description": "Business/program is inactive or missing, or RECOVER did not find an active membership."
-          },
-          "409": {
-            "description": "Phone and email belong to different customer records.",
+          "403": {
+            "description": "RECOVER requests and JOIN requests matching an existing phone or email require verified recovery. The response never contains card access or customer data.",
             "content": {
               "application/json": {
                 "schema": {
                   "example": {
-                    "message": "Phone and email belong to different customers",
-                    "error": "Conflict",
-                    "statusCode": 409
+                    "statusCode": 403,
+                    "code": "RECOVERY_REQUIRES_VERIFICATION",
+                    "message": "Recovery requires phone verification or staff help."
                   }
                 }
               }
             }
+          },
+          "404": {
+            "description": "Business/program is inactive or missing."
           }
         },
         "tags": [
@@ -3433,7 +3433,7 @@
               "RECOVER"
             ],
             "default": "JOIN",
-            "description": "JOIN creates or reuses a customer and membership. RECOVER returns only an existing active membership."
+            "description": "JOIN creates a new customer and membership only when the phone and email are unused. RECOVER always requires a future verified recovery flow and never returns card access from contact details alone."
           }
         },
         "required": [

@@ -53,11 +53,36 @@ export function clearStoredToken(slug: string): void {
   }
 }
 
+export async function loadStoredLoyaltyCard(
+  slug: string,
+  apiBaseUrl: string
+): Promise<{ card: PublicLoyaltyCard; token: string } | null> {
+  const token = readStoredToken(slug);
+
+  if (!token) {
+    return null;
+  }
+
+  const result = await fetchPublicLoyaltyCard(token, apiBaseUrl);
+
+  if (result.status === 'ok') {
+    return {
+      card: result.data,
+      token
+    };
+  }
+
+  if (result.status === 'bad-request' || result.status === 'not-found') {
+    clearStoredToken(slug);
+  }
+
+  return null;
+}
+
 type LoyaltyEnrollmentSuccessProps = LoyaltyEnrollmentClientProps & {
   enrollment: PublicLoyaltyEnrollment;
   platform: WalletPlatform;
   storageUnavailable: boolean;
-  variant?: 'joined' | 'recovered';
 };
 
 export function LoyaltyEnrollmentSuccess({
@@ -66,8 +91,7 @@ export function LoyaltyEnrollmentSuccess({
   appleWalletEnabled,
   enrollment,
   platform,
-  storageUnavailable,
-  variant = 'joined'
+  storageUnavailable
 }: LoyaltyEnrollmentSuccessProps) {
   const cardHref = `/m/${encodeURIComponent(slug)}/loyalty/card?token=${encodeURIComponent(enrollment.cardAccess.token)}`;
 
@@ -75,7 +99,7 @@ export function LoyaltyEnrollmentSuccess({
     <section className="grid gap-5">
       <div className="rounded-lg border border-emerald-100 bg-emerald-50 p-4">
         <p className="text-sm font-semibold text-emerald-800">
-          {variant === 'recovered' ? 'Welcome back' : `You joined ${enrollment.program.name}`}
+          You joined {enrollment.program.name}
         </p>
         <p className="mt-2 text-sm leading-6 text-emerald-900">
           {enrollment.customer.name ? `${enrollment.customer.name}, your` : 'Your'} card is ready.
@@ -202,16 +226,34 @@ export function LoyaltyIdentityForm({
 }: LoyaltyIdentityFormProps) {
   const isRecovery = mode === 'recover';
 
+  if (isRecovery) {
+    return (
+      <section className="grid gap-4" data-loyalty-recovery="verification-required">
+        <div className="rounded-lg border border-amber-100 bg-amber-50 p-4">
+          <p className="text-sm font-semibold text-amber-900">Recovery needs verification</p>
+          <p className="mt-2 text-sm leading-6 text-amber-800">
+            For your security, a phone number or email alone cannot open an existing loyalty
+            card. Phone verification is not available yet, so please ask staff for help.
+          </p>
+        </div>
+        <button
+          type="button"
+          onClick={() => onModeChange('join')}
+          className="h-12 rounded-md border border-neutral-200 bg-white px-5 text-sm font-semibold text-ink transition hover:bg-neutral-50"
+        >
+          Join as a new customer
+        </button>
+      </section>
+    );
+  }
+
   return (
     <form onSubmit={onSubmit} noValidate className="grid gap-4">
       <div className="rounded-md bg-neutral-50 p-3">
-        <p className="text-sm font-semibold text-ink">
-          {isRecovery ? 'Find your existing card' : 'Join this loyalty program'}
-        </p>
+        <p className="text-sm font-semibold text-ink">Join this loyalty program</p>
         <p className="mt-1 text-sm leading-6 text-neutral-600">
-          {isRecovery
-            ? 'Enter the same phone number you used before. We will not create a new card in recovery mode.'
-            : 'Phone is required so your card can be recognized later. Email and name are optional.'}
+          Phone is required for the membership record, but it cannot open an existing card by
+          itself. Email and name are optional.
         </p>
       </div>
 
@@ -243,50 +285,46 @@ export function LoyaltyIdentityForm({
         ) : null}
       </div>
 
-      {!isRecovery ? (
-        <>
-          <div className="grid gap-1">
-            <label htmlFor="loyalty-email" className="text-sm font-semibold text-ink">
-              Email <span className="font-normal text-neutral-500">(optional)</span>
-            </label>
-            <input
-              id="loyalty-email"
-              name="email"
-              type="email"
-              value={email}
-              onChange={(event) => onEmailChange(event.target.value)}
-              placeholder="you@example.com"
-              autoComplete="email"
-              className="h-12 rounded-md border border-neutral-200 bg-white px-3 text-base text-ink outline-none transition focus:border-mint aria-[invalid=true]:border-red-400"
-              aria-invalid={emailError ? 'true' : undefined}
-              aria-describedby={emailError ? 'loyalty-email-error' : undefined}
-              maxLength={200}
-            />
-            {emailError ? (
-              <p id="loyalty-email-error" role="alert" className="text-sm leading-5 text-red-600">
-                {emailError}
-              </p>
-            ) : null}
-          </div>
+      <div className="grid gap-1">
+        <label htmlFor="loyalty-email" className="text-sm font-semibold text-ink">
+          Email <span className="font-normal text-neutral-500">(optional)</span>
+        </label>
+        <input
+          id="loyalty-email"
+          name="email"
+          type="email"
+          value={email}
+          onChange={(event) => onEmailChange(event.target.value)}
+          placeholder="you@example.com"
+          autoComplete="email"
+          className="h-12 rounded-md border border-neutral-200 bg-white px-3 text-base text-ink outline-none transition focus:border-mint aria-[invalid=true]:border-red-400"
+          aria-invalid={emailError ? 'true' : undefined}
+          aria-describedby={emailError ? 'loyalty-email-error' : undefined}
+          maxLength={200}
+        />
+        {emailError ? (
+          <p id="loyalty-email-error" role="alert" className="text-sm leading-5 text-red-600">
+            {emailError}
+          </p>
+        ) : null}
+      </div>
 
-          <div className="grid gap-1">
-            <label htmlFor="loyalty-name" className="text-sm font-semibold text-ink">
-              Name <span className="font-normal text-neutral-500">(optional)</span>
-            </label>
-            <input
-              id="loyalty-name"
-              name="name"
-              type="text"
-              value={name}
-              onChange={(event) => onNameChange(event.target.value)}
-              placeholder="Your name"
-              autoComplete="name"
-              className="h-12 rounded-md border border-neutral-200 bg-white px-3 text-base text-ink outline-none transition focus:border-mint"
-              maxLength={160}
-            />
-          </div>
-        </>
-      ) : null}
+      <div className="grid gap-1">
+        <label htmlFor="loyalty-name" className="text-sm font-semibold text-ink">
+          Name <span className="font-normal text-neutral-500">(optional)</span>
+        </label>
+        <input
+          id="loyalty-name"
+          name="name"
+          type="text"
+          value={name}
+          onChange={(event) => onNameChange(event.target.value)}
+          placeholder="Your name"
+          autoComplete="name"
+          className="h-12 rounded-md border border-neutral-200 bg-white px-3 text-base text-ink outline-none transition focus:border-mint"
+          maxLength={160}
+        />
+      </div>
 
       {error ? (
         <p role="alert" className="rounded-md border border-red-100 bg-red-50 p-3 text-sm leading-6 text-red-700">
@@ -299,21 +337,15 @@ export function LoyaltyIdentityForm({
         disabled={isSubmitting}
         className="h-12 rounded-md bg-ink px-5 text-sm font-semibold text-white transition hover:bg-neutral-800 disabled:cursor-not-allowed disabled:bg-neutral-400"
       >
-        {isSubmitting
-          ? isRecovery
-            ? 'Finding your card...'
-            : 'Creating your card...'
-          : isRecovery
-            ? 'Recover my card'
-            : 'Join and get your card'}
+        {isSubmitting ? 'Creating your card...' : 'Join and get your card'}
       </button>
 
       <button
         type="button"
-        onClick={() => onModeChange(isRecovery ? 'join' : 'recover')}
+        onClick={() => onModeChange('recover')}
         className="text-sm font-medium text-neutral-600 underline hover:text-ink"
       >
-        {isRecovery ? 'Join as a new customer' : 'I already joined'}
+        I already joined
       </button>
     </form>
   );
@@ -365,7 +397,6 @@ export function LoyaltyEnrollmentClient({
   const [isSubmitting, setIsSubmitting] = useState(false);
   const [storageUnavailable, setStorageUnavailable] = useState(false);
   const [enrollment, setEnrollment] = useState<PublicLoyaltyEnrollment | null>(null);
-  const [successVariant, setSuccessVariant] = useState<'joined' | 'recovered'>('joined');
   const [isCheckingToken, setIsCheckingToken] = useState(true);
   const [returningCard, setReturningCard] = useState<PublicLoyaltyCard | null>(null);
   const [returningToken, setReturningToken] = useState<string | null>(null);
@@ -375,26 +406,15 @@ export function LoyaltyEnrollmentClient({
     let cancelled = false;
 
     async function checkStoredToken() {
-      const stored = readStoredToken(slug);
-
-      if (!stored) {
-        if (!cancelled) {
-          setIsCheckingToken(false);
-        }
-        return;
-      }
-
-      const result = await fetchPublicLoyaltyCard(stored, apiBaseUrl);
+      const result = await loadStoredLoyaltyCard(slug, apiBaseUrl);
 
       if (cancelled) {
         return;
       }
 
-      if (result.status === 'ok') {
-        setReturningCard(result.data);
-        setReturningToken(stored);
-      } else {
-        clearStoredToken(slug);
+      if (result) {
+        setReturningCard(result.card);
+        setReturningToken(result.token);
       }
 
       setIsCheckingToken(false);
@@ -411,7 +431,7 @@ export function LoyaltyEnrollmentClient({
     event.preventDefault();
 
     const nextPhoneError = validateIraqiPhone(phone);
-    const nextEmailError = mode === 'join' ? validateOptionalEmail(email) : null;
+    const nextEmailError = validateOptionalEmail(email);
 
     setPhoneError(nextPhoneError);
     setEmailError(nextEmailError);
@@ -432,23 +452,23 @@ export function LoyaltyEnrollmentClient({
 
     const result = await enrollPublicLoyaltyCustomer(
       slug,
-      mode === 'recover'
-        ? {
-            phone: normalizedPhone,
-            intent: 'RECOVER'
-          }
-        : {
-            phone: normalizedPhone,
-            email: email.trim() || undefined,
-            name: name.trim() || undefined,
-            intent: 'JOIN'
-          },
+      {
+        phone: normalizedPhone,
+        email: email.trim() || undefined,
+        name: name.trim() || undefined,
+        intent: 'JOIN'
+      },
       apiBaseUrl
     );
 
     setIsSubmitting(false);
 
     if (result.status !== 'ok') {
+      if (result.status === 'verification-required') {
+        changeMode('recover');
+        return;
+      }
+
       setError(result.message);
       return;
     }
@@ -459,7 +479,6 @@ export function LoyaltyEnrollmentClient({
       setStorageUnavailable(true);
     }
 
-    setSuccessVariant(mode === 'recover' ? 'recovered' : 'joined');
     setEnrollment(result.data);
   }
 
@@ -518,7 +537,6 @@ export function LoyaltyEnrollmentClient({
         enrollment={enrollment}
         platform={platform}
         storageUnavailable={storageUnavailable}
-        variant={successVariant}
       />
     );
   }

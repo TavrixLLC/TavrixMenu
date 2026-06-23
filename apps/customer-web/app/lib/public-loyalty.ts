@@ -120,7 +120,11 @@ export type PublicLoyaltyEnrollResult =
       apiUrl: string;
     }
   | {
-      status: 'bad-request' | 'conflict' | 'not-found';
+      status:
+        | 'bad-request'
+        | 'conflict'
+        | 'not-found'
+        | 'verification-required';
       apiUrl: string;
       message: string;
     }
@@ -176,6 +180,10 @@ function parseApiMessage(value: unknown, fallback: string): string {
   }
 
   return fallback;
+}
+
+function parseApiCode(value: unknown): string | null {
+  return readString(asRecord(value)?.code);
 }
 
 function parseBusiness(value: unknown): PublicLoyaltyBusiness | null {
@@ -444,10 +452,18 @@ export async function enrollPublicLoyaltyCustomer(
       return {
         status: 'not-found',
         apiUrl,
-        message:
-          request.intent === 'RECOVER'
-            ? 'We could not recover a card for that number. Check the number or join as a new customer.'
-            : 'This business does not have an active loyalty card right now.'
+        message: 'This business does not have an active loyalty card right now.'
+      };
+    }
+
+    if (
+      response.status === 403 &&
+      parseApiCode(body) === 'RECOVERY_REQUIRES_VERIFICATION'
+    ) {
+      return {
+        status: 'verification-required',
+        apiUrl,
+        message: 'Recovery requires phone verification or staff help.'
       };
     }
 

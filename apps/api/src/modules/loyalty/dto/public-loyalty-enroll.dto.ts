@@ -5,7 +5,7 @@ import {
   IsOptional,
   IsString,
   Matches,
-  MaxLength,
+  MaxLength
 } from 'class-validator';
 
 export enum PublicLoyaltyEnrollmentIntent {
@@ -43,7 +43,7 @@ export class PublicLoyaltyEnrollDto {
     enum: PublicLoyaltyEnrollmentIntent,
     default: PublicLoyaltyEnrollmentIntent.JOIN,
     description:
-      'JOIN creates or reuses a customer and membership. RECOVER returns only an existing active membership.'
+      'JOIN creates a new customer and membership only when the phone and email are unused. RECOVER always requires a future verified recovery flow and never returns card access from contact details alone.'
   })
   @IsOptional()
   @IsEnum(PublicLoyaltyEnrollmentIntent)
