@@ -300,22 +300,26 @@ export function LoyaltyIdentityForm({
           </p>
         </div>
 
-        <form onSubmit={onTransferSubmit} className="grid gap-3 rounded-lg border border-neutral-200 bg-white p-4">
+        <form
+          onSubmit={onTransferSubmit}
+          className="grid gap-3 rounded-lg border border-neutral-200 bg-white p-4"
+          data-recovery-path="trusted-device"
+        >
           <div>
             <h3 className="text-base font-bold text-ink">
-              Scan transfer QR from old device
+              1. I have the card on another device
             </h3>
             <p className="mt-1 text-sm leading-6 text-neutral-600">
-              Open your card on the old phone, choose "Add card to another
-              device", then scan its QR with this phone's Camera. You can also
-              paste the one-time code or link below.
+              Transfer works only while a trusted old device can still open
+              the card. On that device, choose "Add card to another device,"
+              then scan its QR or enter the one-time code below.
             </p>
           </div>
           <label
             htmlFor="loyalty-transfer-redeem"
             className="text-sm font-semibold text-ink"
           >
-            Transfer code or link
+            Scan transfer QR / Enter transfer code
           </label>
           <input
             id="loyalty-transfer-redeem"
@@ -336,25 +340,55 @@ export function LoyaltyIdentityForm({
             disabled={isTransferSubmitting}
             className="h-12 rounded-md bg-ink px-5 text-sm font-semibold text-white disabled:bg-neutral-400"
           >
-            {isTransferSubmitting ? 'Transferring card...' : 'Transfer this card'}
+            {isTransferSubmitting ? 'Adding card...' : 'Add card to this device'}
           </button>
         </form>
 
-        <div className="rounded-md bg-neutral-50 p-3">
-          <p className="text-sm font-semibold text-ink">No old device?</p>
+        <div
+          className="rounded-lg border border-neutral-200 bg-neutral-50 p-4"
+          data-recovery-path="lost-all-devices"
+        >
+          <h3 className="text-base font-bold text-ink">
+            2. I lost access to all devices
+          </h3>
           <p className="mt-1 text-sm leading-6 text-neutral-600">
-            Ask staff for help. Staff-assisted recovery is not available in the
-            app yet and will never use phone number alone.
+            A transfer QR is not possible when no trusted device still has the
+            card. Ask staff for help. A phone number or email alone cannot
+            unlock an existing card.
           </p>
+          <div className="mt-3 rounded-md border border-dashed border-neutral-300 bg-white p-3">
+            <p className="text-sm font-semibold text-ink">
+              Staff-assisted recovery is planned
+            </p>
+            <p className="mt-1 text-sm leading-6 text-neutral-600">
+              Staff will verify the customer in person. A future authorized
+              staff flow will generate a short-lived, single-use recovery QR or
+              code and log the staff action. It will never use phone-only
+              recovery.
+            </p>
+          </div>
         </div>
 
-        <button
-          type="button"
-          onClick={() => onModeChange('join')}
-          className="h-12 rounded-md border border-neutral-200 bg-white px-5 text-sm font-semibold text-ink transition hover:bg-neutral-50"
+        <div
+          className="rounded-lg border border-neutral-200 bg-white p-4"
+          data-recovery-path="different-phone"
         >
-          Join as a new customer
-        </button>
+          <h3 className="text-base font-bold text-ink">
+            3. Join with a different phone
+          </h3>
+          <p className="mt-1 text-sm leading-6 text-neutral-600">
+            Start a new enrollment only with a phone that is not already
+            attached to a membership. An existing phone remains blocked until
+            recovery is verified.
+          </p>
+          <button
+            type="button"
+            onClick={() => onModeChange('join')}
+            className="mt-3 h-12 w-full rounded-md border border-neutral-200 bg-white px-5 text-sm font-semibold text-ink transition hover:bg-neutral-50"
+          >
+            Join with a different phone
+          </button>
+        </div>
       </section>
     );
   }
@@ -514,7 +548,7 @@ export function LoyaltyEnrollmentClient({
   const [returningCard, setReturningCard] = useState<PublicLoyaltyCard | null>(null);
   const [returningToken, setReturningToken] = useState<string | null>(null);
   const [recoveryMessage, setRecoveryMessage] = useState(
-    'For your security, a phone number or email alone cannot open an existing loyalty card. Transfer from your old device or ask staff for help.'
+    'Choose the path that matches your situation. Transfer is available only when at least one trusted old device still has the card. Phone or email alone cannot unlock it.'
   );
   const [transferCode, setTransferCode] = useState('');
   const [transferError, setTransferError] = useState<string | null>(null);
@@ -615,7 +649,7 @@ export function LoyaltyEnrollmentClient({
     if (result.status !== 'ok') {
       if (result.status === 'verification-required') {
         setRecoveryMessage(
-          'This phone already has a card. For your security, transfer from your old device or ask staff for help.'
+          'This phone is already attached to a card. If a trusted old device still has access, add this device from there. Otherwise, ask staff for help.'
         );
         changeMode('recover');
         return;
@@ -740,7 +774,7 @@ export function LoyaltyEnrollmentClient({
       onModeChange={(nextMode) => {
         if (nextMode === 'recover') {
           setRecoveryMessage(
-            'Phone recovery is unavailable without verification. Transfer from your old device or ask staff for help.'
+            'Transfer is only for customers who still have the card on a trusted old device. If all device access is lost, ask staff for help. Phone recovery is unavailable without verification.'
           );
         }
         changeMode(nextMode);
