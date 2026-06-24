@@ -1,952 +1,461 @@
-# Flutter Mobile App README
-
-> Mobile-first design system and implementation guide for a Flutter café / restaurant ordering app inspired by the warm Starbucks-style visual language. This README is written for a Flutter mobile app, not a web landing page.
+# Waflo Product Design System & Menu Template Engine
 
 ## Purpose
 
-This project uses a warm café visual identity built around cream surfaces, deep green brand areas, rounded cards, pill buttons, product photography, and a persistent ordering action. The goal is to make the mobile app feel like a premium coffeehouse product: clean, calm, tactile, and easy to use with one hand.
+This document is the source of truth for Waflo product design direction across customer web, admin web, Flutter staff/business app, public menu templates, and loyalty/wallet surfaces.
 
-Use this README as the source of truth for:
+Waflo is a Business Loyalty Platform. The restaurant and cafe QR menu plus loyalty experience is the first vertical. Waflo is not currently an ordering, cart, checkout, or delivery product unless those capabilities are explicitly enabled in a later scope.
 
-- Flutter theme tokens
-- App folder structure
-- Reusable widgets
-- Mobile navigation patterns
-- Product/menu screen rules
-- Rewards/loyalty UI rules
-- Asset and typography setup
-- Development and quality checklist
+Use this document to align:
 
-## Mobile App Experience
+- Waflo brand direction and product tone
+- Core color, typography, spacing, radius, and shadow rules
+- Customer public menu website behavior
+- Admin/owner dashboard behavior
+- Flutter staff/business app behavior
+- Loyalty and wallet visual behavior
+- Public menu template engine expectations
+- RTL, Arabic, accessibility, and implementation boundaries
 
-The Flutter app should feel native, not like a website squeezed into a phone. The interface should be built around fast ordering, menu browsing, loyalty, QR/menu sharing, and restaurant management flows if the app has an admin side.
+## Product Direction
 
-Core mobile principles:
+Waflo should feel warm, useful, modern, and trustworthy for business owners and customers. The product should not look like a single coffeehouse clone, and it should not look like a generic blue corporate SaaS product. Waflo owns a flexible loyalty platform identity that can adapt to many merchants while keeping a recognizable coral, green, and warm cream foundation.
 
-- Use a warm cream app canvas instead of pure white.
-- Use dark green for premium brand sections, loyalty moments, and important headers.
-- Use bright green only for primary actions.
-- Keep buttons pill-shaped everywhere.
-- Use 12px rounded cards for menu items, rewards cards, settings panels, and forms.
-- Keep shadows soft and layered.
-- Use bottom navigation or a shell layout instead of desktop top navigation.
-- Keep every important touch target at least 44px high.
-- Make product cards photo-first, with price and CTA clearly visible.
-- Make the order/cart action persistent and reachable with the thumb.
+The first vertical is restaurants and cafes:
 
-## Recommended App Screens
+- Public QR menu browsing
+- Menu categories, items, prices, and images
+- Loyalty enrollment and reward calls to action when enabled
+- Staff scanning for stamps, rewards, and customer wallet passes
+- Admin tools for menu, loyalty, QR/public link, and appearance setup
 
-### Customer App
+Out of scope unless explicitly enabled later:
 
-- Splash screen
-- Onboarding / brand introduction
-- Login / sign up
-- Home
-- Menu categories
-- Product list
-- Product details
-- Product customization
-- Cart
-- Checkout / order summary
-- Rewards / loyalty card
-- Gift cards or offers
+- Customer cart
+- Checkout
+- Order placement
 - Order history
-- Profile
-- Store selector
-- Notifications
+- Product customization checkout flow
+- Delivery or pickup fulfillment
+- Nutrition-first ordering app assumptions
 
-### Restaurant/Admin App
+## Product Surfaces
 
-- Admin login
-- Restaurant dashboard
+### 1. Customer Public Menu Website
+
+The public menu website is mobile-first, template-driven, and optimized for fast QR menu browsing. It is the customer's primary public experience.
+
+Required behavior:
+
+- Mobile-first layout with strong small-screen readability
+- Fast category, item, price, and image scanning
+- Template-driven visual presentation
+- Loyalty or join CTA when loyalty is enabled for the business
+- Arabic and RTL support
+- Existing public menu URLs remain stable
+- No checkout, cart, or order placement scope creep
+
+Visual priorities:
+
+- Make menu content readable before decorative styling
+- Keep category navigation easy to reach on mobile
+- Use item cards or item rows according to the selected template
+- Use merchant imagery without over-cropping important food details
+- Use coral for key CTAs such as join, continue, or claim
+- Use green for success, progress, loyalty growth, and earned rewards
+
+### 2. Admin/Owner Dashboard
+
+The admin/owner dashboard is a calm professional workspace for business owners. It should feel SaaS-grade, organized, and efficient.
+
+Core areas:
+
+- Business setup
 - Menu manager
-- Category manager
-- Product editor
-- Product image uploader
-- QR code / website link screen
-- Loyalty card generator
-- Orders overview
-- Branch settings
-- Domain connection settings
-- AI recommendation settings
+- Category and item management
+- QR code and public link management
+- Loyalty settings
+- Menu appearance and template picker
+- Account and permission-aware settings
 
-## Flutter Project Structure
+Visual priorities:
 
-Recommended structure:
+- Use white surfaces on neutral or warm backgrounds
+- Use coral only for important primary actions
+- Use green for saved/success/progress states
+- Avoid heavy decorative gradients or visual noise
+- Use dense but readable controls for repeated business workflows
+- Make destructive actions visually distinct and hard to trigger accidentally
 
-```text
-lib/
-  main.dart
-  app.dart
+### 3. Flutter Staff/Business App
 
-  core/
-    constants/
-      app_colors.dart
-      app_spacing.dart
-      app_radius.dart
-      app_shadows.dart
-      app_typography.dart
-    theme/
-      app_theme.dart
-    utils/
-      responsive.dart
-      money_formatter.dart
+The Flutter app is for staff and business operations. It should prioritize speed, scanner readability, and confidence during in-person customer interactions.
 
-  shared/
-    widgets/
-      app_scaffold.dart
-      app_button.dart
-      app_card.dart
-      app_text_field.dart
-      app_cached_image.dart
-      quantity_stepper.dart
-      section_header.dart
-      floating_cart_button.dart
-      empty_state.dart
-      loading_view.dart
-      error_view.dart
+Core areas:
 
-  features/
-    auth/
-      presentation/
-      data/
-      domain/
-    home/
-      presentation/
-    menu/
-      presentation/
-      data/
-      domain/
-    product/
-      presentation/
-      data/
-      domain/
-    cart/
-      presentation/
-      data/
-      domain/
-    rewards/
-      presentation/
-      data/
-      domain/
-    profile/
-      presentation/
-    admin/
-      presentation/
-      data/
-      domain/
-```
+- Staff/business dashboard
+- Wallet pass or customer QR scanner
+- Add stamp action
+- Redeem reward action
+- Customer loyalty status summary
+- Basic business operational views as already scoped
 
-For small projects, you can simplify this, but keep theme tokens and shared widgets separated from screens.
+Visual priorities:
 
-## Design Tokens for Flutter
+- Scanner readability first
+- High-contrast scan surfaces
+- Coral for scan, add, continue, and primary staff actions
+- Green for success, progress, redeemed, and earned states
+- Clear loading, error, and permission states
+- No scanner logic changes from design work alone
 
-### Colors
+### 4. Loyalty and Wallet Experience
 
-Create `lib/core/constants/app_colors.dart`:
+Waflo loyalty should feel rewarding without becoming visually noisy. Wallet passes and loyalty screens may use Waflo's coral, green, and cream defaults, but merchant customization must remain possible.
 
-```dart
-import 'package:flutter/material.dart';
+Rules:
 
-class AppColors {
-  AppColors._();
+- Default Waflo loyalty visuals can use coral, green, cream, and selective reward gold
+- Merchant-specific brand color and pass appearance customization must remain possible
+- Reward gold is reserved for premium, milestone, and reward moments
+- Apple Wallet and Google Wallet official badges must not be recolored or restyled
+- Signing, APNs, and wallet pass delivery infrastructure are out of scope for this document
 
-  // Brand greens
-  static const starbucksGreen = Color(0xFF006241);
-  static const greenAccent = Color(0xFF00754A);
-  static const houseGreen = Color(0xFF1E3932);
-  static const greenUplift = Color(0xFF2B5148);
-  static const greenLight = Color(0xFFD4E9E2);
+## Brand Direction
 
-  // Rewards / loyalty
-  static const gold = Color(0xFFCBA258);
-  static const goldLight = Color(0xFFDFC49D);
-  static const goldLightest = Color(0xFFFAF6EE);
-  static const rewardsGreen = Color(0xFF33433D);
+Waflo's brand should communicate:
 
-  // Surfaces
-  static const white = Color(0xFFFFFFFF);
-  static const neutralCool = Color(0xFFF9F9F9);
-  static const neutralWarm = Color(0xFFF2F0EB);
-  static const ceramic = Color(0xFFEDEBE9);
-  static const black = Color(0xFF000000);
+- Warmth for customers
+- Trust and clarity for business owners
+- Momentum around loyalty growth
+- Flexibility for different restaurant and cafe identities
+- A SaaS platform foundation, not a one-off restaurant app
 
-  // Text
-  static const textBlack = Color(0xDE000000); // 87% black
-  static const textBlackSoft = Color(0x94000000); // 58% black
-  static const textWhite = Color(0xFFFFFFFF);
-  static const textWhiteSoft = Color(0xB3FFFFFF); // 70% white
+Design language:
 
-  // Semantic
-  static const error = Color(0xFFC82014);
-  static const warning = Color(0xFFFBBC05);
-  static const successTint = Color(0x55D4E9E2);
-  static const errorTint = Color(0x0DC82014);
-}
-```
+- Coral for action and energy
+- Green for loyalty, progress, and success
+- Cream for warmth in customer-facing menu surfaces
+- White for readable cards, admin surfaces, and form areas
+- Gold only for reward or premium moments
+- Red only for errors and destructive actions
+
+Do not:
+
+- Make the whole interface orange
+- Keep Waflo as a purely blue/corporate product
+- Keep Starbucks-like green as the only identity
+- Build a single fixed visual template into menu data
+- Let ordering/cart assumptions drive menu, loyalty, or template design
+
+## Core Color System
+
+| Token | Hex | Primary use |
+| --- | --- | --- |
+| Primary Coral | `#FF6B4A` | Primary actions, join, scan, claim, continue |
+| Primary Coral Dark | `#D94B2B` | Pressed/hover states, high-emphasis coral accents |
+| Fresh Green | `#43A047` | Success, growth, loyalty progress, reward progress |
+| Fresh Green Dark | `#2E7D32` | Strong success states, accessible green text or icons |
+| Warm Cream | `#FFF8F2` | Warm public menu backgrounds |
+| Surface White | `#FFFFFF` | Cards, readable areas, admin surfaces |
+| Text Dark | `#1F2933` | Primary text |
+| Muted Text | `#6B7280` | Secondary text and helper text |
+| Soft Border | `#F1E2D6` | Borders, dividers, subtle outlines |
+| Reward Gold | `#F59E0B` | Reward and premium moments only |
+| Danger Red | `#DC2626` | Errors and destructive actions only |
 
 Color usage rules:
 
-| Use case | Color |
-|---|---|
-| App background | `neutralWarm` or `ceramic` |
-| Main CTA | `greenAccent` |
-| Brand headings | `starbucksGreen` |
-| Dark feature/header bands | `houseGreen` |
-| Card background | `white` |
-| Loyalty/rewards accent | `gold` |
-| Body text | `textBlack` |
-| Secondary text | `textBlackSoft` |
-| Error | `error` |
+- Coral is for primary actions and customer movement: join, scan, claim, continue, save.
+- Green is for success, growth, loyalty progress, stamps, earned rewards, and positive status.
+- Cream is for warm public menu backgrounds and customer-facing empty states.
+- White is for cards, panels, forms, menus, and readable content areas.
+- Gold is only for reward, premium, milestone, or celebration moments.
+- Red is only for errors, destructive actions, failed states, and warnings that require attention.
+- Blue may appear only where an existing platform pattern requires it, such as links or external service conventions.
 
-Do not use gold as a normal accent color. It should mean loyalty, reward level, premium badge, or points.
+## Typography
 
-### Spacing
+Waflo should use clean, readable product typography. Typography must support English, Arabic, and mixed-language content without layout breakage.
 
-Create `lib/core/constants/app_spacing.dart`:
+Recommended direction:
 
-```dart
-class AppSpacing {
-  AppSpacing._();
+- Use a modern sans-serif family for product UI.
+- Use a font stack or loaded font family that supports Arabic properly.
+- Use clear hierarchy for menu categories, item names, prices, and loyalty state.
+- Keep admin dashboard typography compact enough for repeated work.
+- Avoid decorative fonts for operational UI.
 
-  static const xxs = 4.0;
-  static const xs = 8.0;
-  static const sm = 12.0;
-  static const md = 16.0;
-  static const lg = 24.0;
-  static const xl = 32.0;
-  static const xxl = 40.0;
-  static const xxxl = 56.0;
-  static const section = 64.0;
-}
-```
+Suggested scale:
 
-Mobile spacing rules:
-
-- Screen horizontal padding: `16px`
-- Large phone/tablet horizontal padding: `24px`
-- Card padding: `16px` or `24px`
-- Section gap: `32px` to `40px`
-- Button internal padding: at least `14px vertical` for mobile touch comfort
-
-### Radius
-
-Create `lib/core/constants/app_radius.dart`:
-
-```dart
-class AppRadius {
-  AppRadius._();
-
-  static const sm = 4.0;
-  static const md = 12.0;
-  static const lg = 20.0;
-  static const pill = 50.0;
-  static const circle = 999.0;
-}
-```
-
-Usage:
-
-- Cards: `12px`
-- Modals / bottom sheets: `20px` top corners
-- Buttons: `50px`
-- Floating buttons: circle
-- Inputs: `12px` for modern mobile forms, or `4px` for product customization selector boxes
-
-### Shadows
-
-Create `lib/core/constants/app_shadows.dart`:
-
-```dart
-import 'package:flutter/material.dart';
-
-class AppShadows {
-  AppShadows._();
-
-  static const card = [
-    BoxShadow(
-      color: Color(0x24000000),
-      blurRadius: 1,
-      offset: Offset(0, 1),
-    ),
-    BoxShadow(
-      color: Color(0x14000000),
-      blurRadius: 0.5,
-      offset: Offset(0, 0),
-    ),
-  ];
-
-  static const floating = [
-    BoxShadow(
-      color: Color(0x3D000000),
-      blurRadius: 6,
-      offset: Offset(0, 0),
-    ),
-    BoxShadow(
-      color: Color(0x24000000),
-      blurRadius: 12,
-      offset: Offset(0, 8),
-    ),
-  ];
-
-  static const appBar = [
-    BoxShadow(
-      color: Color(0x1A000000),
-      blurRadius: 3,
-      offset: Offset(0, 1),
-    ),
-    BoxShadow(
-      color: Color(0x0F000000),
-      blurRadius: 2,
-      offset: Offset(0, 2),
-    ),
-  ];
-}
-```
-
-Avoid heavy single shadows. Use subtle layered shadows.
-
-## Theme Setup
-
-Create `lib/core/theme/app_theme.dart`:
-
-```dart
-import 'package:flutter/material.dart';
-import '../constants/app_colors.dart';
-import '../constants/app_radius.dart';
-
-class AppTheme {
-  AppTheme._();
-
-  static ThemeData light() {
-    return ThemeData(
-      useMaterial3: true,
-      scaffoldBackgroundColor: AppColors.neutralWarm,
-      colorScheme: ColorScheme.fromSeed(
-        seedColor: AppColors.greenAccent,
-        primary: AppColors.greenAccent,
-        secondary: AppColors.gold,
-        surface: AppColors.white,
-        error: AppColors.error,
-      ),
-      fontFamily: 'Inter',
-      textTheme: const TextTheme(
-        displayLarge: TextStyle(
-          fontSize: 36,
-          height: 1.15,
-          fontWeight: FontWeight.w600,
-          letterSpacing: -0.16,
-          color: AppColors.textBlack,
-        ),
-        headlineLarge: TextStyle(
-          fontSize: 28,
-          height: 1.2,
-          fontWeight: FontWeight.w600,
-          letterSpacing: -0.16,
-          color: AppColors.textBlack,
-        ),
-        headlineMedium: TextStyle(
-          fontSize: 24,
-          height: 1.3,
-          fontWeight: FontWeight.w600,
-          letterSpacing: -0.16,
-          color: AppColors.starbucksGreen,
-        ),
-        titleLarge: TextStyle(
-          fontSize: 20,
-          height: 1.35,
-          fontWeight: FontWeight.w600,
-          letterSpacing: -0.1,
-          color: AppColors.textBlack,
-        ),
-        bodyLarge: TextStyle(
-          fontSize: 16,
-          height: 1.5,
-          fontWeight: FontWeight.w400,
-          letterSpacing: -0.1,
-          color: AppColors.textBlack,
-        ),
-        bodyMedium: TextStyle(
-          fontSize: 14,
-          height: 1.5,
-          fontWeight: FontWeight.w400,
-          letterSpacing: -0.1,
-          color: AppColors.textBlackSoft,
-        ),
-        labelLarge: TextStyle(
-          fontSize: 16,
-          height: 1.2,
-          fontWeight: FontWeight.w600,
-          letterSpacing: -0.1,
-        ),
-      ),
-      elevatedButtonTheme: ElevatedButtonThemeData(
-        style: ElevatedButton.styleFrom(
-          backgroundColor: AppColors.greenAccent,
-          foregroundColor: AppColors.white,
-          elevation: 0,
-          minimumSize: const Size(44, 48),
-          padding: const EdgeInsets.symmetric(horizontal: 18, vertical: 14),
-          shape: RoundedRectangleBorder(
-            borderRadius: BorderRadius.circular(AppRadius.pill),
-          ),
-          textStyle: const TextStyle(
-            fontSize: 16,
-            fontWeight: FontWeight.w600,
-            letterSpacing: -0.1,
-          ),
-        ),
-      ),
-      outlinedButtonTheme: OutlinedButtonThemeData(
-        style: OutlinedButton.styleFrom(
-          foregroundColor: AppColors.greenAccent,
-          minimumSize: const Size(44, 48),
-          padding: const EdgeInsets.symmetric(horizontal: 18, vertical: 14),
-          side: const BorderSide(color: AppColors.greenAccent),
-          shape: RoundedRectangleBorder(
-            borderRadius: BorderRadius.circular(AppRadius.pill),
-          ),
-        ),
-      ),
-      inputDecorationTheme: InputDecorationTheme(
-        filled: true,
-        fillColor: AppColors.white,
-        contentPadding: const EdgeInsets.symmetric(horizontal: 16, vertical: 14),
-        border: OutlineInputBorder(
-          borderRadius: BorderRadius.circular(AppRadius.md),
-          borderSide: const BorderSide(color: Color(0xFFD6DBDE)),
-        ),
-        enabledBorder: OutlineInputBorder(
-          borderRadius: BorderRadius.circular(AppRadius.md),
-          borderSide: const BorderSide(color: Color(0xFFD6DBDE)),
-        ),
-        focusedBorder: OutlineInputBorder(
-          borderRadius: BorderRadius.circular(AppRadius.md),
-          borderSide: const BorderSide(color: AppColors.greenAccent, width: 1.5),
-        ),
-        errorBorder: OutlineInputBorder(
-          borderRadius: BorderRadius.circular(AppRadius.md),
-          borderSide: const BorderSide(color: AppColors.error),
-        ),
-      ),
-    );
-  }
-}
-```
-
-In `app.dart`:
-
-```dart
-import 'package:flutter/material.dart';
-import 'core/theme/app_theme.dart';
-
-class MyApp extends StatelessWidget {
-  const MyApp({super.key});
-
-  @override
-  Widget build(BuildContext context) {
-    return MaterialApp(
-      debugShowCheckedModeBanner: false,
-      title: 'Cafe App',
-      theme: AppTheme.light(),
-      home: const SizedBox(),
-    );
-  }
-}
-```
-
-## Fonts
-
-Do not use Starbucks proprietary fonts in production unless you have rights to them.
-
-Recommended mobile-safe substitutes:
-
-- `Inter` for clean premium UI
-- `Manrope` for warmer rounded UI
-- `Nunito Sans` for friendlier café feel
-- `Lora` only for special rewards/editorial headings
-- `Kalam` only for decorative handwritten loyalty/cup-name details
-
-Example `pubspec.yaml`:
-
-```yaml
-flutter:
-  fonts:
-    - family: Inter
-      fonts:
-        - asset: assets/fonts/Inter-Regular.ttf
-          weight: 400
-        - asset: assets/fonts/Inter-SemiBold.ttf
-          weight: 600
-        - asset: assets/fonts/Inter-Bold.ttf
-          weight: 700
-```
-
-## Core Widgets
-
-### AppButton
-
-Use one reusable button instead of styling buttons separately on every screen.
-
-```dart
-enum AppButtonVariant { filled, outlined, dark, inverted }
-```
+| Role | Size | Weight | Use |
+| --- | --- | --- | --- |
+| Display | 32-40 | 700 | Public menu merchant name or major page heading |
+| H1 | 28-32 | 700 | Main page title |
+| H2 | 22-24 | 650-700 | Section title |
+| H3 | 18-20 | 650 | Card or panel title |
+| Body | 15-16 | 400-500 | Menu descriptions and normal UI text |
+| Small | 13-14 | 400-500 | Helper text, metadata, secondary labels |
+| Label | 13-15 | 600 | Buttons, tabs, category labels |
 
 Rules:
 
-- Filled: green background, white text.
-- Outlined: green border, green text.
-- Dark: black background, white text.
-- Inverted: white background, green text, used on dark green surfaces.
-- All variants use pill radius.
-- All variants should animate slightly smaller on tap, around `scale: 0.95`.
-- Minimum height should be `48px` on mobile.
+- Do not use negative letter spacing as a default.
+- Do not scale font size directly with viewport width.
+- Preserve readable line height for Arabic and mixed English/Arabic text.
+- Prices must remain legible and aligned with the chosen layout direction.
 
-### AppCard
+## Spacing, Radius, and Shadows
 
-Use for product tiles, loyalty cards, settings cards, and admin panels.
+Spacing tokens:
 
-Visual rules:
+| Token | Value | Use |
+| --- | --- | --- |
+| `xxs` | 4 | Tight icon/text gaps |
+| `xs` | 8 | Compact control gaps |
+| `sm` | 12 | Small card and row gaps |
+| `md` | 16 | Standard screen and card padding |
+| `lg` | 24 | Section padding and panel gaps |
+| `xl` | 32 | Large section gaps |
+| `xxl` | 48 | Major page rhythm |
 
-- Background: white
-- Radius: 12px
-- Shadow: `AppShadows.card`
-- Padding: 16px or 24px
-- Place cards on warm cream background
+Radius tokens:
 
-### FloatingCartButton
+| Token | Value | Use |
+| --- | --- | --- |
+| `sm` | 6 | Small controls and tags |
+| `md` | 8 | Admin cards, inputs, compact panels |
+| `lg` | 12 | Public menu item cards and loyalty cards |
+| `xl` | 18 | Featured customer-facing panels |
+| `pill` | 999 | Pills, chips, segmented controls |
 
-Mobile replacement for the web floating CTA.
+Shadow rules:
 
-Rules:
+- Public menu item cards may use soft, shallow shadows when the template calls for it.
+- Admin dashboard surfaces should usually rely on borders and spacing, not heavy shadows.
+- Floating mobile controls may use a small shadow for separation.
+- Avoid dramatic shadows that make the product feel like a landing page instead of a tool.
 
-- Size: `56px`
-- Shape: circle
-- Background: `greenAccent`
-- Icon: white shopping bag/cart
-- Position: bottom right, above safe area and bottom nav
-- Shadow: `AppShadows.floating`
-- Optional badge for item count
-- Taps navigate to cart
+## Public Menu Template Engine
 
-### ProductCard
+The public menu must use a registry-based template system. A selected template changes presentation, theme tokens, layout behavior, and component styling without rewriting menu data.
 
-Used in menu grids/lists.
+Template selection belongs to business appearance settings, not to menu item content. Menu data remains compatible across templates.
 
-Required content:
+Template registry requirements:
 
-- Product image
-- Product name
-- Short description or category
-- Price
-- Add button
-- Optional loyalty points badge
+- Each template has a stable `id`.
+- Each template has admin-facing metadata for display and preview.
+- The public menu renderer resolves the selected template through a central registry.
+- Existing businesses receive a safe default template.
+- Invalid, missing, or disabled template IDs fall back safely.
+- Future templates can be added by Waflo SaaS owners without rewriting the menu data model.
+- Template rendering must preserve existing public menu URLs.
 
-Mobile layout:
-
-- In list mode: image left, text middle, CTA right/bottom.
-- In grid mode: image top, content bottom.
-- Keep product images clean and photo-first.
-- Avoid too much text inside the card.
-
-### ProductDetailsScreen
-
-Recommended sections:
-
-1. Dark green product hero
-2. Product image
-3. Product name
-4. Price
-5. Rewards cost pill if applicable
-6. Size selector
-7. Add-ins/customization selectors
-8. Quantity stepper
-9. Add to cart button
-10. Nutrition/ingredients accordion
-11. AI recommendation card, if enabled
-
-### AI Recommendation Card
-
-For the feature that suggests items with a drink, show the recommendation as a card.
-
-Required card content:
-
-- Suggested item image
-- Item name
-- Price
-- Short reason, for example: `Pairs well with Turkish coffee`
-- Add button
-
-Visual rules:
-
-- White card on warm cream background
-- 12px radius
-- Soft shadow
-- Product image should preserve the real product cutout/shadow style
-- Do not show AI text as a chat bubble unless the screen is specifically an assistant screen
-
-Example card copy:
+Template definition shape:
 
 ```text
-Recommended with Turkish Coffee
-Date cookie
-2,500 IQD
-A sweet bite that balances the strong coffee flavor.
+id
+displayName
+description
+bestFor
+theme tokens
+layout variant
+item card style
+category navigation style
+loyalty block style
+empty/loading/error state style
+preview metadata or placeholder
 ```
 
-## Navigation for Flutter Mobile
+### Initial Template: `waflo-warm`
 
-Use mobile navigation patterns instead of web navigation.
+| Field | Value |
+| --- | --- |
+| `id` | `waflo-warm` |
+| `displayName` | Waflo Warm |
+| `description` | Warm coral, cream, and green public menu style for most restaurants and cafes. |
+| `bestFor` | General restaurants, cafes, bakeries, casual dining |
+| Theme tokens | Coral primary, cream page background, white cards, green loyalty progress, soft cream border |
+| Layout variant | Mobile-first category sections with featured merchant header |
+| Item card style | Rounded food cards with image, name, description, price, and optional loyalty marker |
+| Category navigation style | Sticky horizontal chips or tabs with coral active state |
+| Loyalty block style | Warm cream or white panel with coral join CTA and green progress state |
+| Empty/loading/error state style | Friendly cream states, skeleton cards, concise retry action |
+| Preview metadata | Placeholder preview showing cream background, coral CTA, rounded menu cards |
 
-Recommended customer app navigation:
+### Initial Template: `coffeehouse-premium`
 
-- Home
-- Menu
-- Rewards
-- Orders
-- Profile
+| Field | Value |
+| --- | --- |
+| `id` | `coffeehouse-premium` |
+| `displayName` | Coffeehouse Premium |
+| `description` | Dark green, gold, and cream style for premium cafe and dessert menus. |
+| `bestFor` | Specialty coffee, dessert shops, premium bakeries, boutique cafes |
+| Theme tokens | Dark green primary surfaces, cream background, gold reward accents, white cards |
+| Layout variant | Editorial merchant header with grouped menu sections |
+| Item card style | Polished cards or rows with strong imagery and restrained gold accents |
+| Category navigation style | Dark green active tabs or compact section jump links |
+| Loyalty block style | Premium reward card with gold milestone details and green progress |
+| Empty/loading/error state style | Quiet premium empty states, low-motion loading, clear retry |
+| Preview metadata | Placeholder preview showing dark header, cream body, gold reward highlight |
 
-Recommended Flutter components:
+### Initial Template: `street-bites`
 
-- `NavigationBar` for Material 3 bottom navigation
-- `ShellRoute` if using `go_router`
-- `FloatingCartButton` above bottom nav
-- `SliverAppBar` for scrollable product/menu pages
-- Modal bottom sheets for filters, size selection, branch selector, and customization
+| Field | Value |
+| --- | --- |
+| `id` | `street-bites` |
+| `displayName` | Street Bites |
+| `description` | Bold coral, orange, and red-accented style for energetic fast-food and street-food menus. |
+| `bestFor` | Burgers, shawarma, fried chicken, food trucks, street-food brands |
+| Theme tokens | Coral primary, energetic warm accents, white cards, red only for errors or strong brand accents |
+| Layout variant | Compact high-energy menu with quick category switching |
+| Item card style | Bold item rows or cards with prominent price and image thumbnail |
+| Category navigation style | Sticky punchy tabs with strong active indicator |
+| Loyalty block style | Direct earn/redeem panel with coral CTA and green success state |
+| Empty/loading/error state style | Simple high-contrast states, fast skeleton loading, direct retry |
+| Preview metadata | Placeholder preview showing bold category tabs and prominent prices |
 
-Avoid desktop-style top nav links like `Menu · Rewards · Gift Cards` on mobile.
+### Initial Template: `minimal-modern`
 
-## Screen Layout Rules
+| Field | Value |
+| --- | --- |
+| `id` | `minimal-modern` |
+| `displayName` | Minimal Modern |
+| `description` | Clean white and neutral style with subtle accents for premium or simple restaurants. |
+| `bestFor` | Fine casual restaurants, modern cafes, simple menus, premium dining |
+| Theme tokens | White background, neutral borders, dark text, subtle coral primary action, green success |
+| Layout variant | Spacious list layout with minimal decoration |
+| Item card style | Border-first cards or rows with restrained images and clear price hierarchy |
+| Category navigation style | Underlined tabs or simple segmented control |
+| Loyalty block style | Quiet inline loyalty panel with subtle coral CTA and green progress |
+| Empty/loading/error state style | Minimal empty states, neutral skeletons, unobtrusive errors |
+| Preview metadata | Placeholder preview showing clean white menu with subtle coral action |
 
-### Home Screen
+## Owner/Admin Template Behavior
 
-Use this rhythm:
+Owner/admin behavior:
 
-1. Warm cream background
-2. Header with greeting and branch/store selector
-3. Dark green feature card for main promotion
-4. Horizontal category chips
-5. Recommended products
-6. Popular products
-7. Rewards summary card
+- Owner/admin can select a public menu template from appearance settings.
+- The selected template applies to the customer public menu.
+- Existing businesses get the safe default template, `waflo-warm`.
+- Invalid template IDs fall back safely to `waflo-warm`.
+- Staff without the required permission cannot change the template.
+- Future templates can be added by Waflo SaaS owners without rewriting menu data.
+- Template selection should not duplicate menu items, categories, prices, images, or loyalty data.
 
-### Menu Screen
+Admin template picker expectations:
+
+- Show template display name, description, best-for metadata, and preview.
+- Make current selection clear.
+- Confirm unsaved changes before navigation if needed.
+- Provide a safe fallback when a preview image is missing.
+- Avoid exposing internal registry implementation details to normal business users.
+
+## RTL and Arabic Rules
+
+Waflo must support Arabic and RTL layouts across public menu, admin dashboard where applicable, and Flutter staff/business app.
 
 Rules:
 
-- Sticky or pinned category selector near the top
-- Search field at the top
-- Product list grouped by category
-- Floating cart button always visible when cart has items
-- Use shimmer/skeleton loading for images
+- Layout direction must flip for RTL languages.
+- Category navigation must scroll and align correctly in RTL.
+- Prices, numbers, and currency formatting must follow locale expectations.
+- Item names and descriptions may be Arabic, English, or mixed.
+- Avoid hardcoded English strings in reusable UI.
+- Icons that imply direction must mirror when appropriate.
+- Do not mirror official brand logos, QR codes, barcodes, or wallet badges.
+- Text containers must allow Arabic line height without clipping.
+- Search and form inputs must handle Arabic text naturally.
 
-### Product Details
-
-Rules:
-
-- Hero can be dark green for premium feel
-- Product photo should be large and centered
-- Customization options should appear as clear mobile rows
-- The final `Add to Cart` button should be sticky at the bottom if the page is long
-
-### Rewards Screen
-
-Rules:
-
-- Use dark green and gold carefully
-- Gold means reward status, stars, level, premium badge, or loyalty ceremony
-- Show points/stars clearly at the top
-- Use cards for reward levels
-- Show progress with a simple progress bar or circular progress indicator
-
-### Admin Screens
-
-Admin screens can use the same visual system, but should prioritize speed and clarity.
-
-Rules:
-
-- Use white cards over cream background
-- Use green CTA for save/publish actions
-- Use red only for destructive actions
-- Use bottom sheets for quick edit actions
-- Use clear empty states for missing menu items
-- QR code screen should have a large preview card and share/download buttons
-
-## Mobile Responsive Rules
-
-Flutter does not use CSS breakpoints, so use constraints and device width.
-
-Suggested helper:
-
-```dart
-class Responsive {
-  static bool isCompact(BuildContext context) => MediaQuery.sizeOf(context).width < 600;
-  static bool isMedium(BuildContext context) {
-    final width = MediaQuery.sizeOf(context).width;
-    return width >= 600 && width < 1024;
-  }
-  static bool isExpanded(BuildContext context) => MediaQuery.sizeOf(context).width >= 1024;
-}
-```
-
-Rules:
-
-| Width | Behavior |
-|---|---|
-| `< 360px` | Single column, reduce horizontal padding to 12px if needed |
-| `360–599px` | Standard phone layout, 16px padding |
-| `600–1023px` | Large phone/tablet, 24px padding, optional 2-column product grid |
-| `1024px+` | Tablet/desktop layout, max content width, side panels possible |
-
-Use `SafeArea` on screens with bottom buttons, floating buttons, or notches.
-
-## Interaction Rules
-
-- Button active feedback: scale to `0.95`.
-- Image fade-in: use `FadeInImage`, `CachedNetworkImage`, or `Image` with animated opacity.
-- Accordions: animate around `300ms`.
-- Bottom sheets: rounded top corners with 20px radius.
-- Loading: use skeleton cards for product lists, not only spinners.
-- Empty states: use short friendly text and one clear CTA.
-- Errors: show concise message plus retry action.
-
-## Assets
-
-Recommended asset structure:
-
-```text
-assets/
-  fonts/
-  images/
-    products/
-    categories/
-    rewards/
-    onboarding/
-  icons/
-  lottie/
-```
-
-Image rules:
-
-- Product images should use clean backgrounds or transparent cutouts.
-- Preserve natural product shadows when available.
-- Do not mix many illustration styles in one screen.
-- Category icons should be simple and consistent.
-- Rewards imagery can feel more ceremonial and premium.
-
-`pubspec.yaml`:
-
-```yaml
-flutter:
-  assets:
-    - assets/images/
-    - assets/images/menu-items/
-    - assets/images/categories/
-    - assets/images/rewards/
-    - assets/icons/
-```
-
-## State Management
-
-Any of these can work:
-
-- Riverpod for scalable apps
-- Bloc/Cubit for strict enterprise style
-- Provider for smaller apps
-
-Recommended for this app: Riverpod.
-
-Suggested feature state:
-
-- Auth state
-- Current restaurant/branch
-- Menu categories
-- Products
-- Cart
-- Rewards profile
-- Orders
-- Admin draft menu edits
-- Upload progress
-
-## API Integration Notes
-
-Recommended backend contracts:
-
-```text
-GET    /businesses/me
-GET    /businesses/:id/categories
-GET    /businesses/:id/items
-GET    /items/:id
-POST   /cart/price-preview
-POST   /orders
-GET    /orders
-GET    /loyalty/profile
-POST   /loyalty/cards/generate
-POST   /ai/recommendations
-POST   /businesses/:id/items
-PATCH  /items/:id
-DELETE /items/:id
-POST   /admin/assets/upload
-POST   /admin/qr-code/generate
-POST   /admin/domain/connect
-```
-
-The AI recommendations endpoint should return structured data, not just text:
-
-```json
-{
-  "title": "Recommended with Turkish Coffee",
-  "items": [
-    {
-      "id": "date-cookie",
-      "name": "Date Cookie",
-      "price": 2500,
-      "currency": "IQD",
-      "imageUrl": "https://example.com/date-cookie.png",
-      "reason": "A sweet bite that balances the strong coffee flavor."
-    }
-  ]
-}
-```
-
-## Accessibility
+## Accessibility Rules
 
 Minimum requirements:
 
-- Touch targets at least 44px high.
-- Text contrast must remain readable on green and cream surfaces.
-- Do not rely on color alone for errors.
-- Product images need semantic labels where useful.
-- Buttons need clear labels for screen readers.
-- Support dynamic text sizes without breaking cards.
-- Checkout and admin forms must be keyboard-friendly.
+- Text contrast must be readable on coral, green, cream, and white surfaces.
+- Do not rely on color alone for errors, success, or loyalty state.
+- Touch targets should be at least 44px high on mobile surfaces.
+- Public menu category controls must be reachable by keyboard and screen readers.
+- Buttons need clear accessible labels.
+- Product images need useful alt text where the image conveys content.
+- Loading states should communicate progress without trapping focus.
+- Error states need concise messages and a retry path where possible.
+- Dynamic text size must not break cards, buttons, scanner controls, or loyalty blocks.
+- QR and scanner surfaces must preserve high contrast.
 
-## Localization and RTL
+## Implementation Boundaries
 
-For Arabic/Kurdish/Iraqi market support:
+This document is design and product source-of-truth only.
 
-- Enable localization from the start.
-- Support RTL layout.
-- Keep prices formatted by locale.
-- Avoid hardcoded English strings in widgets.
-- Product names can be bilingual.
-- Admin fields should support Arabic product names and descriptions.
+Do not implement in this step:
 
-Example:
+- Ordering
+- Cart
+- Checkout
+- Order placement
+- Order history
+- Product customization checkout flow
+- Backend behavior changes
+- OpenAPI changes
+- Prisma schema changes
+- Apple Wallet signing changes
+- Google Wallet signing changes
+- APNs changes
+- Recovery or transfer logic changes
+- Staff scanner logic changes
 
-```dart
-return MaterialApp(
-  supportedLocales: const [
-    Locale('en'),
-    Locale('ar'),
-    Locale('ku'),
-  ],
-  locale: const Locale('ar'),
-  builder: (context, child) {
-    return Directionality(
-      textDirection: Directionality.of(context),
-      child: child!,
-    );
-  },
-);
+Future implementation should follow these boundaries:
+
+- Do not rewrite the app for the template system.
+- Use additive migration-based changes later if schema support is needed.
+- Keep existing public menu URLs working.
+- Keep existing menu data compatible with every template.
+- Do not print QR codes, tokens, PII, wallet payloads, or sensitive customer identifiers in logs.
+- Keep wallet signing and push notification infrastructure separate from visual template work.
+
+## Recommended Future Implementation Plan
+
+### Phase 1
+
+- Replace source-of-truth docs.
+- Audit current UI, theme, and template hardcoding.
+- Identify current ordering/cart assumptions in UI copy or navigation.
+- Document existing public menu URL and data compatibility constraints.
+
+### Phase 2
+
+- Define centralized design tokens.
+- Add public menu template registry.
+- Add default template fallback.
+- Keep public rendering compatible with existing menu data.
+
+### Phase 3
+
+- Add admin template picker.
+- Render public menu through selected template.
+- Add preview metadata and safe missing-preview behavior.
+- Enforce permission checks for template changes.
+
+### Phase 4
+
+- Align Flutter staff/business app theme with Waflo tokens.
+- QA public menu templates on mobile, desktop, and RTL.
+- Verify accessibility contrast, focus, keyboard, and screen-reader basics.
+- Confirm scanner readability and loyalty/wallet visual consistency.
+
+## Verification for Sprint 12B Step 0
+
+Required verification:
+
+- Documentation updated.
+- No backend code changed.
+- No Prisma changed.
+- No OpenAPI changed.
+- No wallet signing or APNs changed.
+- `git diff --check` passes.
+
+Expected branch:
+
+```text
+codex/sprint-12b-replace-design-source-of-truth
 ```
-
-## Performance Rules
-
-- Use cached network images.
-- Compress product images before upload.
-- Paginate long product lists.
-- Avoid rebuilding entire menu pages on cart updates.
-- Use const widgets where possible.
-- Keep animations light.
-- Preload hero/product images when navigating to product details.
-- Use isolated state providers per feature.
-
-## Development Commands
-
-```bash
-flutter pub get
-flutter analyze
-flutter test
-flutter run
-flutter build apk --release
-flutter build appbundle --release
-flutter build ios --release
-```
-
-## Quality Checklist
-
-Before release:
-
-- [ ] App theme uses centralized colors, spacing, radius, shadows, and typography.
-- [ ] No screen hardcodes random greens, random radius values, or inconsistent button styles.
-- [ ] All CTAs use pill radius.
-- [ ] Floating cart/order button works and respects safe area.
-- [ ] Product list works on small Android screens.
-- [ ] Product detail page has sticky/visible add-to-cart behavior.
-- [ ] Rewards screen uses gold only for loyalty moments.
-- [ ] Arabic/RTL layout tested.
-- [ ] Dynamic text size tested.
-- [ ] Empty, loading, and error states implemented.
-- [ ] Images are cached and optimized.
-- [ ] Forms show validation errors clearly.
-- [ ] Admin screens can create/edit/delete products safely.
-- [ ] QR code generation/share flow tested.
-- [ ] App passes `flutter analyze`.
-- [ ] App passes unit/widget tests.
-- [ ] Release build tested on a real Android device.
-
-## Do and Don't
-
-### Do
-
-- Use cream surfaces as the default app background.
-- Use dark green for premium sections.
-- Use bright green for primary CTAs.
-- Keep buttons pill-shaped.
-- Keep cards softly elevated.
-- Use large product photography.
-- Use bottom navigation for the mobile app.
-- Use bottom sheets for mobile choices.
-- Use structured AI recommendation cards.
-
-### Don't
-
-- Do not copy desktop/web navigation into the app.
-- Do not use pure white as the full app background everywhere.
-- Do not use gold for normal buttons.
-- Do not use square buttons.
-- Do not use heavy shadows.
-- Do not make product details look like a web page.
-- Do not place too many actions in the app bar.
-- Do not return AI suggestions as plain paragraphs when they should be products.
-
-## Implementation Priority
-
-Build in this order:
-
-1. Theme tokens
-2. Shared widgets
-3. Navigation shell
-4. Home screen
-5. Menu/product list
-6. Product details and customization
-7. Cart
-8. Rewards/loyalty
-9. Admin menu management
-10. QR/domain tools
-11. AI recommendation cards
-12. Testing and release hardening
-
-## Notes for Designers and Developers
-
-The original inspiration was a web design system with desktop navigation, web hero sections, gift-card grids, rewards pages, product pages, and nutrition tables. In Flutter, the same visual identity should be translated into mobile-native screens:
-
-- Desktop top nav becomes bottom navigation.
-- Web hero sections become mobile feature cards or sliver headers.
-- Web floating order CTA becomes a floating cart button.
-- Large web grids become horizontal lists or 1–2 column mobile grids.
-- Product detail web sections become a scrollable mobile product page with sticky add-to-cart.
-- Web forms become mobile-friendly text fields and bottom-sheet selectors.
-
-The design identity should remain warm, green, premium, rounded, and café-like, but the implementation must feel like a real Flutter mobile app.
