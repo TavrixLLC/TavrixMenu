@@ -1,15 +1,22 @@
 import type { PublicMenuCategorySummary, PublicMenuItem } from './public-menu';
 
-export function getCategoryName(category: PublicMenuCategorySummary) {
-  return category.nameEn || category.nameAr || 'Untitled category';
+export function isRtlLanguage(language: string | null | undefined) {
+  const normalized = language?.toLowerCase() ?? '';
+  return normalized.startsWith('ar') || normalized.startsWith('ku') || normalized.startsWith('fa') || normalized.startsWith('he');
 }
 
-export function getItemName(item: PublicMenuItem) {
-  return item.nameEn || item.nameAr || 'Unnamed item';
+export function getCategoryName(category: PublicMenuCategorySummary, language?: string | null) {
+  return isRtlLanguage(language)
+    ? category.nameAr || category.nameEn || 'Untitled category'
+    : category.nameEn || category.nameAr || 'Untitled category';
 }
 
-export function getItemDescription(item: PublicMenuItem) {
-  return item.descriptionEn || item.descriptionAr;
+export function getItemName(item: PublicMenuItem, language?: string | null) {
+  return isRtlLanguage(language) ? item.nameAr || item.nameEn || 'Unnamed item' : item.nameEn || item.nameAr || 'Unnamed item';
+}
+
+export function getItemDescription(item: PublicMenuItem, language?: string | null) {
+  return isRtlLanguage(language) ? item.descriptionAr || item.descriptionEn : item.descriptionEn || item.descriptionAr;
 }
 
 export function formatPrice(price: string, currency: string) {

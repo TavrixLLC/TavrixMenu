@@ -17,7 +17,9 @@ import { BusinessAccessService } from './business-access.service';
 import { CreateBusinessDto } from './dto/create-business.dto';
 import { CreateMemberDto } from './dto/create-member.dto';
 import { UpdateBusinessDto } from './dto/update-business.dto';
+import { UpdateMenuAppearanceDto } from './dto/update-menu-appearance.dto';
 import { UpdateMemberDto } from './dto/update-member.dto';
+import { resolveMenuTemplateId } from './menu-appearance.constants';
 
 type DashboardSummaryRecommendedNextStep =
   | 'ADD_CATEGORY'
@@ -42,6 +44,8 @@ type AppContextBusiness = Pick<
   | 'language'
   | 'logoUrl'
   | 'coverUrl'
+  | 'menuTemplateId'
+  | 'menuThemeOverrides'
 >;
 
 @Injectable()
@@ -169,7 +173,9 @@ export class BusinessesService {
         currency: true,
         language: true,
         logoUrl: true,
-        coverUrl: true
+        coverUrl: true,
+        menuTemplateId: true,
+        menuThemeOverrides: true
       }
     });
 
@@ -202,7 +208,9 @@ export class BusinessesService {
         currency: true,
         language: true,
         logoUrl: true,
-        coverUrl: true
+        coverUrl: true,
+        menuTemplateId: true,
+        menuThemeOverrides: true
       }
     });
 
@@ -278,6 +286,7 @@ export class BusinessesService {
         role: membership.role,
         permissions: this.businessAccessService.getPermissions(membership.role)
       },
+      menuAppearance: this.mapMenuAppearance(business),
       counts: {
         activeCategories,
         inactiveCategories,
@@ -334,6 +343,67 @@ export class BusinessesService {
       publicMenuUrl: publicMenu.url,
       qrPayload: publicMenu.qrPayload
     };
+  }
+
+  async getMenuAppearance(
+    currentUser: AuthenticatedUser,
+    businessId: string
+  ) {
+    await this.businessAccessService.assertRole(
+      businessId,
+      currentUser.id,
+      this.businessAccessService.appContextRoles
+    );
+
+    const business = await this.prisma.business.findUnique({
+      where: {
+        id: businessId
+      },
+      select: {
+        id: true,
+        menuTemplateId: true,
+        menuThemeOverrides: true
+      }
+    });
+
+    if (!business) {
+      throw new NotFoundException('Business not found');
+    }
+
+    return this.mapMenuAppearance(business);
+  }
+
+  async updateMenuAppearance(
+    currentUser: AuthenticatedUser,
+    businessId: string,
+    dto: UpdateMenuAppearanceDto
+  ) {
+    await this.businessAccessService.assertOwner(businessId, currentUser.id);
+
+    const business = await this.prisma.business.update({
+      where: {
+        id: businessId
+      },
+      data: {
+        menuTemplateId:
+          dto.menuTemplateId === undefined
+            ? undefined
+            : resolveMenuTemplateId(dto.menuTemplateId),
+        menuThemeOverrides:
+          dto.menuThemeOverrides === undefined
+            ? undefined
+            : dto.menuThemeOverrides === null
+              ? Prisma.JsonNull
+              : (dto.menuThemeOverrides as Prisma.InputJsonValue)
+      },
+      select: {
+        id: true,
+        menuTemplateId: true,
+        menuThemeOverrides: true
+      }
+    });
+
+    return this.mapMenuAppearance(business);
   }
 
   async getMembers(currentUser: AuthenticatedUser, businessId: string) {
@@ -593,7 +663,9 @@ export class BusinessesService {
       currency: business.currency,
       language: business.language,
       city: business.city,
-      status: business.status
+      status: business.status,
+      menuTemplateId: resolveMenuTemplateId(business.menuTemplateId),
+      menuThemeOverrides: business.menuThemeOverrides ?? null
     };
   }
 
@@ -627,11 +699,26 @@ export class BusinessesService {
         currency: business.currency,
         language: business.language,
         logoUrl: business.logoUrl,
-        coverUrl: business.coverUrl
+        coverUrl: business.coverUrl,
+        menuTemplateId: resolveMenuTemplateId(business.menuTemplateId),
+        menuThemeOverrides: business.menuThemeOverrides ?? null
       },
       currentMembership: this.mapCurrentMembership(membership),
       permissions: this.businessAccessService.getPermissions(membership.role),
+      menuAppearance: this.mapMenuAppearance(business),
       publicMenu: this.mapPublicMenu(business.slug)
+    };
+  }
+
+  private mapMenuAppearance(business: {
+    id: string;
+    menuTemplateId: string | null;
+    menuThemeOverrides: Prisma.JsonValue | null;
+  }) {
+    return {
+      businessId: business.id,
+      menuTemplateId: resolveMenuTemplateId(business.menuTemplateId),
+      menuThemeOverrides: business.menuThemeOverrides ?? null
     };
   }
 

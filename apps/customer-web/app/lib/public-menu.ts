@@ -1,4 +1,5 @@
 const DEFAULT_API_BASE_URL = 'http://localhost:3000';
+const DEFAULT_MENU_TEMPLATE_ID = 'waflo-warm';
 
 export type PublicMenuBusiness = {
   id: string;
@@ -10,6 +11,8 @@ export type PublicMenuBusiness = {
   currency: string;
   language: string | null;
   city: string | null;
+  menuTemplateId: string;
+  menuThemeOverrides: Record<string, unknown> | null;
 };
 
 export type PublicMenuItem = {
@@ -103,6 +106,10 @@ function readNullableString(value: unknown): string | null {
   return typeof value === 'string' ? value : null;
 }
 
+function readNullableRecord(value: unknown): Record<string, unknown> | null {
+  return typeof value === 'object' && value !== null && !Array.isArray(value) ? (value as Record<string, unknown>) : null;
+}
+
 function readNumber(value: unknown): number {
   return typeof value === 'number' && Number.isFinite(value) ? value : 0;
 }
@@ -135,7 +142,9 @@ function parsePublicMenuBusiness(value: unknown): PublicMenuBusiness | null {
     coverUrl: readNullableString(record.coverUrl),
     currency: readString(record.currency) || '',
     language: readNullableString(record.language),
-    city: readNullableString(record.city)
+    city: readNullableString(record.city),
+    menuTemplateId: readString(record.menuTemplateId) || DEFAULT_MENU_TEMPLATE_ID,
+    menuThemeOverrides: readNullableRecord(record.menuThemeOverrides)
   };
 }
 

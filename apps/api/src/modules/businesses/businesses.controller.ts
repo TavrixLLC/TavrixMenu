@@ -21,6 +21,7 @@ import { BusinessesService } from './businesses.service';
 import { CreateBusinessDto } from './dto/create-business.dto';
 import { CreateMemberDto } from './dto/create-member.dto';
 import { UpdateBusinessDto } from './dto/update-business.dto';
+import { UpdateMenuAppearanceDto } from './dto/update-menu-appearance.dto';
 import { UpdateMemberDto } from './dto/update-member.dto';
 
 @ApiTags('businesses')
@@ -74,7 +75,8 @@ export class BusinessesController {
             canManageMenu: true,
             canManageMembers: true,
             canViewMembers: true,
-            canViewPublicLink: true
+            canViewPublicLink: true,
+            canManageAppearance: true
           },
           publicMenu: {
             slug: 'tavrix-cafe',
@@ -144,7 +146,8 @@ export class BusinessesController {
           canManageMenu: true,
           canManageMembers: true,
           canViewMembers: true,
-          canViewPublicLink: true
+          canViewPublicLink: true,
+          canManageAppearance: true
         },
         publicMenu: {
           slug: 'tavrix-cafe',
@@ -186,7 +189,8 @@ export class BusinessesController {
             canManageMenu: true,
             canManageMembers: true,
             canViewMembers: true,
-            canViewPublicLink: true
+            canViewPublicLink: true,
+            canManageAppearance: true
           }
         },
         counts: {
@@ -237,6 +241,49 @@ export class BusinessesController {
     @Param('id') businessId: string
   ) {
     return this.businessesService.getPublicLink(currentUser, businessId);
+  }
+
+  @Get(':id/menu-appearance')
+  @ApiOkResponse({
+    description:
+      'Public menu appearance settings for a business. OWNER, MANAGER, and STAFF can view when actively assigned.',
+    schema: {
+      example: {
+        businessId: 'bus_123',
+        menuTemplateId: 'waflo-warm',
+        menuThemeOverrides: null
+      }
+    }
+  })
+  getMenuAppearance(
+    @CurrentUser() currentUser: AuthenticatedUser,
+    @Param('id') businessId: string
+  ) {
+    return this.businessesService.getMenuAppearance(currentUser, businessId);
+  }
+
+  @Patch(':id/menu-appearance')
+  @ApiOkResponse({
+    description:
+      'Public menu appearance updated. OWNER only; STAFF cannot change templates.',
+    schema: {
+      example: {
+        businessId: 'bus_123',
+        menuTemplateId: 'coffeehouse-premium',
+        menuThemeOverrides: null
+      }
+    }
+  })
+  updateMenuAppearance(
+    @CurrentUser() currentUser: AuthenticatedUser,
+    @Param('id') businessId: string,
+    @Body() dto: UpdateMenuAppearanceDto
+  ) {
+    return this.businessesService.updateMenuAppearance(
+      currentUser,
+      businessId,
+      dto
+    );
   }
 
   @Get(':id/members')

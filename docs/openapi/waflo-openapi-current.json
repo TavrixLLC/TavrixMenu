@@ -154,7 +154,8 @@
                         "canManageMenu": true,
                         "canManageMembers": true,
                         "canViewMembers": true,
-                        "canViewPublicLink": true
+                        "canViewPublicLink": true,
+                        "canManageAppearance": true
                       },
                       "publicMenu": {
                         "slug": "tavrix-cafe",
@@ -260,7 +261,8 @@
                       "canManageMenu": true,
                       "canManageMembers": true,
                       "canViewMembers": true,
-                      "canViewPublicLink": true
+                      "canViewPublicLink": true,
+                      "canManageAppearance": true
                     },
                     "publicMenu": {
                       "slug": "tavrix-cafe",
@@ -322,7 +324,8 @@
                         "canManageMenu": true,
                         "canManageMembers": true,
                         "canViewMembers": true,
-                        "canViewPublicLink": true
+                        "canViewPublicLink": true,
+                        "canManageAppearance": true
                       }
                     },
                     "counts": {
@@ -386,6 +389,92 @@
                     "publicMenuPath": "/m/tavrix-cafe",
                     "publicMenuUrl": "http://localhost:3001/m/tavrix-cafe",
                     "qrPayload": "http://localhost:3001/m/tavrix-cafe"
+                  }
+                }
+              }
+            }
+          }
+        },
+        "security": [
+          {
+            "bearer": []
+          }
+        ],
+        "tags": [
+          "businesses"
+        ]
+      }
+    },
+    "/businesses/{id}/menu-appearance": {
+      "get": {
+        "operationId": "BusinessesController_getMenuAppearance",
+        "parameters": [
+          {
+            "name": "id",
+            "required": true,
+            "in": "path",
+            "schema": {
+              "type": "string"
+            }
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": "Public menu appearance settings for a business. OWNER, MANAGER, and STAFF can view when actively assigned.",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "example": {
+                    "businessId": "bus_123",
+                    "menuTemplateId": "waflo-warm",
+                    "menuThemeOverrides": null
+                  }
+                }
+              }
+            }
+          }
+        },
+        "security": [
+          {
+            "bearer": []
+          }
+        ],
+        "tags": [
+          "businesses"
+        ]
+      },
+      "patch": {
+        "operationId": "BusinessesController_updateMenuAppearance",
+        "parameters": [
+          {
+            "name": "id",
+            "required": true,
+            "in": "path",
+            "schema": {
+              "type": "string"
+            }
+          }
+        ],
+        "requestBody": {
+          "required": true,
+          "content": {
+            "application/json": {
+              "schema": {
+                "$ref": "#/components/schemas/UpdateMenuAppearanceDto"
+              }
+            }
+          }
+        },
+        "responses": {
+          "200": {
+            "description": "Public menu appearance updated. OWNER only; STAFF cannot change templates.",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "example": {
+                    "businessId": "bus_123",
+                    "menuTemplateId": "coffeehouse-premium",
+                    "menuThemeOverrides": null
                   }
                 }
               }
@@ -1074,7 +1163,9 @@
                       "coverUrl": null,
                       "currency": "IQD",
                       "language": "ar",
-                      "city": "Baghdad"
+                      "city": "Baghdad",
+                      "menuTemplateId": "waflo-warm",
+                      "menuThemeOverrides": null
                     },
                     "categories": [
                       {
@@ -2993,6 +3084,27 @@
           "name",
           "type"
         ]
+      },
+      "UpdateMenuAppearanceDto": {
+        "type": "object",
+        "properties": {
+          "menuTemplateId": {
+            "type": "string",
+            "enum": [
+              "waflo-warm",
+              "coffeehouse-premium",
+              "street-bites",
+              "minimal-modern"
+            ],
+            "example": "waflo-warm",
+            "description": "Public menu template ID selected for this business."
+          },
+          "menuThemeOverrides": {
+            "type": "object",
+            "nullable": true,
+            "description": "Reserved for future merchant theme overrides. Public rendering must remain safe when this is null."
+          }
+        }
       },
       "CreateMemberDto": {
         "type": "object",

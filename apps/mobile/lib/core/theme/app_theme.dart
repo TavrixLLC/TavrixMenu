@@ -9,9 +9,9 @@ class AppTheme {
   static ThemeData get light {
     return ThemeData(
       colorScheme: ColorScheme.fromSeed(
-        seedColor: AppColors.brandGreen,
-        primary: AppColors.greenAccent,
-        secondary: AppColors.houseGreen,
+        seedColor: AppColors.primaryCoral,
+        primary: AppColors.primaryCoral,
+        secondary: AppColors.freshGreen,
         error: AppColors.error,
         surface: AppColors.white,
       ),
@@ -32,7 +32,7 @@ class AppTheme {
       filledButtonTheme: FilledButtonThemeData(
         style: FilledButton.styleFrom(
           minimumSize: const Size(44, 44),
-          backgroundColor: AppColors.greenAccent,
+          backgroundColor: AppColors.primaryCoral,
           foregroundColor: AppColors.white,
           shape: const StadiumBorder(),
           textStyle: const TextStyle(fontWeight: FontWeight.w700),
@@ -41,8 +41,8 @@ class AppTheme {
       outlinedButtonTheme: OutlinedButtonThemeData(
         style: OutlinedButton.styleFrom(
           minimumSize: const Size(44, 44),
-          foregroundColor: AppColors.brandGreen,
-          side: const BorderSide(color: AppColors.greenAccent),
+          foregroundColor: AppColors.primaryCoralDark,
+          side: const BorderSide(color: AppColors.primaryCoral),
           shape: const StadiumBorder(),
           textStyle: const TextStyle(fontWeight: FontWeight.w700),
         ),
@@ -60,7 +60,7 @@ class AppTheme {
         ),
         focusedBorder: OutlineInputBorder(
           borderRadius: BorderRadius.all(Radius.circular(AppRadius.md)),
-          borderSide: BorderSide(color: AppColors.greenAccent, width: 1.5),
+          borderSide: BorderSide(color: AppColors.primaryCoral, width: 1.5),
         ),
         errorBorder: OutlineInputBorder(
           borderRadius: BorderRadius.all(Radius.circular(AppRadius.md)),

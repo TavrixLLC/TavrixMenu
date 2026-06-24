@@ -181,7 +181,10 @@ class _AccessCard extends StatelessWidget {
     return AppCard(
       child: Row(
         children: [
-          const Icon(Icons.verified_user_outlined),
+          const Icon(
+            Icons.verified_user_outlined,
+            color: AppColors.freshGreenDark,
+          ),
           const SizedBox(width: AppSpacing.md),
           Expanded(
             child: Column(
@@ -331,7 +334,7 @@ class _WorkflowMetricTile extends StatelessWidget {
           child: Column(
             crossAxisAlignment: CrossAxisAlignment.start,
             children: [
-              Icon(icon, size: 20, color: AppColors.houseGreen),
+              Icon(icon, size: 20, color: AppColors.primaryCoral),
               const SizedBox(height: AppSpacing.sm),
               Text(
                 '$value',
@@ -405,7 +408,7 @@ class _WorkflowNextStep extends StatelessWidget {
         child: Row(
           crossAxisAlignment: CrossAxisAlignment.start,
           children: [
-            const Icon(Icons.info_outline),
+            const Icon(Icons.info_outline, color: AppColors.primaryCoral),
             const SizedBox(width: AppSpacing.md),
             Expanded(
               child: Column(
@@ -439,7 +442,7 @@ class _InlineNotice extends StatelessWidget {
       child: Row(
         crossAxisAlignment: CrossAxisAlignment.start,
         children: [
-          const Icon(Icons.info_outline),
+          const Icon(Icons.info_outline, color: AppColors.primaryCoral),
           const SizedBox(width: AppSpacing.md),
           Expanded(
             child: Column(
@@ -478,7 +481,10 @@ class _DashboardActionCard extends StatelessWidget {
       onTap: enabled ? () => Navigator.of(context).pushNamed(routeName) : null,
       child: Row(
         children: [
-          Icon(icon),
+          Icon(
+            icon,
+            color: enabled ? AppColors.primaryCoral : AppColors.mutedText,
+          ),
           const SizedBox(width: AppSpacing.md),
           Expanded(
             child: Column(
@@ -490,7 +496,10 @@ class _DashboardActionCard extends StatelessWidget {
               ],
             ),
           ),
-          const Icon(Icons.chevron_right),
+          Icon(
+            Icons.chevron_right,
+            color: enabled ? AppColors.mutedText : AppColors.softBorder,
+          ),
         ],
       ),
     );

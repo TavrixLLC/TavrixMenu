@@ -18,6 +18,7 @@ type BusinessPermissionSet = {
   canManageMembers: boolean;
   canViewMembers: boolean;
   canViewPublicLink: boolean;
+  canManageAppearance: boolean;
 };
 
 @Injectable()
@@ -88,7 +89,8 @@ export class BusinessAccessService {
       canManageMembers: role === BusinessUserRole.OWNER,
       canViewMembers:
         role === BusinessUserRole.OWNER || role === BusinessUserRole.MANAGER,
-      canViewPublicLink: true
+      canViewPublicLink: true,
+      canManageAppearance: role === BusinessUserRole.OWNER
     };
   }
 

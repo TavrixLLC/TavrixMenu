@@ -7,16 +7,20 @@ import {
   getCategories,
   getDashboardSummary,
   getItems,
+  getMenuAppearance,
   reorderCategories,
   reorderItems,
   restoreCategory,
   restoreItem,
+  updateMenuAppearance,
   type AdminCategory,
   type AdminDashboardSummary,
   type AdminMeResponse,
+  type AdminMenuAppearance,
   type AdminMenuItem,
   type AdminPermissions
 } from '../lib/admin-api';
+import { adminMenuTemplates, getAdminMenuTemplate } from '../lib/menu-templates';
 
 type OwnerWorkflowPanelProps = {
   apiBaseUrl: string;
@@ -40,6 +44,7 @@ type WorkflowState =
       me: AdminMeResponse;
       businessId: string;
       summary: AdminDashboardSummary;
+      menuAppearance: AdminMenuAppearance;
       categories: AdminCategory[];
       items: AdminMenuItem[];
     };
@@ -62,7 +67,8 @@ const permissionLabels: Array<[keyof AdminPermissions, string]> = [
   ['canManageMenu', 'Manage menu'],
   ['canManageMembers', 'Manage members'],
   ['canViewMembers', 'View members'],
-  ['canViewPublicLink', 'View public link']
+  ['canViewPublicLink', 'View public link'],
+  ['canManageAppearance', 'Manage appearance']
 ];
 
 function sortCategories(categories: AdminCategory[]) {
@@ -96,6 +102,10 @@ function pickCurrentBusinessId(me: AdminMeResponse) {
 function isMenuManager(summary: AdminDashboardSummary) {
   const role = summary.currentUser.role.toUpperCase();
   return summary.currentUser.permissions.canManageMenu && (role === 'OWNER' || role === 'MANAGER');
+}
+
+function isAppearanceManager(summary: AdminDashboardSummary) {
+  return summary.currentUser.permissions.canManageAppearance || summary.currentUser.permissions.canManageBusiness;
 }
 
 function StatusPill({
@@ -333,6 +343,96 @@ function PublicMenuShareSection({
       </div>
 
       {copyStatus ? <p className="mt-4 text-sm font-semibold text-neutral-700">{copyStatus}</p> : null}
+    </section>
+  );
+}
+
+function MenuAppearanceSection({
+  summary,
+  appearance,
+  canManage,
+  actionPending,
+  onSelect
+}: {
+  summary: AdminDashboardSummary;
+  appearance: AdminMenuAppearance;
+  canManage: boolean;
+  actionPending: boolean;
+  onSelect: (templateId: string) => void;
+}) {
+  const selectedTemplate = getAdminMenuTemplate(appearance.menuTemplateId);
+
+  return (
+    <section className="rounded-lg border border-neutral-200 bg-white p-5">
+      <div className="flex flex-col gap-4 lg:flex-row lg:items-start lg:justify-between">
+        <div>
+          <p className="text-sm font-semibold uppercase text-accent">Menu appearance</p>
+          <h2 className="mt-2 text-xl font-bold text-ink">Public menu template</h2>
+          <p className="mt-2 max-w-2xl text-sm leading-6 text-neutral-600">
+            Current template: {selectedTemplate.displayName}. Existing menu data and public URLs stay unchanged.
+          </p>
+        </div>
+        <a
+          href={summary.publicMenu.url}
+          target="_blank"
+          rel="noreferrer"
+          className="inline-flex w-fit rounded-md border border-neutral-200 bg-white px-4 py-2 text-sm font-semibold text-ink"
+        >
+          Open public menu
+        </a>
+      </div>
+
+      {!canManage ? (
+        <p className="mt-4 rounded-md border border-amber-200 bg-amber-50 p-3 text-sm font-semibold text-amber-900">
+          Template changes require owner appearance permission.
+        </p>
+      ) : null}
+
+      <div className="mt-5 grid gap-4 xl:grid-cols-4">
+        {adminMenuTemplates.map((template) => {
+          const selected = template.id === appearance.menuTemplateId;
+
+          return (
+            <article
+              key={template.id}
+              className={`rounded-lg border p-4 ${
+                selected ? 'border-accent bg-[#fff8f2]' : 'border-neutral-200 bg-white'
+              }`}
+            >
+              <div className="flex items-start justify-between gap-3">
+                <div>
+                  <h3 className="font-bold text-ink">{template.displayName}</h3>
+                  <p className="mt-1 text-xs font-semibold uppercase text-neutral-500">{template.id}</p>
+                </div>
+                {selected ? <StatusPill tone="success">Current</StatusPill> : null}
+              </div>
+              <p className="mt-3 text-sm leading-6 text-neutral-600">{template.description}</p>
+              <p className="mt-3 text-xs font-semibold uppercase text-neutral-500">Best for</p>
+              <p className="mt-1 text-sm leading-6 text-neutral-700">{template.bestFor}</p>
+              <div className="mt-4 rounded-md border border-neutral-200 bg-white p-3">
+                <p className="text-xs font-semibold uppercase text-neutral-500">{template.preview.label}</p>
+                <div className="mt-3 flex gap-2">
+                  {template.preview.swatches.map((swatch) => (
+                    <span
+                      key={swatch}
+                      className="h-8 w-8 rounded-full border border-neutral-200"
+                      style={{ backgroundColor: swatch }}
+                    />
+                  ))}
+                </div>
+              </div>
+              <button
+                type="button"
+                className="mt-4 w-full rounded-md bg-accent px-4 py-2 text-sm font-semibold text-white disabled:cursor-not-allowed disabled:bg-neutral-300"
+                disabled={!canManage || actionPending || selected}
+                onClick={() => onSelect(template.id)}
+              >
+                {selected ? 'Selected' : 'Select template'}
+              </button>
+            </article>
+          );
+        })}
+      </div>
     </section>
   );
 }
@@ -588,8 +688,14 @@ export function OwnerWorkflowPanel({ apiBaseUrl }: OwnerWorkflowPanelProps) {
           return;
         }
 
-        const [summaryResult, categoriesResult, itemsResult] = await Promise.all([
+        const [summaryResult, menuAppearanceResult, categoriesResult, itemsResult] = await Promise.all([
           getDashboardSummary({
+            apiBaseUrl,
+            token,
+            businessId,
+            signal
+          }),
+          getMenuAppearance({
             apiBaseUrl,
             token,
             businessId,
@@ -624,6 +730,15 @@ export function OwnerWorkflowPanel({ apiBaseUrl }: OwnerWorkflowPanelProps) {
           return;
         }
 
+        if (menuAppearanceResult.status !== 'ok') {
+          setState({
+            status: menuAppearanceResult.status,
+            apiUrl: menuAppearanceResult.apiUrl,
+            message: menuAppearanceResult.message
+          });
+          return;
+        }
+
         if (categoriesResult.status !== 'ok') {
           setState({
             status: categoriesResult.status,
@@ -647,6 +762,7 @@ export function OwnerWorkflowPanel({ apiBaseUrl }: OwnerWorkflowPanelProps) {
           me: meResult.data,
           businessId,
           summary: summaryResult.data,
+          menuAppearance: menuAppearanceResult.data,
           categories: sortCategories(categoriesResult.data),
           items: sortItems(itemsResult.data)
         });
@@ -664,8 +780,13 @@ export function OwnerWorkflowPanel({ apiBaseUrl }: OwnerWorkflowPanelProps) {
 
   const refreshWorkflowData = useCallback(
     async (businessId: string, token: string) => {
-      const [summaryResult, categoriesResult, itemsResult] = await Promise.all([
+      const [summaryResult, menuAppearanceResult, categoriesResult, itemsResult] = await Promise.all([
         getDashboardSummary({
+          apiBaseUrl,
+          token,
+          businessId
+        }),
+        getMenuAppearance({
           apiBaseUrl,
           token,
           businessId
@@ -688,6 +809,10 @@ export function OwnerWorkflowPanel({ apiBaseUrl }: OwnerWorkflowPanelProps) {
         return summaryResult.message;
       }
 
+      if (menuAppearanceResult.status !== 'ok') {
+        return menuAppearanceResult.message;
+      }
+
       if (categoriesResult.status !== 'ok') {
         return categoriesResult.message;
       }
@@ -701,6 +826,7 @@ export function OwnerWorkflowPanel({ apiBaseUrl }: OwnerWorkflowPanelProps) {
           ? {
               ...current,
               summary: summaryResult.data,
+              menuAppearance: menuAppearanceResult.data,
               categories: sortCategories(categoriesResult.data),
               items: sortItems(itemsResult.data)
             }
@@ -822,6 +948,7 @@ export function OwnerWorkflowPanel({ apiBaseUrl }: OwnerWorkflowPanelProps) {
   }
 
   const canManage = isMenuManager(state.summary);
+  const canManageAppearance = isAppearanceManager(state.summary);
   const actionPending = actionState.status === 'pending';
 
   return (
@@ -829,6 +956,29 @@ export function OwnerWorkflowPanel({ apiBaseUrl }: OwnerWorkflowPanelProps) {
       <DashboardSummarySection summary={state.summary} />
 
       <PublicMenuShareSection summary={state.summary} copyStatus={copyStatus} onCopy={copyToClipboard} />
+
+      <ActionBanner actionState={actionState} />
+
+      <MenuAppearanceSection
+        summary={state.summary}
+        appearance={state.menuAppearance}
+        canManage={canManageAppearance}
+        actionPending={actionPending}
+        onSelect={(templateId) =>
+          void runMutation(`Saving ${getAdminMenuTemplate(templateId).displayName}...`, 'Menu template saved.', async (token, businessId) => {
+            const result = await updateMenuAppearance({
+              apiBaseUrl,
+              token,
+              businessId,
+              menuTemplateId: templateId
+            });
+
+            return result.status === 'ok'
+              ? { status: 'ok' }
+              : { status: result.status, message: `Template save failed: ${result.message}` };
+          })
+        }
+      />
 
       <section id="menu-workflow" className="grid gap-4">
         <div className="flex flex-col gap-3 lg:flex-row lg:items-end lg:justify-between">
@@ -848,8 +998,6 @@ export function OwnerWorkflowPanel({ apiBaseUrl }: OwnerWorkflowPanelProps) {
             Refresh
           </button>
         </div>
-
-        <ActionBanner actionState={actionState} />
 
         <div className="grid gap-4 xl:grid-cols-2">
           <CategoryManager

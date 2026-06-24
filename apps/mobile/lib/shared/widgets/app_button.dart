@@ -1,5 +1,7 @@
 import 'package:flutter/material.dart';
 
+import '../../core/constants/app_colors.dart';
+
 enum AppButtonVariant { primary, secondary, danger, ghost }
 
 class AppButton extends StatelessWidget {
@@ -39,9 +41,20 @@ class AppButton extends StatelessWidget {
               ),
       AppButtonVariant.danger =>
         icon == null
-            ? FilledButton.tonal(onPressed: onPressed, child: Text(label))
+            ? FilledButton.tonal(
+                onPressed: onPressed,
+                style: FilledButton.styleFrom(
+                  backgroundColor: AppColors.dangerRed.withValues(alpha: 0.10),
+                  foregroundColor: AppColors.dangerRed,
+                ),
+                child: Text(label),
+              )
             : FilledButton.tonalIcon(
                 onPressed: onPressed,
+                style: FilledButton.styleFrom(
+                  backgroundColor: AppColors.dangerRed.withValues(alpha: 0.10),
+                  foregroundColor: AppColors.dangerRed,
+                ),
                 icon: Icon(icon),
                 label: Text(label),
               ),

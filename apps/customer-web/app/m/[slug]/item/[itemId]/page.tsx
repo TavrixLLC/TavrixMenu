@@ -1,6 +1,7 @@
 import Link from 'next/link';
 import { PlaceholderImage } from '../../../../components/PlaceholderImage';
-import { formatPrice, getCategoryName, getItemDescription, getItemName } from '../../../../lib/menu-format';
+import { formatPrice, getCategoryName, getItemDescription, getItemName, isRtlLanguage } from '../../../../lib/menu-format';
+import { getPublicMenuTemplate } from '../../../../lib/menu-templates';
 import { fetchPublicItem, fetchPublicMenu } from '../../../../lib/public-menu';
 
 type ProductDetailPageProps = {
@@ -22,15 +23,15 @@ function DetailState({
   detail?: string;
 }) {
   return (
-    <main className="mx-auto flex min-h-screen w-full max-w-3xl flex-col justify-center bg-[#fafaf7] px-4 py-12">
-      <Link href={`/m/${slug}`} className="text-sm font-semibold text-neutral-600">
+    <main className="mx-auto flex min-h-screen w-full max-w-3xl flex-col justify-center bg-cream px-4 py-12">
+      <Link href={`/m/${slug}`} className="text-sm font-semibold text-muted">
         Back to menu
       </Link>
-      <section className="mt-5 rounded-lg border border-neutral-200 bg-white p-6 shadow-sm">
-        <p className="text-sm font-semibold uppercase text-mint">Menu item</p>
+      <section className="mt-5 rounded-xl border border-borderSoft bg-white p-6 shadow-sm">
+        <p className="text-sm font-semibold uppercase text-coral">Menu item</p>
         <h1 className="mt-2 text-3xl font-bold text-ink">{title}</h1>
-        <p className="mt-3 text-base leading-7 text-neutral-600">{message}</p>
-        {detail ? <p className="mt-4 rounded-md bg-neutral-50 p-3 text-sm text-neutral-500">{detail}</p> : null}
+        <p className="mt-3 text-base leading-7 text-muted">{message}</p>
+        {detail ? <p className="mt-4 rounded-md bg-[#FFF8F2] p-3 text-sm text-muted">{detail}</p> : null}
       </section>
     </main>
   );
@@ -82,38 +83,50 @@ export default async function ProductDetailPage({ params }: ProductDetailPagePro
     );
   }
 
-  const itemName = getItemName(item);
-  const description = getItemDescription(item);
   const businessName = business?.name || 'menu';
   const businessSlug = business?.slug || slug;
   const currency = business?.currency || '';
+  const language = business?.language || null;
+  const itemName = getItemName(item, language);
+  const description = getItemDescription(item, language);
+  const template = getPublicMenuTemplate(business?.menuTemplateId);
+  const premium = template.layoutVariant === 'editorial-premium';
+  const minimal = template.layoutVariant === 'minimal-list';
+  const direction = isRtlLanguage(language) ? 'rtl' : 'ltr';
+  const mainClass = minimal
+    ? 'mx-auto min-h-screen w-full max-w-3xl bg-white px-4 py-5'
+    : premium
+      ? 'mx-auto min-h-screen w-full max-w-3xl bg-[#f8f1e7] px-4 py-5'
+      : 'mx-auto min-h-screen w-full max-w-3xl bg-cream px-4 py-5';
 
   return (
-    <main className="mx-auto min-h-screen w-full max-w-3xl bg-[#fafaf7] px-4 py-5">
-      <Link href={`/m/${slug}`} className="text-sm font-semibold text-neutral-600">
+    <main dir={direction} lang={language || undefined} className={mainClass}>
+      <Link href={`/m/${slug}`} className="text-sm font-semibold text-muted">
         Back to {businessName}
       </Link>
 
       <section className="mt-5">
         {item.imageUrl ? (
-          <img src={item.imageUrl} alt={itemName} className="aspect-[4/3] w-full rounded-lg object-cover" />
+          <img src={item.imageUrl} alt={itemName} className="aspect-[4/3] w-full rounded-xl object-cover" />
         ) : (
-          <PlaceholderImage label="Product image" className="aspect-[4/3] w-full rounded-lg" />
+          <PlaceholderImage label="Product image" className="aspect-[4/3] w-full rounded-xl" />
         )}
         <div className="mt-5 flex items-start justify-between gap-4">
           <div>
-            <p className="text-sm font-semibold text-mint">{category ? getCategoryName(category) : 'Menu item'}</p>
+            <p className={premium ? 'text-sm font-semibold text-[#12392F]' : 'text-sm font-semibold text-coral'}>
+              {category ? getCategoryName(category, language) : 'Menu item'}
+            </p>
             <h1 className="mt-1 text-3xl font-bold text-ink">{itemName}</h1>
-            <p className="mt-2 text-sm text-neutral-500">/m/{businessSlug}</p>
+            <p className="mt-2 text-sm text-muted">/m/{businessSlug}</p>
           </div>
           <div className="shrink-0 text-right">
             <p className="text-base font-bold text-ink">{formatPrice(item.price, currency)}</p>
-            <span className="mt-2 inline-flex rounded-full bg-emerald-50 px-2 py-1 text-xs font-semibold text-emerald-700">
+            <span className="mt-2 inline-flex rounded-full bg-[#ECF8EF] px-2 py-1 text-xs font-semibold text-green-dark">
               Available
             </span>
           </div>
         </div>
-        {description ? <p className="mt-4 text-base leading-7 text-neutral-700">{description}</p> : null}
+        {description ? <p className="mt-4 text-base leading-7 text-muted">{description}</p> : null}
       </section>
     </main>
   );

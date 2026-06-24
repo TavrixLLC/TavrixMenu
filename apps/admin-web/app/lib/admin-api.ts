@@ -19,6 +19,8 @@ export type AdminBusiness = {
   language: string;
   logoUrl: string | null;
   coverUrl: string | null;
+  menuTemplateId?: string;
+  menuThemeOverrides?: Record<string, unknown> | null;
   status?: string;
 };
 
@@ -49,6 +51,7 @@ export type AdminPermissions = {
   canManageMembers: boolean;
   canViewMembers: boolean;
   canViewPublicLink: boolean;
+  canManageAppearance: boolean;
 };
 
 export type AdminPublicMenuLink = {
@@ -81,9 +84,16 @@ export type AdminDashboardSummary = {
     role: string;
     permissions: AdminPermissions;
   };
+  menuAppearance?: AdminMenuAppearance;
   counts: AdminDashboardCounts;
   publicMenu: Pick<AdminPublicMenuLink, 'path' | 'url' | 'qrPayload'>;
   onboardingHints: AdminDashboardOnboardingHints;
+};
+
+export type AdminMenuAppearance = {
+  businessId: string;
+  menuTemplateId: string;
+  menuThemeOverrides: Record<string, unknown> | null;
 };
 
 export type AdminCategory = {
@@ -334,6 +344,10 @@ function readNullableString(value: unknown): string | null {
   return typeof value === 'string' ? value : null;
 }
 
+function readNullableRecord(value: unknown): Record<string, unknown> | null {
+  return typeof value === 'object' && value !== null && !Array.isArray(value) ? (value as Record<string, unknown>) : null;
+}
+
 function readBoolean(value: unknown): boolean {
   return typeof value === 'boolean' ? value : false;
 }
@@ -402,6 +416,8 @@ function parseAdminBusiness(value: unknown): AdminBusiness | null {
     language: readString(record.language) || 'ar',
     logoUrl: readNullableString(record.logoUrl),
     coverUrl: readNullableString(record.coverUrl),
+    menuTemplateId: readString(record.menuTemplateId) || undefined,
+    menuThemeOverrides: readNullableRecord(record.menuThemeOverrides),
     status: readString(record.status) || undefined
   };
 }
@@ -482,7 +498,8 @@ function parsePermissions(value: unknown): AdminPermissions {
       canManageMenu: false,
       canManageMembers: false,
       canViewMembers: false,
-      canViewPublicLink: false
+      canViewPublicLink: false,
+      canManageAppearance: false
     };
   }
 
@@ -491,7 +508,8 @@ function parsePermissions(value: unknown): AdminPermissions {
     canManageMenu: readBoolean(record.canManageMenu),
     canManageMembers: readBoolean(record.canManageMembers),
     canViewMembers: readBoolean(record.canViewMembers),
-    canViewPublicLink: readBoolean(record.canViewPublicLink)
+    canViewPublicLink: readBoolean(record.canViewPublicLink),
+    canManageAppearance: readBoolean(record.canManageAppearance)
   };
 }
 
@@ -542,6 +560,27 @@ function parseDashboardPublicMenu(value: unknown): AdminDashboardSummary['public
   };
 }
 
+function parseMenuAppearance(value: unknown): AdminMenuAppearance | null {
+  const record = asRecord(value);
+
+  if (!record) {
+    return null;
+  }
+
+  const businessId = readString(record.businessId);
+  const menuTemplateId = readString(record.menuTemplateId);
+
+  if (!businessId || !menuTemplateId) {
+    return null;
+  }
+
+  return {
+    businessId,
+    menuTemplateId,
+    menuThemeOverrides: readNullableRecord(record.menuThemeOverrides)
+  };
+}
+
 function parseDashboardSummary(value: unknown): AdminDashboardSummary | null {
   const record = asRecord(value);
 
@@ -564,6 +603,7 @@ function parseDashboardSummary(value: unknown): AdminDashboardSummary | null {
       role,
       permissions: parsePermissions(currentUserRecord?.permissions)
     },
+    menuAppearance: parseMenuAppearance(record.menuAppearance) || undefined,
     counts: parseDashboardCounts(record.counts),
     publicMenu,
     onboardingHints: parseDashboardOnboardingHints(record.onboardingHints)
@@ -1491,6 +1531,52 @@ export function getPublicLink({
     signal,
     parse: parsePublicLink,
     contractName: 'GET /businesses/{id}/public-link'
+  });
+}
+
+export function getMenuAppearance({
+  apiBaseUrl,
+  token,
+  businessId,
+  signal
+}: {
+  apiBaseUrl: string;
+  token: string | null;
+  businessId: string;
+  signal?: AbortSignal;
+}) {
+  return requestAdminJson({
+    apiBaseUrl,
+    token,
+    path: `/businesses/${encodeURIComponent(businessId)}/menu-appearance`,
+    signal,
+    parse: parseMenuAppearance,
+    contractName: 'GET /businesses/{id}/menu-appearance'
+  });
+}
+
+export function updateMenuAppearance({
+  apiBaseUrl,
+  token,
+  businessId,
+  menuTemplateId,
+  signal
+}: {
+  apiBaseUrl: string;
+  token: string | null;
+  businessId: string;
+  menuTemplateId: string;
+  signal?: AbortSignal;
+}) {
+  return requestAdminJson({
+    apiBaseUrl,
+    token,
+    path: `/businesses/${encodeURIComponent(businessId)}/menu-appearance`,
+    method: 'PATCH',
+    body: { menuTemplateId },
+    signal,
+    parse: parseMenuAppearance,
+    contractName: 'PATCH /businesses/{id}/menu-appearance'
   });
 }
 
