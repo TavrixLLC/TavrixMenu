@@ -24,3 +24,141 @@ a {
   color: inherit;
   text-decoration: none;
 }
+
+.admin-template-preview {
+  display: grid;
+  gap: 0.5rem;
+  min-height: 9rem;
+  margin-top: 1rem;
+  padding: 0.75rem;
+  overflow: hidden;
+  border: 1px solid #e5e7eb;
+  border-radius: 0.5rem;
+  background: #fff8f2;
+}
+
+.admin-template-preview [data-slot="merchant-hero"] {
+  display: grid;
+  grid-template-columns: 2rem 1fr;
+  gap: 0.5rem;
+  align-items: center;
+}
+
+.admin-template-preview [data-slot="merchant-logo"] {
+  width: 2rem;
+  height: 2rem;
+  border-radius: 0.45rem;
+  background: #ffffff;
+}
+
+.admin-template-preview [data-slot="merchant-name"],
+.admin-template-preview [data-slot="item-copy"] {
+  height: 0.65rem;
+  border-radius: 999px;
+  background: #1f2933;
+}
+
+.admin-template-preview [data-slot="category-navigation"] {
+  display: flex;
+  gap: 0.35rem;
+}
+
+.admin-template-preview [data-slot="category-navigation"] span {
+  width: 2.5rem;
+  height: 0.9rem;
+  border-radius: 999px;
+  background: #ffffff;
+}
+
+.admin-template-preview [data-slot="item-list"] {
+  display: grid;
+  grid-template-columns: 2.5rem 1fr 2.8rem;
+  gap: 0.45rem;
+  align-items: center;
+  padding: 0.4rem;
+  border-radius: 0.45rem;
+  background: #ffffff;
+}
+
+.admin-template-preview [data-slot="item-image"] {
+  width: 2.5rem;
+  height: 2.5rem;
+  border-radius: 0.4rem;
+  background: #f1e2d6;
+}
+
+.admin-template-preview [data-slot="item-price"] {
+  height: 1.2rem;
+  border-radius: 999px;
+  background: #ff6b4a;
+}
+
+.admin-template-preview [data-slot="loyalty-block"] {
+  height: 1.1rem;
+  border-radius: 0.45rem;
+  background: #43a047;
+}
+
+.admin-template-preview[data-template="coffeehouse-premium"] {
+  background: #f8f1e7;
+}
+
+.admin-template-preview[data-template="coffeehouse-premium"] [data-slot="merchant-hero"] {
+  margin: -0.75rem -0.75rem 0;
+  padding: 0.75rem;
+  background: #12392f;
+}
+
+.admin-template-preview[data-template="coffeehouse-premium"] [data-slot="merchant-name"] {
+  background: #f59e0b;
+}
+
+.admin-template-preview[data-template="coffeehouse-premium"] [data-slot="item-price"] {
+  background: #f59e0b;
+}
+
+.admin-template-preview[data-template="street-bites"] {
+  border-color: #ff6b4a;
+  background: #fff3ec;
+  box-shadow: 0 5px 0 #ffd5c8;
+}
+
+.admin-template-preview[data-template="street-bites"] [data-slot="category-navigation"] span {
+  border-radius: 0.25rem;
+  background: #1f2933;
+}
+
+.admin-template-preview[data-template="street-bites"] [data-slot="item-list"] {
+  border: 2px solid #ffd5c8;
+}
+
+.admin-template-preview[data-template="minimal-modern"] {
+  background: #ffffff;
+}
+
+.admin-template-preview[data-template="minimal-modern"] [data-slot="merchant-hero"] {
+  padding-bottom: 0.5rem;
+  border-bottom: 1px solid #e5e7eb;
+}
+
+.admin-template-preview[data-template="minimal-modern"] [data-slot="category-navigation"] span {
+  height: 0.35rem;
+  border-radius: 0;
+  background: #e5e7eb;
+}
+
+.admin-template-preview[data-template="minimal-modern"] [data-slot="item-list"] {
+  grid-template-columns: 1fr 2.8rem;
+  padding-inline: 0;
+  border-bottom: 1px solid #e5e7eb;
+  border-radius: 0;
+  background: transparent;
+}
+
+.admin-template-preview[data-template="minimal-modern"] [data-slot="item-image"] {
+  display: none;
+}
+
+.admin-template-preview[data-template="minimal-modern"] [data-slot="item-price"] {
+  background: #1f2933;
+}

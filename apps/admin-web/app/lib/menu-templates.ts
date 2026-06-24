@@ -4,6 +4,9 @@ export const adminMenuTemplates = [
     displayName: 'Waflo Warm',
     description: 'Warm coral, cream, and green menu style with rounded food cards.',
     bestFor: 'General restaurants, cafes, bakeries, and casual dining',
+    cssClass: 'waflo-template-waflo-warm',
+    version: '1.0.0',
+    status: 'enabled',
     preview: {
       label: 'Cream canvas with coral CTA',
       swatches: ['#FF6B4A', '#FFF8F2', '#43A047']
@@ -14,6 +17,9 @@ export const adminMenuTemplates = [
     displayName: 'Coffeehouse Premium',
     description: 'Dark green, gold, and cream editorial style for premium cafe and dessert menus.',
     bestFor: 'Specialty coffee, desserts, boutique cafes, and premium bakeries',
+    cssClass: 'waflo-template-coffeehouse-premium',
+    version: '1.0.0',
+    status: 'enabled',
     preview: {
       label: 'Dark green editorial header',
       swatches: ['#12392F', '#F59E0B', '#F8F1E7']
@@ -24,6 +30,9 @@ export const adminMenuTemplates = [
     displayName: 'Street Bites',
     description: 'Bold coral and warm accent style with punchy rows and prominent prices.',
     bestFor: 'Burgers, shawarma, fried chicken, food trucks, and street-food brands',
+    cssClass: 'waflo-template-street-bites',
+    version: '1.0.0',
+    status: 'enabled',
     preview: {
       label: 'Bold prices and tabs',
       swatches: ['#FF6B4A', '#FFB020', '#FFF3EC']
@@ -34,6 +43,9 @@ export const adminMenuTemplates = [
     displayName: 'Minimal Modern',
     description: 'Clean white and neutral list style with subtle coral accents.',
     bestFor: 'Premium dining, modern cafes, and simple focused menus',
+    cssClass: 'waflo-template-minimal-modern',
+    version: '1.0.0',
+    status: 'enabled',
     preview: {
       label: 'Clean white list',
       swatches: ['#FFFFFF', '#FF6B4A', '#E5E7EB']

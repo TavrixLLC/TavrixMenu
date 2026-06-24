@@ -16,6 +16,10 @@ export type PublicMenuTemplateDefinition = {
   displayName: string;
   description: string;
   bestFor: string;
+  cssClass: `waflo-template-${PublicMenuTemplateId}`;
+  cssFile: string;
+  version: string;
+  status: 'enabled' | 'disabled';
   themeTokens: {
     background: string;
     surface: string;
@@ -26,12 +30,16 @@ export type PublicMenuTemplateDefinition = {
     text: string;
     muted: string;
     reward: string;
+    danger: string;
   };
-  layoutVariant: 'warm-cards' | 'editorial-premium' | 'street-rows' | 'minimal-list';
-  itemCardStyle: string;
-  categoryNavigationStyle: string;
-  loyaltyBlockStyle: string;
-  stateStyle: string;
+  supportedFeatures: {
+    rtl: boolean;
+    loyaltyBlock: boolean;
+    itemImages: boolean;
+    soldOutState: boolean;
+    aiRecommendations: boolean;
+    responsiveLayouts: boolean;
+  };
   preview: {
     label: string;
     description: string;
@@ -39,12 +47,25 @@ export type PublicMenuTemplateDefinition = {
   };
 };
 
+const sharedFeatures = {
+  rtl: true,
+  loyaltyBlock: true,
+  itemImages: true,
+  soldOutState: true,
+  aiRecommendations: false,
+  responsiveLayouts: true
+} as const;
+
 export const publicMenuTemplates = [
   {
     id: 'waflo-warm',
     displayName: 'Waflo Warm',
-    description: 'Warm coral, cream, and green public menu style for most restaurants and cafes.',
+    description: 'Warm coral, cream, and green CSS template for most restaurant and cafe menus.',
     bestFor: 'General restaurants, cafes, bakeries, and casual dining',
+    cssClass: 'waflo-template-waflo-warm',
+    cssFile: 'waflo-warm.css',
+    version: '1.0.0',
+    status: 'enabled',
     themeTokens: {
       background: wafloPalette.warmCream,
       surface: wafloPalette.surfaceWhite,
@@ -54,24 +75,25 @@ export const publicMenuTemplates = [
       border: wafloPalette.softBorder,
       text: wafloPalette.textDark,
       muted: wafloPalette.mutedText,
-      reward: wafloPalette.rewardGold
+      reward: wafloPalette.rewardGold,
+      danger: wafloPalette.dangerRed
     },
-    layoutVariant: 'warm-cards',
-    itemCardStyle: 'Rounded food cards with generous image treatment and coral price emphasis.',
-    categoryNavigationStyle: 'Sticky horizontal chips with coral active/focus treatment.',
-    loyaltyBlockStyle: 'Warm cream or white loyalty panel with coral join CTA and green progress tone.',
-    stateStyle: 'Friendly cream empty/error states with rounded cards and concise retry copy.',
+    supportedFeatures: sharedFeatures,
     preview: {
       label: 'Cream canvas with coral CTA',
-      description: 'Rounded menu cards over a warm public QR-menu background.',
+      description: 'Rounded cards over a warm public QR-menu background.',
       swatches: [wafloPalette.primaryCoral, wafloPalette.warmCream, wafloPalette.freshGreen]
     }
   },
   {
     id: 'coffeehouse-premium',
     displayName: 'Coffeehouse Premium',
-    description: 'Dark green, gold, and cream style for premium cafe and dessert menus.',
+    description: 'Dark green, gold, and cream CSS template for premium cafe and dessert menus.',
     bestFor: 'Specialty coffee, dessert shops, premium bakeries, and boutique cafes',
+    cssClass: 'waflo-template-coffeehouse-premium',
+    cssFile: 'coffeehouse-premium.css',
+    version: '1.0.0',
+    status: 'enabled',
     themeTokens: {
       background: '#F8F1E7',
       surface: wafloPalette.surfaceWhite,
@@ -81,24 +103,25 @@ export const publicMenuTemplates = [
       border: '#E7D7C1',
       text: wafloPalette.textDark,
       muted: wafloPalette.mutedText,
-      reward: wafloPalette.rewardGold
+      reward: wafloPalette.rewardGold,
+      danger: wafloPalette.dangerRed
     },
-    layoutVariant: 'editorial-premium',
-    itemCardStyle: 'Polished image-led cards with restrained gold reward accents.',
-    categoryNavigationStyle: 'Dark green section links with gold active underline.',
-    loyaltyBlockStyle: 'Premium reward card with gold milestone details and green progress.',
-    stateStyle: 'Quiet premium states with low-motion loading and clear retry action.',
+    supportedFeatures: sharedFeatures,
     preview: {
       label: 'Dark green editorial header',
-      description: 'Cream body, dark merchant banner, and gold reward highlight.',
+      description: 'Premium merchant hero, calm cards, and gold reward accents.',
       swatches: ['#12392F', wafloPalette.rewardGold, '#F8F1E7']
     }
   },
   {
     id: 'street-bites',
     displayName: 'Street Bites',
-    description: 'Bold coral, orange, and red-accented style for energetic fast-food menus.',
+    description: 'Bold coral, orange, and red-accented CSS template for fast-food browsing.',
     bestFor: 'Burgers, shawarma, fried chicken, food trucks, and street-food brands',
+    cssClass: 'waflo-template-street-bites',
+    cssFile: 'street-bites.css',
+    version: '1.0.0',
+    status: 'enabled',
     themeTokens: {
       background: '#FFF3EC',
       surface: wafloPalette.surfaceWhite,
@@ -108,24 +131,25 @@ export const publicMenuTemplates = [
       border: '#FFD5C8',
       text: wafloPalette.textDark,
       muted: wafloPalette.mutedText,
-      reward: '#FFB020'
+      reward: '#FFB020',
+      danger: wafloPalette.dangerRed
     },
-    layoutVariant: 'street-rows',
-    itemCardStyle: 'Bold compact rows with prominent price and quick category scanning.',
-    categoryNavigationStyle: 'Punchy sticky tabs with strong coral active indicator.',
-    loyaltyBlockStyle: 'Direct earn/redeem panel with coral action and green success state.',
-    stateStyle: 'High-contrast states, fast skeletons, and direct retry copy.',
+    supportedFeatures: sharedFeatures,
     preview: {
       label: 'Bold prices and tabs',
-      description: 'Energetic row layout with prominent category and price treatment.',
+      description: 'Energetic rows with strong category and price treatment.',
       swatches: [wafloPalette.primaryCoral, '#FFB020', '#FFF3EC']
     }
   },
   {
     id: 'minimal-modern',
     displayName: 'Minimal Modern',
-    description: 'Clean white and neutral style with subtle accents for premium simple menus.',
+    description: 'Clean white and neutral CSS template with subtle coral accents.',
     bestFor: 'Fine casual restaurants, modern cafes, simple menus, and premium dining',
+    cssClass: 'waflo-template-minimal-modern',
+    cssFile: 'minimal-modern.css',
+    version: '1.0.0',
+    status: 'enabled',
     themeTokens: {
       background: wafloPalette.surfaceWhite,
       surface: wafloPalette.surfaceWhite,
@@ -135,16 +159,13 @@ export const publicMenuTemplates = [
       border: '#E5E7EB',
       text: wafloPalette.textDark,
       muted: wafloPalette.mutedText,
-      reward: wafloPalette.rewardGold
+      reward: wafloPalette.rewardGold,
+      danger: wafloPalette.dangerRed
     },
-    layoutVariant: 'minimal-list',
-    itemCardStyle: 'Border-first rows with restrained images and strong text hierarchy.',
-    categoryNavigationStyle: 'Simple underlined tabs with subtle coral active state.',
-    loyaltyBlockStyle: 'Quiet inline loyalty panel with subtle coral CTA and green progress.',
-    stateStyle: 'Minimal empty/loading/error states with unobtrusive borders.',
+    supportedFeatures: sharedFeatures,
     preview: {
       label: 'Clean white list',
-      description: 'Sparse menu layout with subtle coral action and thin dividers.',
+      description: 'Sparse border-first layout with quiet typography.',
       swatches: [wafloPalette.surfaceWhite, wafloPalette.primaryCoral, '#E5E7EB']
     }
   }
@@ -160,5 +181,5 @@ export function resolvePublicMenuTemplateId(value: string | null | undefined): P
 
 export function getPublicMenuTemplate(value: string | null | undefined) {
   const id = resolvePublicMenuTemplateId(value);
-  return publicMenuTemplates.find((template) => template.id === id) ?? publicMenuTemplates[0];
+  return publicMenuTemplates.find((template) => template.id === id && template.status === 'enabled') ?? publicMenuTemplates[0];
 }

@@ -90,44 +90,62 @@ export default async function ProductDetailPage({ params }: ProductDetailPagePro
   const itemName = getItemName(item, language);
   const description = getItemDescription(item, language);
   const template = getPublicMenuTemplate(business?.menuTemplateId);
-  const premium = template.layoutVariant === 'editorial-premium';
-  const minimal = template.layoutVariant === 'minimal-list';
   const direction = isRtlLanguage(language) ? 'rtl' : 'ltr';
-  const mainClass = minimal
-    ? 'mx-auto min-h-screen w-full max-w-3xl bg-white px-4 py-5'
-    : premium
-      ? 'mx-auto min-h-screen w-full max-w-3xl bg-[#f8f1e7] px-4 py-5'
-      : 'mx-auto min-h-screen w-full max-w-3xl bg-cream px-4 py-5';
 
   return (
-    <main dir={direction} lang={language || undefined} className={mainClass}>
-      <Link href={`/m/${slug}`} className="text-sm font-semibold text-muted">
-        Back to {businessName}
-      </Link>
+    <main
+      dir={direction}
+      lang={language || undefined}
+      className={`waflo-menu waflo-item-detail ${template.cssClass}`}
+      data-template={template.id}
+      data-business-slug={businessSlug}
+      data-component="public-menu-item"
+      data-state="ready"
+      data-dir={direction}
+    >
+      <article className="waflo-item-detail__shell" data-slot="item-detail-shell" data-component="item-detail-shell">
+        <Link href={`/m/${slug}`} className="waflo-item-detail__back" data-slot="back-link">
+          Back to {businessName}
+        </Link>
 
-      <section className="mt-5">
-        {item.imageUrl ? (
-          <img src={item.imageUrl} alt={itemName} className="aspect-[4/3] w-full rounded-xl object-cover" />
-        ) : (
-          <PlaceholderImage label="Product image" className="aspect-[4/3] w-full rounded-xl" />
-        )}
-        <div className="mt-5 flex items-start justify-between gap-4">
-          <div>
-            <p className={premium ? 'text-sm font-semibold text-[#12392F]' : 'text-sm font-semibold text-coral'}>
-              {category ? getCategoryName(category, language) : 'Menu item'}
-            </p>
-            <h1 className="mt-1 text-3xl font-bold text-ink">{itemName}</h1>
-            <p className="mt-2 text-sm text-muted">/m/{businessSlug}</p>
+        <section className="waflo-item-detail__card" data-slot="item-detail" data-component="menu-item" data-item-id={item.id}>
+          <div
+            className="waflo-item-detail__image"
+            data-slot="item-image"
+            data-component="item-image"
+            data-state={item.imageUrl ? 'image' : 'placeholder'}
+            data-has-image={item.imageUrl ? 'true' : 'false'}
+          >
+            {item.imageUrl ? <img src={item.imageUrl} alt={itemName} /> : <PlaceholderImage label="Product image" />}
           </div>
-          <div className="shrink-0 text-right">
-            <p className="text-base font-bold text-ink">{formatPrice(item.price, currency)}</p>
-            <span className="mt-2 inline-flex rounded-full bg-[#ECF8EF] px-2 py-1 text-xs font-semibold text-green-dark">
-              Available
-            </span>
+          <div className="waflo-item-detail__body" data-slot="item-copy">
+            <div className="waflo-item-detail__heading">
+              <div>
+                <p className="waflo-item-detail__category" data-slot="category-title">
+                  {category ? getCategoryName(category, language) : 'Menu item'}
+                </p>
+                <h1 className="waflo-item-detail__name" data-slot="item-name">
+                  {itemName}
+                </h1>
+                <p className="waflo-item-detail__merchant" data-slot="merchant-metadata">
+                  /m/{businessSlug}
+                </p>
+              </div>
+              <div className="waflo-item-detail__price-block" data-slot="item-price">
+                <p>{formatPrice(item.price, currency)}</p>
+                <span data-slot="item-status" data-state="available">
+                  Available
+                </span>
+              </div>
+            </div>
+            {description ? (
+              <p className="waflo-item-detail__description" data-slot="item-description">
+                {description}
+              </p>
+            ) : null}
           </div>
-        </div>
-        {description ? <p className="mt-4 text-base leading-7 text-muted">{description}</p> : null}
-      </section>
+        </section>
+      </article>
     </main>
   );
 }

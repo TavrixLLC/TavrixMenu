@@ -22,6 +22,8 @@ Waflo is a Business Loyalty Platform. The restaurant and cafe QR menu plus loyal
 
 - Customer web tokens: `apps/customer-web/app/lib/waflo-design.ts`
 - Customer web Tailwind aliases: `apps/customer-web/tailwind.config.ts`
+- Customer web public menu CSS contract: `apps/customer-web/app/styles/public-menu-contract.css`
+- Customer web CSS-first templates: `apps/customer-web/app/styles/menu-templates/`
 - Admin web Tailwind aliases: `apps/admin-web/tailwind.config.ts`
 - Flutter tokens: `apps/mobile/lib/core/constants/app_colors.dart`
 - Flutter theme: `apps/mobile/lib/core/theme/app_theme.dart`
@@ -35,3 +37,4 @@ Waflo is a Business Loyalty Platform. The restaurant and cafe QR menu plus loyal
 - Gold is only for reward or premium moments.
 - Red is only for errors and destructive actions.
 - Official Apple Wallet and Google Wallet button artwork must not be recolored.
+- Public menu visual templates must use the fixed HTML contract and CSS-first template files rather than template-specific React branches.

@@ -327,18 +327,9 @@ function PublicMenuShareSection({
         </div>
         <div>
           <p className="text-xs font-semibold uppercase text-neutral-500">QR payload</p>
-          <div className="mt-2 grid gap-2">
-            <p className="break-all rounded-md border border-neutral-200 bg-neutral-50 p-3 text-sm font-semibold text-ink">
-              {summary.publicMenu.qrPayload}
-            </p>
-            <button
-              type="button"
-              className="inline-flex w-fit rounded-md border border-neutral-200 bg-white px-3 py-2 text-sm font-semibold text-neutral-700"
-              onClick={() => onCopy(summary.publicMenu.qrPayload, 'QR payload')}
-            >
-              Copy QR payload
-            </button>
-          </div>
+          <p className="mt-2 rounded-md border border-neutral-200 bg-neutral-50 p-3 text-sm font-semibold text-neutral-700">
+            QR payload is available to QR generation flows and is not displayed here.
+          </p>
         </div>
       </div>
 
@@ -409,15 +400,32 @@ function MenuAppearanceSection({
               <p className="mt-3 text-sm leading-6 text-neutral-600">{template.description}</p>
               <p className="mt-3 text-xs font-semibold uppercase text-neutral-500">Best for</p>
               <p className="mt-1 text-sm leading-6 text-neutral-700">{template.bestFor}</p>
-              <div className="mt-4 rounded-md border border-neutral-200 bg-white p-3">
+              <div
+                className={`admin-template-preview ${template.cssClass}`}
+                data-template={template.id}
+                aria-label={`${template.displayName} CSS template preview`}
+              >
+                <div data-slot="merchant-hero">
+                  <span data-slot="merchant-logo" />
+                  <span data-slot="merchant-name" />
+                </div>
+                <div data-slot="category-navigation">
+                  <span />
+                  <span />
+                  <span />
+                </div>
+                <div data-slot="item-list">
+                  <span data-slot="item-image" />
+                  <span data-slot="item-copy" />
+                  <span data-slot="item-price" />
+                </div>
+                <div data-slot="loyalty-block" />
+              </div>
+              <div className="mt-3 flex items-center justify-between gap-3 rounded-md border border-neutral-200 bg-white p-3">
                 <p className="text-xs font-semibold uppercase text-neutral-500">{template.preview.label}</p>
-                <div className="mt-3 flex gap-2">
+                <div className="flex gap-1.5">
                   {template.preview.swatches.map((swatch) => (
-                    <span
-                      key={swatch}
-                      className="h-8 w-8 rounded-full border border-neutral-200"
-                      style={{ backgroundColor: swatch }}
-                    />
+                    <span key={swatch} className="h-5 w-5 rounded-full border border-neutral-200" style={{ backgroundColor: swatch }} />
                   ))}
                 </div>
               </div>
