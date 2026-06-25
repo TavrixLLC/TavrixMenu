@@ -40,6 +40,17 @@ Use this checklist by readiness milestone. Product-area headings are kept inside
 - [ ] Clerk mobile auth.
 - [ ] Business setup.
 - [ ] Menu management.
+- [x] Physical Android staff scanner E2E smoke passed on staging.
+
+### Wallet and Loyalty
+
+- [x] Cross-business phone enrollment passed on staging.
+- [x] Same-business duplicate enrollment remains blocked.
+- [x] Phone-only RECOVER remains blocked.
+- [x] Apple Wallet stale 304/update marker risk mitigated.
+- [x] Customer-web Wallet refresh mitigation copy deployed.
+- [ ] APNs enabled and verified in the real pilot environment before background installed-pass updates are promised.
+- [ ] Pilot staff training explains that the live web card is the source of truth and Apple Wallet installed-pass refresh timing is platform-controlled.
 
 ### QR
 
@@ -48,6 +59,7 @@ Use this checklist by readiness milestone. Product-area headings are kept inside
 ### Deployment
 
 - [ ] Staging environment.
+- [ ] Confirm staging/production APNs operational setting before paid pilot go/no-go.
 
 ### Support Operations
 

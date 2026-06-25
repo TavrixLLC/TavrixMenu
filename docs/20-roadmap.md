@@ -142,7 +142,7 @@ Real authenticated Flutter staff scanner E2E was not executed on a physical devi
 
 ## Sprint 12: Launch Readiness, BTAQA Parity & Market-readiness
 
-Status: Scope locked. Implementation not started.
+Status: Sprint 12A closed on 2026-06-25. Sprint 12B is the next active sprint.
 
 Goal: Prepare Waflo for the first real restaurant pilot by adding market-readiness work, BTAQA visual parity, and safety safeguards, while preserving Waflo's restaurant-first differentiation.
 
@@ -153,8 +153,11 @@ Full scope: [21-sprint-12-launch-readiness.md](21-sprint-12-launch-readiness.md)
 #### 1. Sprint 12A — Safety and Runtime
 * **Fix unverified cross-device recovery security:** Hardens customer card token recovery against unauthorized access.
 * **Real Flutter staff scanner E2E smoke:** Proves the authenticated staff Add Stamp scan workflow works end-to-end on a physical device/emulator.
+* **Closure result:** Staff Scanner E2E passed on physical Android; recovery/transfer security passed; cross-business enrollment passed on staging; Apple Wallet stale 304/update marker mitigation deployed at `451ab0e`.
+* **Caveat:** Apple Wallet installed-pass refresh timing is platform-controlled. The live web card is the source of truth, and APNs must be enabled/verified in the real pilot environment before background Wallet updates are promised.
 
 #### 2. Sprint 12B — Premium Card Designer v1 (BTAQA Parity)
+* **Status:** Next active sprint.
 * **Owner can customize card color**
 * **Upload/use logo**
 * **Select stamp icon/template**

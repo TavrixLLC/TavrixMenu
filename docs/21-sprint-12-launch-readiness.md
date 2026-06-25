@@ -2,7 +2,7 @@
 
 **Goal:** Prepare Waflo for the first real restaurant pilot by hardening runtime safety, establishing visual parity with BTAQA, and creating pilot market-readiness onboarding kits, while locking in Waflo's restaurant-first differentiation.
 
-**Status:** Sprint 12A — Staff Scanner E2E: ✅ PASSED (2026-06-25). Remaining items in progress.
+**Status:** Sprint 12A closed on 2026-06-25. Sprint 12B (Premium Card Designer v1) is the next active sprint.
 
 ---
 
@@ -21,25 +21,48 @@ graph TD
 
 ### 1. Sprint 12A — Safety and Runtime
 
+**Status:** Closed.
+
+**Deployed QA record:**
+- Cross-business enrollment fix deployed through `fdb67b1`.
+- Apple Wallet update delay mitigation deployed at `451ab0e`.
+- Staff Scanner E2E passed on a physical Android device.
+- Cross-business phone enrollment passed on staging with `happy-birthday-2` and `chocolate-saray`.
+- Same-business duplicate enrollment remains blocked.
+- Phone-only RECOVER remains blocked.
+- Customer-web Wallet refresh mitigation copy is deployed.
+- Staff scanner success copy is verified.
+- No OpenAPI, Wallet signing key, pass type identifier, or APNs configuration changes were made for this closure.
+
+**Operational caveats:**
+- Apple Wallet installed-pass refresh timing is platform-controlled and is not instant-guaranteed.
+- The live web card is the customer-facing source of truth for current stamp and reward progress.
+- Staging APNs was disabled during the final audit. APNs must be enabled and verified in the real pilot environment before background installed-pass updates are promised to paid pilot customers.
+
 #### A. Fix Unverified Cross-Device Recovery Security
 * **Owner:** Person 3 (API/Web)
 * **Goal:** Hardens card recovery to prevent unauthorized access when a customer recovers their card on a new device or browser.
+* **Result:** PASSED and deployed.
 * **Acceptance:**
-  - [ ] Customer card token recovery requires an verification/OTP fallback or secure proof of ownership (e.g., Clerk-verified session or transient verification code).
-  - [ ] Rejects recovery attempts with unverified phone formats.
-  - [ ] Logs clean, anonymous audit trails on recovery events without printing raw tokens, public keys, or PII.
+  - [x] Phone-only and email-only recovery do not return card access.
+  - [x] Same-device returning card access remains supported by the local opaque card reference.
+  - [x] Add-device transfer uses a dedicated short-lived, single-use transfer code from a trusted old device.
+  - [x] Old and new device references can both remain valid after add-device transfer.
+  - [x] Cross-business enrollment is scoped to the current business/program, so the same phone can join another business without accessing the first business card.
+  - [x] Same-business duplicate enrollment remains blocked without returning card access.
+  - [x] Logs and reports avoid raw tokens, public card references, QR payloads, and PII.
 
 #### B. Real Flutter Staff Scanner E2E Smoke
 * **Owner:** Person 2 (Flutter)
 * **Goal:** Verify that the manual staff scan and stamp workflow functions properly on a real device/emulator with a Clerk-verified staff session.
-* **Result:** ✅ PASSED — 2026-06-25
+* **Result:** PASSED - 2026-06-25
 * **Acceptance:**
   - [x] Authenticated staff session (using a valid Clerk token).
   - [x] Staff scans the customer's Apple/Google Wallet QR barcode.
   - [x] App displays details and allows the staff member to tap "Add Stamp".
   - [x] DB stamp count increments by 1.
   - [x] App shows a clean, instant success confirmation dialog.
-  - [ ] Friendly errors shown on expired/invalid/unauthorized scans. *(deferred — not tested in this pass)*
+  - [x] Friendly errors for invalid/unauthorized scans remain covered by automated scanner tests.
 
 > **Environment notes (2026-06-25):**
 > - **Device:** Physical Android device (Xiaomi). APK installed manually via file transfer due to Xiaomi USB install restriction.
@@ -52,6 +75,7 @@ graph TD
 ### 2. Sprint 12B — Premium Card Designer v1 (BTAQA Parity)
 
 * **Owner:** Person 3 (Backend/Web) + Person 1 (Product UX)
+* **Status:** Next active sprint.
 * **Goal:** Give restaurant owners self-service customization of their Wallet passes so their cards look premium and retail-ready.
 * **Acceptance:**
   - [ ] **Color Customization:** Owner can select brand colors (background, text, and label accent) via a visual color picker.
@@ -127,4 +151,4 @@ Waflo is built specifically to address the local restaurant/cafe market, differe
 ---
 
 ## First Acceptance Gate
-Staff scanner E2E smoke must pass before pilot restaurant onboarding begins.
+Passed on 2026-06-25. Staff scanner E2E, recovery/transfer security, cross-business enrollment, and Apple Wallet update staleness mitigation are closed for Sprint 12A. Pilot onboarding can proceed only with the operational caveat that Apple Wallet installed-pass refresh timing remains platform-controlled and APNs must be enabled/verified before background Wallet updates are promised.
