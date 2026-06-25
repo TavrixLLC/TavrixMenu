@@ -32,7 +32,7 @@ class MenuRepositoryImpl implements MenuRepository {
         businessId: 'dev-business',
         categoryId: 'dev-category-drinks',
         name: 'House Latte',
-        description: 'Warm espresso drink managed by staff.',
+        description: 'Warm espresso drink managed by the team.',
         priceCents: 450,
         isAvailable: true,
         sortOrder: 0,

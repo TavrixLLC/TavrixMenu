@@ -1,6 +1,7 @@
 import 'package:flutter/material.dart';
 import 'package:flutter_bloc/flutter_bloc.dart';
 
+import '../../../../app/router/route_names.dart';
 import '../../../../core/constants/app_spacing.dart';
 import '../../../../core/utils/money_formatter.dart';
 import '../../../../shared/widgets/app_button.dart';
@@ -93,6 +94,15 @@ class _MenuScreenState extends State<MenuScreen> {
                 subtitle: state.showArchived
                     ? 'Restore archived categories and unavailable menu items.'
                     : 'Manage active categories and available menu items.',
+              ),
+              const SizedBox(height: AppSpacing.md),
+              AppButton(
+                label: 'Menu appearance',
+                icon: Icons.palette_outlined,
+                variant: AppButtonVariant.secondary,
+                onPressed: () => Navigator.of(
+                  context,
+                ).pushNamed(AppRouteNames.menuAppearance),
               ),
               if (state.summaryErrorMessage != null) ...[
                 const SizedBox(height: AppSpacing.md),

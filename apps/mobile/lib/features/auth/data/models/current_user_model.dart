@@ -1,4 +1,5 @@
 import '../../domain/entities/current_user.dart';
+import '../../../../core/utils/business_role.dart';
 
 class CurrentUserModel extends CurrentUser {
   const CurrentUserModel({
@@ -31,12 +32,13 @@ class CurrentUserModel extends CurrentUser {
     );
     final role =
         _string(json['role']) ??
+        _string(user['role']) ??
         memberships
             .where((membership) => membership.isActive)
             .firstOrNull
             ?.role ??
         businesses.firstOrNull?.role ??
-        'OWNER';
+        BusinessRole.operator;
 
     return CurrentUserModel(
       id: _string(user['id']) ?? '',
@@ -48,7 +50,7 @@ class CurrentUserModel extends CurrentUser {
           _string(user['full_name']) ??
           _string(user['fullName']) ??
           '',
-      role: role,
+      role: BusinessRole.normalize(role),
       phone: _string(user['phone']),
       status: _string(user['status']),
       createdAt: _dateString(user['createdAt'] ?? user['created_at']),
@@ -107,7 +109,7 @@ CurrentUserMembership _membershipFromJson(Map<String, dynamic> json) {
 
   return CurrentUserMembership(
     id: _string(json['id']) ?? '',
-    role: _string(json['role']) ?? 'STAFF',
+    role: BusinessRole.normalize(_string(json['role'])),
     isActive: _bool(json['isActive']) ?? _bool(json['is_active']) ?? false,
     business: CurrentUserMembershipBusiness(
       id: _string(business['id']) ?? '',
@@ -129,7 +131,7 @@ CurrentUserBusiness _businessFromJson(Map<String, dynamic> json) {
     name: _string(json['name']) ?? '',
     slug: _string(json['slug']) ?? '',
     type: _string(json['type']) ?? '',
-    role: _string(json['role']) ?? 'STAFF',
+    role: BusinessRole.normalize(_string(json['role'])),
   );
 }
 

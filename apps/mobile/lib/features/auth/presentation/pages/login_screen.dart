@@ -47,7 +47,7 @@ class LoginScreen extends StatelessWidget {
               const SizedBox(height: AppSpacing.lg),
               const AppCard(
                 child: Text(
-                  'Customers browse public menus on the web. This app is for owners, managers, and staff who operate loyalty and menu workflows.',
+                  'Customers browse public menus on the web. This app is for business operators who run loyalty and menu workflows.',
                 ),
               ),
               if (state.status == AuthStatus.failure &&
@@ -259,7 +259,7 @@ class _CustomClerkAuthFormState extends State<_CustomClerkAuthForm> {
           if (!widget.config.hasGoogleNativeClientConfig) ...[
             const SizedBox(height: AppSpacing.sm),
             Text(
-              'Native Google sign-in needs GOOGLE_CLIENT_ID or GOOGLE_SERVER_CLIENT_ID configured for this app.',
+              'Google sign-in is not configured yet.',
               style: Theme.of(context).textTheme.bodyMedium,
             ),
           ],
@@ -347,10 +347,7 @@ class _CustomClerkAuthFormState extends State<_CustomClerkAuthForm> {
 
   Future<void> _signInWithGoogle() async {
     if (!widget.config.hasGoogleNativeClientConfig) {
-      setState(
-        () => _localMessage =
-            'Native Google sign-in is not configured for this build.',
-      );
+      setState(() => _localMessage = 'Google sign-in is not configured yet.');
       return;
     }
 

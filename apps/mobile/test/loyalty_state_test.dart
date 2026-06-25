@@ -28,12 +28,17 @@ void main() {
     },
   );
 
-  test('unknown roles cannot view the enrollment link', () {
-    const state = LoyaltyState(
-      status: LoyaltyStatus.success,
-      currentRole: 'CUSTOMER',
-    );
+  test(
+    'missing role remains operational until backend permissions are known',
+    () {
+      const state = LoyaltyState(
+        status: LoyaltyStatus.success,
+        currentRole: 'BUSINESS_OPERATOR',
+      );
 
-    expect(state.canViewEnrollmentLink, isFalse);
-  });
+      expect(state.canViewEnrollmentLink, isTrue);
+      expect(state.canUseDailyOperations, isTrue);
+      expect(state.canConfigureProgram, isTrue);
+    },
+  );
 }

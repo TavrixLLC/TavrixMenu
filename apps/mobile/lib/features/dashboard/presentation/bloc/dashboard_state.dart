@@ -2,6 +2,7 @@ import 'package:equatable/equatable.dart';
 
 import '../../../auth/domain/entities/current_user.dart';
 import '../../../business_setup/domain/entities/business.dart';
+import '../../../../core/utils/business_role.dart';
 import '../../domain/entities/dashboard_summary.dart';
 
 enum DashboardStatus { initial, loading, success, failure }
@@ -25,11 +26,25 @@ class DashboardState extends Equatable {
   final String? errorMessage;
   final String? summaryErrorMessage;
 
-  BusinessPermissions? get permissions =>
-      summary?.permissions ?? business?.permissions;
+  BusinessPermissions? get permissions {
+    final currentSummary = summary;
+    if (currentSummary != null &&
+        currentSummary.currentUser.permissionsAvailable) {
+      return currentSummary.permissions;
+    }
+    return business?.permissions;
+  }
 
-  String get effectiveRole =>
-      summary?.currentUser.role ?? user?.role ?? 'STAFF';
+  String? get backendRole {
+    final role = summary?.currentUser.role ?? user?.role;
+    return BusinessRole.isKnown(role) ? BusinessRole.normalize(role) : null;
+  }
+
+  String get effectiveRole => backendRole ?? BusinessRole.operator;
+
+  String get roleDisplayLabel => BusinessRole.displayLabel(effectiveRole);
+
+  bool get hasKnownRole => backendRole != null;
 
   DashboardState copyWith({
     DashboardStatus? status,

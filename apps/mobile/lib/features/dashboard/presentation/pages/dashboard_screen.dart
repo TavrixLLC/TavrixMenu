@@ -75,7 +75,7 @@ class _DashboardScreenState extends State<DashboardScreen> {
             children: [
               BusinessHeaderCard(
                 business: state.business,
-                role: state.effectiveRole,
+                role: state.roleDisplayLabel,
               ),
               if (state.summaryErrorMessage != null) ...[
                 const SizedBox(height: AppSpacing.md),
@@ -104,9 +104,20 @@ class _DashboardScreenState extends State<DashboardScreen> {
               const SizedBox(height: AppSpacing.lg),
               const SectionHeader(
                 title: 'Quick actions',
-                subtitle: 'Business operations for managers and staff.',
+                subtitle: 'Business operations for your workspace team.',
               ),
               const SizedBox(height: AppSpacing.md),
+              _DashboardActionCard(
+                enabled: _canManageMenu(state),
+                title: 'Customize menu design',
+                subtitle: _canManageMenu(state)
+                    ? 'Choose the public menu template customers see.'
+                    : 'Restricted by your business permissions.',
+                icon: Icons.palette_outlined,
+                routeName: AppRouteNames.menuAppearance,
+                accentColor: AppColors.primaryCoral,
+              ),
+              const SizedBox(height: AppSpacing.sm),
               _DashboardActionCard(
                 enabled: _canManageMenu(state),
                 title: 'Manage Menu',
@@ -164,12 +175,25 @@ class _DashboardScreenState extends State<DashboardScreen> {
 }
 
 bool _canManageBusiness(DashboardState state) {
-  return state.permissions?.canManageBusiness ?? state.effectiveRole == 'OWNER';
+  final permissions = state.permissions;
+  if (permissions != null) {
+    return permissions.canManageBusiness;
+  }
+  if (!state.hasKnownRole) {
+    return true;
+  }
+  return state.effectiveRole == 'OWNER';
 }
 
 bool _canManageMenu(DashboardState state) {
-  return state.permissions?.canManageMenu ??
-      (state.effectiveRole == 'OWNER' || state.effectiveRole == 'MANAGER');
+  final permissions = state.permissions;
+  if (permissions != null) {
+    return permissions.canManageMenu;
+  }
+  if (!state.hasKnownRole) {
+    return true;
+  }
+  return state.effectiveRole == 'OWNER' || state.effectiveRole == 'MANAGER';
 }
 
 bool _canViewPublicLink(DashboardState state) {
@@ -187,7 +211,7 @@ class _AccessCard extends StatelessWidget {
     final businessName = state.business?.name.trim() ?? 'this business';
     final title = fullName.isNotEmpty ? fullName : 'Your access';
     final subtitle =
-        'Signed in with ${state.effectiveRole.toLowerCase()} access for $businessName.';
+        'Signed in as ${state.roleDisplayLabel.toLowerCase()} for $businessName.';
 
     return AppCard(
       child: Row(
@@ -208,7 +232,7 @@ class _AccessCard extends StatelessWidget {
             ),
           ),
           const SizedBox(width: AppSpacing.md),
-          RoleBadge(role: state.effectiveRole),
+          RoleBadge(role: state.roleDisplayLabel),
         ],
       ),
     );

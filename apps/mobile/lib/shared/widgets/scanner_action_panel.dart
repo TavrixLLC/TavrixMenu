@@ -67,7 +67,7 @@ class ScannerActionPanel extends StatelessWidget {
                     ),
                     const SizedBox(height: AppSpacing.xs),
                     Text(
-                      'Tokens stay hidden from staff screens.',
+                      'Tokens stay hidden from operator screens.',
                       style: Theme.of(context).textTheme.bodyMedium?.copyWith(
                         color: AppColors.surfaceWhite.withValues(alpha: 0.78),
                       ),

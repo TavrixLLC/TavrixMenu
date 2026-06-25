@@ -1,5 +1,6 @@
 import '../../../business_setup/data/models/business_model.dart';
 import '../../../business_setup/domain/entities/business.dart';
+import '../../../../core/utils/business_role.dart';
 import '../../domain/entities/dashboard_summary.dart';
 
 class DashboardSummaryModel extends DashboardSummary {
@@ -18,6 +19,7 @@ class DashboardSummaryModel extends DashboardSummary {
         _asObject(json['currentUser']) ??
         _asObject(json['current_user']) ??
         const <String, dynamic>{};
+    final permissionsJson = _asObject(currentUserJson['permissions']);
     final publicMenu = _publicMenuFromJson(
       _asObject(json['publicMenu']) ?? _asObject(json['public_menu']),
       slug: _string(businessJson['slug']) ?? '',
@@ -26,9 +28,9 @@ class DashboardSummaryModel extends DashboardSummary {
     return DashboardSummaryModel(
       business: BusinessModel.fromAppContext({
         'business': businessJson,
-        'permissions':
-            _asObject(currentUserJson['permissions']) ??
-            const <String, dynamic>{},
+        ...permissionsJson == null
+            ? const <String, dynamic>{}
+            : {'permissions': permissionsJson},
         'publicMenu': {
           'path': publicMenu.path,
           'url': publicMenu.url,
@@ -36,10 +38,9 @@ class DashboardSummaryModel extends DashboardSummary {
         },
       }).toEntity(),
       currentUser: DashboardCurrentUser(
-        role: _string(currentUserJson['role']) ?? 'STAFF',
-        permissions: _permissionsFromJson(
-          _asObject(currentUserJson['permissions']),
-        ),
+        role: BusinessRole.normalize(_string(currentUserJson['role'])),
+        permissions: _permissionsFromJson(permissionsJson),
+        permissionsAvailable: permissionsJson != null,
       ),
       counts: _countsFromJson(_asObject(json['counts'])),
       publicMenu: publicMenu,

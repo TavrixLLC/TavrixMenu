@@ -84,7 +84,7 @@ class _StaffScannerScreenState extends State<StaffScannerScreen> {
               const SectionHeader(
                 title: 'Operator scan',
                 subtitle:
-                    'Fast loyalty lookup for staff during live customer interactions.',
+                    'Fast loyalty lookup for team members during live customer interactions.',
               ),
               const SizedBox(height: AppSpacing.md),
               if (_cameraOpen)
