@@ -818,7 +818,7 @@
         "parameters": [],
         "responses": {
           "200": {
-            "description": "Enabled Waflo-managed public menu templates. The response excludes CSS source and merchant-sensitive data.",
+            "description": "Enabled Waflo-managed public menu templates. The response excludes CSS source, development preview URLs, and merchant-sensitive data.",
             "content": {
               "application/json": {
                 "schema": {
@@ -841,8 +841,8 @@
                           ],
                           "previewLayout": "warm-card-list",
                           "thumbnailUrl": null,
-                          "mobilePreviewUrl": "/dev/menu-templates/waflo-warm",
-                          "desktopPreviewUrl": "/dev/menu-templates/waflo-warm"
+                          "mobilePreviewUrl": null,
+                          "desktopPreviewUrl": null
                         },
                         "supportedFeatures": {
                           "rtl": true,

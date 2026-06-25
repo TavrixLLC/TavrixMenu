@@ -48,6 +48,9 @@ GET /menu-templates
 ```
 
 Admin-web consumes that endpoint and does not maintain a separate template list.
+Catalog preview URL fields are `null` until Waflo publishes production-safe
+preview assets. `/dev/menu-templates/*` is dev/QA-only and must not be exposed
+as a mobile/admin catalog preview URL.
 
 Each template definition includes:
 
@@ -101,7 +104,7 @@ Do not add a new React branch to `PublicMenuTemplateView` for a visual-only temp
 - `GET /businesses/:id/menu-appearance` and `PATCH /businesses/:id/menu-appearance` remain compatibility aliases.
 - Staff can view the current appearance but cannot save changes.
 - The admin picker displays template name, description, best-for copy, a CSS-reflective mini preview, current badge, draft selection, preview action, and save action.
-- The picker previews with the existing public URL plus `?previewTemplateId=<template-id>`.
+- The picker previews with the existing public URL plus `?previewTemplateId=<template-id>`. This query is handled by customer-web and does not persist appearance changes.
 - Saving a template changes the public menu after the appearance setting is updated.
 
 ## Preview QA

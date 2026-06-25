@@ -24,8 +24,8 @@ const menuTemplates = Object.freeze([
       previewColors: Object.freeze(['#FF6B4A', '#FFF8F2', '#43A047']),
       previewLayout: 'warm-card-list',
       thumbnailUrl: null,
-      mobilePreviewUrl: '/dev/menu-templates/waflo-warm',
-      desktopPreviewUrl: '/dev/menu-templates/waflo-warm'
+      mobilePreviewUrl: null,
+      desktopPreviewUrl: null
     }),
     supportedFeatures: sharedFeatures
   }),
@@ -43,8 +43,8 @@ const menuTemplates = Object.freeze([
       previewColors: Object.freeze(['#12392F', '#F59E0B', '#F8F1E7']),
       previewLayout: 'editorial-cafe',
       thumbnailUrl: null,
-      mobilePreviewUrl: '/dev/menu-templates/coffeehouse-premium',
-      desktopPreviewUrl: '/dev/menu-templates/coffeehouse-premium'
+      mobilePreviewUrl: null,
+      desktopPreviewUrl: null
     }),
     supportedFeatures: sharedFeatures
   }),
@@ -62,8 +62,8 @@ const menuTemplates = Object.freeze([
       previewColors: Object.freeze(['#FF6B4A', '#FFB020', '#FFF3EC']),
       previewLayout: 'bold-quick-service',
       thumbnailUrl: null,
-      mobilePreviewUrl: '/dev/menu-templates/street-bites',
-      desktopPreviewUrl: '/dev/menu-templates/street-bites'
+      mobilePreviewUrl: null,
+      desktopPreviewUrl: null
     }),
     supportedFeatures: sharedFeatures
   }),
@@ -81,8 +81,8 @@ const menuTemplates = Object.freeze([
       previewColors: Object.freeze(['#FFFFFF', '#FF6B4A', '#E5E7EB']),
       previewLayout: 'minimal-list',
       thumbnailUrl: null,
-      mobilePreviewUrl: '/dev/menu-templates/minimal-modern',
-      desktopPreviewUrl: '/dev/menu-templates/minimal-modern'
+      mobilePreviewUrl: null,
+      desktopPreviewUrl: null
     }),
     supportedFeatures: sharedFeatures
   })

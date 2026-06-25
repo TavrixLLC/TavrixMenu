@@ -16,6 +16,10 @@ describe('MenuTemplatesService', () => {
     assert.ok(catalog.templates.some((template) => template.isDefault && template.id === 'waflo-warm'));
     assert.ok(catalog.templates.every((template) => Array.isArray(template.preview.previewColors)));
     assert.ok(catalog.templates.every((template) => typeof template.preview.previewLayout === 'string'));
+    assert.ok(catalog.templates.every((template) => template.preview.thumbnailUrl === null));
+    assert.ok(catalog.templates.every((template) => template.preview.mobilePreviewUrl === null));
+    assert.ok(catalog.templates.every((template) => template.preview.desktopPreviewUrl === null));
+    assert.equal(JSON.stringify(catalog).includes('/dev/menu-templates'), false);
     assert.equal(Object.hasOwn(catalog.templates[0] as object, 'cssFile'), false);
     assert.equal(Object.hasOwn(catalog.templates[0] as object, 'cssClass'), false);
   });

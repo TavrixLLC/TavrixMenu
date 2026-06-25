@@ -1,6 +1,9 @@
 import { BadRequestException, ForbiddenException } from '@nestjs/common';
 import { strict as assert } from 'assert';
+import { validate } from 'class-validator';
 import { describe, it } from 'node:test';
+import { UpdateMenuAppearanceDto } from './dto/update-menu-appearance.dto';
+import { MENU_TEMPLATE_IDS } from './menu-appearance.constants';
 import { BusinessesService } from './businesses.service';
 
 describe('BusinessesService menu appearance contract', () => {
@@ -107,6 +110,30 @@ describe('BusinessesService menu appearance contract', () => {
       BadRequestException
     );
     assert.equal(setup.updates.length, 0);
+  });
+
+  it('keeps DTO validation scoped to the enabled Waflo-managed template IDs', async () => {
+    assert.deepEqual(MENU_TEMPLATE_IDS, [
+      'waflo-warm',
+      'coffeehouse-premium',
+      'street-bites',
+      'minimal-modern'
+    ]);
+
+    for (const menuTemplateId of MENU_TEMPLATE_IDS) {
+      const dto = new UpdateMenuAppearanceDto();
+      dto.menuTemplateId = menuTemplateId;
+
+      assert.deepEqual(await validate(dto), []);
+    }
+
+    const invalid = new UpdateMenuAppearanceDto();
+    invalid.menuTemplateId = 'luxury-dining' as never;
+
+    const errors = await validate(invalid);
+
+    assert.equal(errors.length, 1);
+    assert.ok(errors[0]?.constraints?.isIn);
   });
 });
 

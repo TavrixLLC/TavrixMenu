@@ -6,7 +6,9 @@ Flutter implementation is not included in this branch. Mobile should integrate t
 
 - `GET /menu-templates`
   - Returns enabled Waflo-managed templates.
-  - Use `displayName`, `description`, `bestFor`, `version`, `status`, `enabled`, `isDefault`, `preview.previewColors`, `preview.previewLayout`, `preview.thumbnailUrl`, `preview.mobilePreviewUrl`, `preview.desktopPreviewUrl`, and `supportedFeatures`.
+  - Use `displayName`, `description`, `bestFor`, `version`, `status`, `enabled`, `isDefault`, `preview.previewColors`, `preview.previewLayout`, and `supportedFeatures`.
+  - `preview.thumbnailUrl`, `preview.mobilePreviewUrl`, and `preview.desktopPreviewUrl` are currently `null` unless Waflo publishes production-safe preview assets later.
+  - Do not use `/dev/menu-templates/*` from the catalog. That route is dev/QA-only and is not a mobile/admin preview contract.
   - Do not hardcode template IDs in Flutter except as a defensive fallback for `waflo-warm`.
 
 - `GET /businesses/:businessId/appearance`
@@ -28,9 +30,11 @@ Use the existing public menu URL with a query parameter:
 
 Rules:
 
+- The `previewTemplateId` query is consumed by customer-web, not the API public menu endpoint.
 - Opening this URL must not save changes.
 - The page uses the same public menu data and CSS template contract as the saved public menu.
 - Invalid preview IDs safely render the business effective template.
+- Disabled or unknown template IDs must not render as previews.
 - Do not send or display QR payloads, tokens, card references, transfer tokens, JWTs, phone numbers, email addresses, or other sensitive data.
 
 ## Suggested Screen Behavior

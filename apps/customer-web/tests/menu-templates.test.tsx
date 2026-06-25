@@ -40,6 +40,32 @@ describe('customer-web public menu templates', () => {
 
   it('falls back safely when a template id is invalid', () => {
     assert.equal(getPublicMenuTemplate('unknown-template').id, 'waflo-warm');
+    assert.equal(getPublicMenuTemplate('luxury-dining').id, 'waflo-warm');
+    assert.equal(getPublicMenuTemplate('artisan-cafe').id, 'waflo-warm');
+    assert.equal(getPublicMenuTemplate('quick-serve-bold').id, 'waflo-warm');
+  });
+
+  it('renders a web preview template without mutating the saved appearance', () => {
+    const savedAppearance = {
+      ...demoMenu.appearance,
+      menuTemplateId: 'waflo-warm',
+      effectiveTemplateId: 'waflo-warm'
+    };
+    const menu = {
+      ...demoMenu,
+      appearance: savedAppearance
+    };
+    const html = renderToStaticMarkup(
+      <PublicMenuTemplateView
+        menu={menu}
+        template={getPublicMenuTemplate('coffeehouse-premium')}
+        loyaltyContext={demoLoyalty}
+      />
+    );
+
+    assert.match(html, /data-template="coffeehouse-premium"/);
+    assert.equal(menu.appearance.effectiveTemplateId, 'waflo-warm');
+    assert.equal(savedAppearance.effectiveTemplateId, 'waflo-warm');
   });
 
   it('keeps the same semantic DOM contract across templates', () => {

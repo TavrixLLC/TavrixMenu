@@ -17,8 +17,8 @@ const catalogExample = {
         previewColors: ['#FF6B4A', '#FFF8F2', '#43A047'],
         previewLayout: 'warm-card-list',
         thumbnailUrl: null,
-        mobilePreviewUrl: '/dev/menu-templates/waflo-warm',
-        desktopPreviewUrl: '/dev/menu-templates/waflo-warm'
+        mobilePreviewUrl: null,
+        desktopPreviewUrl: null
       },
       supportedFeatures: {
         rtl: true,
@@ -40,7 +40,7 @@ export class MenuTemplatesController {
   @Get()
   @ApiOkResponse({
     description:
-      'Enabled Waflo-managed public menu templates. The response excludes CSS source and merchant-sensitive data.',
+      'Enabled Waflo-managed public menu templates. The response excludes CSS source, development preview URLs, and merchant-sensitive data.',
     schema: {
       example: catalogExample
     }
