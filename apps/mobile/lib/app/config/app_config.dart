@@ -8,6 +8,8 @@ class AppConfig {
     required this.appEnv,
     required this.enableDevAuth,
     required this.clerkPublishableKey,
+    this.googleClientId = '',
+    this.googleServerClientId = '',
   });
 
   factory AppConfig.fromEnvironment() {
@@ -21,6 +23,8 @@ class AppConfig {
         defaultValue: false,
       ),
       clerkPublishableKey: String.fromEnvironment('CLERK_PUBLISHABLE_KEY'),
+      googleClientId: String.fromEnvironment('GOOGLE_CLIENT_ID'),
+      googleServerClientId: String.fromEnvironment('GOOGLE_SERVER_CLIENT_ID'),
     );
   }
 
@@ -30,10 +34,16 @@ class AppConfig {
   final String appEnv;
   final bool enableDevAuth;
   final String clerkPublishableKey;
+  final String googleClientId;
+  final String googleServerClientId;
 
   bool get hasApiBaseUrl => apiBaseUrl.trim().isNotEmpty;
 
   bool get hasClerkPublishableKey => clerkPublishableKey.trim().isNotEmpty;
+
+  bool get hasGoogleNativeClientConfig =>
+      googleClientId.trim().isNotEmpty ||
+      googleServerClientId.trim().isNotEmpty;
 
   bool get isDevelopment => appEnv.trim().toLowerCase() == 'development';
 
@@ -55,5 +65,17 @@ class AppConfig {
       return trimmed.substring(0, trimmed.length - 1);
     }
     return trimmed;
+  }
+
+  String? get normalizedGoogleClientId {
+    final trimmed = googleClientId.trim();
+    return trimmed.isEmpty ? null : trimmed;
+  }
+
+  String? get normalizedGoogleServerClientId {
+    final trimmed = googleServerClientId.trim().isNotEmpty
+        ? googleServerClientId.trim()
+        : googleClientId.trim();
+    return trimmed.isEmpty ? null : trimmed;
   }
 }

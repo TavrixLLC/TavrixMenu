@@ -1,5 +1,7 @@
 import 'package:flutter/material.dart';
 
+import 'waflo_text_field.dart';
+
 class AppTextField extends StatelessWidget {
   const AppTextField({
     required this.label,
@@ -20,12 +22,13 @@ class AppTextField extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
-    return TextField(
+    return WafloTextField(
+      label: label,
       controller: controller,
       keyboardType: keyboardType,
       maxLines: maxLines,
       onChanged: onChanged,
-      decoration: InputDecoration(labelText: label, hintText: hint),
+      hint: hint,
     );
   }
 }

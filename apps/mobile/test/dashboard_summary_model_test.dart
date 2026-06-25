@@ -56,4 +56,20 @@ void main() {
     expect(model.publicMenu.qrPayload, 'http://localhost:3001/m/tavrix-cafe');
     expect(model.onboardingHints.recommendedNextStep, 'SHARE_PUBLIC_MENU');
   });
+
+  test('missing summary role and permissions do not default to staff', () {
+    final model = DashboardSummaryModel.fromJson({
+      'business': {
+        'id': 'bus_123',
+        'name': 'Tavrix Cafe',
+        'slug': 'tavrix-cafe',
+      },
+      'currentUser': <String, dynamic>{},
+    });
+
+    expect(model.currentUser.role, 'BUSINESS_OPERATOR');
+    expect(model.currentUser.permissionsAvailable, isFalse);
+    expect(model.business.permissions, isNull);
+    expect(model.currentUser.role, isNot('STAFF'));
+  });
 }

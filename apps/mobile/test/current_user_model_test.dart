@@ -73,4 +73,17 @@ void main() {
     expect(model.fullName, 'Legacy Owner');
     expect(model.hasBusiness, isFalse);
   });
+
+  test('missing role data falls back to neutral operator role', () {
+    final model = CurrentUserModel.fromJson({
+      'user': {'id': 'usr_unknown'},
+      'businesses': [
+        {'id': 'bus_123', 'name': 'Tavrix Cafe'},
+      ],
+    });
+
+    expect(model.role, 'BUSINESS_OPERATOR');
+    expect(model.businesses.single.role, 'BUSINESS_OPERATOR');
+    expect(model.role, isNot('STAFF'));
+  });
 }

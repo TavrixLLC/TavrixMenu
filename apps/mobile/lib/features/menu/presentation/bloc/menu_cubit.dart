@@ -89,7 +89,9 @@ class MenuCubit extends Cubit<MenuState> {
             (failure) => summaryErrorMessage = failureMessage(failure),
             (summary) {
               resolvedBusiness = summary.business;
-              permissions = summary.permissions;
+              permissions = summary.currentUser.permissionsAvailable
+                  ? summary.permissions
+                  : summary.business.permissions ?? permissions;
             },
           );
         }

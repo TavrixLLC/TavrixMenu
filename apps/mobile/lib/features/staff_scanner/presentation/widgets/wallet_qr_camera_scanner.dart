@@ -2,11 +2,14 @@ import 'dart:async';
 
 import 'package:flutter/material.dart';
 import 'package:mobile_scanner/mobile_scanner.dart';
+import 'package:url_launcher/url_launcher.dart';
 
 import '../../../../core/constants/app_colors.dart';
+import '../../../../core/constants/app_radius.dart';
 import '../../../../core/constants/app_spacing.dart';
 import '../../../../shared/widgets/app_button.dart';
 import '../../../../shared/widgets/app_card.dart';
+import '../../../../shared/widgets/waflo_status_badge.dart';
 
 class WalletQrCameraScanner extends StatefulWidget {
   const WalletQrCameraScanner({
@@ -42,42 +45,35 @@ class _WalletQrCameraScannerState extends State<WalletQrCameraScanner> {
       child: Column(
         crossAxisAlignment: CrossAxisAlignment.start,
         children: [
-          Text(
-            'Camera wallet scan',
-            style: Theme.of(context).textTheme.titleMedium,
-          ),
+          Text('Camera scanner', style: Theme.of(context).textTheme.titleLarge),
           const SizedBox(height: AppSpacing.xs),
           const Text(
-            'Point the camera at the customer wallet QR code. The code is used only for this lookup.',
+            'Point the frame at the customer wallet QR. The code is processed without displaying the raw token.',
           ),
           const SizedBox(height: AppSpacing.md),
           AspectRatio(
             aspectRatio: 1,
             child: ClipRRect(
-              borderRadius: BorderRadius.circular(12),
-              child: Stack(
-                fit: StackFit.expand,
-                children: [
-                  MobileScanner(
-                    key: const ValueKey('walletCameraPreview'),
-                    controller: _controller,
-                    onDetect: _handleCapture,
-                    onDetectError: (_, _) {},
-                    errorBuilder: (context, error) => _CameraErrorView(
-                      errorCode: error.errorCode,
-                      onRetry: _retryCamera,
-                    ),
-                    placeholderBuilder: (_) => const ColoredBox(
-                      color: AppColors.textBlack,
-                      child: Center(
-                        child: CircularProgressIndicator(
-                          key: ValueKey('walletCameraStarting'),
-                        ),
-                      ),
+              borderRadius: BorderRadius.circular(AppRadius.lg),
+              child: MobileScanner(
+                key: const ValueKey('walletCameraPreview'),
+                controller: _controller,
+                onDetect: _handleCapture,
+                onDetectError: (_, _) {},
+                errorBuilder: (context, error) => WalletCameraErrorView(
+                  errorCode: error.errorCode,
+                  onRetry: _retryCamera,
+                  onOpenSettings: _openAppSettings,
+                ),
+                overlayBuilder: (_, _) => const WalletCameraActiveOverlay(),
+                placeholderBuilder: (_) => const ColoredBox(
+                  color: AppColors.ink,
+                  child: Center(
+                    child: CircularProgressIndicator(
+                      key: ValueKey('walletCameraStarting'),
                     ),
                   ),
-                  const IgnorePointer(child: _ScanFrameOverlay()),
-                ],
+                ),
               ),
             ),
           ),
@@ -124,13 +120,27 @@ class _WalletQrCameraScannerState extends State<WalletQrCameraScanner> {
       // The scanner widget renders the safe permission/device error state.
     }
   }
+
+  Future<void> _openAppSettings() async {
+    final settingsUri = Uri.parse('app-settings:');
+    if (await canLaunchUrl(settingsUri)) {
+      await launchUrl(settingsUri);
+    }
+  }
 }
 
-class _CameraErrorView extends StatelessWidget {
-  const _CameraErrorView({required this.errorCode, required this.onRetry});
+@visibleForTesting
+class WalletCameraErrorView extends StatelessWidget {
+  const WalletCameraErrorView({
+    required this.errorCode,
+    required this.onRetry,
+    required this.onOpenSettings,
+    super.key,
+  });
 
   final MobileScannerErrorCode errorCode;
   final VoidCallback onRetry;
+  final VoidCallback onOpenSettings;
 
   @override
   Widget build(BuildContext context) {
@@ -143,35 +153,114 @@ class _CameraErrorView extends StatelessWidget {
         ? 'Camera scanning is not supported on this device. Use manual entry instead.'
         : 'The camera could not start. Try again or use manual entry.';
 
-    return ColoredBox(
-      key: ValueKey(
-        permissionDenied ? 'walletCameraPermissionDenied' : 'walletCameraError',
+    return DecoratedBox(
+      key: const ValueKey('walletCameraErrorState'),
+      decoration: BoxDecoration(
+        color: AppColors.warmCream,
+        border: Border.all(color: AppColors.softBorder),
       ),
-      color: AppColors.ceramic,
       child: Padding(
         padding: const EdgeInsets.all(AppSpacing.lg),
-        child: Column(
-          mainAxisAlignment: MainAxisAlignment.center,
-          children: [
-            Icon(
-              permissionDenied
-                  ? Icons.no_photography_outlined
-                  : Icons.camera_alt_outlined,
+        child: Center(
+          child: SingleChildScrollView(
+            child: Column(
+              mainAxisSize: MainAxisSize.min,
+              children: [
+                DecoratedBox(
+                  decoration: BoxDecoration(
+                    color: AppColors.coralTint,
+                    borderRadius: BorderRadius.circular(AppRadius.md),
+                  ),
+                  child: Padding(
+                    padding: const EdgeInsets.all(AppSpacing.md),
+                    child: Icon(
+                      permissionDenied
+                          ? Icons.no_photography_outlined
+                          : Icons.camera_alt_outlined,
+                      key: ValueKey(
+                        permissionDenied
+                            ? 'walletCameraPermissionDenied'
+                            : 'walletCameraError',
+                      ),
+                      color: AppColors.primaryCoralDark,
+                      size: 32,
+                    ),
+                  ),
+                ),
+                const SizedBox(height: AppSpacing.sm),
+                Text(
+                  permissionDenied
+                      ? 'Camera access needed'
+                      : 'Camera unavailable',
+                  textAlign: TextAlign.center,
+                  style: Theme.of(context).textTheme.titleMedium,
+                ),
+                const SizedBox(height: AppSpacing.xs),
+                Text(
+                  message,
+                  textAlign: TextAlign.center,
+                  style: Theme.of(
+                    context,
+                  ).textTheme.bodyMedium?.copyWith(color: AppColors.mutedText),
+                ),
+                if (permissionDenied ||
+                    (!unsupported && !permissionDenied)) ...[
+                  const SizedBox(height: AppSpacing.md),
+                  Wrap(
+                    alignment: WrapAlignment.center,
+                    spacing: AppSpacing.sm,
+                    runSpacing: AppSpacing.sm,
+                    children: [
+                      if (permissionDenied)
+                        AppButton(
+                          label: 'Open settings',
+                          icon: Icons.settings_outlined,
+                          onPressed: onOpenSettings,
+                          expand: false,
+                          variant: AppButtonVariant.secondary,
+                        ),
+                      if (!unsupported && !permissionDenied)
+                        AppButton(
+                          label: 'Try camera again',
+                          icon: Icons.refresh,
+                          onPressed: onRetry,
+                          expand: false,
+                        ),
+                    ],
+                  ),
+                ],
+              ],
             ),
-            const SizedBox(height: AppSpacing.sm),
-            Text(message, textAlign: TextAlign.center),
-            if (!unsupported) ...[
-              const SizedBox(height: AppSpacing.md),
-              AppButton(
-                label: 'Try camera again',
-                icon: Icons.refresh,
-                onPressed: onRetry,
-                expand: false,
-              ),
-            ],
-          ],
+          ),
         ),
       ),
+    );
+  }
+}
+
+@visibleForTesting
+class WalletCameraActiveOverlay extends StatelessWidget {
+  const WalletCameraActiveOverlay({super.key});
+
+  @override
+  Widget build(BuildContext context) {
+    return Stack(
+      fit: StackFit.expand,
+      children: const [
+        IgnorePointer(child: _ScanFrameOverlay()),
+        PositionedDirectional(
+          start: AppSpacing.md,
+          end: AppSpacing.md,
+          bottom: AppSpacing.md,
+          child: WafloStatusBadge(
+            key: ValueKey('walletCameraSecureScanBadge'),
+            label: 'Ready for secure scan',
+            icon: Icons.lock_outline,
+            color: AppColors.charcoalSoft,
+            foregroundColor: AppColors.surfaceWhite,
+          ),
+        ),
+      ],
     );
   }
 }
@@ -186,9 +275,17 @@ class _ScanFrameOverlay extends StatelessWidget {
         widthFactor: 0.72,
         heightFactor: 0.72,
         child: DecoratedBox(
+          key: const ValueKey('walletCameraScanFrameOverlay'),
           decoration: BoxDecoration(
-            border: Border.all(color: Colors.white, width: 3),
-            borderRadius: BorderRadius.circular(16),
+            border: Border.all(color: AppColors.surfaceWhite, width: 3),
+            borderRadius: BorderRadius.circular(AppRadius.lg),
+            boxShadow: const [
+              BoxShadow(
+                color: Color(0x33000000),
+                blurRadius: 24,
+                spreadRadius: 4,
+              ),
+            ],
           ),
         ),
       ),

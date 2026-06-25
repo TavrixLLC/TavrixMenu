@@ -52,6 +52,41 @@ void main() {
 
     await cubit.close();
   });
+
+  test(
+    'active business membership opens dashboard even without setup flag',
+    () async {
+      final cubit = _authCubit(
+        const CurrentUser(
+          id: 'usr_member',
+          email: 'operator@tavrix.local',
+          fullName: 'Workspace Member',
+          role: 'BUSINESS_OPERATOR',
+          onboarding: CurrentUserOnboarding(hasBusiness: false),
+          memberships: [
+            CurrentUserMembership(
+              id: 'mem_123',
+              role: 'BUSINESS_OPERATOR',
+              isActive: true,
+              business: CurrentUserMembershipBusiness(
+                id: 'bus_123',
+                name: 'Tavrix Cafe',
+                slug: 'tavrix-cafe',
+                type: 'cafe',
+              ),
+            ),
+          ],
+        ),
+      );
+
+      await cubit.signInWithClerk();
+
+      expect(cubit.state.status, AuthStatus.authenticated);
+      expect(cubit.state.shouldOpenDashboard, isTrue);
+
+      await cubit.close();
+    },
+  );
 }
 
 AuthCubit _authCubit(CurrentUser user) {

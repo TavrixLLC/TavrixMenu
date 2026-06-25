@@ -1,5 +1,6 @@
 import 'package:equatable/equatable.dart';
 
+import '../../../../core/utils/business_role.dart';
 import '../../../business_setup/domain/entities/business.dart';
 import '../../domain/entities/loyalty_membership.dart';
 import '../../domain/entities/loyalty_program.dart';
@@ -11,7 +12,7 @@ class LoyaltyState extends Equatable {
   const LoyaltyState({
     required this.status,
     this.business,
-    this.currentRole = 'STAFF',
+    this.currentRole = BusinessRole.operator,
     this.permissions,
     this.program,
     this.memberships = const [],
@@ -45,18 +46,43 @@ class LoyaltyState extends Equatable {
   final String? summaryErrorMessage;
 
   bool get canUseDailyOperations {
+    final currentPermissions = permissions;
+    if (currentPermissions != null) {
+      return currentPermissions.canManageMembers ||
+          currentPermissions.canViewMembers;
+    }
     final role = currentRole.toUpperCase();
-    return role == 'OWNER' || role == 'MANAGER' || role == 'STAFF';
+    return role == BusinessRole.owner ||
+        role == BusinessRole.manager ||
+        role == BusinessRole.staff ||
+        !BusinessRole.isKnown(role);
   }
 
   bool get canConfigureProgram {
+    final currentPermissions = permissions;
+    if (currentPermissions != null) {
+      return currentPermissions.canManageBusiness ||
+          currentPermissions.canManageMembers;
+    }
     final role = currentRole.toUpperCase();
-    return role == 'OWNER' || role == 'MANAGER';
+    if (!BusinessRole.isKnown(role)) {
+      return true;
+    }
+    return role == BusinessRole.owner || role == BusinessRole.manager;
   }
 
   bool get canViewEnrollmentLink {
+    final currentPermissions = permissions;
+    if (currentPermissions != null) {
+      return currentPermissions.canViewPublicLink ||
+          currentPermissions.canViewMembers ||
+          currentPermissions.canManageMembers;
+    }
     final role = currentRole.toUpperCase();
-    return role == 'OWNER' || role == 'MANAGER' || role == 'STAFF';
+    return role == BusinessRole.owner ||
+        role == BusinessRole.manager ||
+        role == BusinessRole.staff ||
+        !BusinessRole.isKnown(role);
   }
 
   LoyaltyState copyWith({

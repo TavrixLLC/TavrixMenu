@@ -42,6 +42,12 @@ import '../../features/menu/domain/usecases/reorder_menu_items.dart';
 import '../../features/menu/domain/usecases/restore_menu_category.dart';
 import '../../features/menu/domain/usecases/restore_menu_item.dart';
 import '../../features/menu/presentation/bloc/menu_cubit.dart';
+import '../../features/menu_appearance/data/datasources/menu_appearance_remote_data_source.dart';
+import '../../features/menu_appearance/data/repositories/menu_appearance_repository_impl.dart';
+import '../../features/menu_appearance/domain/usecases/get_business_appearance.dart';
+import '../../features/menu_appearance/domain/usecases/get_menu_template_catalog.dart';
+import '../../features/menu_appearance/domain/usecases/update_business_appearance.dart';
+import '../../features/menu_appearance/presentation/bloc/menu_appearance_cubit.dart';
 import '../../features/staff_scanner/data/datasources/wallet_scan_remote_data_source.dart';
 import '../../features/staff_scanner/data/repositories/wallet_scan_repository_impl.dart';
 import '../../features/staff_scanner/domain/usecases/scan_wallet_pass.dart';
@@ -56,6 +62,7 @@ class AppDependencies {
     required this.businessSetupCubit,
     required this.dashboardCubit,
     required this.menuCubit,
+    required this.menuAppearanceCubit,
     required this.loyaltyCubit,
     required this.walletScanCubit,
   });
@@ -118,6 +125,24 @@ class AppDependencies {
     final reorderMenuCategories = ReorderMenuCategories(menuRepository);
     final reorderMenuItems = ReorderMenuItems(menuRepository);
 
+    final menuAppearanceRemoteDataSource = MenuAppearanceRemoteDataSourceImpl(
+      apiClient,
+    );
+    final menuAppearanceRepository = MenuAppearanceRepositoryImpl(
+      remoteDataSource: menuAppearanceRemoteDataSource,
+      networkInfo: networkInfo,
+      devFallbackEnabled: resolvedConfig.isDevAuthEnabled,
+    );
+    final getMenuTemplateCatalog = GetMenuTemplateCatalog(
+      menuAppearanceRepository,
+    );
+    final getBusinessAppearance = GetBusinessAppearance(
+      menuAppearanceRepository,
+    );
+    final updateBusinessAppearance = UpdateBusinessAppearance(
+      menuAppearanceRepository,
+    );
+
     final loyaltyRemoteDataSource = LoyaltyRemoteDataSourceImpl(apiClient);
     final loyaltyRepository = LoyaltyRepositoryImpl(
       remoteDataSource: loyaltyRemoteDataSource,
@@ -173,6 +198,12 @@ class AppDependencies {
         reorderMenuItems: reorderMenuItems,
         getDashboardSummary: getDashboardSummary,
       ),
+      menuAppearanceCubit: MenuAppearanceCubit(
+        getMyBusiness: getMyBusiness,
+        getMenuTemplateCatalog: getMenuTemplateCatalog,
+        getBusinessAppearance: getBusinessAppearance,
+        updateBusinessAppearance: updateBusinessAppearance,
+      ),
       loyaltyCubit: LoyaltyCubit(
         getMyBusiness: getMyBusiness,
         getDashboardSummary: getDashboardSummary,
@@ -200,6 +231,7 @@ class AppDependencies {
   final BusinessSetupCubit businessSetupCubit;
   final DashboardCubit dashboardCubit;
   final MenuCubit menuCubit;
+  final MenuAppearanceCubit menuAppearanceCubit;
   final LoyaltyCubit loyaltyCubit;
   final WalletScanCubit walletScanCubit;
 
@@ -208,6 +240,7 @@ class AppDependencies {
     await businessSetupCubit.close();
     await dashboardCubit.close();
     await menuCubit.close();
+    await menuAppearanceCubit.close();
     await loyaltyCubit.close();
     await walletScanCubit.close();
   }

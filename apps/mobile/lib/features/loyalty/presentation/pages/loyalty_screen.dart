@@ -90,7 +90,7 @@ class _LoyaltyScreenState extends State<LoyaltyScreen> {
               SectionHeader(
                 title: business.name,
                 subtitle:
-                    'Stamp-card loyalty operations for owners, managers, and staff.',
+                    'Stamp-card loyalty operations for the workspace team.',
               ),
               if (state.canUseDailyOperations) ...[
                 const SizedBox(height: AppSpacing.md),
@@ -218,7 +218,7 @@ class _LoyaltyScreenState extends State<LoyaltyScreen> {
                         controller: nameController,
                         decoration: const InputDecoration(
                           labelText: 'Program name',
-                          hintText: 'Tavrix Cafe Stamp Card',
+                          hintText: 'Waflo Cafe Stamp Card',
                         ),
                       ),
                       const SizedBox(height: AppSpacing.md),
@@ -638,7 +638,7 @@ class _ProgramSection extends StatelessWidget {
             const _LoyaltyNotice(
               title: 'View-only program access',
               message:
-                  'Staff can view the active loyalty program but cannot configure it.',
+                  'Team members can view the active loyalty program but cannot configure it.',
             ),
           ],
         ],

@@ -1,6 +1,7 @@
 import 'package:flutter_bloc/flutter_bloc.dart';
 
 import '../../../../core/errors/failures.dart';
+import '../../../../core/utils/business_role.dart';
 import '../../../../core/utils/failure_message.dart';
 import '../../../business_setup/domain/entities/business.dart';
 import '../../../business_setup/domain/usecases/get_my_business.dart';
@@ -90,7 +91,9 @@ class LoyaltyCubit extends Cubit<LoyaltyState> {
             (failure) => summaryErrorMessage = failureMessage(failure),
             (summary) {
               resolvedBusiness = summary.business;
-              permissions = summary.permissions;
+              permissions = summary.currentUser.permissionsAvailable
+                  ? summary.permissions
+                  : summary.business.permissions ?? permissions;
               role = summary.currentUser.role;
             },
           );
@@ -543,7 +546,7 @@ class LoyaltyCubit extends Cubit<LoyaltyState> {
         permissions?.canManageMembers == true) {
       return 'MANAGER';
     }
-    return 'STAFF';
+    return BusinessRole.operator;
   }
 
   bool _isRecoverableProgramLookupFailure(Failure failure) {

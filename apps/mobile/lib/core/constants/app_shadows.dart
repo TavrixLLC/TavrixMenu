@@ -6,18 +6,18 @@ class AppShadows {
   const AppShadows._();
 
   static const soft = [
-    BoxShadow(color: Color(0x14000000), blurRadius: 18, offset: Offset(0, 8)),
+    BoxShadow(color: Color(0x10000000), blurRadius: 18, offset: Offset(0, 8)),
   ];
 
   static const medium = [
-    BoxShadow(color: Color(0x1F000000), blurRadius: 24, offset: Offset(0, 12)),
+    BoxShadow(color: Color(0x18000000), blurRadius: 28, offset: Offset(0, 14)),
   ];
 
   static const header = [
-    BoxShadow(color: Color(0x24006241), blurRadius: 24, offset: Offset(0, 12)),
+    BoxShadow(color: Color(0x24101820), blurRadius: 30, offset: Offset(0, 14)),
   ];
 
   static const focusRing = [
-    BoxShadow(color: AppColors.greenLight, blurRadius: 0, spreadRadius: 3),
+    BoxShadow(color: AppColors.coralTint, blurRadius: 0, spreadRadius: 3),
   ];
 }

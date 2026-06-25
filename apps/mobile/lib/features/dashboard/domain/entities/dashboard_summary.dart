@@ -30,13 +30,18 @@ class DashboardSummary extends Equatable {
 }
 
 class DashboardCurrentUser extends Equatable {
-  const DashboardCurrentUser({required this.role, required this.permissions});
+  const DashboardCurrentUser({
+    required this.role,
+    required this.permissions,
+    this.permissionsAvailable = false,
+  });
 
   final String role;
   final BusinessPermissions permissions;
+  final bool permissionsAvailable;
 
   @override
-  List<Object?> get props => [role, permissions];
+  List<Object?> get props => [role, permissions, permissionsAvailable];
 }
 
 class DashboardCounts extends Equatable {

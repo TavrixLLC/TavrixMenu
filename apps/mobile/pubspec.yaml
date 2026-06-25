@@ -1,5 +1,5 @@
 name: tavrix_menu_mobile
-description: "Flutter app foundation for Tavrix Menu business owners, managers, and staff."
+description: "Flutter operator app for Waflo business owners, managers, and staff."
 publish_to: 'none'
 
 version: 1.0.0+1
@@ -21,6 +21,8 @@ dependencies:
   clerk_auth: 0.0.14-beta
   qr_flutter: ^4.1.0
   share_plus: ^13.1.0
+  google_sign_in: ^7.2.0
+  url_launcher: ^6.3.2
 
 dev_dependencies:
   flutter_test:

@@ -4,6 +4,7 @@ import 'package:dartz/dartz.dart';
 import 'package:flutter/material.dart';
 import 'package:flutter_bloc/flutter_bloc.dart';
 import 'package:flutter_test/flutter_test.dart';
+import 'package:mobile_scanner/mobile_scanner.dart';
 import 'package:tavrix_menu_mobile/core/errors/failures.dart';
 import 'package:tavrix_menu_mobile/core/network/network_info.dart';
 import 'package:tavrix_menu_mobile/features/business_setup/domain/entities/business.dart';
@@ -22,6 +23,7 @@ import 'package:tavrix_menu_mobile/features/staff_scanner/domain/repositories/wa
 import 'package:tavrix_menu_mobile/features/staff_scanner/domain/usecases/scan_wallet_pass.dart';
 import 'package:tavrix_menu_mobile/features/staff_scanner/presentation/bloc/wallet_scan_cubit.dart';
 import 'package:tavrix_menu_mobile/features/staff_scanner/presentation/pages/staff_scanner_screen.dart';
+import 'package:tavrix_menu_mobile/features/staff_scanner/presentation/widgets/wallet_qr_camera_scanner.dart';
 import 'package:tavrix_menu_mobile/shared/widgets/app_button.dart';
 
 import 'helpers/stub_http_client_adapter.dart';
@@ -106,11 +108,77 @@ void main() {
 
     expect(find.byKey(const ValueKey('walletScanResult')), findsOneWidget);
     expect(find.text('Demo Customer'), findsOneWidget);
-    expect(find.text('+9647700000000'), findsOneWidget);
+    expect(find.text('Phone ending 000'), findsOneWidget);
+    expect(find.text('+9647700000000'), findsNothing);
     expect(find.text('Tavrix Cafe Stamp Card'), findsOneWidget);
     expect(find.text('3 of 10 stamps'), findsOneWidget);
     expect(find.text('Free coffee is not ready yet.'), findsOneWidget);
     expect(_tokenField(tester).controller?.text, isEmpty);
+  });
+
+  testWidgets('camera permission error hides scan overlays', (tester) async {
+    var settingsRequested = false;
+    await tester.pumpWidget(
+      MaterialApp(
+        home: Scaffold(
+          body: SizedBox.square(
+            dimension: 360,
+            child: WalletCameraErrorView(
+              errorCode: MobileScannerErrorCode.permissionDenied,
+              onOpenSettings: () => settingsRequested = true,
+              onRetry: () {},
+            ),
+          ),
+        ),
+      ),
+    );
+
+    expect(
+      find.byKey(const ValueKey('walletCameraErrorState')),
+      findsOneWidget,
+    );
+    expect(
+      find.byKey(const ValueKey('walletCameraPermissionDenied')),
+      findsOneWidget,
+    );
+    expect(
+      find.byKey(const ValueKey('walletCameraScanFrameOverlay')),
+      findsNothing,
+    );
+    expect(
+      find.byKey(const ValueKey('walletCameraSecureScanBadge')),
+      findsNothing,
+    );
+    expect(find.textContaining('camera-test-token'), findsNothing);
+
+    await tester.tap(find.text('Open settings'));
+    await tester.pump();
+    expect(settingsRequested, isTrue);
+    expect(find.text('Try camera again'), findsNothing);
+  });
+
+  testWidgets('active camera overlay contains frame and secure badge', (
+    tester,
+  ) async {
+    await tester.pumpWidget(
+      const MaterialApp(
+        home: Scaffold(
+          body: SizedBox.square(
+            dimension: 360,
+            child: WalletCameraActiveOverlay(),
+          ),
+        ),
+      ),
+    );
+
+    expect(
+      find.byKey(const ValueKey('walletCameraScanFrameOverlay')),
+      findsOneWidget,
+    );
+    expect(
+      find.byKey(const ValueKey('walletCameraSecureScanBadge')),
+      findsOneWidget,
+    );
   });
 
   testWidgets(

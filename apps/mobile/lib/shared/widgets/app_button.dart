@@ -1,6 +1,6 @@
 import 'package:flutter/material.dart';
 
-import '../../core/constants/app_colors.dart';
+import 'waflo_button.dart';
 
 enum AppButtonVariant { primary, secondary, danger, ghost }
 
@@ -22,56 +22,17 @@ class AppButton extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
-    final button = switch (variant) {
-      AppButtonVariant.primary =>
-        icon == null
-            ? FilledButton(onPressed: onPressed, child: Text(label))
-            : FilledButton.icon(
-                onPressed: onPressed,
-                icon: Icon(icon),
-                label: Text(label),
-              ),
-      AppButtonVariant.secondary =>
-        icon == null
-            ? OutlinedButton(onPressed: onPressed, child: Text(label))
-            : OutlinedButton.icon(
-                onPressed: onPressed,
-                icon: Icon(icon),
-                label: Text(label),
-              ),
-      AppButtonVariant.danger =>
-        icon == null
-            ? FilledButton.tonal(
-                onPressed: onPressed,
-                style: FilledButton.styleFrom(
-                  backgroundColor: AppColors.dangerRed.withValues(alpha: 0.10),
-                  foregroundColor: AppColors.dangerRed,
-                ),
-                child: Text(label),
-              )
-            : FilledButton.tonalIcon(
-                onPressed: onPressed,
-                style: FilledButton.styleFrom(
-                  backgroundColor: AppColors.dangerRed.withValues(alpha: 0.10),
-                  foregroundColor: AppColors.dangerRed,
-                ),
-                icon: Icon(icon),
-                label: Text(label),
-              ),
-      AppButtonVariant.ghost =>
-        icon == null
-            ? TextButton(onPressed: onPressed, child: Text(label))
-            : TextButton.icon(
-                onPressed: onPressed,
-                icon: Icon(icon),
-                label: Text(label),
-              ),
-    };
-
-    if (!expand) {
-      return button;
-    }
-
-    return SizedBox(width: double.infinity, child: button);
+    return WafloButton(
+      label: label,
+      onPressed: onPressed,
+      icon: icon,
+      expand: expand,
+      variant: switch (variant) {
+        AppButtonVariant.primary => WafloButtonVariant.primary,
+        AppButtonVariant.secondary => WafloButtonVariant.secondary,
+        AppButtonVariant.danger => WafloButtonVariant.danger,
+        AppButtonVariant.ghost => WafloButtonVariant.ghost,
+      },
+    );
   }
 }
