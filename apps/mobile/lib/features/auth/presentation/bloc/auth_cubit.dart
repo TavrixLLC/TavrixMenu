@@ -1,8 +1,8 @@
 import 'package:flutter_bloc/flutter_bloc.dart';
 
 import '../../../../core/auth/auth_session_controller.dart';
-import '../../../../core/utils/failure_message.dart';
 import '../../domain/usecases/get_current_user.dart';
+import '../utils/auth_error_copy.dart';
 import 'auth_state.dart';
 
 class AuthCubit extends Cubit<AuthState> {
@@ -64,15 +64,16 @@ class AuthCubit extends Cubit<AuthState> {
     emit(state.copyWith(status: AuthStatus.loading, clearError: true));
 
     final result = await _getCurrentUser();
-    result.fold(
-      (failure) => emit(
+    result.fold((failure) {
+      final copy = authErrorCopyFromFailure(failure);
+      emit(
         AuthState(
           status: AuthStatus.failure,
-          errorMessage: failureMessage(failure),
+          errorTitle: copy.title,
+          errorMessage: copy.body,
         ),
-      ),
-      (user) => emit(AuthState(status: AuthStatus.authenticated, user: user)),
-    );
+      );
+    }, (user) => emit(AuthState(status: AuthStatus.authenticated, user: user)));
   }
 
   Future<void> signOut() async {

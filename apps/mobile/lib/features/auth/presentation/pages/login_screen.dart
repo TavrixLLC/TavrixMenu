@@ -20,6 +20,7 @@ import '../../../../shared/widgets/waflo_status_badge.dart';
 import '../../../../shared/widgets/waflo_text_field.dart';
 import '../bloc/auth_cubit.dart';
 import '../bloc/auth_state.dart';
+import '../utils/auth_error_copy.dart';
 
 class LoginScreen extends StatelessWidget {
   const LoginScreen({required this.config, super.key});
@@ -53,7 +54,10 @@ class LoginScreen extends StatelessWidget {
               if (state.status == AuthStatus.failure &&
                   state.errorMessage != null) ...[
                 const SizedBox(height: AppSpacing.md),
-                ErrorView(message: state.errorMessage!),
+                ErrorView(
+                  title: state.errorTitle ?? 'Something needs attention',
+                  message: state.errorMessage!,
+                ),
               ],
               const SizedBox(height: AppSpacing.lg),
               if (config.hasClerkPublishableKey)
@@ -209,6 +213,7 @@ class _CustomClerkAuthFormState extends State<_CustomClerkAuthForm> {
   clerk.Strategy? _otpStrategy;
   bool _isBusy = false;
   bool _isGoogleBusy = false;
+  String? _localErrorTitle;
   String? _localMessage;
 
   @override
@@ -265,7 +270,10 @@ class _CustomClerkAuthFormState extends State<_CustomClerkAuthForm> {
           ],
           if (_localMessage != null) ...[
             const SizedBox(height: AppSpacing.md),
-            ErrorView(message: _localMessage!),
+            ErrorView(
+              title: _localErrorTitle ?? 'Something needs attention',
+              message: _localMessage!,
+            ),
           ],
           const SizedBox(height: AppSpacing.lg),
           const _TrustLinks(),
@@ -277,7 +285,10 @@ class _CustomClerkAuthFormState extends State<_CustomClerkAuthForm> {
   Future<void> _sendCode() async {
     final identifier = _identifierController.text.trim();
     if (identifier.isEmpty) {
-      setState(() => _localMessage = 'Enter your work email or phone number.');
+      setState(() {
+        _localErrorTitle = null;
+        _localMessage = 'Enter your work email or phone number.';
+      });
       return;
     }
 
@@ -286,6 +297,7 @@ class _CustomClerkAuthFormState extends State<_CustomClerkAuthForm> {
         : clerk.Strategy.phoneCode;
     setState(() {
       _isBusy = true;
+      _localErrorTitle = null;
       _localMessage = null;
       _otpStrategy = strategy;
     });
@@ -303,7 +315,7 @@ class _CustomClerkAuthFormState extends State<_CustomClerkAuthForm> {
         _isBusy = false;
       });
     } on clerk.ClerkError catch (error) {
-      _setAuthError(error.toString());
+      _setClerkAuthError(error);
     } on Object {
       _setAuthError(
         'We could not send a code. Check your account and try again.',
@@ -315,16 +327,23 @@ class _CustomClerkAuthFormState extends State<_CustomClerkAuthForm> {
     final strategy = _otpStrategy;
     final code = _codeController.text.trim();
     if (strategy == null) {
-      setState(() => _localMessage = 'Start again to request a fresh code.');
+      setState(() {
+        _localErrorTitle = null;
+        _localMessage = 'Start again to request a fresh code.';
+      });
       return;
     }
     if (code.length < 4) {
-      setState(() => _localMessage = 'Enter the verification code.');
+      setState(() {
+        _localErrorTitle = null;
+        _localMessage = 'Enter the verification code.';
+      });
       return;
     }
 
     setState(() {
       _isBusy = true;
+      _localErrorTitle = null;
       _localMessage = null;
     });
 
@@ -339,7 +358,7 @@ class _CustomClerkAuthFormState extends State<_CustomClerkAuthForm> {
         _setAuthError('We need one more verification step for this account.');
       }
     } on clerk.ClerkError catch (error) {
-      _setAuthError(error.toString());
+      _setClerkAuthError(error);
     } on Object {
       _setAuthError('The code could not be verified. Try again.');
     }
@@ -347,12 +366,16 @@ class _CustomClerkAuthFormState extends State<_CustomClerkAuthForm> {
 
   Future<void> _signInWithGoogle() async {
     if (!widget.config.hasGoogleNativeClientConfig) {
-      setState(() => _localMessage = 'Google sign-in is not configured yet.');
+      setState(() {
+        _localErrorTitle = null;
+        _localMessage = 'Google sign-in is not configured yet.';
+      });
       return;
     }
 
     setState(() {
       _isGoogleBusy = true;
+      _localErrorTitle = null;
       _localMessage = null;
     });
 
@@ -389,7 +412,7 @@ class _CustomClerkAuthFormState extends State<_CustomClerkAuthForm> {
     } on GoogleSignInException catch (error) {
       _setAuthError(_googleMessage(error));
     } on clerk.ClerkError catch (error) {
-      _setAuthError(error.toString());
+      _setClerkAuthError(error);
     } on Object {
       _setAuthError('Google sign-in could not be completed.');
     }
@@ -425,18 +448,25 @@ class _CustomClerkAuthFormState extends State<_CustomClerkAuthForm> {
       _step = _AuthStep.identifier;
       _otpStrategy = null;
       _codeController.clear();
+      _localErrorTitle = null;
       _localMessage = null;
       _isBusy = false;
     });
   }
 
-  void _setAuthError(String message) {
+  void _setClerkAuthError(Object error) {
+    final copy = authErrorCopyFromClerkError(error);
+    _setAuthError(copy.body, title: copy.title);
+  }
+
+  void _setAuthError(String message, {String? title}) {
     if (!mounted) {
       return;
     }
     setState(() {
       _isBusy = false;
       _isGoogleBusy = false;
+      _localErrorTitle = title;
       _localMessage = message;
     });
   }

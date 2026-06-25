@@ -6,8 +6,14 @@ import 'waflo_button.dart';
 import 'waflo_card.dart';
 
 class WafloErrorState extends StatelessWidget {
-  const WafloErrorState({required this.message, super.key, this.onRetry});
+  const WafloErrorState({
+    required this.message,
+    super.key,
+    this.title = 'Something needs attention',
+    this.onRetry,
+  });
 
+  final String title;
   final String message;
   final VoidCallback? onRetry;
 
@@ -20,10 +26,7 @@ class WafloErrorState extends StatelessWidget {
         children: [
           const Icon(Icons.error_outline, color: AppColors.dangerRed),
           const SizedBox(height: AppSpacing.sm),
-          Text(
-            'Something needs attention',
-            style: Theme.of(context).textTheme.titleMedium,
-          ),
+          Text(title, style: Theme.of(context).textTheme.titleMedium),
           const SizedBox(height: AppSpacing.xs),
           Text(message),
           if (onRetry != null) ...[

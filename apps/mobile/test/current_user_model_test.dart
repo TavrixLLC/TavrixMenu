@@ -86,4 +86,50 @@ void main() {
     expect(model.businesses.single.role, 'BUSINESS_OPERATOR');
     expect(model.role, isNot('STAFF'));
   });
+
+  test('admin role is preserved and does not render as staff', () {
+    final model = CurrentUserModel.fromJson({
+      'user': {'id': 'usr_admin', 'role': 'ADMIN'},
+      'memberships': [
+        {
+          'id': 'mem_admin',
+          'role': 'ADMIN',
+          'isActive': true,
+          'business': {
+            'id': 'bus_123',
+            'name': 'Tavrix Cafe',
+            'slug': 'tavrix-cafe',
+            'type': 'cafe',
+          },
+        },
+      ],
+      'businesses': [
+        {
+          'id': 'bus_123',
+          'name': 'Tavrix Cafe',
+          'slug': 'tavrix-cafe',
+          'type': 'cafe',
+          'role': 'ADMIN',
+        },
+      ],
+    });
+
+    expect(model.role, 'ADMIN');
+    expect(model.memberships.single.role, 'ADMIN');
+    expect(model.businesses.single.role, 'ADMIN');
+    expect(model.role, isNot('STAFF'));
+  });
+
+  test('manager and staff roles remain distinct', () {
+    final manager = CurrentUserModel.fromJson({
+      'user': {'id': 'usr_manager', 'role': 'MANAGER'},
+    });
+    final staff = CurrentUserModel.fromJson({
+      'user': {'id': 'usr_staff', 'role': 'STAFF'},
+    });
+
+    expect(manager.role, 'MANAGER');
+    expect(manager.role, isNot('STAFF'));
+    expect(staff.role, 'STAFF');
+  });
 }

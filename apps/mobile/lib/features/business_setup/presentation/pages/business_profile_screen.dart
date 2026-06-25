@@ -2,6 +2,7 @@ import 'package:flutter/material.dart';
 import 'package:flutter_bloc/flutter_bloc.dart';
 
 import '../../../../core/constants/app_spacing.dart';
+import '../../../../core/utils/business_role.dart';
 import '../../../../shared/widgets/app_button.dart';
 import '../../../../shared/widgets/app_card.dart';
 import '../../../../shared/widgets/app_scaffold.dart';
@@ -150,7 +151,8 @@ class _BusinessProfileScreenState extends State<BusinessProfileScreen> {
 
             final canManageBusiness =
                 dashboardState.permissions?.canManageBusiness ??
-                (dashboardState.effectiveRole == 'OWNER');
+                (dashboardState.effectiveRole == BusinessRole.owner ||
+                    dashboardState.effectiveRole == BusinessRole.admin);
             if (!canManageBusiness) {
               return const AppScaffold(
                 title: 'Business profile',

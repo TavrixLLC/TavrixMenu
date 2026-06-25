@@ -87,6 +87,23 @@ void main() {
       await cubit.close();
     },
   );
+
+  test('account-not-found access check uses operator-safe copy', () async {
+    final cubit = _authCubitFailure(const NotFoundFailure());
+
+    await cubit.signInWithClerk();
+
+    expect(cubit.state.status, AuthStatus.failure);
+    expect(cubit.state.errorTitle, 'Account not found');
+    expect(
+      cubit.state.errorMessage,
+      'We couldn\'t find an operator account for this email or phone. Ask your business owner to invite you to Waflo.',
+    );
+    expect(cubit.state.errorMessage, isNot(contains('ERROR_RECEIVED')));
+    expect(cubit.state.errorMessage, isNot(contains('SERVER')));
+
+    await cubit.close();
+  });
 }
 
 AuthCubit _authCubit(CurrentUser user) {
@@ -110,6 +127,27 @@ AuthCubit _authCubit(CurrentUser user) {
   );
 }
 
+AuthCubit _authCubitFailure(Failure failure) {
+  final config = const AppConfig(
+    apiBaseUrl: 'https://api.example.test',
+    customerWebBaseUrl: 'https://menu.example.test',
+    devAuthToken: '',
+    appEnv: 'development',
+    enableDevAuth: false,
+    clerkPublishableKey: 'pk_test_example',
+  );
+  final sessionController = AuthSessionController(
+    config: config,
+    clerkTokenProvider: ClerkTokenProvider(),
+    devTokenProvider: const DevTokenProvider(''),
+  );
+
+  return AuthCubit(
+    getCurrentUser: GetCurrentUser(_FailureMeRepository(failure)),
+    authSessionController: sessionController,
+  );
+}
+
 class _FakeMeRepository implements MeRepository {
   const _FakeMeRepository(this.user);
 
@@ -117,4 +155,13 @@ class _FakeMeRepository implements MeRepository {
 
   @override
   Future<Either<Failure, CurrentUser>> getMe() async => Right(user);
+}
+
+class _FailureMeRepository implements MeRepository {
+  const _FailureMeRepository(this.failure);
+
+  final Failure failure;
+
+  @override
+  Future<Either<Failure, CurrentUser>> getMe() async => Left(failure);
 }

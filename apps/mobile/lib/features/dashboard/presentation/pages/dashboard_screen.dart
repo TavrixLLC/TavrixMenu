@@ -5,6 +5,7 @@ import '../../../../app/router/route_names.dart';
 import '../../../../core/constants/app_colors.dart';
 import '../../../../core/constants/app_radius.dart';
 import '../../../../core/constants/app_spacing.dart';
+import '../../../../core/utils/business_role.dart';
 import '../../../../shared/widgets/app_card.dart';
 import '../../../../shared/widgets/app_scaffold.dart';
 import '../../../../shared/widgets/business_header_card.dart';
@@ -182,7 +183,8 @@ bool _canManageBusiness(DashboardState state) {
   if (!state.hasKnownRole) {
     return true;
   }
-  return state.effectiveRole == 'OWNER';
+  return state.effectiveRole == BusinessRole.owner ||
+      state.effectiveRole == BusinessRole.admin;
 }
 
 bool _canManageMenu(DashboardState state) {
@@ -193,7 +195,9 @@ bool _canManageMenu(DashboardState state) {
   if (!state.hasKnownRole) {
     return true;
   }
-  return state.effectiveRole == 'OWNER' || state.effectiveRole == 'MANAGER';
+  return state.effectiveRole == BusinessRole.owner ||
+      state.effectiveRole == BusinessRole.admin ||
+      state.effectiveRole == BusinessRole.manager;
 }
 
 bool _canViewPublicLink(DashboardState state) {
