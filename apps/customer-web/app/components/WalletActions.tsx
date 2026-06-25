@@ -37,7 +37,7 @@ export function WalletActions({
     return (
       <section className="grid gap-3" data-wallet-platform="ios">
         <p className="text-sm leading-6 text-neutral-600">
-          Save this card to Apple Wallet, or open the web card for current progress.
+          Save this card to Apple Wallet, or open the live card for current progress.
         </p>
         {appleWalletEnabled ? (
           <AppleWalletButton enabled cardToken={cardToken} />
@@ -54,7 +54,7 @@ export function WalletActions({
               : 'bg-ink text-white hover:bg-neutral-800'
           }`}
         >
-          Open web card
+          Open live card
         </Link>
       </section>
     );
@@ -64,14 +64,14 @@ export function WalletActions({
     return (
       <section className="grid gap-3" data-wallet-platform="android">
         <p className="text-sm leading-6 text-neutral-600">
-          Save this card to Google Wallet, or open the web card for current progress.
+          Save this card to Google Wallet, or open the live card for current progress.
         </p>
         <GoogleWalletButton apiBaseUrl={apiBaseUrl} cardToken={cardToken} />
         <Link
           href={cardHref}
           className="inline-flex h-12 items-center justify-center rounded-md border border-neutral-200 bg-white px-5 text-sm font-semibold text-ink transition hover:bg-neutral-50"
         >
-          Open web card
+          Open live card
         </Link>
       </section>
     );
@@ -104,7 +104,7 @@ export function WalletActions({
         href={cardHref}
         className="inline-flex h-12 items-center justify-center rounded-md border border-neutral-200 bg-white px-5 text-sm font-semibold text-ink transition hover:bg-neutral-50"
       >
-        Open web card in this browser
+        Open live card in this browser
       </Link>
     </section>
   );

@@ -13,6 +13,7 @@ import {
   ReturningLoyaltyCardView,
   storeCardToken
 } from '../app/m/[slug]/loyalty/LoyaltyEnrollmentClient';
+import { AppleWalletRefreshNotice } from '../app/m/[slug]/loyalty/card/LoyaltyCardClient';
 import {
   normalizeIraqiPhone,
   validateIraqiPhone,
@@ -419,7 +420,7 @@ describe('device-aware wallet actions', () => {
 
     assert.match(html, /add-to-apple-wallet\.svg/);
     assert.equal(/add-to-google-wallet\.svg/.test(html), false);
-    assert.ok(html.indexOf('add-to-apple-wallet.svg') < html.indexOf('Open web card'));
+    assert.ok(html.indexOf('add-to-apple-wallet.svg') < html.indexOf('Open live card'));
   });
 
   it('shows Google first on Android and keeps the web card secondary', () => {
@@ -427,7 +428,7 @@ describe('device-aware wallet actions', () => {
 
     assert.match(html, /add-to-google-wallet\.svg/);
     assert.equal(/add-to-apple-wallet\.svg/.test(html), false);
-    assert.ok(html.indexOf('add-to-google-wallet.svg') < html.indexOf('Open web card'));
+    assert.ok(html.indexOf('add-to-google-wallet.svg') < html.indexOf('Open live card'));
   });
 
   it('shows a copy-to-phone flow on desktop without a wallet default', () => {
@@ -443,7 +444,7 @@ describe('device-aware wallet actions', () => {
     const html = renderActions('ios', false);
 
     assert.equal(/add-to-apple-wallet\.svg/.test(html), false);
-    assert.match(html, /Open web card/);
+    assert.match(html, /Open live card/);
     assert.match(html, /Apple Wallet is not available for this card right now/);
   });
 
@@ -463,6 +464,16 @@ describe('device-aware wallet actions', () => {
     }
 
     assert.equal(calls.length, 0);
+  });
+});
+
+describe('Apple Wallet refresh delay mitigation copy', () => {
+  it('points customers to the live web card without suggesting settings toggles', () => {
+    const html = renderToStaticMarkup(<AppleWalletRefreshNotice />);
+
+    assert.match(html, /Your live card is up to date online/);
+    assert.match(html, /Apple Wallet may refresh shortly/);
+    assert.equal(/Automatic Updates/i.test(html), false);
   });
 });
 

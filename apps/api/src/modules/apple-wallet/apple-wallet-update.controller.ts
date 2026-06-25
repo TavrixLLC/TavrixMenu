@@ -146,6 +146,7 @@ export class AppleWalletUpdateController {
       ...params
     });
 
+    response.setHeader('Cache-Control', 'no-store, max-age=0');
     response.setHeader('Last-Modified', result.lastModified.toUTCString());
 
     if (result.status === 'NOT_MODIFIED') {

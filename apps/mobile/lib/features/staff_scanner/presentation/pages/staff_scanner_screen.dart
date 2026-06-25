@@ -474,7 +474,7 @@ class _StampSuccessBanner extends StatelessWidget {
             color: AppColors.freshGreenDark,
           ),
           const SizedBox(width: AppSpacing.sm),
-          const Text('Stamp added!'),
+          const Text('Stamp added successfully.'),
         ],
       ),
     );
