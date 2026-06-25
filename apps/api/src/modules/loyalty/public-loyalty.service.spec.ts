@@ -260,6 +260,49 @@ describe('PublicLoyaltyService secure customer identity', () => {
     assert.equal(typeof enrollment.cardAccess.token, 'string');
   });
 
+  it('allows the same phone to join a different business without leaking card access', async () => {
+    const setup = createSetup();
+
+    const firstEnrollment = await setup.service.enrollCustomer('sample-cafe', {
+      phone: '07701234567',
+      intent: PublicLoyaltyEnrollmentIntent.JOIN
+    });
+    const secondEnrollment = await setup.service.enrollCustomer(
+      'chocolate-saray',
+      {
+        phone: '+9647701234567',
+        intent: PublicLoyaltyEnrollmentIntent.JOIN
+      }
+    );
+    const firstCard = await setup.service.getPublicCard(
+      firstEnrollment.cardAccess.token
+    );
+    const secondCard = await setup.service.getPublicCard(
+      secondEnrollment.cardAccess.token
+    );
+
+    assert.equal(setup.state.customers.length, 1);
+    assert.equal(setup.state.memberships.length, 2);
+    assert.notEqual(
+      firstEnrollment.cardAccess.token,
+      secondEnrollment.cardAccess.token
+    );
+    assert.equal(firstCard.business.slug, 'sample-cafe');
+    assert.equal(secondCard.business.slug, 'chocolate-saray');
+    assert.equal(secondEnrollment.business.slug, 'chocolate-saray');
+    assert.equal(
+      JSON.stringify(secondEnrollment).includes(firstEnrollment.cardAccess.token),
+      false
+    );
+
+    await captureVerificationRequired(
+      setup.service.enrollCustomer('chocolate-saray', {
+        phone: '+9647701234567',
+        intent: PublicLoyaltyEnrollmentIntent.RECOVER
+      })
+    );
+  });
+
   it('returns the same verification response for existing and unknown recovery requests', async () => {
     const existing = createSetup();
     await existing.service.enrollCustomer('sample-cafe', {
@@ -421,6 +464,13 @@ function createSetup() {
     language: 'en',
     status: BusinessStatus.ACTIVE
   };
+  const secondBusiness = {
+    ...business,
+    id: 'business_2',
+    name: 'Chocolate Saray',
+    slug: 'chocolate-saray',
+    type: 'DESSERT'
+  };
   const program = {
     id: 'program_1',
     businessId: business.id,
@@ -437,6 +487,15 @@ function createSetup() {
     createdAt: now,
     updatedAt: now
   };
+  const secondProgram = {
+    ...program,
+    id: 'program_2',
+    businessId: secondBusiness.id,
+    name: 'Chocolate rewards',
+    rewardName: 'Chocolate reward'
+  };
+  const businesses = [business, secondBusiness];
+  const programs = [program, secondProgram];
   const state = {
     customers: [] as Array<any>,
     memberships: [] as Array<any>,
@@ -446,11 +505,17 @@ function createSetup() {
   };
 
   function membershipWithRelations(membership: any) {
+    const membershipBusiness =
+      businesses.find((item) => item.id === membership.businessId) ?? business;
+    const membershipProgram =
+      programs.find((item) => item.id === membership.loyaltyProgramId) ??
+      program;
+
     return {
       ...membership,
-      business,
+      business: membershipBusiness,
       loyaltyProgram: {
-        ...program,
+        ...membershipProgram,
         stampStyle: null
       },
       customer: state.customers.find(
@@ -480,6 +545,16 @@ function createSetup() {
       }
     },
     loyaltyMembership: {
+      findFirst: async ({ where }: any) => {
+        const membership = state.memberships.find(
+          (item) =>
+            item.businessId === where.businessId &&
+            item.loyaltyProgramId === where.loyaltyProgramId &&
+            item.customerId === where.customerId
+        );
+
+        return membership ? { id: membership.id } : null;
+      },
       create: async ({ data }: any) => {
         const membership = {
           id: `membership_${state.memberships.length + 1}`,
@@ -608,10 +683,22 @@ function createSetup() {
 
   const prisma = {
     business: {
-      findFirst: async () => ({
-        ...business,
-        loyaltyPrograms: [program]
-      })
+      findFirst: async ({ where }: any) => {
+        const foundBusiness = businesses.find(
+          (item) => item.slug === where.slug && item.status === where.status
+        );
+
+        if (!foundBusiness) {
+          return null;
+        }
+
+        return {
+          ...foundBusiness,
+          loyaltyPrograms: programs.filter(
+            (item) => item.businessId === foundBusiness.id && item.isActive
+          )
+        };
+      }
     },
     loyaltyMembership: {
       findFirst: async ({ where }: any) => {

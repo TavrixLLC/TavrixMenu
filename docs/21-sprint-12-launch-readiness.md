@@ -2,7 +2,7 @@
 
 **Goal:** Prepare Waflo for the first real restaurant pilot by hardening runtime safety, establishing visual parity with BTAQA, and creating pilot market-readiness onboarding kits, while locking in Waflo's restaurant-first differentiation.
 
-**Status:** Scope updated. Implementation not started.
+**Status:** Sprint 12A — Staff Scanner E2E: ✅ PASSED (2026-06-25). Remaining items in progress.
 
 ---
 
@@ -32,13 +32,20 @@ graph TD
 #### B. Real Flutter Staff Scanner E2E Smoke
 * **Owner:** Person 2 (Flutter)
 * **Goal:** Verify that the manual staff scan and stamp workflow functions properly on a real device/emulator with a Clerk-verified staff session.
+* **Result:** ✅ PASSED — 2026-06-25
 * **Acceptance:**
-  - [ ] Authenticated staff session (using a valid Clerk token).
-  - [ ] Staff scans the customer's Apple/Google Wallet QR barcode.
-  - [ ] App displays details and allows the staff member to tap "Add Stamp".
-  - [ ] DB stamp count increments by 1.
-  - [ ] App shows a clean, instant success confirmation dialog.
-  - [ ] Friendly errors shown on expired/invalid/unauthorized scans.
+  - [x] Authenticated staff session (using a valid Clerk token).
+  - [x] Staff scans the customer's Apple/Google Wallet QR barcode.
+  - [x] App displays details and allows the staff member to tap "Add Stamp".
+  - [x] DB stamp count increments by 1.
+  - [x] App shows a clean, instant success confirmation dialog.
+  - [ ] Friendly errors shown on expired/invalid/unauthorized scans. *(deferred — not tested in this pass)*
+
+> **Environment notes (2026-06-25):**
+> - **Device:** Physical Android device (Xiaomi). APK installed manually via file transfer due to Xiaomi USB install restriction.
+> - **Flutter/Android SDK:** `sdk.dir` was pointing to `D:\` (incorrect). Fixed by installing a clean Android SDK at `D:\Android\Sdk` and updating `local.properties`.
+> - **API URLs:** Mobile app was using localhost URLs. Switched to staging URLs to unblock staff login, business context, and Wallet Scan.
+> - **Workflow confirmed:** Staff login → business context load → Wallet Scan open → valid QR scan → Add Stamp → success.
 
 ---
 
