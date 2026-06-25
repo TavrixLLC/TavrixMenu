@@ -105,7 +105,9 @@ export class PublicLoyaltyService {
 
     try {
       membership = await this.prisma.$transaction(async (transaction) => {
-        const customer = await this.createNewCustomer(transaction, {
+        const customer = await this.resolveCustomerForJoin(transaction, {
+          businessId: business.id,
+          loyaltyProgramId: program.id,
           phone,
           email,
           name
@@ -263,9 +265,11 @@ export class PublicLoyaltyService {
     return this.mapEnrollmentResponse(membership, newCardToken);
   }
 
-  private async createNewCustomer(
+  private async resolveCustomerForJoin(
     transaction: Prisma.TransactionClient,
     customerInput: {
+      businessId: string;
+      loyaltyProgramId: string;
       phone: string;
       email: string | null;
       name: string | null;
@@ -286,8 +290,18 @@ export class PublicLoyaltyService {
         })
       : null;
 
-    if (phoneCustomer || emailCustomer) {
+    if (emailCustomer && (!phoneCustomer || emailCustomer.id !== phoneCustomer.id)) {
       throw this.recoveryRequiresVerification();
+    }
+
+    if (phoneCustomer) {
+      await this.assertNoCurrentProgramMembership(transaction, {
+        businessId: customerInput.businessId,
+        loyaltyProgramId: customerInput.loyaltyProgramId,
+        customerId: phoneCustomer.id
+      });
+
+      return phoneCustomer;
     }
 
     return transaction.customer.create({
@@ -297,6 +311,30 @@ export class PublicLoyaltyService {
         name: customerInput.name
       }
     });
+  }
+
+  private async assertNoCurrentProgramMembership(
+    transaction: Prisma.TransactionClient,
+    input: {
+      businessId: string;
+      loyaltyProgramId: string;
+      customerId: string;
+    }
+  ) {
+    const existingMembership = await transaction.loyaltyMembership.findFirst({
+      where: {
+        businessId: input.businessId,
+        loyaltyProgramId: input.loyaltyProgramId,
+        customerId: input.customerId
+      },
+      select: {
+        id: true
+      }
+    });
+
+    if (existingMembership) {
+      throw this.recoveryRequiresVerification();
+    }
   }
 
   private recoveryRequiresVerification() {

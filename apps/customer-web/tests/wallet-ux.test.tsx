@@ -156,7 +156,7 @@ describe('loyalty identity states', () => {
     assert.match(lostAllDevicesSection, /log the staff action/);
     assert.equal(/name="transferCode"/.test(lostAllDevicesSection), false);
     assert.match(differentPhoneSection, /Join with a different phone/);
-    assert.match(differentPhoneSection, /not already attached to a membership/);
+    assert.match(differentPhoneSection, /not already attached to a card for this business/);
   });
 
   it('loads a valid same-device opaque card reference and clears it on request', async () => {

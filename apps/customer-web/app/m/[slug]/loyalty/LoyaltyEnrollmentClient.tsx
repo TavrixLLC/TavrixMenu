@@ -378,8 +378,8 @@ export function LoyaltyIdentityForm({
           </h3>
           <p className="mt-1 text-sm leading-6 text-neutral-600">
             Start a new enrollment only with a phone that is not already
-            attached to a membership. An existing phone remains blocked until
-            recovery is verified.
+            attached to a card for this business. An existing card here remains
+            blocked until recovery is verified.
           </p>
           <button
             type="button"
@@ -649,7 +649,7 @@ export function LoyaltyEnrollmentClient({
     if (result.status !== 'ok') {
       if (result.status === 'verification-required') {
         setRecoveryMessage(
-          'This phone is already attached to a card. If a trusted old device still has access, add this device from there. Otherwise, ask staff for help.'
+          'This phone is already attached to a card for this business. If a trusted old device still has access, add this device from there. Otherwise, ask staff for help.'
         );
         changeMode('recover');
         return;
