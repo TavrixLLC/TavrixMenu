@@ -1,30 +1,57 @@
-import { PlaceholderImage } from '../../../components/PlaceholderImage';
-
 export default function LoadingMenuPage() {
   return (
-    <main className="min-h-screen bg-[#fafaf7] pb-10">
-      <section className="mx-auto w-full max-w-4xl px-4 pt-4">
-        <PlaceholderImage label="Loading cover" className="h-40 w-full rounded-lg sm:h-56" />
-        <div className="-mt-8 flex items-end gap-4 px-3">
-          <PlaceholderImage label="Logo" className="h-20 w-20 shrink-0 rounded-lg bg-white shadow-sm" />
-          <div className="pb-1">
-            <div className="h-4 w-24 rounded bg-neutral-200" />
-            <div className="mt-3 h-8 w-48 rounded bg-neutral-200" />
-            <div className="mt-2 h-4 w-32 rounded bg-neutral-200" />
+    <main
+      className="waflo-menu waflo-template-waflo-warm"
+      data-template="waflo-warm"
+      data-business-slug="loading"
+      data-component="public-menu"
+      data-state="loading"
+      data-dir="ltr"
+      data-loyalty-enabled="false"
+      lang="en"
+      dir="ltr"
+    >
+      <section className="waflo-menu__shell" data-slot="merchant-shell" data-component="menu-shell">
+        <header className="waflo-menu__hero" data-slot="merchant-hero" data-component="merchant-header" data-state="loading">
+          <div
+            className="waflo-menu__cover"
+            data-slot="merchant-cover"
+            data-component="merchant-media"
+            data-state="loading"
+            data-has-image="false"
+          >
+            <span className="waflo-menu__skeleton" />
           </div>
-        </div>
-      </section>
-      <section className="mx-auto mt-8 grid w-full max-w-4xl gap-3 px-4">
-        {[0, 1, 2].map((item) => (
-          <div key={item} className="grid grid-cols-[96px_1fr] gap-4 rounded-lg border border-neutral-200 bg-white p-3 shadow-sm">
-            <div className="aspect-square rounded bg-neutral-100" />
-            <div>
-              <div className="h-5 w-40 rounded bg-neutral-200" />
-              <div className="mt-3 h-4 w-full max-w-sm rounded bg-neutral-100" />
-              <div className="mt-4 h-4 w-20 rounded bg-neutral-200" />
+          <section className="waflo-menu__identity" data-slot="merchant-identity" data-component="merchant-identity">
+            <div
+              className="waflo-menu__logo"
+              data-slot="merchant-logo"
+              data-component="merchant-media"
+              data-state="loading"
+              data-has-image="false"
+            >
+              <span className="waflo-menu__skeleton" />
             </div>
-          </div>
-        ))}
+            <div className="waflo-menu__identity-copy" data-slot="merchant-copy">
+              <span className="waflo-menu__skeleton" style={{ width: '7rem' }} />
+              <span className="waflo-menu__skeleton" style={{ width: '14rem', height: '2.4rem', marginTop: '0.7rem' }} />
+              <span className="waflo-menu__skeleton" style={{ width: '10rem', marginTop: '0.7rem' }} />
+            </div>
+          </section>
+        </header>
+
+        <section className="waflo-menu__body" data-slot="menu-body" data-component="menu-body" data-state="loading">
+          {[0, 1, 2].map((item) => (
+            <div key={item} className="waflo-menu__skeleton-card" data-slot="skeleton-state" data-component="menu-state" data-state="loading">
+              <span className="waflo-menu__skeleton" style={{ aspectRatio: '1', height: 'auto' }} />
+              <span>
+                <span className="waflo-menu__skeleton" style={{ width: '65%' }} />
+                <span className="waflo-menu__skeleton" style={{ width: '90%', marginTop: '0.7rem' }} />
+                <span className="waflo-menu__skeleton" style={{ width: '7rem', marginTop: '0.9rem' }} />
+              </span>
+            </div>
+          ))}
+        </section>
       </section>
     </main>
   );

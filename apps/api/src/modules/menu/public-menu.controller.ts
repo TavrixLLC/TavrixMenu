@@ -21,7 +21,15 @@ export class PublicMenuController {
           coverUrl: null,
           currency: 'IQD',
           language: 'ar',
-          city: 'Baghdad'
+          city: 'Baghdad',
+          menuTemplateId: 'waflo-warm',
+          menuThemeOverrides: null
+        },
+        appearance: {
+          menuTemplateId: 'waflo-warm',
+          effectiveTemplateId: 'waflo-warm',
+          fallbackApplied: false,
+          menuThemeOverrides: null
         },
         categories: [
           {

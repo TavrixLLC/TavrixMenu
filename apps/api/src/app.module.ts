@@ -9,6 +9,7 @@ import { HealthModule } from './modules/health/health.module';
 import { GoogleWalletModule } from './modules/google-wallet/google-wallet.module';
 import { LoyaltyModule } from './modules/loyalty/loyalty.module';
 import { MenuModule } from './modules/menu/menu.module';
+import { MenuTemplatesModule } from './modules/menu-templates/menu-templates.module';
 import { UsersModule } from './modules/users/users.module';
 import { PrismaModule } from './prisma/prisma.module';
 import { validateEnvironment } from './env.validation';
@@ -24,6 +25,7 @@ import { validateEnvironment } from './env.validation';
     AuthModule,
     UsersModule,
     BusinessesModule,
+    MenuTemplatesModule,
     MenuModule,
     LoyaltyModule,
     GoogleWalletModule,

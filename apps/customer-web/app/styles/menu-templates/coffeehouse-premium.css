@@ -1,0 +1,149 @@
+.waflo-menu[data-template="coffeehouse-premium"] {
+  --waflo-template-bg: #f8f1e7;
+  --waflo-template-surface: #ffffff;
+  --waflo-template-primary: #12392f;
+  --waflo-template-primary-dark: #0b271f;
+  --waflo-template-success: #2e7d32;
+  --waflo-template-border: #e7d7c1;
+  --waflo-template-text: #1f2933;
+  --waflo-template-muted: #6b7280;
+  --waflo-template-reward: #f59e0b;
+  --waflo-template-danger: #dc2626;
+  --waflo-menu-radius: 14px;
+  --waflo-menu-radius-sm: 10px;
+  --waflo-menu-shadow: 0 18px 50px rgb(11 39 31 / 12%);
+}
+
+.waflo-menu[data-template="coffeehouse-premium"] .waflo-menu__shell {
+  width: min(100%, 76rem);
+}
+
+.waflo-menu[data-template="coffeehouse-premium"] .waflo-menu__hero {
+  grid-template-areas: "identity cover";
+  grid-template-columns: minmax(0, 1fr) minmax(18rem, 26rem);
+  gap: clamp(1rem, 3vw, 2rem);
+  align-items: stretch;
+  padding: clamp(1.25rem, 3vw, 2rem);
+  border-radius: 18px;
+  background:
+    linear-gradient(135deg, rgb(245 158 11 / 18%), transparent 42%),
+    var(--waflo-template-primary);
+  color: white;
+  box-shadow: var(--waflo-menu-shadow);
+}
+
+.waflo-menu[data-template="coffeehouse-premium"] .waflo-menu__cover {
+  min-height: 18rem;
+  border: 1px solid rgb(255 255 255 / 14%);
+  border-radius: 14px;
+}
+
+.waflo-menu[data-template="coffeehouse-premium"] .waflo-menu__identity {
+  grid-template-columns: 5.5rem minmax(0, 1fr);
+  align-content: end;
+  align-items: end;
+  margin: 0;
+  padding: 0;
+}
+
+.waflo-menu[data-template="coffeehouse-premium"] .waflo-menu__logo {
+  border-color: rgb(255 255 255 / 18%);
+  background: rgb(255 255 255 / 10%);
+  box-shadow: none;
+}
+
+.waflo-menu[data-template="coffeehouse-premium"] .waflo-menu__merchant-name,
+.waflo-menu[data-template="coffeehouse-premium"] .waflo-menu__metadata,
+.waflo-menu[data-template="coffeehouse-premium"] .waflo-menu__metadata div + div::before {
+  color: white;
+}
+
+.waflo-menu[data-template="coffeehouse-premium"] .waflo-menu__merchant-type,
+.waflo-menu[data-template="coffeehouse-premium"] .waflo-menu__eyebrow {
+  color: var(--waflo-template-reward);
+}
+
+.waflo-menu[data-template="coffeehouse-premium"] .waflo-menu__status {
+  background: rgb(245 158 11 / 16%);
+  color: var(--waflo-template-reward);
+}
+
+.waflo-menu[data-template="coffeehouse-premium"] .waflo-menu__category-link {
+  border-color: #d8c29f;
+  background: #fff8f2;
+  color: var(--waflo-template-primary);
+}
+
+.waflo-menu[data-template="coffeehouse-premium"] .waflo-menu__loyalty {
+  border-color: rgb(245 158 11 / 28%);
+  background: var(--waflo-template-primary);
+  color: white;
+}
+
+.waflo-menu[data-template="coffeehouse-premium"] .waflo-menu__loyalty-title,
+.waflo-menu[data-template="coffeehouse-premium"] .waflo-menu__loyalty-description {
+  color: white;
+}
+
+.waflo-menu[data-template="coffeehouse-premium"] .waflo-menu__loyalty-action {
+  background: var(--waflo-template-reward);
+  color: var(--waflo-template-primary-dark);
+}
+
+.waflo-menu[data-template="coffeehouse-premium"] .waflo-menu__items {
+  grid-template-columns: repeat(auto-fit, minmax(min(100%, 18rem), 1fr));
+  gap: 1rem;
+}
+
+.waflo-menu[data-template="coffeehouse-premium"] .waflo-menu__item-link {
+  grid-template-areas:
+    "image image"
+    "copy price";
+  grid-template-columns: minmax(0, 1fr) auto;
+  align-items: start;
+  padding: 0;
+  overflow: hidden;
+  border-color: var(--waflo-template-border);
+}
+
+.waflo-menu[data-template="coffeehouse-premium"] .waflo-menu__item-image {
+  width: 100%;
+  aspect-ratio: 4 / 3;
+  border-radius: 0;
+}
+
+.waflo-menu[data-template="coffeehouse-premium"] .waflo-menu__item-copy {
+  padding: 1rem;
+}
+
+.waflo-menu[data-template="coffeehouse-premium"] .waflo-menu__item-price {
+  align-self: start;
+  margin: 1rem 1rem 0 0;
+  background: rgb(245 158 11 / 14%);
+  color: var(--waflo-template-primary);
+}
+
+[data-dir="rtl"].waflo-menu[data-template="coffeehouse-premium"] .waflo-menu__item-price {
+  margin: 1rem 0 0 1rem;
+}
+
+@media (max-width: 760px) {
+  .waflo-menu[data-template="coffeehouse-premium"] .waflo-menu__hero {
+    grid-template-areas:
+      "cover"
+      "identity";
+    grid-template-columns: 1fr;
+  }
+
+  .waflo-menu[data-template="coffeehouse-premium"] .waflo-menu__cover {
+    min-height: 12rem;
+  }
+
+  .waflo-menu[data-template="coffeehouse-premium"] .waflo-menu__identity {
+    grid-template-columns: minmax(0, 1fr);
+  }
+
+  .waflo-menu[data-template="coffeehouse-premium"] .waflo-menu__logo {
+    display: none;
+  }
+}

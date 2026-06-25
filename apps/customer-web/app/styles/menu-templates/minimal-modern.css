@@ -1,0 +1,164 @@
+.waflo-menu[data-template="minimal-modern"] {
+  --waflo-template-bg: #ffffff;
+  --waflo-template-surface: #ffffff;
+  --waflo-template-primary: #ff6b4a;
+  --waflo-template-primary-dark: #d94b2b;
+  --waflo-template-success: #2e7d32;
+  --waflo-template-border: #e5e7eb;
+  --waflo-template-text: #1f2933;
+  --waflo-template-muted: #6b7280;
+  --waflo-template-reward: #f59e0b;
+  --waflo-template-danger: #dc2626;
+  --waflo-menu-radius: 10px;
+  --waflo-menu-radius-sm: 8px;
+  --waflo-menu-shadow: none;
+}
+
+.waflo-menu[data-template="minimal-modern"] .waflo-menu__shell {
+  width: min(100%, 64rem);
+}
+
+.waflo-menu[data-template="minimal-modern"] .waflo-menu__hero {
+  padding-bottom: 1.5rem;
+  border-bottom: 1px solid var(--waflo-template-border);
+}
+
+.waflo-menu[data-template="minimal-modern"] .waflo-menu__cover {
+  display: none;
+}
+
+.waflo-menu[data-template="minimal-modern"] .waflo-menu__identity {
+  grid-template-columns: 4rem minmax(0, 1fr);
+  align-items: center;
+  margin: 0;
+  padding: 0;
+}
+
+.waflo-menu[data-template="minimal-modern"] .waflo-menu__logo {
+  width: 4rem;
+  height: 4rem;
+  border: 1px solid var(--waflo-template-border);
+  box-shadow: none;
+}
+
+.waflo-menu[data-template="minimal-modern"] .waflo-menu__merchant-type,
+.waflo-menu[data-template="minimal-modern"] .waflo-menu__eyebrow {
+  color: var(--waflo-template-muted);
+  font-weight: 700;
+}
+
+.waflo-menu[data-template="minimal-modern"] .waflo-menu__merchant-name {
+  font-size: clamp(2rem, 5vw, 3.1rem);
+  font-weight: 750;
+}
+
+.waflo-menu[data-template="minimal-modern"] .waflo-menu__status {
+  display: none;
+}
+
+.waflo-menu[data-template="minimal-modern"] .waflo-menu__loyalty {
+  border-width: 1px 0;
+  border-radius: 0;
+  box-shadow: none;
+}
+
+.waflo-menu[data-template="minimal-modern"] .waflo-menu__loyalty-action {
+  border: 1px solid var(--waflo-template-primary);
+  background: transparent;
+  color: var(--waflo-template-primary-dark);
+}
+
+.waflo-menu[data-template="minimal-modern"] .waflo-menu__category-nav {
+  background: var(--waflo-template-surface);
+}
+
+.waflo-menu[data-template="minimal-modern"] .waflo-menu__category-list {
+  gap: 1rem;
+}
+
+.waflo-menu[data-template="minimal-modern"] .waflo-menu__category-link {
+  min-height: 2rem;
+  padding: 0.35rem 0;
+  border-width: 0 0 2px;
+  border-color: transparent;
+  border-radius: 0;
+  background: transparent;
+  color: var(--waflo-template-muted);
+  font-weight: 700;
+}
+
+.waflo-menu[data-template="minimal-modern"] .waflo-menu__category-link:hover,
+.waflo-menu[data-template="minimal-modern"] .waflo-menu__category-link:focus-visible {
+  border-color: var(--waflo-template-primary);
+  color: var(--waflo-template-text);
+}
+
+.waflo-menu[data-template="minimal-modern"] .waflo-menu__category-title {
+  font-size: 1.45rem;
+  font-weight: 750;
+}
+
+.waflo-menu[data-template="minimal-modern"] .waflo-menu__items {
+  gap: 0;
+}
+
+.waflo-menu[data-template="minimal-modern"] .waflo-menu__item-link {
+  grid-template-columns: minmax(0, 1fr) 8rem;
+  grid-template-areas: "copy price";
+  padding: 1.15rem 0;
+  border-width: 0 0 1px;
+  border-radius: 0;
+  background: transparent;
+  box-shadow: none;
+}
+
+.waflo-menu[data-template="minimal-modern"] .waflo-menu__item-link:hover {
+  box-shadow: none;
+  transform: none;
+}
+
+.waflo-menu[data-template="minimal-modern"] .waflo-menu__item-image {
+  display: none;
+}
+
+.waflo-menu[data-template="minimal-modern"] .waflo-menu__item-name {
+  font-weight: 700;
+}
+
+.waflo-menu[data-template="minimal-modern"] .waflo-menu__item-price {
+  justify-self: end;
+  background: transparent;
+  color: var(--waflo-template-text);
+  font-weight: 750;
+}
+
+[data-dir="rtl"].waflo-menu[data-template="minimal-modern"] .waflo-menu__item-price {
+  justify-self: start;
+}
+
+@media (max-width: 640px) {
+  .waflo-menu[data-template="minimal-modern"] .waflo-menu__identity {
+    grid-template-columns: minmax(0, 1fr);
+  }
+
+  .waflo-menu[data-template="minimal-modern"] .waflo-menu__logo {
+    display: none;
+  }
+
+  .waflo-menu[data-template="minimal-modern"] .waflo-menu__item-link {
+    grid-template-areas:
+      "copy"
+      "price";
+    grid-template-columns: 1fr;
+    gap: 0.5rem;
+  }
+
+  .waflo-menu[data-template="minimal-modern"] .waflo-menu__item-price {
+    justify-self: start;
+    padding: 0;
+  }
+
+  [data-dir="rtl"].waflo-menu[data-template="minimal-modern"] .waflo-menu__item-price {
+    justify-self: end;
+  }
+}

@@ -9,10 +9,13 @@ import {
   UseGuards
 } from '@nestjs/common';
 import {
+  ApiBadRequestResponse,
   ApiBearerAuth,
   ApiCreatedResponse,
+  ApiForbiddenResponse,
   ApiOkResponse,
-  ApiTags
+  ApiTags,
+  ApiUnauthorizedResponse
 } from '@nestjs/swagger';
 import { CurrentUser } from '../auth/decorators/current-user.decorator';
 import { ClerkAuthGuard } from '../auth/guards/clerk-auth.guard';
@@ -21,6 +24,7 @@ import { BusinessesService } from './businesses.service';
 import { CreateBusinessDto } from './dto/create-business.dto';
 import { CreateMemberDto } from './dto/create-member.dto';
 import { UpdateBusinessDto } from './dto/update-business.dto';
+import { UpdateMenuAppearanceDto } from './dto/update-menu-appearance.dto';
 import { UpdateMemberDto } from './dto/update-member.dto';
 
 @ApiTags('businesses')
@@ -74,7 +78,8 @@ export class BusinessesController {
             canManageMenu: true,
             canManageMembers: true,
             canViewMembers: true,
-            canViewPublicLink: true
+            canViewPublicLink: true,
+            canManageAppearance: true
           },
           publicMenu: {
             slug: 'tavrix-cafe',
@@ -144,7 +149,8 @@ export class BusinessesController {
           canManageMenu: true,
           canManageMembers: true,
           canViewMembers: true,
-          canViewPublicLink: true
+          canViewPublicLink: true,
+          canManageAppearance: true
         },
         publicMenu: {
           slug: 'tavrix-cafe',
@@ -186,7 +192,8 @@ export class BusinessesController {
             canManageMenu: true,
             canManageMembers: true,
             canViewMembers: true,
-            canViewPublicLink: true
+            canViewPublicLink: true,
+            canManageAppearance: true
           }
         },
         counts: {
@@ -237,6 +244,115 @@ export class BusinessesController {
     @Param('id') businessId: string
   ) {
     return this.businessesService.getPublicLink(currentUser, businessId);
+  }
+
+  @Get(':id/appearance')
+  @ApiOkResponse({
+    description:
+      'Business public menu appearance settings. OWNER, MANAGER, and STAFF can view when actively assigned.',
+    schema: {
+      example: {
+        businessId: 'bus_123',
+        menuTemplateId: 'waflo-warm',
+        menuThemeOverrides: null,
+        effectiveTemplateId: 'waflo-warm',
+        fallbackApplied: false,
+        defaultTemplateId: 'waflo-warm'
+      }
+    }
+  })
+  @ApiUnauthorizedResponse({ description: 'Missing or invalid bearer token.' })
+  @ApiForbiddenResponse({ description: 'Active business membership required.' })
+  getAppearance(
+    @CurrentUser() currentUser: AuthenticatedUser,
+    @Param('id') businessId: string
+  ) {
+    return this.businessesService.getMenuAppearance(currentUser, businessId);
+  }
+
+  @Patch(':id/appearance')
+  @ApiOkResponse({
+    description:
+      'Business public menu appearance updated. OWNER only; STAFF cannot change templates.',
+    schema: {
+      example: {
+        businessId: 'bus_123',
+        menuTemplateId: 'coffeehouse-premium',
+        menuThemeOverrides: null,
+        effectiveTemplateId: 'coffeehouse-premium',
+        fallbackApplied: false,
+        defaultTemplateId: 'waflo-warm'
+      }
+    }
+  })
+  @ApiBadRequestResponse({
+    description: 'Invalid or unsupported template id.'
+  })
+  @ApiUnauthorizedResponse({ description: 'Missing or invalid bearer token.' })
+  @ApiForbiddenResponse({ description: 'OWNER permission required.' })
+  updateAppearance(
+    @CurrentUser() currentUser: AuthenticatedUser,
+    @Param('id') businessId: string,
+    @Body() dto: UpdateMenuAppearanceDto
+  ) {
+    return this.businessesService.updateMenuAppearance(
+      currentUser,
+      businessId,
+      dto
+    );
+  }
+
+  @Get(':id/menu-appearance')
+  @ApiOkResponse({
+    description:
+      'Compatibility alias for GET /businesses/:id/appearance.',
+    schema: {
+      example: {
+        businessId: 'bus_123',
+        menuTemplateId: 'waflo-warm',
+        menuThemeOverrides: null,
+        effectiveTemplateId: 'waflo-warm',
+        fallbackApplied: false,
+        defaultTemplateId: 'waflo-warm'
+      }
+    }
+  })
+  getMenuAppearance(
+    @CurrentUser() currentUser: AuthenticatedUser,
+    @Param('id') businessId: string
+  ) {
+    return this.businessesService.getMenuAppearance(currentUser, businessId);
+  }
+
+  @Patch(':id/menu-appearance')
+  @ApiOkResponse({
+    description:
+      'Compatibility alias for PATCH /businesses/:id/appearance.',
+    schema: {
+      example: {
+        businessId: 'bus_123',
+        menuTemplateId: 'coffeehouse-premium',
+        menuThemeOverrides: null,
+        effectiveTemplateId: 'coffeehouse-premium',
+        fallbackApplied: false,
+        defaultTemplateId: 'waflo-warm'
+      }
+    }
+  })
+  @ApiBadRequestResponse({
+    description: 'Invalid or unsupported template id.'
+  })
+  @ApiForbiddenResponse({ description: 'OWNER permission required.' })
+  updateMenuAppearance(
+    @CurrentUser() currentUser: AuthenticatedUser,
+    @Param('id') businessId: string,
+    @Body() dto: UpdateMenuAppearanceDto
+  ) {
+    return this.businessesService.updateMenuAppearance(
+      currentUser,
+      businessId,
+      dto
+    );
   }
 
   @Get(':id/members')

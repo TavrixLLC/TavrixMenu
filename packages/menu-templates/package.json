@@ -1,0 +1,19 @@
+{
+  "name": "@tavrix-menu/menu-templates",
+  "version": "0.1.0",
+  "private": true,
+  "description": "Shared Waflo public menu template registry.",
+  "main": "manifest.cjs",
+  "types": "manifest.d.ts",
+  "exports": {
+    ".": {
+      "types": "./manifest.d.ts",
+      "require": "./manifest.cjs",
+      "default": "./manifest.cjs"
+    }
+  },
+  "scripts": {
+    "build": "node -e \"require('./manifest.cjs')\"",
+    "lint": "node -e \"require('./manifest.cjs')\""
+  }
+}

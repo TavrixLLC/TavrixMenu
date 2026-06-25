@@ -36,6 +36,8 @@ model Business {
   currency            String               @default("IQD")
   language            String               @default("ar")
   city                String?
+  menuTemplateId      String               @default("waflo-warm") @map("menu_template_id")
+  menuThemeOverrides  Json?                @map("menu_theme_overrides")
   status              BusinessStatus       @default(ACTIVE)
   createdAt           DateTime             @default(now()) @map("created_at")
   updatedAt           DateTime             @updatedAt @map("updated_at")

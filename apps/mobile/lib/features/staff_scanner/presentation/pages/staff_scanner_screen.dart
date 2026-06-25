@@ -405,6 +405,8 @@ class _WalletScanResultCard extends StatelessWidget {
               LinearProgressIndicator(
                 key: const ValueKey('walletStampProgressBar'),
                 value: progress,
+                color: AppColors.freshGreen,
+                backgroundColor: AppColors.greenLight,
               ),
               const SizedBox(height: AppSpacing.xs),
               Text(
@@ -467,7 +469,10 @@ class _StampSuccessBanner extends StatelessWidget {
       ),
       child: Row(
         children: [
-          const Icon(Icons.check_circle_outline, color: AppColors.brandGreen),
+          const Icon(
+            Icons.check_circle_outline,
+            color: AppColors.freshGreenDark,
+          ),
           const SizedBox(width: AppSpacing.sm),
           const Text('Stamp added!'),
         ],

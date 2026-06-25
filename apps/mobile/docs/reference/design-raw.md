@@ -238,7 +238,7 @@ Shadow rules:
 
 ## Public Menu Template Engine
 
-The public menu must use a registry-based template system. A selected template changes presentation, theme tokens, layout behavior, and component styling without rewriting menu data.
+The public menu must use a registry-based CSS-first template system. A selected template changes presentation, theme tokens, layout behavior, and component styling without rewriting menu data or adding template-specific React render branches.
 
 Template selection belongs to business appearance settings, not to menu item content. Menu data remains compatible across templates.
 
@@ -247,6 +247,8 @@ Template registry requirements:
 - Each template has a stable `id`.
 - Each template has admin-facing metadata for display and preview.
 - The public menu renderer resolves the selected template through a central registry.
+- The public menu renderer emits one fixed semantic HTML contract for every template.
+- Template CSS targets `main.waflo-menu`, `data-template`, `data-slot`, `data-component`, and `data-state`.
 - Existing businesses receive a safe default template.
 - Invalid, missing, or disabled template IDs fall back safely.
 - Future templates can be added by Waflo SaaS owners without rewriting the menu data model.
@@ -259,8 +261,12 @@ id
 displayName
 description
 bestFor
+cssClass
+cssFile
+version
+status
 theme tokens
-layout variant
+supported features
 item card style
 category navigation style
 loyalty block style
@@ -277,7 +283,7 @@ preview metadata or placeholder
 | `description` | Warm coral, cream, and green public menu style for most restaurants and cafes. |
 | `bestFor` | General restaurants, cafes, bakeries, casual dining |
 | Theme tokens | Coral primary, cream page background, white cards, green loyalty progress, soft cream border |
-| Layout variant | Mobile-first category sections with featured merchant header |
+| CSS layout behavior | Mobile-first category sections with featured merchant header |
 | Item card style | Rounded food cards with image, name, description, price, and optional loyalty marker |
 | Category navigation style | Sticky horizontal chips or tabs with coral active state |
 | Loyalty block style | Warm cream or white panel with coral join CTA and green progress state |
@@ -293,7 +299,7 @@ preview metadata or placeholder
 | `description` | Dark green, gold, and cream style for premium cafe and dessert menus. |
 | `bestFor` | Specialty coffee, dessert shops, premium bakeries, boutique cafes |
 | Theme tokens | Dark green primary surfaces, cream background, gold reward accents, white cards |
-| Layout variant | Editorial merchant header with grouped menu sections |
+| CSS layout behavior | Editorial merchant header with grouped menu sections |
 | Item card style | Polished cards or rows with strong imagery and restrained gold accents |
 | Category navigation style | Dark green active tabs or compact section jump links |
 | Loyalty block style | Premium reward card with gold milestone details and green progress |
@@ -309,7 +315,7 @@ preview metadata or placeholder
 | `description` | Bold coral, orange, and red-accented style for energetic fast-food and street-food menus. |
 | `bestFor` | Burgers, shawarma, fried chicken, food trucks, street-food brands |
 | Theme tokens | Coral primary, energetic warm accents, white cards, red only for errors or strong brand accents |
-| Layout variant | Compact high-energy menu with quick category switching |
+| CSS layout behavior | Compact high-energy menu with quick category switching |
 | Item card style | Bold item rows or cards with prominent price and image thumbnail |
 | Category navigation style | Sticky punchy tabs with strong active indicator |
 | Loyalty block style | Direct earn/redeem panel with coral CTA and green success state |
@@ -325,7 +331,7 @@ preview metadata or placeholder
 | `description` | Clean white and neutral style with subtle accents for premium or simple restaurants. |
 | `bestFor` | Fine casual restaurants, modern cafes, simple menus, premium dining |
 | Theme tokens | White background, neutral borders, dark text, subtle coral primary action, green success |
-| Layout variant | Spacious list layout with minimal decoration |
+| CSS layout behavior | Spacious list layout with minimal decoration |
 | Item card style | Border-first cards or rows with restrained images and clear price hierarchy |
 | Category navigation style | Underlined tabs or simple segmented control |
 | Loyalty block style | Quiet inline loyalty panel with subtle coral CTA and green progress |
@@ -343,6 +349,7 @@ Owner/admin behavior:
 - Staff without the required permission cannot change the template.
 - Future templates can be added by Waflo SaaS owners without rewriting menu data.
 - Template selection should not duplicate menu items, categories, prices, images, or loyalty data.
+- Visual-only template changes should add metadata and CSS against the public menu HTML contract, not React branches.
 
 Admin template picker expectations:
 

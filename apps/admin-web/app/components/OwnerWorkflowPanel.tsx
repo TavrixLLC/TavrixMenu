@@ -7,14 +7,19 @@ import {
   getCategories,
   getDashboardSummary,
   getItems,
+  getMenuAppearance,
+  getMenuTemplateCatalog,
   reorderCategories,
   reorderItems,
   restoreCategory,
   restoreItem,
+  updateMenuAppearance,
   type AdminCategory,
   type AdminDashboardSummary,
   type AdminMeResponse,
+  type AdminMenuAppearance,
   type AdminMenuItem,
+  type AdminMenuTemplate,
   type AdminPermissions
 } from '../lib/admin-api';
 
@@ -40,6 +45,8 @@ type WorkflowState =
       me: AdminMeResponse;
       businessId: string;
       summary: AdminDashboardSummary;
+      menuAppearance: AdminMenuAppearance;
+      templates: AdminMenuTemplate[];
       categories: AdminCategory[];
       items: AdminMenuItem[];
     };
@@ -62,7 +69,8 @@ const permissionLabels: Array<[keyof AdminPermissions, string]> = [
   ['canManageMenu', 'Manage menu'],
   ['canManageMembers', 'Manage members'],
   ['canViewMembers', 'View members'],
-  ['canViewPublicLink', 'View public link']
+  ['canViewPublicLink', 'View public link'],
+  ['canManageAppearance', 'Manage appearance']
 ];
 
 function sortCategories(categories: AdminCategory[]) {
@@ -96,6 +104,14 @@ function pickCurrentBusinessId(me: AdminMeResponse) {
 function isMenuManager(summary: AdminDashboardSummary) {
   const role = summary.currentUser.role.toUpperCase();
   return summary.currentUser.permissions.canManageMenu && (role === 'OWNER' || role === 'MANAGER');
+}
+
+function isAppearanceManager(summary: AdminDashboardSummary) {
+  return summary.currentUser.permissions.canManageAppearance || summary.currentUser.permissions.canManageBusiness;
+}
+
+function getMenuTemplate(templates: AdminMenuTemplate[], value: string) {
+  return templates.find((template) => template.id === value) || templates[0] || null;
 }
 
 function StatusPill({
@@ -317,22 +333,160 @@ function PublicMenuShareSection({
         </div>
         <div>
           <p className="text-xs font-semibold uppercase text-neutral-500">QR payload</p>
-          <div className="mt-2 grid gap-2">
-            <p className="break-all rounded-md border border-neutral-200 bg-neutral-50 p-3 text-sm font-semibold text-ink">
-              {summary.publicMenu.qrPayload}
-            </p>
-            <button
-              type="button"
-              className="inline-flex w-fit rounded-md border border-neutral-200 bg-white px-3 py-2 text-sm font-semibold text-neutral-700"
-              onClick={() => onCopy(summary.publicMenu.qrPayload, 'QR payload')}
-            >
-              Copy QR payload
-            </button>
-          </div>
+          <p className="mt-2 rounded-md border border-neutral-200 bg-neutral-50 p-3 text-sm font-semibold text-neutral-700">
+            QR payload is available to QR generation flows and is not displayed here.
+          </p>
         </div>
       </div>
 
       {copyStatus ? <p className="mt-4 text-sm font-semibold text-neutral-700">{copyStatus}</p> : null}
+    </section>
+  );
+}
+
+function MenuAppearanceSection({
+  summary,
+  appearance,
+  templates,
+  draftTemplateId,
+  canManage,
+  actionPending,
+  onDraftTemplate,
+  onPreview,
+  onSave
+}: {
+  summary: AdminDashboardSummary;
+  appearance: AdminMenuAppearance;
+  templates: AdminMenuTemplate[];
+  draftTemplateId: string;
+  canManage: boolean;
+  actionPending: boolean;
+  onDraftTemplate: (templateId: string) => void;
+  onPreview: (templateId: string) => void;
+  onSave: () => void;
+}) {
+  const currentTemplateId = appearance.effectiveTemplateId || appearance.menuTemplateId;
+  const currentTemplate = getMenuTemplate(templates, currentTemplateId);
+  const draftTemplate = getMenuTemplate(templates, draftTemplateId);
+  const hasDraftChange = draftTemplateId !== currentTemplateId;
+
+  return (
+    <section className="rounded-lg border border-neutral-200 bg-white p-5">
+      <div className="flex flex-col gap-4 lg:flex-row lg:items-start lg:justify-between">
+        <div>
+          <p className="text-sm font-semibold uppercase text-accent">Menu appearance</p>
+          <h2 className="mt-2 text-xl font-bold text-ink">Public menu template</h2>
+          <p className="mt-2 max-w-2xl text-sm leading-6 text-neutral-600">
+            Current template: {currentTemplate?.displayName || currentTemplateId}. Existing menu data and public URLs stay unchanged.
+          </p>
+          {draftTemplate ? (
+            <p className="mt-1 text-sm leading-6 text-neutral-600">
+              Draft selection: {draftTemplate.displayName}.
+            </p>
+          ) : null}
+        </div>
+        <div className="flex flex-wrap gap-2">
+          <button
+            type="button"
+            className="inline-flex w-fit rounded-md border border-neutral-200 bg-white px-4 py-2 text-sm font-semibold text-ink disabled:cursor-not-allowed disabled:text-neutral-400"
+            disabled={!draftTemplate || actionPending}
+            onClick={() => onPreview(draftTemplateId)}
+          >
+            Preview draft
+          </button>
+          <button
+            type="button"
+            className="inline-flex w-fit rounded-md bg-accent px-4 py-2 text-sm font-semibold text-white disabled:cursor-not-allowed disabled:bg-neutral-300"
+            disabled={!canManage || actionPending || !draftTemplate || !hasDraftChange}
+            onClick={onSave}
+          >
+            Save template
+          </button>
+        </div>
+      </div>
+
+      {!canManage ? (
+        <p className="mt-4 rounded-md border border-amber-200 bg-amber-50 p-3 text-sm font-semibold text-amber-900">
+          Template changes require owner appearance permission.
+        </p>
+      ) : null}
+
+      <div className="mt-5 grid gap-4 xl:grid-cols-4">
+        {templates.map((template) => {
+          const current = template.id === currentTemplateId;
+          const draft = template.id === draftTemplateId;
+
+          return (
+            <article
+              key={template.id}
+              className={`rounded-lg border p-4 ${
+                draft ? 'border-accent bg-[#fff8f2]' : 'border-neutral-200 bg-white'
+              }`}
+            >
+              <div className="flex items-start justify-between gap-3">
+                <div>
+                  <h3 className="font-bold text-ink">{template.displayName}</h3>
+                  <p className="mt-1 text-xs font-semibold uppercase text-neutral-500">{template.id}</p>
+                </div>
+                <div className="flex flex-wrap justify-end gap-2">
+                  {current ? <StatusPill tone="success">Current</StatusPill> : null}
+                  {draft && !current ? <StatusPill tone="warning">Draft</StatusPill> : null}
+                </div>
+              </div>
+              <p className="mt-3 text-sm leading-6 text-neutral-600">{template.description}</p>
+              <p className="mt-3 text-xs font-semibold uppercase text-neutral-500">Best for</p>
+              <p className="mt-1 text-sm leading-6 text-neutral-700">{template.bestFor}</p>
+              <div
+                className="admin-template-preview"
+                data-template={template.id}
+                aria-label={`${template.displayName} CSS template preview`}
+              >
+                <div data-slot="merchant-hero">
+                  <span data-slot="merchant-logo" />
+                  <span data-slot="merchant-name" />
+                </div>
+                <div data-slot="category-navigation">
+                  <span />
+                  <span />
+                  <span />
+                </div>
+                <div data-slot="item-list">
+                  <span data-slot="item-image" />
+                  <span data-slot="item-copy" />
+                  <span data-slot="item-price" />
+                </div>
+                <div data-slot="loyalty-block" />
+              </div>
+              <div className="mt-3 flex items-center justify-between gap-3 rounded-md border border-neutral-200 bg-white p-3">
+                <p className="text-xs font-semibold uppercase text-neutral-500">{template.preview.previewLayout}</p>
+                <div className="flex gap-1.5">
+                  {template.preview.previewColors.map((swatch) => (
+                    <span key={swatch} className="h-5 w-5 rounded-full border border-neutral-200" style={{ backgroundColor: swatch }} />
+                  ))}
+                </div>
+              </div>
+              <div className="mt-4 grid gap-2 sm:grid-cols-2">
+                <button
+                  type="button"
+                  className="rounded-md border border-neutral-200 bg-white px-4 py-2 text-sm font-semibold text-ink disabled:cursor-not-allowed disabled:text-neutral-400"
+                  disabled={actionPending}
+                  onClick={() => onPreview(template.id)}
+                >
+                  Preview
+                </button>
+                <button
+                  type="button"
+                  className="rounded-md bg-accent px-4 py-2 text-sm font-semibold text-white disabled:cursor-not-allowed disabled:bg-neutral-300"
+                  disabled={!canManage || actionPending || draft}
+                  onClick={() => onDraftTemplate(template.id)}
+                >
+                  {draft ? 'Selected' : 'Choose'}
+                </button>
+              </div>
+            </article>
+          );
+        })}
+      </div>
     </section>
   );
 }
@@ -547,6 +701,7 @@ export function OwnerWorkflowPanel({ apiBaseUrl }: OwnerWorkflowPanelProps) {
   const [state, setState] = useState<WorkflowState>({ status: 'idle' });
   const [actionState, setActionState] = useState<ActionState>({ status: 'idle' });
   const [copyStatus, setCopyStatus] = useState<string | null>(null);
+  const [draftTemplateId, setDraftTemplateId] = useState('waflo-warm');
 
   const loadWorkflow = useCallback(
     async (signal?: AbortSignal) => {
@@ -588,11 +743,22 @@ export function OwnerWorkflowPanel({ apiBaseUrl }: OwnerWorkflowPanelProps) {
           return;
         }
 
-        const [summaryResult, categoriesResult, itemsResult] = await Promise.all([
+        const [summaryResult, menuAppearanceResult, templateCatalogResult, categoriesResult, itemsResult] = await Promise.all([
           getDashboardSummary({
             apiBaseUrl,
             token,
             businessId,
+            signal
+          }),
+          getMenuAppearance({
+            apiBaseUrl,
+            token,
+            businessId,
+            signal
+          }),
+          getMenuTemplateCatalog({
+            apiBaseUrl,
+            token,
             signal
           }),
           getCategories({
@@ -624,6 +790,24 @@ export function OwnerWorkflowPanel({ apiBaseUrl }: OwnerWorkflowPanelProps) {
           return;
         }
 
+        if (menuAppearanceResult.status !== 'ok') {
+          setState({
+            status: menuAppearanceResult.status,
+            apiUrl: menuAppearanceResult.apiUrl,
+            message: menuAppearanceResult.message
+          });
+          return;
+        }
+
+        if (templateCatalogResult.status !== 'ok') {
+          setState({
+            status: templateCatalogResult.status,
+            apiUrl: templateCatalogResult.apiUrl,
+            message: templateCatalogResult.message
+          });
+          return;
+        }
+
         if (categoriesResult.status !== 'ok') {
           setState({
             status: categoriesResult.status,
@@ -642,11 +826,15 @@ export function OwnerWorkflowPanel({ apiBaseUrl }: OwnerWorkflowPanelProps) {
           return;
         }
 
+        setDraftTemplateId(menuAppearanceResult.data.effectiveTemplateId || menuAppearanceResult.data.menuTemplateId);
+
         setState({
           status: 'ok',
           me: meResult.data,
           businessId,
           summary: summaryResult.data,
+          menuAppearance: menuAppearanceResult.data,
+          templates: templateCatalogResult.data.templates,
           categories: sortCategories(categoriesResult.data),
           items: sortItems(itemsResult.data)
         });
@@ -664,8 +852,13 @@ export function OwnerWorkflowPanel({ apiBaseUrl }: OwnerWorkflowPanelProps) {
 
   const refreshWorkflowData = useCallback(
     async (businessId: string, token: string) => {
-      const [summaryResult, categoriesResult, itemsResult] = await Promise.all([
+      const [summaryResult, menuAppearanceResult, categoriesResult, itemsResult] = await Promise.all([
         getDashboardSummary({
+          apiBaseUrl,
+          token,
+          businessId
+        }),
+        getMenuAppearance({
           apiBaseUrl,
           token,
           businessId
@@ -688,6 +881,10 @@ export function OwnerWorkflowPanel({ apiBaseUrl }: OwnerWorkflowPanelProps) {
         return summaryResult.message;
       }
 
+      if (menuAppearanceResult.status !== 'ok') {
+        return menuAppearanceResult.message;
+      }
+
       if (categoriesResult.status !== 'ok') {
         return categoriesResult.message;
       }
@@ -696,11 +893,14 @@ export function OwnerWorkflowPanel({ apiBaseUrl }: OwnerWorkflowPanelProps) {
         return itemsResult.message;
       }
 
+      setDraftTemplateId(menuAppearanceResult.data.effectiveTemplateId || menuAppearanceResult.data.menuTemplateId);
+
       setState((current) =>
         current.status === 'ok'
           ? {
               ...current,
               summary: summaryResult.data,
+              menuAppearance: menuAppearanceResult.data,
               categories: sortCategories(categoriesResult.data),
               items: sortItems(itemsResult.data)
             }
@@ -739,6 +939,16 @@ export function OwnerWorkflowPanel({ apiBaseUrl }: OwnerWorkflowPanelProps) {
     } catch (error) {
       setCopyStatus(error instanceof Error ? error.message : `Could not copy ${label}.`);
     }
+  }
+
+  function previewTemplate(templateId: string) {
+    if (state.status !== 'ok') {
+      return;
+    }
+
+    const previewUrl = new URL(state.summary.publicMenu.url);
+    previewUrl.searchParams.set('previewTemplateId', templateId);
+    window.open(previewUrl.toString(), '_blank', 'noopener,noreferrer');
   }
 
   function moveCategory(index: number, direction: -1 | 1) {
@@ -822,6 +1032,7 @@ export function OwnerWorkflowPanel({ apiBaseUrl }: OwnerWorkflowPanelProps) {
   }
 
   const canManage = isMenuManager(state.summary);
+  const canManageAppearance = isAppearanceManager(state.summary);
   const actionPending = actionState.status === 'pending';
 
   return (
@@ -829,6 +1040,35 @@ export function OwnerWorkflowPanel({ apiBaseUrl }: OwnerWorkflowPanelProps) {
       <DashboardSummarySection summary={state.summary} />
 
       <PublicMenuShareSection summary={state.summary} copyStatus={copyStatus} onCopy={copyToClipboard} />
+
+      <ActionBanner actionState={actionState} />
+
+      <MenuAppearanceSection
+        summary={state.summary}
+        appearance={state.menuAppearance}
+        templates={state.templates}
+        draftTemplateId={draftTemplateId}
+        canManage={canManageAppearance}
+        actionPending={actionPending}
+        onDraftTemplate={setDraftTemplateId}
+        onPreview={previewTemplate}
+        onSave={() => {
+          const draftTemplate = getMenuTemplate(state.templates, draftTemplateId);
+
+          void runMutation(`Saving ${draftTemplate?.displayName || draftTemplateId}...`, 'Menu template saved.', async (token, businessId) => {
+            const result = await updateMenuAppearance({
+              apiBaseUrl,
+              token,
+              businessId,
+              menuTemplateId: draftTemplateId
+            });
+
+            return result.status === 'ok'
+              ? { status: 'ok' }
+              : { status: result.status, message: `Template save failed: ${result.message}` };
+          });
+        }}
+      />
 
       <section id="menu-workflow" className="grid gap-4">
         <div className="flex flex-col gap-3 lg:flex-row lg:items-end lg:justify-between">
@@ -848,8 +1088,6 @@ export function OwnerWorkflowPanel({ apiBaseUrl }: OwnerWorkflowPanelProps) {
             Refresh
           </button>
         </div>
-
-        <ActionBanner actionState={actionState} />
 
         <div className="grid gap-4 xl:grid-cols-2">
           <CategoryManager

@@ -1,4 +1,5 @@
 const DEFAULT_API_BASE_URL = 'http://localhost:3000';
+const DEFAULT_MENU_TEMPLATE_ID = 'waflo-warm';
 
 export type PublicMenuBusiness = {
   id: string;
@@ -10,6 +11,15 @@ export type PublicMenuBusiness = {
   currency: string;
   language: string | null;
   city: string | null;
+  menuTemplateId: string;
+  menuThemeOverrides: Record<string, unknown> | null;
+};
+
+export type PublicMenuAppearance = {
+  menuTemplateId: string;
+  effectiveTemplateId: string;
+  fallbackApplied: boolean;
+  menuThemeOverrides: Record<string, unknown> | null;
 };
 
 export type PublicMenuItem = {
@@ -34,6 +44,7 @@ export type PublicMenuCategory = {
 
 export type PublicMenuResponse = {
   business: PublicMenuBusiness;
+  appearance: PublicMenuAppearance;
   categories: PublicMenuCategory[];
 };
 
@@ -81,9 +92,33 @@ export function getApiBaseUrl() {
   return (process.env.API_BASE_URL || process.env.NEXT_PUBLIC_API_BASE_URL || DEFAULT_API_BASE_URL).replace(/\/+$/, '');
 }
 
+function parsePublicMenuAppearance(menu: PublicMenuResponse): PublicMenuAppearance {
+  const appearanceRecord = asRecord((menu as unknown as Record<string, unknown>).appearance);
+  const menuTemplateId =
+    readString(appearanceRecord?.menuTemplateId) ||
+    readString(appearanceRecord?.effectiveTemplateId) ||
+    menu.business.menuTemplateId ||
+    DEFAULT_MENU_TEMPLATE_ID;
+  const effectiveTemplateId =
+    readString(appearanceRecord?.effectiveTemplateId) ||
+    menuTemplateId ||
+    DEFAULT_MENU_TEMPLATE_ID;
+
+  return {
+    menuTemplateId,
+    effectiveTemplateId,
+    fallbackApplied: readBoolean(appearanceRecord?.fallbackApplied, false),
+    menuThemeOverrides:
+      readNullableRecord(appearanceRecord?.menuThemeOverrides) ||
+      menu.business.menuThemeOverrides ||
+      null
+  };
+}
+
 function getAvailableMenu(menu: PublicMenuResponse): PublicMenuResponse {
   return {
     ...menu,
+    appearance: parsePublicMenuAppearance(menu),
     categories: menu.categories.map((category) => ({
       ...category,
       items: category.items.filter((item) => item.isAvailable)
@@ -101,6 +136,10 @@ function readString(value: unknown): string | null {
 
 function readNullableString(value: unknown): string | null {
   return typeof value === 'string' ? value : null;
+}
+
+function readNullableRecord(value: unknown): Record<string, unknown> | null {
+  return typeof value === 'object' && value !== null && !Array.isArray(value) ? (value as Record<string, unknown>) : null;
 }
 
 function readNumber(value: unknown): number {
@@ -135,7 +174,9 @@ function parsePublicMenuBusiness(value: unknown): PublicMenuBusiness | null {
     coverUrl: readNullableString(record.coverUrl),
     currency: readString(record.currency) || '',
     language: readNullableString(record.language),
-    city: readNullableString(record.city)
+    city: readNullableString(record.city),
+    menuTemplateId: readString(record.menuTemplateId) || DEFAULT_MENU_TEMPLATE_ID,
+    menuThemeOverrides: readNullableRecord(record.menuThemeOverrides)
   };
 }
 

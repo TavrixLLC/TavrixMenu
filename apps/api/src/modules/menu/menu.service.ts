@@ -11,6 +11,7 @@ import {
 import { PrismaService } from '../../prisma/prisma.service';
 import { AuthenticatedUser } from '../auth/interfaces/authenticated-user.interface';
 import { BusinessAccessService } from '../businesses/business-access.service';
+import { resolveMenuTemplateId } from '../businesses/menu-appearance.constants';
 import { CreateCategoryDto } from './dto/create-category.dto';
 import { CreateItemDto } from './dto/create-item.dto';
 import { ReorderMenuRecordsDto } from './dto/reorder-menu-records.dto';
@@ -403,6 +404,8 @@ export class MenuService {
         currency: true,
         language: true,
         city: true,
+        menuTemplateId: true,
+        menuThemeOverrides: true,
         menuCategories: {
           where: {
             isActive: true
@@ -453,8 +456,14 @@ export class MenuService {
         coverUrl: business.coverUrl,
         currency: business.currency,
         language: business.language,
-        city: business.city
+        city: business.city,
+        menuTemplateId: resolveMenuTemplateId(business.menuTemplateId),
+        menuThemeOverrides: business.menuThemeOverrides ?? null
       },
+      appearance: this.mapPublicMenuAppearance({
+        menuTemplateId: business.menuTemplateId,
+        menuThemeOverrides: business.menuThemeOverrides
+      }),
       categories: business.menuCategories.map((category) => ({
         id: category.id,
         nameAr: category.nameAr,
@@ -550,6 +559,23 @@ export class MenuService {
 
       seenIds.add(order.id);
     }
+  }
+
+  private mapPublicMenuAppearance(appearance: {
+    menuTemplateId: string | null;
+    menuThemeOverrides: unknown;
+  }) {
+    const effectiveTemplateId = resolveMenuTemplateId(appearance.menuTemplateId);
+
+    return {
+      menuTemplateId: effectiveTemplateId,
+      effectiveTemplateId,
+      fallbackApplied:
+        appearance.menuTemplateId === null ||
+        appearance.menuTemplateId === undefined ||
+        appearance.menuTemplateId !== effectiveTemplateId,
+      menuThemeOverrides: appearance.menuThemeOverrides ?? null
+    };
   }
 
   private mapCategory(category: MenuCategory) {

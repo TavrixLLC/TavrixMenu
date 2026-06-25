@@ -4,8 +4,8 @@
 
 :root {
   color-scheme: light;
-  background: #fafaf7;
-  color: #171717;
+  background: #fff8f2;
+  color: #1f2933;
 }
 
 * {
@@ -15,8 +15,8 @@
 body {
   margin: 0;
   min-height: 100vh;
-  background: #fafaf7;
-  color: #171717;
+  background: #fff8f2;
+  color: #1f2933;
   font-family: Arial, Helvetica, sans-serif;
 }
 

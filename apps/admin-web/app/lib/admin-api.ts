@@ -19,6 +19,8 @@ export type AdminBusiness = {
   language: string;
   logoUrl: string | null;
   coverUrl: string | null;
+  menuTemplateId?: string;
+  menuThemeOverrides?: Record<string, unknown> | null;
   status?: string;
 };
 
@@ -49,6 +51,7 @@ export type AdminPermissions = {
   canManageMembers: boolean;
   canViewMembers: boolean;
   canViewPublicLink: boolean;
+  canManageAppearance: boolean;
 };
 
 export type AdminPublicMenuLink = {
@@ -81,9 +84,42 @@ export type AdminDashboardSummary = {
     role: string;
     permissions: AdminPermissions;
   };
+  menuAppearance?: AdminMenuAppearance;
   counts: AdminDashboardCounts;
   publicMenu: Pick<AdminPublicMenuLink, 'path' | 'url' | 'qrPayload'>;
   onboardingHints: AdminDashboardOnboardingHints;
+};
+
+export type AdminMenuAppearance = {
+  businessId: string;
+  menuTemplateId: string;
+  effectiveTemplateId: string;
+  fallbackApplied: boolean;
+  defaultTemplateId: string;
+  menuThemeOverrides: Record<string, unknown> | null;
+};
+
+export type AdminMenuTemplate = {
+  id: string;
+  displayName: string;
+  description: string;
+  bestFor: string;
+  version: string;
+  status: string;
+  enabled: boolean;
+  isDefault: boolean;
+  preview: {
+    previewColors: string[];
+    previewLayout: string;
+    thumbnailUrl: string | null;
+    mobilePreviewUrl: string | null;
+    desktopPreviewUrl: string | null;
+  };
+  supportedFeatures: Record<string, boolean>;
+};
+
+export type AdminMenuTemplateCatalog = {
+  templates: AdminMenuTemplate[];
 };
 
 export type AdminCategory = {
@@ -334,6 +370,10 @@ function readNullableString(value: unknown): string | null {
   return typeof value === 'string' ? value : null;
 }
 
+function readNullableRecord(value: unknown): Record<string, unknown> | null {
+  return typeof value === 'object' && value !== null && !Array.isArray(value) ? (value as Record<string, unknown>) : null;
+}
+
 function readBoolean(value: unknown): boolean {
   return typeof value === 'boolean' ? value : false;
 }
@@ -402,6 +442,8 @@ function parseAdminBusiness(value: unknown): AdminBusiness | null {
     language: readString(record.language) || 'ar',
     logoUrl: readNullableString(record.logoUrl),
     coverUrl: readNullableString(record.coverUrl),
+    menuTemplateId: readString(record.menuTemplateId) || undefined,
+    menuThemeOverrides: readNullableRecord(record.menuThemeOverrides),
     status: readString(record.status) || undefined
   };
 }
@@ -482,7 +524,8 @@ function parsePermissions(value: unknown): AdminPermissions {
       canManageMenu: false,
       canManageMembers: false,
       canViewMembers: false,
-      canViewPublicLink: false
+      canViewPublicLink: false,
+      canManageAppearance: false
     };
   }
 
@@ -491,7 +534,8 @@ function parsePermissions(value: unknown): AdminPermissions {
     canManageMenu: readBoolean(record.canManageMenu),
     canManageMembers: readBoolean(record.canManageMembers),
     canViewMembers: readBoolean(record.canViewMembers),
-    canViewPublicLink: readBoolean(record.canViewPublicLink)
+    canViewPublicLink: readBoolean(record.canViewPublicLink),
+    canManageAppearance: readBoolean(record.canManageAppearance)
   };
 }
 
@@ -542,6 +586,89 @@ function parseDashboardPublicMenu(value: unknown): AdminDashboardSummary['public
   };
 }
 
+function parseMenuAppearance(value: unknown): AdminMenuAppearance | null {
+  const record = asRecord(value);
+
+  if (!record) {
+    return null;
+  }
+
+  const businessId = readString(record.businessId);
+  const menuTemplateId = readString(record.menuTemplateId);
+
+  if (!businessId || !menuTemplateId) {
+    return null;
+  }
+
+  return {
+    businessId,
+    menuTemplateId,
+    effectiveTemplateId: readString(record.effectiveTemplateId) || menuTemplateId,
+    fallbackApplied: readBoolean(record.fallbackApplied),
+    defaultTemplateId: readString(record.defaultTemplateId) || 'waflo-warm',
+    menuThemeOverrides: readNullableRecord(record.menuThemeOverrides)
+  };
+}
+
+function parseMenuTemplate(value: unknown): AdminMenuTemplate | null {
+  const record = asRecord(value);
+  const preview = asRecord(record?.preview);
+  const supportedFeatures = readNullableRecord(record?.supportedFeatures);
+
+  if (!record || !preview || !supportedFeatures) {
+    return null;
+  }
+
+  const id = readString(record.id);
+  const displayName = readString(record.displayName);
+  const description = readString(record.description);
+  const bestFor = readString(record.bestFor);
+  const version = readString(record.version);
+  const status = readString(record.status);
+  const previewLayout = readString(preview.previewLayout);
+  const previewColors = Array.isArray(preview.previewColors)
+    ? preview.previewColors.filter((color): color is string => typeof color === 'string')
+    : [];
+
+  if (!id || !displayName || !description || !bestFor || !version || !status || !previewLayout || previewColors.length === 0) {
+    return null;
+  }
+
+  return {
+    id,
+    displayName,
+    description,
+    bestFor,
+    version,
+    status,
+    enabled: readBoolean(record.enabled),
+    isDefault: readBoolean(record.isDefault),
+    preview: {
+      previewColors,
+      previewLayout,
+      thumbnailUrl: readNullableString(preview.thumbnailUrl),
+      mobilePreviewUrl: readNullableString(preview.mobilePreviewUrl),
+      desktopPreviewUrl: readNullableString(preview.desktopPreviewUrl)
+    },
+    supportedFeatures: Object.fromEntries(
+      Object.entries(supportedFeatures).filter((entry): entry is [string, boolean] => typeof entry[1] === 'boolean')
+    )
+  };
+}
+
+function parseMenuTemplateCatalog(value: unknown): AdminMenuTemplateCatalog | null {
+  const record = asRecord(value);
+  const templates = Array.isArray(record?.templates)
+    ? compact(record.templates.map(parseMenuTemplate))
+    : null;
+
+  if (!templates || templates.length === 0) {
+    return null;
+  }
+
+  return { templates };
+}
+
 function parseDashboardSummary(value: unknown): AdminDashboardSummary | null {
   const record = asRecord(value);
 
@@ -564,6 +691,7 @@ function parseDashboardSummary(value: unknown): AdminDashboardSummary | null {
       role,
       permissions: parsePermissions(currentUserRecord?.permissions)
     },
+    menuAppearance: parseMenuAppearance(record.menuAppearance) || undefined,
     counts: parseDashboardCounts(record.counts),
     publicMenu,
     onboardingHints: parseDashboardOnboardingHints(record.onboardingHints)
@@ -1491,6 +1619,71 @@ export function getPublicLink({
     signal,
     parse: parsePublicLink,
     contractName: 'GET /businesses/{id}/public-link'
+  });
+}
+
+export function getMenuTemplateCatalog({
+  apiBaseUrl,
+  token,
+  signal
+}: {
+  apiBaseUrl: string;
+  token: string | null;
+  signal?: AbortSignal;
+}) {
+  return requestAdminJson({
+    apiBaseUrl,
+    token,
+    path: '/menu-templates',
+    signal,
+    parse: parseMenuTemplateCatalog,
+    contractName: 'GET /menu-templates'
+  });
+}
+
+export function getMenuAppearance({
+  apiBaseUrl,
+  token,
+  businessId,
+  signal
+}: {
+  apiBaseUrl: string;
+  token: string | null;
+  businessId: string;
+  signal?: AbortSignal;
+}) {
+  return requestAdminJson({
+    apiBaseUrl,
+    token,
+    path: `/businesses/${encodeURIComponent(businessId)}/appearance`,
+    signal,
+    parse: parseMenuAppearance,
+    contractName: 'GET /businesses/{id}/appearance'
+  });
+}
+
+export function updateMenuAppearance({
+  apiBaseUrl,
+  token,
+  businessId,
+  menuTemplateId,
+  signal
+}: {
+  apiBaseUrl: string;
+  token: string | null;
+  businessId: string;
+  menuTemplateId: string;
+  signal?: AbortSignal;
+}) {
+  return requestAdminJson({
+    apiBaseUrl,
+    token,
+    path: `/businesses/${encodeURIComponent(businessId)}/appearance`,
+    method: 'PATCH',
+    body: { menuTemplateId },
+    signal,
+    parse: parseMenuAppearance,
+    contractName: 'PATCH /businesses/{id}/appearance'
   });
 }
 

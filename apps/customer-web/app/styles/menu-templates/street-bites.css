@@ -1,0 +1,151 @@
+.waflo-menu[data-template="street-bites"] {
+  --waflo-template-bg: #fff3ec;
+  --waflo-template-surface: #ffffff;
+  --waflo-template-primary: #ff6b4a;
+  --waflo-template-primary-dark: #d94b2b;
+  --waflo-template-success: #43a047;
+  --waflo-template-border: #ffd5c8;
+  --waflo-template-text: #1f2933;
+  --waflo-template-muted: #6b7280;
+  --waflo-template-reward: #ffb020;
+  --waflo-template-danger: #dc2626;
+  --waflo-menu-radius: 12px;
+  --waflo-menu-radius-sm: 9px;
+  --waflo-menu-shadow: 0 10px 0 #ffd5c8;
+}
+
+.waflo-menu[data-template="street-bites"] .waflo-menu__hero {
+  padding: 0;
+  overflow: hidden;
+  border: 2px solid var(--waflo-template-primary);
+  border-radius: 14px;
+  background: var(--waflo-template-surface);
+  box-shadow: var(--waflo-menu-shadow);
+}
+
+.waflo-menu[data-template="street-bites"] .waflo-menu__hero::before {
+  display: block;
+  height: 0.75rem;
+  background: var(--waflo-template-primary);
+  content: "";
+}
+
+.waflo-menu[data-template="street-bites"] .waflo-menu__cover {
+  display: none;
+}
+
+.waflo-menu[data-template="street-bites"] .waflo-menu__identity {
+  grid-template-columns: minmax(0, 1fr) 7.5rem;
+  gap: 1rem;
+  align-items: center;
+  margin: 0;
+  padding: clamp(1rem, 3vw, 1.5rem);
+}
+
+.waflo-menu[data-template="street-bites"] .waflo-menu__logo {
+  order: 2;
+  width: 7.5rem;
+  height: 7.5rem;
+  border: 0;
+  border-radius: 10px;
+  box-shadow: none;
+}
+
+.waflo-menu[data-template="street-bites"] .waflo-menu__identity-copy {
+  order: 1;
+}
+
+.waflo-menu[data-template="street-bites"] .waflo-menu__merchant-type,
+.waflo-menu[data-template="street-bites"] .waflo-menu__eyebrow {
+  color: var(--waflo-template-primary-dark);
+  font-weight: 900;
+}
+
+.waflo-menu[data-template="street-bites"] .waflo-menu__merchant-name,
+.waflo-menu[data-template="street-bites"] .waflo-menu__category-title,
+.waflo-menu[data-template="street-bites"] .waflo-menu__item-name {
+  font-weight: 900;
+  text-transform: uppercase;
+}
+
+.waflo-menu[data-template="street-bites"] .waflo-menu__status {
+  background: color-mix(in srgb, var(--waflo-template-primary) 12%, white);
+  color: var(--waflo-template-primary-dark);
+}
+
+.waflo-menu[data-template="street-bites"] .waflo-menu__loyalty {
+  border: 2px solid var(--waflo-template-primary);
+  box-shadow: 0 8px 0 #ffd5c8;
+}
+
+.waflo-menu[data-template="street-bites"] .waflo-menu__category-link {
+  border: 0;
+  border-radius: 8px;
+  background: var(--waflo-template-text);
+  color: white;
+  box-shadow: 0 4px 0 var(--waflo-template-primary);
+  text-transform: uppercase;
+}
+
+.waflo-menu[data-template="street-bites"] .waflo-menu__items {
+  gap: 0.75rem;
+}
+
+.waflo-menu[data-template="street-bites"] .waflo-menu__item-link {
+  grid-template-columns: 7rem minmax(0, 1fr) 8rem;
+  border: 2px solid var(--waflo-template-border);
+  box-shadow: none;
+}
+
+.waflo-menu[data-template="street-bites"] .waflo-menu__item-link:hover {
+  border-color: var(--waflo-template-primary);
+  box-shadow: 0 6px 0 #ffd5c8;
+}
+
+.waflo-menu[data-template="street-bites"] .waflo-menu__item-price {
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  width: 100%;
+  max-width: none;
+  min-height: 3.25rem;
+  border-radius: 10px;
+  background: var(--waflo-template-primary);
+  color: white;
+  font-size: 1rem;
+}
+
+.waflo-menu[data-template="street-bites"] .waflo-menu__item-status {
+  background: transparent;
+  color: var(--waflo-template-danger);
+  padding-inline: 0;
+}
+
+.waflo-menu[data-template="street-bites"] .waflo-menu__item-status[data-state="available"] {
+  color: var(--waflo-template-success);
+}
+
+@media (max-width: 640px) {
+  .waflo-menu[data-template="street-bites"] .waflo-menu__identity {
+    grid-template-columns: minmax(0, 1fr);
+  }
+
+  .waflo-menu[data-template="street-bites"] .waflo-menu__logo {
+    display: none;
+  }
+
+  .waflo-menu[data-template="street-bites"] .waflo-menu__merchant-name {
+    font-size: clamp(1.5rem, 8vw, 2rem);
+  }
+
+  .waflo-menu[data-template="street-bites"] .waflo-menu__item-link {
+    grid-template-areas:
+      "copy copy"
+      "price price";
+    grid-template-columns: 1fr;
+  }
+
+  .waflo-menu[data-template="street-bites"] .waflo-menu__item-image {
+    display: none;
+  }
+}
