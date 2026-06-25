@@ -1,8 +1,7 @@
 import 'package:flutter/material.dart';
 
 import '../../core/constants/app_colors.dart';
-import '../../core/constants/app_radius.dart';
-import '../../core/constants/app_spacing.dart';
+import 'waflo_status_badge.dart';
 
 class StatusBadge extends StatelessWidget {
   const StatusBadge({
@@ -18,24 +17,10 @@ class StatusBadge extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
-    return DecoratedBox(
-      decoration: BoxDecoration(
-        color: color,
-        borderRadius: BorderRadius.circular(AppRadius.pill),
-      ),
-      child: Padding(
-        padding: const EdgeInsetsDirectional.symmetric(
-          horizontal: AppSpacing.sm,
-          vertical: AppSpacing.xs,
-        ),
-        child: Text(
-          label,
-          style: Theme.of(context).textTheme.labelMedium?.copyWith(
-            color: foregroundColor,
-            fontWeight: FontWeight.w700,
-          ),
-        ),
-      ),
+    return WafloStatusBadge(
+      label: label,
+      color: color,
+      foregroundColor: foregroundColor,
     );
   }
 }

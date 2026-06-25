@@ -106,7 +106,8 @@ void main() {
 
     expect(find.byKey(const ValueKey('walletScanResult')), findsOneWidget);
     expect(find.text('Demo Customer'), findsOneWidget);
-    expect(find.text('+9647700000000'), findsOneWidget);
+    expect(find.text('Phone ending 000'), findsOneWidget);
+    expect(find.text('+9647700000000'), findsNothing);
     expect(find.text('Tavrix Cafe Stamp Card'), findsOneWidget);
     expect(find.text('3 of 10 stamps'), findsOneWidget);
     expect(find.text('Free coffee is not ready yet.'), findsOneWidget);

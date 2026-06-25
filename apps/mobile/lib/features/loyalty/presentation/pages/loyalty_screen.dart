@@ -218,7 +218,7 @@ class _LoyaltyScreenState extends State<LoyaltyScreen> {
                         controller: nameController,
                         decoration: const InputDecoration(
                           labelText: 'Program name',
-                          hintText: 'Tavrix Cafe Stamp Card',
+                          hintText: 'Waflo Cafe Stamp Card',
                         ),
                       ),
                       const SizedBox(height: AppSpacing.md),

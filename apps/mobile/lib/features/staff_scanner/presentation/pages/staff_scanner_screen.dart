@@ -8,6 +8,8 @@ import '../../../../shared/widgets/app_card.dart';
 import '../../../../shared/widgets/app_scaffold.dart';
 import '../../../../shared/widgets/error_view.dart';
 import '../../../../shared/widgets/loading_view.dart';
+import '../../../../shared/widgets/loyalty_progress_card.dart';
+import '../../../../shared/widgets/scanner_action_panel.dart';
 import '../../../../shared/widgets/section_header.dart';
 import '../../../../shared/widgets/status_badge.dart';
 import '../../domain/entities/wallet_scan_result.dart';
@@ -80,19 +82,18 @@ class _StaffScannerScreenState extends State<StaffScannerScreen> {
             crossAxisAlignment: CrossAxisAlignment.start,
             children: [
               const SectionHeader(
-                title: 'Staff wallet scan',
+                title: 'Operator scan',
                 subtitle:
-                    'Scan the customer wallet QR code to look up loyalty progress and reward status.',
+                    'Fast loyalty lookup for staff during live customer interactions.',
               ),
               const SizedBox(height: AppSpacing.md),
               if (_cameraOpen)
                 _buildCameraScanner()
               else if (_pendingCameraToken == null && state.result == null)
-                AppButton(
-                  key: const ValueKey('walletOpenCameraButton'),
-                  label: 'Scan with camera',
-                  icon: Icons.qr_code_scanner,
-                  onPressed: isScanning ? null : _openCamera,
+                ScannerActionPanel(
+                  businessName: state.business?.name,
+                  isBusy: isScanning,
+                  onScan: _openCamera,
                 ),
               if (_pendingCameraToken != null &&
                   state.status == WalletScanStatus.failure) ...[
@@ -104,9 +105,9 @@ class _StaffScannerScreenState extends State<StaffScannerScreen> {
               ],
               const SizedBox(height: AppSpacing.lg),
               const SectionHeader(
-                title: 'Manual entry',
+                title: 'Secure manual fallback',
                 subtitle:
-                    'Use manual entry when camera scanning is unavailable.',
+                    'Use only when the camera is unavailable. Token text is never shown in result states.',
               ),
               const SizedBox(height: AppSpacing.md),
               AppCard(
@@ -122,8 +123,9 @@ class _StaffScannerScreenState extends State<StaffScannerScreen> {
                       textInputAction: TextInputAction.done,
                       onSubmitted: isScanning ? null : (_) => _scanManual(),
                       decoration: const InputDecoration(
-                        labelText: 'QR token',
-                        hintText: 'Paste wallet QR token',
+                        labelText: 'Wallet token',
+                        hintText: 'Paste wallet token',
+                        prefixIcon: Icon(Icons.password_outlined),
                       ),
                     ),
                     const SizedBox(height: AppSpacing.md),
@@ -360,10 +362,9 @@ class _WalletScanResultCard extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
-    final phone = result.customerPhone?.trim();
+    final phoneHint = _maskedCustomerHint(result.customerPhone);
     final stamps = updatedStamps ?? result.stamps;
     final goal = updatedGoal ?? result.goal;
-    final progress = goal > 0 ? (stamps / goal).clamp(0.0, 1.0) : 0.0;
 
     final isStamping = stampStatus == StampStatus.stamping;
     final stampSucceeded = stampStatus == StampStatus.stampSuccess;
@@ -374,7 +375,20 @@ class _WalletScanResultCard extends StatelessWidget {
       children: [
         const SectionHeader(
           title: 'Scan result',
-          subtitle: 'Customer loyalty membership found.',
+          subtitle:
+              'Customer loyalty membership found. Sensitive details stay minimized.',
+        ),
+        const SizedBox(height: AppSpacing.md),
+        LoyaltyProgressCard(
+          customerName: result.customerDisplayName,
+          customerHint: phoneHint ?? 'Customer details minimized for privacy.',
+          programName: result.programName,
+          rewardText: result.canRedeem
+              ? '${result.rewardName} is ready to redeem.'
+              : '${result.rewardName} is not ready yet.',
+          stamps: stamps,
+          goal: goal,
+          canRedeem: result.canRedeem,
         ),
         const SizedBox(height: AppSpacing.md),
         AppCard(
@@ -389,36 +403,12 @@ class _WalletScanResultCard extends StatelessWidget {
               ),
               const SizedBox(height: AppSpacing.md),
               Text(
-                result.customerDisplayName,
-                style: Theme.of(context).textTheme.titleLarge,
-              ),
-              if (phone != null && phone.isNotEmpty) ...[
-                const SizedBox(height: AppSpacing.xs),
-                Text(phone),
-              ],
-              const SizedBox(height: AppSpacing.lg),
-              Text(
-                result.programName,
-                style: Theme.of(context).textTheme.titleMedium,
-              ),
-              const SizedBox(height: AppSpacing.sm),
-              LinearProgressIndicator(
-                key: const ValueKey('walletStampProgressBar'),
-                value: progress,
-              ),
-              const SizedBox(height: AppSpacing.xs),
-              Text(
-                key: const ValueKey('walletStampCount'),
-                '$stamps of $goal stamps',
-              ),
-              const SizedBox(height: AppSpacing.md),
-              Text(
-                result.canRedeem
-                    ? '${result.rewardName} is ready to redeem.'
-                    : '${result.rewardName} is not ready yet.',
+                stampSucceeded
+                    ? 'Stamp has been recorded for this scan.'
+                    : 'Add one stamp only after confirming the customer interaction.',
+                style: Theme.of(context).textTheme.bodyMedium,
               ),
               const SizedBox(height: AppSpacing.lg),
-              // ── Add stamp action ──────────────────────────────────
               AppButton(
                 key: const ValueKey('walletAddStampButton'),
                 label: isStamping ? 'Adding stamp...' : 'Add stamp',
@@ -451,6 +441,17 @@ class _WalletScanResultCard extends StatelessWidget {
   }
 }
 
+String? _maskedCustomerHint(String? phone) {
+  final trimmed = phone?.trim();
+  if (trimmed == null || trimmed.isEmpty) {
+    return null;
+  }
+  final visible = trimmed.length <= 3
+      ? trimmed
+      : trimmed.substring(trimmed.length - 3);
+  return 'Phone ending $visible';
+}
+
 class _StampSuccessBanner extends StatelessWidget {
   @override
   Widget build(BuildContext context) {
@@ -463,11 +464,16 @@ class _StampSuccessBanner extends StatelessWidget {
       decoration: BoxDecoration(
         color: AppColors.greenLight,
         borderRadius: BorderRadius.circular(8),
-        border: Border.all(color: AppColors.brandGreen.withValues(alpha: 0.25)),
+        border: Border.all(
+          color: AppColors.freshGreenDark.withValues(alpha: 0.25),
+        ),
       ),
       child: Row(
         children: [
-          const Icon(Icons.check_circle_outline, color: AppColors.brandGreen),
+          const Icon(
+            Icons.check_circle_outline,
+            color: AppColors.freshGreenDark,
+          ),
           const SizedBox(width: AppSpacing.sm),
           const Text('Stamp added!'),
         ],

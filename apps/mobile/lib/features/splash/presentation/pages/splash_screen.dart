@@ -51,14 +51,14 @@ class _SplashScreenState extends State<SplashScreen> {
               const StatusBadge(label: 'Business app'),
               const SizedBox(height: AppSpacing.lg),
               Text(
-                'Tavrix Menu',
+                'Waflo Operator',
                 style: Theme.of(context).textTheme.headlineMedium?.copyWith(
-                  color: AppColors.houseGreen,
+                  color: AppColors.ink,
                   fontWeight: FontWeight.w900,
                 ),
               ),
               const SizedBox(height: AppSpacing.xs),
-              const Text('Preparing your workspace'),
+              const Text('Preparing your operator workspace'),
             ],
           ),
         ),

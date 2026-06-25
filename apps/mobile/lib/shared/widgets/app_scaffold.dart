@@ -1,7 +1,7 @@
 import 'package:flutter/material.dart';
 
-import '../../core/constants/app_colors.dart';
 import '../../core/constants/app_spacing.dart';
+import 'waflo_scaffold.dart';
 
 class AppScaffold extends StatelessWidget {
   const AppScaffold({
@@ -23,23 +23,13 @@ class AppScaffold extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
-    final body = Padding(padding: padding, child: child);
-
-    return Scaffold(
-      backgroundColor: AppColors.neutralWarm,
-      appBar: title == null
-          ? null
-          : AppBar(title: Text(title!), actions: actions),
-      bottomNavigationBar: bottomNavigation,
-      body: SafeArea(
-        child: scrollable
-            ? ListView(
-                keyboardDismissBehavior:
-                    ScrollViewKeyboardDismissBehavior.onDrag,
-                children: [body],
-              )
-            : body,
-      ),
+    return WafloScaffold(
+      title: title,
+      actions: actions,
+      scrollable: scrollable,
+      padding: padding,
+      bottomNavigation: bottomNavigation,
+      child: child,
     );
   }
 }

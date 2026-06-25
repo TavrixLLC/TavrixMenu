@@ -4,9 +4,11 @@ import 'package:flutter/material.dart';
 import 'package:mobile_scanner/mobile_scanner.dart';
 
 import '../../../../core/constants/app_colors.dart';
+import '../../../../core/constants/app_radius.dart';
 import '../../../../core/constants/app_spacing.dart';
 import '../../../../shared/widgets/app_button.dart';
 import '../../../../shared/widgets/app_card.dart';
+import '../../../../shared/widgets/waflo_status_badge.dart';
 
 class WalletQrCameraScanner extends StatefulWidget {
   const WalletQrCameraScanner({
@@ -42,22 +44,20 @@ class _WalletQrCameraScannerState extends State<WalletQrCameraScanner> {
       child: Column(
         crossAxisAlignment: CrossAxisAlignment.start,
         children: [
-          Text(
-            'Camera wallet scan',
-            style: Theme.of(context).textTheme.titleMedium,
-          ),
+          Text('Camera scanner', style: Theme.of(context).textTheme.titleLarge),
           const SizedBox(height: AppSpacing.xs),
           const Text(
-            'Point the camera at the customer wallet QR code. The code is used only for this lookup.',
+            'Point the frame at the customer wallet QR. The code is processed without displaying the raw token.',
           ),
           const SizedBox(height: AppSpacing.md),
           AspectRatio(
             aspectRatio: 1,
             child: ClipRRect(
-              borderRadius: BorderRadius.circular(12),
+              borderRadius: BorderRadius.circular(AppRadius.lg),
               child: Stack(
                 fit: StackFit.expand,
                 children: [
+                  const ColoredBox(color: AppColors.ink),
                   MobileScanner(
                     key: const ValueKey('walletCameraPreview'),
                     controller: _controller,
@@ -68,7 +68,7 @@ class _WalletQrCameraScannerState extends State<WalletQrCameraScanner> {
                       onRetry: _retryCamera,
                     ),
                     placeholderBuilder: (_) => const ColoredBox(
-                      color: AppColors.textBlack,
+                      color: AppColors.ink,
                       child: Center(
                         child: CircularProgressIndicator(
                           key: ValueKey('walletCameraStarting'),
@@ -77,6 +77,17 @@ class _WalletQrCameraScannerState extends State<WalletQrCameraScanner> {
                     ),
                   ),
                   const IgnorePointer(child: _ScanFrameOverlay()),
+                  const PositionedDirectional(
+                    start: AppSpacing.md,
+                    end: AppSpacing.md,
+                    bottom: AppSpacing.md,
+                    child: WafloStatusBadge(
+                      label: 'Ready for secure scan',
+                      icon: Icons.lock_outline,
+                      color: AppColors.charcoalSoft,
+                      foregroundColor: AppColors.surfaceWhite,
+                    ),
+                  ),
                 ],
               ),
             ),
@@ -157,6 +168,7 @@ class _CameraErrorView extends StatelessWidget {
               permissionDenied
                   ? Icons.no_photography_outlined
                   : Icons.camera_alt_outlined,
+              color: AppColors.primaryCoralDark,
             ),
             const SizedBox(height: AppSpacing.sm),
             Text(message, textAlign: TextAlign.center),
@@ -187,8 +199,15 @@ class _ScanFrameOverlay extends StatelessWidget {
         heightFactor: 0.72,
         child: DecoratedBox(
           decoration: BoxDecoration(
-            border: Border.all(color: Colors.white, width: 3),
-            borderRadius: BorderRadius.circular(16),
+            border: Border.all(color: AppColors.surfaceWhite, width: 3),
+            borderRadius: BorderRadius.circular(AppRadius.lg),
+            boxShadow: const [
+              BoxShadow(
+                color: Color(0x33000000),
+                blurRadius: 24,
+                spreadRadius: 4,
+              ),
+            ],
           ),
         ),
       ),

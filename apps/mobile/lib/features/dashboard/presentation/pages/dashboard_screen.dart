@@ -12,6 +12,8 @@ import '../../../../shared/widgets/error_view.dart';
 import '../../../../shared/widgets/loading_view.dart';
 import '../../../../shared/widgets/role_badge.dart';
 import '../../../../shared/widgets/section_header.dart';
+import '../../../../shared/widgets/waflo_action_tile.dart';
+import '../../../../shared/widgets/waflo_metric_card.dart';
 import '../../../auth/presentation/bloc/auth_cubit.dart';
 import '../bloc/dashboard_cubit.dart';
 import '../bloc/dashboard_state.dart';
@@ -71,7 +73,10 @@ class _DashboardScreenState extends State<DashboardScreen> {
           return Column(
             crossAxisAlignment: CrossAxisAlignment.start,
             children: [
-              BusinessHeaderCard(business: state.business),
+              BusinessHeaderCard(
+                business: state.business,
+                role: state.effectiveRole,
+              ),
               if (state.summaryErrorMessage != null) ...[
                 const SizedBox(height: AppSpacing.md),
                 _InlineNotice(
@@ -82,6 +87,16 @@ class _DashboardScreenState extends State<DashboardScreen> {
               ],
               const SizedBox(height: AppSpacing.lg),
               _AccessCard(state: state),
+              const SizedBox(height: AppSpacing.lg),
+              _DashboardActionCard(
+                title: 'Scan customer QR',
+                subtitle:
+                    'Open the scanner for stamps, rewards, and member lookup.',
+                icon: Icons.qr_code_scanner,
+                routeName: AppRouteNames.walletScan,
+                accentColor: AppColors.primaryCoral,
+                badge: 'Ready',
+              ),
               if (state.summary != null) ...[
                 const SizedBox(height: AppSpacing.lg),
                 _DashboardSummarySection(state: state),
@@ -100,6 +115,7 @@ class _DashboardScreenState extends State<DashboardScreen> {
                     : 'Restricted by your business permissions.',
                 icon: Icons.restaurant_menu,
                 routeName: AppRouteNames.menu,
+                accentColor: AppColors.freshGreen,
               ),
               const SizedBox(height: AppSpacing.sm),
               _DashboardActionCard(
@@ -107,16 +123,18 @@ class _DashboardScreenState extends State<DashboardScreen> {
                 subtitle: 'Enroll customers, add stamps, and redeem rewards.',
                 icon: Icons.loyalty_outlined,
                 routeName: AppRouteNames.loyalty,
+                accentColor: AppColors.freshGreen,
               ),
               const SizedBox(height: AppSpacing.sm),
               _DashboardActionCard(
                 enabled: _canViewPublicLink(state),
                 title: 'QR Menu',
                 subtitle: _canViewPublicLink(state)
-                    ? 'Copy the public menu URL and QR payload.'
+                    ? 'Copy the public menu URL for table displays.'
                     : 'Public link access is restricted.',
                 icon: Icons.qr_code_2,
                 routeName: AppRouteNames.qr,
+                accentColor: AppColors.primaryCoral,
               ),
               const SizedBox(height: AppSpacing.sm),
               _DashboardActionCard(
@@ -127,20 +145,15 @@ class _DashboardScreenState extends State<DashboardScreen> {
                     : 'Only permitted business managers can edit this profile.',
                 icon: Icons.storefront,
                 routeName: AppRouteNames.businessProfile,
+                accentColor: AppColors.rewardGold,
               ),
               const SizedBox(height: AppSpacing.sm),
               _DashboardActionCard(
                 title: 'Subscription',
-                subtitle: 'View Tavrix Menu Basic and Pro placeholders.',
+                subtitle: 'Review plan status and premium workspace access.',
                 icon: Icons.workspace_premium,
                 routeName: AppRouteNames.subscription,
-              ),
-              const SizedBox(height: AppSpacing.sm),
-              _DashboardActionCard(
-                title: 'Wallet Scan',
-                subtitle: 'Paste a customer wallet QR token for lookup.',
-                icon: Icons.document_scanner_outlined,
-                routeName: AppRouteNames.walletScan,
+                accentColor: AppColors.rewardGold,
               ),
             ],
           );
@@ -171,17 +184,18 @@ class _AccessCard extends StatelessWidget {
   @override
   Widget build(BuildContext context) {
     final fullName = state.user?.fullName.trim() ?? '';
-    final email = state.user?.email.trim() ?? '';
     final businessName = state.business?.name.trim() ?? 'this business';
     final title = fullName.isNotEmpty ? fullName : 'Your access';
-    final subtitle = email.isNotEmpty
-        ? email
-        : 'Signed in with ${state.effectiveRole.toLowerCase()} access for $businessName.';
+    final subtitle =
+        'Signed in with ${state.effectiveRole.toLowerCase()} access for $businessName.';
 
     return AppCard(
       child: Row(
         children: [
-          const Icon(Icons.verified_user_outlined),
+          const Icon(
+            Icons.verified_user_outlined,
+            color: AppColors.primaryCoral,
+          ),
           const SizedBox(width: AppSpacing.md),
           Expanded(
             child: Column(
@@ -321,30 +335,11 @@ class _WorkflowMetricTile extends StatelessWidget {
   Widget build(BuildContext context) {
     return SizedBox(
       width: width,
-      child: DecoratedBox(
-        decoration: BoxDecoration(
-          color: AppColors.neutralWarm,
-          borderRadius: BorderRadius.circular(AppRadius.md),
-        ),
-        child: Padding(
-          padding: const EdgeInsets.all(AppSpacing.md),
-          child: Column(
-            crossAxisAlignment: CrossAxisAlignment.start,
-            children: [
-              Icon(icon, size: 20, color: AppColors.houseGreen),
-              const SizedBox(height: AppSpacing.sm),
-              Text(
-                '$value',
-                style: Theme.of(context).textTheme.headlineSmall?.copyWith(
-                  color: AppColors.textBlack,
-                  fontWeight: FontWeight.w800,
-                ),
-              ),
-              const SizedBox(height: AppSpacing.xxs),
-              Text(label, maxLines: 2, overflow: TextOverflow.ellipsis),
-            ],
-          ),
-        ),
+      child: WafloMetricCard(
+        label: label,
+        value: '$value',
+        icon: icon,
+        accentColor: value == 0 ? AppColors.mutedText : AppColors.primaryCoral,
       ),
     );
   }
@@ -359,14 +354,14 @@ class _WorkflowMemberRow extends StatelessWidget {
   Widget build(BuildContext context) {
     return DecoratedBox(
       decoration: BoxDecoration(
-        color: AppColors.greenLight,
+        color: AppColors.greenTint,
         borderRadius: BorderRadius.circular(AppRadius.md),
       ),
       child: Padding(
         padding: const EdgeInsets.all(AppSpacing.md),
         child: Row(
           children: [
-            const Icon(Icons.groups_outlined, color: AppColors.houseGreen),
+            const Icon(Icons.groups_outlined, color: AppColors.freshGreenDark),
             const SizedBox(width: AppSpacing.md),
             Expanded(
               child: Text(
@@ -397,7 +392,7 @@ class _WorkflowNextStep extends StatelessWidget {
   Widget build(BuildContext context) {
     return DecoratedBox(
       decoration: BoxDecoration(
-        border: Border.all(color: AppColors.ceramic),
+        border: Border.all(color: AppColors.softBorder),
         borderRadius: BorderRadius.circular(AppRadius.md),
       ),
       child: Padding(
@@ -464,6 +459,8 @@ class _DashboardActionCard extends StatelessWidget {
     required this.icon,
     required this.routeName,
     this.enabled = true,
+    this.accentColor = AppColors.primaryCoral,
+    this.badge,
   });
 
   final String title;
@@ -471,28 +468,19 @@ class _DashboardActionCard extends StatelessWidget {
   final IconData icon;
   final String routeName;
   final bool enabled;
+  final Color accentColor;
+  final String? badge;
 
   @override
   Widget build(BuildContext context) {
-    return AppCard(
+    return WafloActionTile(
+      title: title,
+      subtitle: subtitle,
+      icon: icon,
+      enabled: enabled,
+      accentColor: accentColor,
+      badge: badge,
       onTap: enabled ? () => Navigator.of(context).pushNamed(routeName) : null,
-      child: Row(
-        children: [
-          Icon(icon),
-          const SizedBox(width: AppSpacing.md),
-          Expanded(
-            child: Column(
-              crossAxisAlignment: CrossAxisAlignment.start,
-              children: [
-                Text(title, style: Theme.of(context).textTheme.titleMedium),
-                const SizedBox(height: AppSpacing.xxs),
-                Text(subtitle),
-              ],
-            ),
-          ),
-          const Icon(Icons.chevron_right),
-        ],
-      ),
     );
   }
 }

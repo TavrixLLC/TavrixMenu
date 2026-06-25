@@ -20,9 +20,9 @@ class SubscriptionScreen extends StatelessWidget {
         crossAxisAlignment: CrossAxisAlignment.start,
         children: [
           const SectionHeader(
-            title: 'Tavrix Menu plans',
+            title: 'Waflo plans',
             subtitle:
-                'Sprint 1 only shows plan placeholders. Mobile checkout is not implemented.',
+                'Plan status is informational in the operator app. Checkout is not implemented here.',
           ),
           const SizedBox(height: AppSpacing.lg),
           _PlanCard(
@@ -43,7 +43,7 @@ class SubscriptionScreen extends StatelessWidget {
             features: const [
               'Staff scanner',
               'AI recommendations later',
-              'Loyalty management later',
+              'Advanced loyalty management',
             ],
           ),
         ],
@@ -101,7 +101,7 @@ class _PlanCard extends StatelessWidget {
           ],
           const SizedBox(height: AppSpacing.md),
           AppButton(
-            label: 'Checkout not available in mobile',
+            label: 'Plan changes unavailable in mobile',
             icon: Icons.lock_outline,
             onPressed: null,
             variant: AppButtonVariant.secondary,

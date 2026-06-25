@@ -49,7 +49,7 @@ class _TavrixMenuAppState extends State<TavrixMenuApp> {
         ),
       ],
       child: MaterialApp(
-        title: 'Tavrix Menu',
+        title: 'Waflo Operator',
         debugShowCheckedModeBanner: false,
         theme: AppTheme.light,
         initialRoute: AppRouteNames.splash,
