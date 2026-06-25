@@ -133,6 +133,26 @@ describe('WalletRefreshJobService enqueue', () => {
     assert.equal(setup.jobs[0].reason, WalletRefreshJobReason.REWARD_REDEEMED);
   });
 
+  it('advances the Apple update marker monotonically for rapid loyalty changes', async () => {
+    const previousMarker = new Date(Date.now() + 60000);
+    const setup = createJobService({
+      walletEnabled: false,
+      hasApplePass: true,
+      applePassUpdatedAt: previousMarker
+    });
+
+    await setup.service.enqueueWalletRefreshForMembership({
+      businessId: 'business_1',
+      membershipId: 'membership_1',
+      reason: WalletRefreshJobReason.STAMP_ADDED
+    });
+
+    assert.equal(
+      setup.walletPassUpdates[0].data.applePassUpdatedAt.getTime(),
+      previousMarker.getTime() + 1
+    );
+  });
+
   it('marks an Apple pass updated without creating a job when APNs is disabled', async () => {
     const setup = createJobService({
       walletEnabled: false,
@@ -316,6 +336,7 @@ function createJobService(overrides: {
   claimedJobs?: Array<ReturnType<typeof claimedJob>>;
   hasPass?: boolean;
   hasApplePass?: boolean;
+  applePassUpdatedAt?: Date | null;
   apnsEnabled?: boolean;
   walletEnabled?: boolean;
 } = {}) {
@@ -340,7 +361,8 @@ function createJobService(overrides: {
           return overrides.hasApplePass
             ? {
                 id: 'apple_pass_1',
-                platform: WalletPassPlatform.APPLE_WALLET
+                platform: WalletPassPlatform.APPLE_WALLET,
+                applePassUpdatedAt: overrides.applePassUpdatedAt ?? null
               }
             : null;
         }

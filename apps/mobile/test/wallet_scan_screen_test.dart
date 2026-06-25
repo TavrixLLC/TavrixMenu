@@ -380,7 +380,7 @@ void main() {
         find.byKey(const ValueKey('walletStampSuccessBanner')),
         findsOneWidget,
       );
-      expect(find.text('Stamp added!'), findsOneWidget);
+      expect(find.text('Stamp added successfully.'), findsOneWidget);
       // Progress bar and count should update to 4/10
       expect(find.text('4 of 10 stamps'), findsOneWidget);
       // Button disabled after success

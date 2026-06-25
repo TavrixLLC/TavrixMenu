@@ -121,6 +121,14 @@ function CardMetrics({ card }: { card: PublicLoyaltyCard }) {
   );
 }
 
+export function AppleWalletRefreshNotice() {
+  return (
+    <p className="mt-5 rounded-md bg-sky-50 p-3 text-sm leading-6 text-sky-800">
+      Your live card is up to date online. Apple Wallet may refresh shortly after stamps are added.
+    </p>
+  );
+}
+
 function CardView({
   slug,
   card,
@@ -185,9 +193,7 @@ function CardView({
 
             <CardMetrics card={card} />
 
-            <p className="mt-5 rounded-md bg-sky-50 p-3 text-sm leading-6 text-sky-800">
-              This web card loads current stamp and reward progress from the loyalty service.
-            </p>
+            <AppleWalletRefreshNotice />
 
             <div className="mt-5 border-t border-neutral-200 pt-5">
               <h2 className="text-lg font-bold text-ink">Wallet options</h2>

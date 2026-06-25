@@ -196,11 +196,10 @@ export class AppleWalletUpdateService {
     const lastModified = this.passChangeTime(pass);
     const conditionalDate = this.parseHttpDate(input.ifModifiedSince);
 
-    if (
-      conditionalDate &&
-      Math.floor(conditionalDate.getTime() / 1000) >=
-        Math.floor(lastModified.getTime() / 1000)
-    ) {
+    // Apple sends If-Modified-Since at second precision; equality can hide
+    // millisecond-level stamp updates, so only a strictly newer client date
+    // is safe to treat as unchanged.
+    if (conditionalDate && conditionalDate.getTime() > lastModified.getTime()) {
       this.logUpdateEvent('updated_pass_not_modified', context);
       return {
         status: 'NOT_MODIFIED' as const,

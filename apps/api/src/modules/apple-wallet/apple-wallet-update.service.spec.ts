@@ -202,10 +202,29 @@ describe('AppleWalletUpdateService', () => {
       authorization: `ApplePass ${setup.rawToken}`,
       passTypeIdentifier: setup.pass.applePassTypeIdentifier,
       serialNumber: setup.pass.appleSerialNumber,
-      ifModifiedSince: membershipUpdatedAt.toUTCString()
+      ifModifiedSince: new Date(
+        membershipUpdatedAt.getTime() + 1000
+      ).toUTCString()
     });
 
     assert.equal(notModified.status, 'NOT_MODIFIED');
+    assert.equal(setup.state.generateInputs.length, 1);
+  });
+
+  it('does not return stale 304 when the update marker changes within the same HTTP-date second', async () => {
+    const setup = createSetup();
+    setup.pass.applePassUpdatedAt = new Date(
+      membershipUpdatedAt.getTime() + 500
+    );
+
+    const result = await setup.service.getUpdatedPass({
+      authorization: `ApplePass ${setup.rawToken}`,
+      passTypeIdentifier: setup.pass.applePassTypeIdentifier,
+      serialNumber: setup.pass.appleSerialNumber,
+      ifModifiedSince: membershipUpdatedAt.toUTCString()
+    });
+
+    assert.equal(result.status, 'UPDATED');
     assert.equal(setup.state.generateInputs.length, 1);
   });
 
@@ -332,6 +351,7 @@ describe('AppleWalletUpdateController', () => {
     );
 
     assert.equal(response.statusCode, 200);
+    assert.equal(response.headers['Cache-Control'], 'no-store, max-age=0');
     assert.equal(
       response.headers['Content-Type'],
       APPLE_WALLET_PASS_CONTENT_TYPE

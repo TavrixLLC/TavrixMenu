@@ -137,7 +137,8 @@ export class WalletRefreshJobService implements OnModuleInit, OnModuleDestroy {
         status: WalletPassStatus.ACTIVE
       },
       select: {
-        id: true
+        id: true,
+        applePassUpdatedAt: true
       }
     });
 
@@ -150,7 +151,9 @@ export class WalletRefreshJobService implements OnModuleInit, OnModuleDestroy {
         id: pass.id
       },
       data: {
-        applePassUpdatedAt: new Date()
+        applePassUpdatedAt: this.nextApplePassUpdateMarker(
+          pass.applePassUpdatedAt
+        )
       }
     });
 
@@ -164,6 +167,13 @@ export class WalletRefreshJobService implements OnModuleInit, OnModuleDestroy {
       input,
       WalletRefreshJobProvider.APPLE_WALLET
     );
+  }
+
+  private nextApplePassUpdateMarker(previous: Date | null) {
+    const now = new Date();
+    const previousTime = previous?.getTime() ?? 0;
+
+    return new Date(Math.max(now.getTime(), previousTime + 1));
   }
 
   private async createOrReusePendingJob(
