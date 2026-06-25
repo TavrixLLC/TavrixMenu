@@ -24,6 +24,12 @@ export default async function SingleMenuTemplatePreviewPage({ params }: Template
         business: {
           ...demoMenu.business,
           menuTemplateId: template.id
+        },
+        appearance: {
+          ...demoMenu.appearance,
+          menuTemplateId: template.id,
+          effectiveTemplateId: template.id,
+          fallbackApplied: false
         }
       }}
       template={template}

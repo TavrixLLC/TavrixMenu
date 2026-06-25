@@ -8,6 +8,7 @@ import {
   getDashboardSummary,
   getItems,
   getMenuAppearance,
+  getMenuTemplateCatalog,
   reorderCategories,
   reorderItems,
   restoreCategory,
@@ -18,9 +19,9 @@ import {
   type AdminMeResponse,
   type AdminMenuAppearance,
   type AdminMenuItem,
+  type AdminMenuTemplate,
   type AdminPermissions
 } from '../lib/admin-api';
-import { adminMenuTemplates, getAdminMenuTemplate } from '../lib/menu-templates';
 
 type OwnerWorkflowPanelProps = {
   apiBaseUrl: string;
@@ -45,6 +46,7 @@ type WorkflowState =
       businessId: string;
       summary: AdminDashboardSummary;
       menuAppearance: AdminMenuAppearance;
+      templates: AdminMenuTemplate[];
       categories: AdminCategory[];
       items: AdminMenuItem[];
     };
@@ -106,6 +108,10 @@ function isMenuManager(summary: AdminDashboardSummary) {
 
 function isAppearanceManager(summary: AdminDashboardSummary) {
   return summary.currentUser.permissions.canManageAppearance || summary.currentUser.permissions.canManageBusiness;
+}
+
+function getMenuTemplate(templates: AdminMenuTemplate[], value: string) {
+  return templates.find((template) => template.id === value) || templates[0] || null;
 }
 
 function StatusPill({
@@ -341,17 +347,28 @@ function PublicMenuShareSection({
 function MenuAppearanceSection({
   summary,
   appearance,
+  templates,
+  draftTemplateId,
   canManage,
   actionPending,
-  onSelect
+  onDraftTemplate,
+  onPreview,
+  onSave
 }: {
   summary: AdminDashboardSummary;
   appearance: AdminMenuAppearance;
+  templates: AdminMenuTemplate[];
+  draftTemplateId: string;
   canManage: boolean;
   actionPending: boolean;
-  onSelect: (templateId: string) => void;
+  onDraftTemplate: (templateId: string) => void;
+  onPreview: (templateId: string) => void;
+  onSave: () => void;
 }) {
-  const selectedTemplate = getAdminMenuTemplate(appearance.menuTemplateId);
+  const currentTemplateId = appearance.effectiveTemplateId || appearance.menuTemplateId;
+  const currentTemplate = getMenuTemplate(templates, currentTemplateId);
+  const draftTemplate = getMenuTemplate(templates, draftTemplateId);
+  const hasDraftChange = draftTemplateId !== currentTemplateId;
 
   return (
     <section className="rounded-lg border border-neutral-200 bg-white p-5">
@@ -360,17 +377,32 @@ function MenuAppearanceSection({
           <p className="text-sm font-semibold uppercase text-accent">Menu appearance</p>
           <h2 className="mt-2 text-xl font-bold text-ink">Public menu template</h2>
           <p className="mt-2 max-w-2xl text-sm leading-6 text-neutral-600">
-            Current template: {selectedTemplate.displayName}. Existing menu data and public URLs stay unchanged.
+            Current template: {currentTemplate?.displayName || currentTemplateId}. Existing menu data and public URLs stay unchanged.
           </p>
+          {draftTemplate ? (
+            <p className="mt-1 text-sm leading-6 text-neutral-600">
+              Draft selection: {draftTemplate.displayName}.
+            </p>
+          ) : null}
         </div>
-        <a
-          href={summary.publicMenu.url}
-          target="_blank"
-          rel="noreferrer"
-          className="inline-flex w-fit rounded-md border border-neutral-200 bg-white px-4 py-2 text-sm font-semibold text-ink"
-        >
-          Open public menu
-        </a>
+        <div className="flex flex-wrap gap-2">
+          <button
+            type="button"
+            className="inline-flex w-fit rounded-md border border-neutral-200 bg-white px-4 py-2 text-sm font-semibold text-ink disabled:cursor-not-allowed disabled:text-neutral-400"
+            disabled={!draftTemplate || actionPending}
+            onClick={() => onPreview(draftTemplateId)}
+          >
+            Preview draft
+          </button>
+          <button
+            type="button"
+            className="inline-flex w-fit rounded-md bg-accent px-4 py-2 text-sm font-semibold text-white disabled:cursor-not-allowed disabled:bg-neutral-300"
+            disabled={!canManage || actionPending || !draftTemplate || !hasDraftChange}
+            onClick={onSave}
+          >
+            Save template
+          </button>
+        </div>
       </div>
 
       {!canManage ? (
@@ -380,14 +412,15 @@ function MenuAppearanceSection({
       ) : null}
 
       <div className="mt-5 grid gap-4 xl:grid-cols-4">
-        {adminMenuTemplates.map((template) => {
-          const selected = template.id === appearance.menuTemplateId;
+        {templates.map((template) => {
+          const current = template.id === currentTemplateId;
+          const draft = template.id === draftTemplateId;
 
           return (
             <article
               key={template.id}
               className={`rounded-lg border p-4 ${
-                selected ? 'border-accent bg-[#fff8f2]' : 'border-neutral-200 bg-white'
+                draft ? 'border-accent bg-[#fff8f2]' : 'border-neutral-200 bg-white'
               }`}
             >
               <div className="flex items-start justify-between gap-3">
@@ -395,13 +428,16 @@ function MenuAppearanceSection({
                   <h3 className="font-bold text-ink">{template.displayName}</h3>
                   <p className="mt-1 text-xs font-semibold uppercase text-neutral-500">{template.id}</p>
                 </div>
-                {selected ? <StatusPill tone="success">Current</StatusPill> : null}
+                <div className="flex flex-wrap justify-end gap-2">
+                  {current ? <StatusPill tone="success">Current</StatusPill> : null}
+                  {draft && !current ? <StatusPill tone="warning">Draft</StatusPill> : null}
+                </div>
               </div>
               <p className="mt-3 text-sm leading-6 text-neutral-600">{template.description}</p>
               <p className="mt-3 text-xs font-semibold uppercase text-neutral-500">Best for</p>
               <p className="mt-1 text-sm leading-6 text-neutral-700">{template.bestFor}</p>
               <div
-                className={`admin-template-preview ${template.cssClass}`}
+                className="admin-template-preview"
                 data-template={template.id}
                 aria-label={`${template.displayName} CSS template preview`}
               >
@@ -422,21 +458,31 @@ function MenuAppearanceSection({
                 <div data-slot="loyalty-block" />
               </div>
               <div className="mt-3 flex items-center justify-between gap-3 rounded-md border border-neutral-200 bg-white p-3">
-                <p className="text-xs font-semibold uppercase text-neutral-500">{template.preview.label}</p>
+                <p className="text-xs font-semibold uppercase text-neutral-500">{template.preview.previewLayout}</p>
                 <div className="flex gap-1.5">
-                  {template.preview.swatches.map((swatch) => (
+                  {template.preview.previewColors.map((swatch) => (
                     <span key={swatch} className="h-5 w-5 rounded-full border border-neutral-200" style={{ backgroundColor: swatch }} />
                   ))}
                 </div>
               </div>
-              <button
-                type="button"
-                className="mt-4 w-full rounded-md bg-accent px-4 py-2 text-sm font-semibold text-white disabled:cursor-not-allowed disabled:bg-neutral-300"
-                disabled={!canManage || actionPending || selected}
-                onClick={() => onSelect(template.id)}
-              >
-                {selected ? 'Selected' : 'Select template'}
-              </button>
+              <div className="mt-4 grid gap-2 sm:grid-cols-2">
+                <button
+                  type="button"
+                  className="rounded-md border border-neutral-200 bg-white px-4 py-2 text-sm font-semibold text-ink disabled:cursor-not-allowed disabled:text-neutral-400"
+                  disabled={actionPending}
+                  onClick={() => onPreview(template.id)}
+                >
+                  Preview
+                </button>
+                <button
+                  type="button"
+                  className="rounded-md bg-accent px-4 py-2 text-sm font-semibold text-white disabled:cursor-not-allowed disabled:bg-neutral-300"
+                  disabled={!canManage || actionPending || draft}
+                  onClick={() => onDraftTemplate(template.id)}
+                >
+                  {draft ? 'Selected' : 'Choose'}
+                </button>
+              </div>
             </article>
           );
         })}
@@ -655,6 +701,7 @@ export function OwnerWorkflowPanel({ apiBaseUrl }: OwnerWorkflowPanelProps) {
   const [state, setState] = useState<WorkflowState>({ status: 'idle' });
   const [actionState, setActionState] = useState<ActionState>({ status: 'idle' });
   const [copyStatus, setCopyStatus] = useState<string | null>(null);
+  const [draftTemplateId, setDraftTemplateId] = useState('waflo-warm');
 
   const loadWorkflow = useCallback(
     async (signal?: AbortSignal) => {
@@ -696,7 +743,7 @@ export function OwnerWorkflowPanel({ apiBaseUrl }: OwnerWorkflowPanelProps) {
           return;
         }
 
-        const [summaryResult, menuAppearanceResult, categoriesResult, itemsResult] = await Promise.all([
+        const [summaryResult, menuAppearanceResult, templateCatalogResult, categoriesResult, itemsResult] = await Promise.all([
           getDashboardSummary({
             apiBaseUrl,
             token,
@@ -707,6 +754,11 @@ export function OwnerWorkflowPanel({ apiBaseUrl }: OwnerWorkflowPanelProps) {
             apiBaseUrl,
             token,
             businessId,
+            signal
+          }),
+          getMenuTemplateCatalog({
+            apiBaseUrl,
+            token,
             signal
           }),
           getCategories({
@@ -747,6 +799,15 @@ export function OwnerWorkflowPanel({ apiBaseUrl }: OwnerWorkflowPanelProps) {
           return;
         }
 
+        if (templateCatalogResult.status !== 'ok') {
+          setState({
+            status: templateCatalogResult.status,
+            apiUrl: templateCatalogResult.apiUrl,
+            message: templateCatalogResult.message
+          });
+          return;
+        }
+
         if (categoriesResult.status !== 'ok') {
           setState({
             status: categoriesResult.status,
@@ -765,12 +826,15 @@ export function OwnerWorkflowPanel({ apiBaseUrl }: OwnerWorkflowPanelProps) {
           return;
         }
 
+        setDraftTemplateId(menuAppearanceResult.data.effectiveTemplateId || menuAppearanceResult.data.menuTemplateId);
+
         setState({
           status: 'ok',
           me: meResult.data,
           businessId,
           summary: summaryResult.data,
           menuAppearance: menuAppearanceResult.data,
+          templates: templateCatalogResult.data.templates,
           categories: sortCategories(categoriesResult.data),
           items: sortItems(itemsResult.data)
         });
@@ -829,6 +893,8 @@ export function OwnerWorkflowPanel({ apiBaseUrl }: OwnerWorkflowPanelProps) {
         return itemsResult.message;
       }
 
+      setDraftTemplateId(menuAppearanceResult.data.effectiveTemplateId || menuAppearanceResult.data.menuTemplateId);
+
       setState((current) =>
         current.status === 'ok'
           ? {
@@ -873,6 +939,16 @@ export function OwnerWorkflowPanel({ apiBaseUrl }: OwnerWorkflowPanelProps) {
     } catch (error) {
       setCopyStatus(error instanceof Error ? error.message : `Could not copy ${label}.`);
     }
+  }
+
+  function previewTemplate(templateId: string) {
+    if (state.status !== 'ok') {
+      return;
+    }
+
+    const previewUrl = new URL(state.summary.publicMenu.url);
+    previewUrl.searchParams.set('previewTemplateId', templateId);
+    window.open(previewUrl.toString(), '_blank', 'noopener,noreferrer');
   }
 
   function moveCategory(index: number, direction: -1 | 1) {
@@ -970,22 +1046,28 @@ export function OwnerWorkflowPanel({ apiBaseUrl }: OwnerWorkflowPanelProps) {
       <MenuAppearanceSection
         summary={state.summary}
         appearance={state.menuAppearance}
+        templates={state.templates}
+        draftTemplateId={draftTemplateId}
         canManage={canManageAppearance}
         actionPending={actionPending}
-        onSelect={(templateId) =>
-          void runMutation(`Saving ${getAdminMenuTemplate(templateId).displayName}...`, 'Menu template saved.', async (token, businessId) => {
+        onDraftTemplate={setDraftTemplateId}
+        onPreview={previewTemplate}
+        onSave={() => {
+          const draftTemplate = getMenuTemplate(state.templates, draftTemplateId);
+
+          void runMutation(`Saving ${draftTemplate?.displayName || draftTemplateId}...`, 'Menu template saved.', async (token, businessId) => {
             const result = await updateMenuAppearance({
               apiBaseUrl,
               token,
               businessId,
-              menuTemplateId: templateId
+              menuTemplateId: draftTemplateId
             });
 
             return result.status === 'ok'
               ? { status: 'ok' }
               : { status: result.status, message: `Template save failed: ${result.message}` };
-          })
-        }
+          });
+        }}
       />
 
       <section id="menu-workflow" className="grid gap-4">

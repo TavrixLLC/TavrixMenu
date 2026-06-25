@@ -460,6 +460,10 @@ export class MenuService {
         menuTemplateId: resolveMenuTemplateId(business.menuTemplateId),
         menuThemeOverrides: business.menuThemeOverrides ?? null
       },
+      appearance: this.mapPublicMenuAppearance({
+        menuTemplateId: business.menuTemplateId,
+        menuThemeOverrides: business.menuThemeOverrides
+      }),
       categories: business.menuCategories.map((category) => ({
         id: category.id,
         nameAr: category.nameAr,
@@ -555,6 +559,23 @@ export class MenuService {
 
       seenIds.add(order.id);
     }
+  }
+
+  private mapPublicMenuAppearance(appearance: {
+    menuTemplateId: string | null;
+    menuThemeOverrides: unknown;
+  }) {
+    const effectiveTemplateId = resolveMenuTemplateId(appearance.menuTemplateId);
+
+    return {
+      menuTemplateId: effectiveTemplateId,
+      effectiveTemplateId,
+      fallbackApplied:
+        appearance.menuTemplateId === null ||
+        appearance.menuTemplateId === undefined ||
+        appearance.menuTemplateId !== effectiveTemplateId,
+      menuThemeOverrides: appearance.menuThemeOverrides ?? null
+    };
   }
 
   private mapCategory(category: MenuCategory) {

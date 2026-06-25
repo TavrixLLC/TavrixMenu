@@ -10,23 +10,29 @@ export const demoMenu: PublicMenuResponse = {
     logoUrl: null,
     coverUrl: null,
     currency: 'IQD',
-    language: 'ar',
+    language: 'en',
     city: 'Baghdad',
     menuTemplateId: 'waflo-warm',
+    menuThemeOverrides: null
+  },
+  appearance: {
+    menuTemplateId: 'waflo-warm',
+    effectiveTemplateId: 'waflo-warm',
+    fallbackApplied: false,
     menuThemeOverrides: null
   },
   categories: [
     {
       id: 'cakes',
-      nameAr: 'كيك',
+      nameAr: 'Cakes',
       nameEn: 'Cakes',
       sortOrder: 0,
       items: [
         {
           id: 'strawberry-cake',
-          nameAr: 'كيكة الفراولة',
+          nameAr: 'Strawberry Cake',
           nameEn: 'Strawberry Cake',
-          descriptionAr: 'كيكة ناعمة مع كريمة خفيفة وفراولة طازجة.',
+          descriptionAr: 'Soft cake with light cream and fresh strawberries.',
           descriptionEn: 'Soft cake with light cream and fresh strawberries.',
           price: '5500',
           imageUrl: null,
@@ -35,9 +41,9 @@ export const demoMenu: PublicMenuResponse = {
         },
         {
           id: 'chocolate-slice',
-          nameAr: 'قطعة شوكولاتة',
+          nameAr: 'Chocolate Slice',
           nameEn: 'Chocolate Slice',
-          descriptionAr: 'شوكولاتة غنية بطبقات كريمة.',
+          descriptionAr: 'Rich chocolate with layered cream.',
           descriptionEn: 'Rich chocolate with layered cream.',
           price: '4500',
           imageUrl: null,
@@ -48,15 +54,15 @@ export const demoMenu: PublicMenuResponse = {
     },
     {
       id: 'drinks',
-      nameAr: 'مشروبات',
+      nameAr: 'Drinks',
       nameEn: 'Drinks',
       sortOrder: 1,
       items: [
         {
           id: 'iced-latte',
-          nameAr: 'لاتيه بارد',
+          nameAr: 'Iced Latte',
           nameEn: 'Iced Latte',
-          descriptionAr: 'إسبريسو وحليب بارد مع ثلج.',
+          descriptionAr: 'Espresso and cold milk over ice.',
           descriptionEn: 'Espresso and cold milk over ice.',
           price: '3500',
           imageUrl: null,
@@ -65,9 +71,9 @@ export const demoMenu: PublicMenuResponse = {
         },
         {
           id: 'mint-lemonade',
-          nameAr: 'ليمون نعناع',
+          nameAr: 'Mint Lemonade',
           nameEn: 'Mint Lemonade',
-          descriptionAr: 'ليمون منعش مع نعناع.',
+          descriptionAr: 'Fresh lemon with mint.',
           descriptionEn: 'Fresh lemon with mint.',
           price: '3000',
           imageUrl: null,

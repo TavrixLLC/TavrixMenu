@@ -93,7 +93,33 @@ export type AdminDashboardSummary = {
 export type AdminMenuAppearance = {
   businessId: string;
   menuTemplateId: string;
+  effectiveTemplateId: string;
+  fallbackApplied: boolean;
+  defaultTemplateId: string;
   menuThemeOverrides: Record<string, unknown> | null;
+};
+
+export type AdminMenuTemplate = {
+  id: string;
+  displayName: string;
+  description: string;
+  bestFor: string;
+  version: string;
+  status: string;
+  enabled: boolean;
+  isDefault: boolean;
+  preview: {
+    previewColors: string[];
+    previewLayout: string;
+    thumbnailUrl: string | null;
+    mobilePreviewUrl: string | null;
+    desktopPreviewUrl: string | null;
+  };
+  supportedFeatures: Record<string, boolean>;
+};
+
+export type AdminMenuTemplateCatalog = {
+  templates: AdminMenuTemplate[];
 };
 
 export type AdminCategory = {
@@ -577,8 +603,70 @@ function parseMenuAppearance(value: unknown): AdminMenuAppearance | null {
   return {
     businessId,
     menuTemplateId,
+    effectiveTemplateId: readString(record.effectiveTemplateId) || menuTemplateId,
+    fallbackApplied: readBoolean(record.fallbackApplied),
+    defaultTemplateId: readString(record.defaultTemplateId) || 'waflo-warm',
     menuThemeOverrides: readNullableRecord(record.menuThemeOverrides)
   };
+}
+
+function parseMenuTemplate(value: unknown): AdminMenuTemplate | null {
+  const record = asRecord(value);
+  const preview = asRecord(record?.preview);
+  const supportedFeatures = readNullableRecord(record?.supportedFeatures);
+
+  if (!record || !preview || !supportedFeatures) {
+    return null;
+  }
+
+  const id = readString(record.id);
+  const displayName = readString(record.displayName);
+  const description = readString(record.description);
+  const bestFor = readString(record.bestFor);
+  const version = readString(record.version);
+  const status = readString(record.status);
+  const previewLayout = readString(preview.previewLayout);
+  const previewColors = Array.isArray(preview.previewColors)
+    ? preview.previewColors.filter((color): color is string => typeof color === 'string')
+    : [];
+
+  if (!id || !displayName || !description || !bestFor || !version || !status || !previewLayout || previewColors.length === 0) {
+    return null;
+  }
+
+  return {
+    id,
+    displayName,
+    description,
+    bestFor,
+    version,
+    status,
+    enabled: readBoolean(record.enabled),
+    isDefault: readBoolean(record.isDefault),
+    preview: {
+      previewColors,
+      previewLayout,
+      thumbnailUrl: readNullableString(preview.thumbnailUrl),
+      mobilePreviewUrl: readNullableString(preview.mobilePreviewUrl),
+      desktopPreviewUrl: readNullableString(preview.desktopPreviewUrl)
+    },
+    supportedFeatures: Object.fromEntries(
+      Object.entries(supportedFeatures).filter((entry): entry is [string, boolean] => typeof entry[1] === 'boolean')
+    )
+  };
+}
+
+function parseMenuTemplateCatalog(value: unknown): AdminMenuTemplateCatalog | null {
+  const record = asRecord(value);
+  const templates = Array.isArray(record?.templates)
+    ? compact(record.templates.map(parseMenuTemplate))
+    : null;
+
+  if (!templates || templates.length === 0) {
+    return null;
+  }
+
+  return { templates };
 }
 
 function parseDashboardSummary(value: unknown): AdminDashboardSummary | null {
@@ -1534,6 +1622,25 @@ export function getPublicLink({
   });
 }
 
+export function getMenuTemplateCatalog({
+  apiBaseUrl,
+  token,
+  signal
+}: {
+  apiBaseUrl: string;
+  token: string | null;
+  signal?: AbortSignal;
+}) {
+  return requestAdminJson({
+    apiBaseUrl,
+    token,
+    path: '/menu-templates',
+    signal,
+    parse: parseMenuTemplateCatalog,
+    contractName: 'GET /menu-templates'
+  });
+}
+
 export function getMenuAppearance({
   apiBaseUrl,
   token,
@@ -1548,10 +1655,10 @@ export function getMenuAppearance({
   return requestAdminJson({
     apiBaseUrl,
     token,
-    path: `/businesses/${encodeURIComponent(businessId)}/menu-appearance`,
+    path: `/businesses/${encodeURIComponent(businessId)}/appearance`,
     signal,
     parse: parseMenuAppearance,
-    contractName: 'GET /businesses/{id}/menu-appearance'
+    contractName: 'GET /businesses/{id}/appearance'
   });
 }
 
@@ -1571,12 +1678,12 @@ export function updateMenuAppearance({
   return requestAdminJson({
     apiBaseUrl,
     token,
-    path: `/businesses/${encodeURIComponent(businessId)}/menu-appearance`,
+    path: `/businesses/${encodeURIComponent(businessId)}/appearance`,
     method: 'PATCH',
     body: { menuTemplateId },
     signal,
     parse: parseMenuAppearance,
-    contractName: 'PATCH /businesses/{id}/menu-appearance'
+    contractName: 'PATCH /businesses/{id}/appearance'
   });
 }
 

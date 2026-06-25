@@ -89,7 +89,7 @@ export default async function ProductDetailPage({ params }: ProductDetailPagePro
   const language = business?.language || null;
   const itemName = getItemName(item, language);
   const description = getItemDescription(item, language);
-  const template = getPublicMenuTemplate(business?.menuTemplateId);
+  const template = getPublicMenuTemplate(menu?.appearance.effectiveTemplateId || business?.menuTemplateId);
   const direction = isRtlLanguage(language) ? 'rtl' : 'ltr';
 
   return (

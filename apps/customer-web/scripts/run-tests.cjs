@@ -27,3 +27,4 @@ registerExtension('.tsx');
 require(path.join(projectRoot, 'tests', 'google-wallet.test.tsx'));
 require(path.join(projectRoot, 'tests', 'apple-wallet.test.tsx'));
 require(path.join(projectRoot, 'tests', 'wallet-ux.test.tsx'));
+require(path.join(projectRoot, 'tests', 'menu-templates.test.tsx'));

@@ -26,9 +26,9 @@ export default function MenuTemplatePreviewPage() {
 
       <section className="mx-auto grid max-w-7xl gap-8 px-4 pb-10">
         {publicMenuTemplates.map((template) => (
-          <article key={template.id} className="rounded-lg border border-white/15 bg-white/[0.03] p-4">
-            <div className="flex flex-col gap-3 lg:flex-row lg:items-start lg:justify-between">
-              <div>
+          <article key={template.id} className="min-w-0 rounded-lg border border-white/15 bg-white/[0.03] p-4">
+            <div className="flex min-w-0 flex-col gap-3 lg:flex-row lg:items-start lg:justify-between">
+              <div className="min-w-0">
                 <p className="text-sm font-semibold uppercase text-[#F59E0B]">{template.id}</p>
                 <h2 className="mt-1 text-2xl font-bold">{template.displayName}</h2>
                 <p className="mt-2 max-w-3xl text-sm leading-6 text-white/70">{template.description}</p>
@@ -41,8 +41,8 @@ export default function MenuTemplatePreviewPage() {
               </Link>
             </div>
 
-            <div className="mt-4 grid gap-4 xl:grid-cols-[390px_minmax(0,1fr)]">
-              <div>
+            <div className="mt-4 grid min-w-0 gap-4 xl:grid-cols-[390px_minmax(0,1fr)]">
+              <div className="w-full max-w-[390px]">
                 <p className="mb-2 text-xs font-semibold uppercase text-white/60">Mobile width</p>
                 <iframe
                   title={`${template.displayName} mobile preview`}
@@ -50,7 +50,7 @@ export default function MenuTemplatePreviewPage() {
                   className="h-[720px] w-full rounded-lg border border-white/20 bg-white"
                 />
               </div>
-              <div>
+              <div className="min-w-0">
                 <p className="mb-2 text-xs font-semibold uppercase text-white/60">Desktop width</p>
                 <iframe
                   title={`${template.displayName} desktop preview`}

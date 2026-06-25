@@ -16,7 +16,7 @@ export class UpdateMenuAppearanceDto {
     type: Object,
     nullable: true,
     description:
-      'Reserved for future merchant theme overrides. Public rendering must remain safe when this is null.'
+      'Reserved for future merchant theme overrides. Non-null overrides are rejected in this sprint.'
   })
   @ValidateIf((_, value) => value !== undefined && value !== null)
   @IsObject()

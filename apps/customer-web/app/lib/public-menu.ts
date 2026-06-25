@@ -15,6 +15,13 @@ export type PublicMenuBusiness = {
   menuThemeOverrides: Record<string, unknown> | null;
 };
 
+export type PublicMenuAppearance = {
+  menuTemplateId: string;
+  effectiveTemplateId: string;
+  fallbackApplied: boolean;
+  menuThemeOverrides: Record<string, unknown> | null;
+};
+
 export type PublicMenuItem = {
   id: string;
   nameAr: string | null;
@@ -37,6 +44,7 @@ export type PublicMenuCategory = {
 
 export type PublicMenuResponse = {
   business: PublicMenuBusiness;
+  appearance: PublicMenuAppearance;
   categories: PublicMenuCategory[];
 };
 
@@ -84,9 +92,33 @@ export function getApiBaseUrl() {
   return (process.env.API_BASE_URL || process.env.NEXT_PUBLIC_API_BASE_URL || DEFAULT_API_BASE_URL).replace(/\/+$/, '');
 }
 
+function parsePublicMenuAppearance(menu: PublicMenuResponse): PublicMenuAppearance {
+  const appearanceRecord = asRecord((menu as unknown as Record<string, unknown>).appearance);
+  const menuTemplateId =
+    readString(appearanceRecord?.menuTemplateId) ||
+    readString(appearanceRecord?.effectiveTemplateId) ||
+    menu.business.menuTemplateId ||
+    DEFAULT_MENU_TEMPLATE_ID;
+  const effectiveTemplateId =
+    readString(appearanceRecord?.effectiveTemplateId) ||
+    menuTemplateId ||
+    DEFAULT_MENU_TEMPLATE_ID;
+
+  return {
+    menuTemplateId,
+    effectiveTemplateId,
+    fallbackApplied: readBoolean(appearanceRecord?.fallbackApplied, false),
+    menuThemeOverrides:
+      readNullableRecord(appearanceRecord?.menuThemeOverrides) ||
+      menu.business.menuThemeOverrides ||
+      null
+  };
+}
+
 function getAvailableMenu(menu: PublicMenuResponse): PublicMenuResponse {
   return {
     ...menu,
+    appearance: parsePublicMenuAppearance(menu),
     categories: menu.categories.map((category) => ({
       ...category,
       items: category.items.filter((item) => item.isAvailable)

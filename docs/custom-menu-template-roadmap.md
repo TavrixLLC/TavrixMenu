@@ -8,7 +8,9 @@ Sprint 12B prepares the public menu architecture for future custom merchant temp
 - Existing businesses default to `waflo-warm`.
 - Invalid, missing, disabled, or unknown template IDs fall back to `waflo-warm`.
 - The public menu renderer emits one stable HTML contract.
-- Templates are CSS-first packages with metadata plus a CSS file.
+- Templates are Waflo-managed CSS-first entries in `packages/menu-templates/manifest.cjs` plus customer-web CSS files.
+- API exposes enabled template metadata through `GET /menu-templates`.
+- Admin/mobile picker flows should consume the API catalog instead of maintaining separate template lists.
 - `menuThemeOverrides` exists as optional future storage, but arbitrary owner-managed CSS is not enabled.
 
 ## Future Capabilities
@@ -48,10 +50,12 @@ Custom CSS must not:
 
 1. Waflo creates a private template manifest entry.
 2. Waflo writes CSS against the public menu HTML contract.
-3. The template is previewed with representative menu data in mobile and desktop widths.
-4. Accessibility and RTL checks are run.
-5. The template is marked `enabled` for one or more approved businesses.
-6. If the template is disabled or missing, the public menu falls back to `waflo-warm`.
+3. Waflo adds preview metadata and thumbnails when available.
+4. The template is previewed with representative menu data in mobile and desktop widths.
+5. Accessibility and RTL checks are run.
+6. The template is marked `enabled` for one or more approved businesses.
+7. API catalog, admin/mobile picker, and customer-web rendering are verified.
+8. If the template is disabled or missing, the public menu falls back to `waflo-warm`.
 
 ## Schema Direction
 

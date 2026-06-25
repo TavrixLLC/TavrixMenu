@@ -405,6 +405,113 @@
         ]
       }
     },
+    "/businesses/{id}/appearance": {
+      "get": {
+        "operationId": "BusinessesController_getAppearance",
+        "parameters": [
+          {
+            "name": "id",
+            "required": true,
+            "in": "path",
+            "schema": {
+              "type": "string"
+            }
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": "Business public menu appearance settings. OWNER, MANAGER, and STAFF can view when actively assigned.",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "example": {
+                    "businessId": "bus_123",
+                    "menuTemplateId": "waflo-warm",
+                    "menuThemeOverrides": null,
+                    "effectiveTemplateId": "waflo-warm",
+                    "fallbackApplied": false,
+                    "defaultTemplateId": "waflo-warm"
+                  }
+                }
+              }
+            }
+          },
+          "401": {
+            "description": "Missing or invalid bearer token."
+          },
+          "403": {
+            "description": "Active business membership required."
+          }
+        },
+        "security": [
+          {
+            "bearer": []
+          }
+        ],
+        "tags": [
+          "businesses"
+        ]
+      },
+      "patch": {
+        "operationId": "BusinessesController_updateAppearance",
+        "parameters": [
+          {
+            "name": "id",
+            "required": true,
+            "in": "path",
+            "schema": {
+              "type": "string"
+            }
+          }
+        ],
+        "requestBody": {
+          "required": true,
+          "content": {
+            "application/json": {
+              "schema": {
+                "$ref": "#/components/schemas/UpdateMenuAppearanceDto"
+              }
+            }
+          }
+        },
+        "responses": {
+          "200": {
+            "description": "Business public menu appearance updated. OWNER only; STAFF cannot change templates.",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "example": {
+                    "businessId": "bus_123",
+                    "menuTemplateId": "coffeehouse-premium",
+                    "menuThemeOverrides": null,
+                    "effectiveTemplateId": "coffeehouse-premium",
+                    "fallbackApplied": false,
+                    "defaultTemplateId": "waflo-warm"
+                  }
+                }
+              }
+            }
+          },
+          "400": {
+            "description": "Invalid or unsupported template id."
+          },
+          "401": {
+            "description": "Missing or invalid bearer token."
+          },
+          "403": {
+            "description": "OWNER permission required."
+          }
+        },
+        "security": [
+          {
+            "bearer": []
+          }
+        ],
+        "tags": [
+          "businesses"
+        ]
+      }
+    },
     "/businesses/{id}/menu-appearance": {
       "get": {
         "operationId": "BusinessesController_getMenuAppearance",
@@ -420,14 +527,17 @@
         ],
         "responses": {
           "200": {
-            "description": "Public menu appearance settings for a business. OWNER, MANAGER, and STAFF can view when actively assigned.",
+            "description": "Compatibility alias for GET /businesses/:id/appearance.",
             "content": {
               "application/json": {
                 "schema": {
                   "example": {
                     "businessId": "bus_123",
                     "menuTemplateId": "waflo-warm",
-                    "menuThemeOverrides": null
+                    "menuThemeOverrides": null,
+                    "effectiveTemplateId": "waflo-warm",
+                    "fallbackApplied": false,
+                    "defaultTemplateId": "waflo-warm"
                   }
                 }
               }
@@ -467,18 +577,27 @@
         },
         "responses": {
           "200": {
-            "description": "Public menu appearance updated. OWNER only; STAFF cannot change templates.",
+            "description": "Compatibility alias for PATCH /businesses/:id/appearance.",
             "content": {
               "application/json": {
                 "schema": {
                   "example": {
                     "businessId": "bus_123",
                     "menuTemplateId": "coffeehouse-premium",
-                    "menuThemeOverrides": null
+                    "menuThemeOverrides": null,
+                    "effectiveTemplateId": "coffeehouse-premium",
+                    "fallbackApplied": false,
+                    "defaultTemplateId": "waflo-warm"
                   }
                 }
               }
             }
+          },
+          "400": {
+            "description": "Invalid or unsupported template id."
+          },
+          "403": {
+            "description": "OWNER permission required."
           }
         },
         "security": [
@@ -690,6 +809,59 @@
         ],
         "tags": [
           "businesses"
+        ]
+      }
+    },
+    "/menu-templates": {
+      "get": {
+        "operationId": "MenuTemplatesController_getMenuTemplates",
+        "parameters": [],
+        "responses": {
+          "200": {
+            "description": "Enabled Waflo-managed public menu templates. The response excludes CSS source and merchant-sensitive data.",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "example": {
+                    "templates": [
+                      {
+                        "id": "waflo-warm",
+                        "displayName": "Waflo Warm",
+                        "description": "Warm coral, cream, and green CSS template for most restaurant and cafe menus.",
+                        "bestFor": "General restaurants, cafes, bakeries, and casual dining",
+                        "version": "1.0.0",
+                        "status": "enabled",
+                        "enabled": true,
+                        "isDefault": true,
+                        "preview": {
+                          "previewColors": [
+                            "#FF6B4A",
+                            "#FFF8F2",
+                            "#43A047"
+                          ],
+                          "previewLayout": "warm-card-list",
+                          "thumbnailUrl": null,
+                          "mobilePreviewUrl": "/dev/menu-templates/waflo-warm",
+                          "desktopPreviewUrl": "/dev/menu-templates/waflo-warm"
+                        },
+                        "supportedFeatures": {
+                          "rtl": true,
+                          "loyaltyBlock": true,
+                          "itemImages": true,
+                          "soldOutState": true,
+                          "aiRecommendations": false,
+                          "responsiveLayouts": true
+                        }
+                      }
+                    ]
+                  }
+                }
+              }
+            }
+          }
+        },
+        "tags": [
+          "menu templates"
         ]
       }
     },
@@ -1165,6 +1337,12 @@
                       "language": "ar",
                       "city": "Baghdad",
                       "menuTemplateId": "waflo-warm",
+                      "menuThemeOverrides": null
+                    },
+                    "appearance": {
+                      "menuTemplateId": "waflo-warm",
+                      "effectiveTemplateId": "waflo-warm",
+                      "fallbackApplied": false,
                       "menuThemeOverrides": null
                     },
                     "categories": [
@@ -3102,7 +3280,7 @@
           "menuThemeOverrides": {
             "type": "object",
             "nullable": true,
-            "description": "Reserved for future merchant theme overrides. Public rendering must remain safe when this is null."
+            "description": "Reserved for future merchant theme overrides. Non-null overrides are rejected in this sprint."
           }
         }
       },

@@ -72,6 +72,9 @@ importers:
       '@prisma/client':
         specifier: ^6.9.0
         version: 6.19.3(prisma@6.19.3(typescript@5.9.3))(typescript@5.9.3)
+      '@tavrix-menu/menu-templates':
+        specifier: workspace:*
+        version: link:../../packages/menu-templates
       class-transformer:
         specifier: ^0.5.1
         version: 0.5.1
@@ -130,6 +133,9 @@ importers:
 
   apps/customer-web:
     dependencies:
+      '@tavrix-menu/menu-templates':
+        specifier: workspace:*
+        version: link:../../packages/menu-templates
       next:
         specifier: ^15.3.4
         version: 15.5.19(react-dom@19.2.7(react@19.2.7))(react@19.2.7)
@@ -169,6 +175,8 @@ importers:
         version: 5.9.3
 
   packages/config: {}
+
+  packages/menu-templates: {}
 
   packages/shared-types:
     devDependencies:

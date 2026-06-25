@@ -1,4 +1,5 @@
 import {
+  BadRequestException,
   ConflictException,
   Injectable,
   NotFoundException
@@ -19,7 +20,11 @@ import { CreateMemberDto } from './dto/create-member.dto';
 import { UpdateBusinessDto } from './dto/update-business.dto';
 import { UpdateMenuAppearanceDto } from './dto/update-menu-appearance.dto';
 import { UpdateMemberDto } from './dto/update-member.dto';
-import { resolveMenuTemplateId } from './menu-appearance.constants';
+import {
+  DEFAULT_MENU_TEMPLATE_ID,
+  isMenuTemplateId,
+  resolveMenuTemplateId
+} from './menu-appearance.constants';
 
 type DashboardSummaryRecommendedNextStep =
   | 'ADD_CATEGORY'
@@ -380,27 +385,56 @@ export class BusinessesService {
   ) {
     await this.businessAccessService.assertOwner(businessId, currentUser.id);
 
-    const business = await this.prisma.business.update({
-      where: {
-        id: businessId
-      },
-      data: {
-        menuTemplateId:
-          dto.menuTemplateId === undefined
-            ? undefined
-            : resolveMenuTemplateId(dto.menuTemplateId),
-        menuThemeOverrides:
-          dto.menuThemeOverrides === undefined
-            ? undefined
-            : dto.menuThemeOverrides === null
-              ? Prisma.JsonNull
-              : (dto.menuThemeOverrides as Prisma.InputJsonValue)
-      },
-      select: {
-        id: true,
-        menuTemplateId: true,
-        menuThemeOverrides: true
-      }
+    if (
+      dto.menuTemplateId !== undefined &&
+      !isMenuTemplateId(dto.menuTemplateId)
+    ) {
+      throw new BadRequestException('Unsupported menu template id');
+    }
+
+    if (
+      dto.menuThemeOverrides !== undefined &&
+      dto.menuThemeOverrides !== null
+    ) {
+      throw new BadRequestException(
+        'Menu theme overrides are not supported in this sprint'
+      );
+    }
+
+    const business = await this.prisma.$transaction(async (transaction) => {
+      const updatedBusiness = await transaction.business.update({
+        where: {
+          id: businessId
+        },
+        data: {
+          menuTemplateId: dto.menuTemplateId,
+          menuThemeOverrides:
+            dto.menuThemeOverrides === undefined
+              ? undefined
+              : dto.menuThemeOverrides === null
+                ? Prisma.JsonNull
+                : (dto.menuThemeOverrides as Prisma.InputJsonValue)
+        },
+        select: {
+          id: true,
+          menuTemplateId: true,
+          menuThemeOverrides: true
+        }
+      });
+
+      await transaction.auditLog.create({
+        data: {
+          businessId,
+          userId: currentUser.id,
+          action: 'MENU_APPEARANCE_UPDATED',
+          metadataJson: {
+            menuTemplateId:
+              dto.menuTemplateId ?? resolveMenuTemplateId(updatedBusiness.menuTemplateId)
+          }
+        }
+      });
+
+      return updatedBusiness;
     });
 
     return this.mapMenuAppearance(business);
@@ -715,10 +749,19 @@ export class BusinessesService {
     menuTemplateId: string | null;
     menuThemeOverrides: Prisma.JsonValue | null;
   }) {
+    const effectiveTemplateId = resolveMenuTemplateId(business.menuTemplateId);
+    const fallbackApplied =
+      business.menuTemplateId === null ||
+      business.menuTemplateId === undefined ||
+      business.menuTemplateId !== effectiveTemplateId;
+
     return {
       businessId: business.id,
-      menuTemplateId: resolveMenuTemplateId(business.menuTemplateId),
-      menuThemeOverrides: business.menuThemeOverrides ?? null
+      menuTemplateId: effectiveTemplateId,
+      menuThemeOverrides: business.menuThemeOverrides ?? null,
+      effectiveTemplateId,
+      fallbackApplied,
+      defaultTemplateId: DEFAULT_MENU_TEMPLATE_ID
     };
   }
 

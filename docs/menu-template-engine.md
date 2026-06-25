@@ -8,8 +8,8 @@ Templates must not duplicate menu fetching, normalized menu data, or React layou
 
 Runtime flow:
 
-1. The public menu API returns menu data and the business appearance fields.
-2. Customer-web resolves `business.menuTemplateId` through `apps/customer-web/app/lib/menu-templates.ts`.
+1. The public menu API returns menu data plus `appearance.menuTemplateId` and `appearance.effectiveTemplateId`.
+2. Customer-web resolves `appearance.effectiveTemplateId` through the shared registry exposed by `@tavrix-menu/menu-templates`.
 3. Invalid, missing, disabled, or unknown template IDs fall back to `waflo-warm`.
 4. `PublicMenuTemplateView` renders the same `main.waflo-menu` DOM contract for every template.
 5. Template CSS loaded from `apps/customer-web/app/styles/menu-templates/*.css` changes layout and visual style through `data-template`.
@@ -19,6 +19,7 @@ The renderer is allowed to choose content from data, such as merchant name, cate
 ## Data And Fallback
 
 - Business field: `menuTemplateId`
+- Public menu response field: `appearance.effectiveTemplateId`
 - Optional future field: `menuThemeOverrides`
 - Default template: `waflo-warm`
 - Existing public menu URLs remain `/m/:slug`.
@@ -28,17 +29,25 @@ The renderer is allowed to choose content from data, such as merchant name, cate
 
 ## Template Manifest
 
-Customer-web template manifest:
+Shared Waflo-managed template manifest:
+
+```text
+packages/menu-templates/manifest.cjs
+```
+
+Customer-web imports the shared manifest through:
 
 ```text
 apps/customer-web/app/lib/menu-templates.ts
 ```
 
-Admin picker metadata:
+API exposes enabled templates from the same manifest through:
 
 ```text
-apps/admin-web/app/lib/menu-templates.ts
+GET /menu-templates
 ```
+
+Admin-web consumes that endpoint and does not maintain a separate template list.
 
 Each template definition includes:
 
@@ -50,7 +59,7 @@ Each template definition includes:
 - `cssFile`
 - `version`
 - `status`
-- `themeTokens`
+- `isDefault`
 - `supportedFeatures`
 - `preview`
 
@@ -74,22 +83,25 @@ The four templates use the same HTML structure and differ through CSS only.
 
 ## Adding A Template
 
-1. Add the new template ID to the API allowlist in `apps/api/src/modules/businesses/menu-appearance.constants.ts`.
-2. Add template metadata in `apps/customer-web/app/lib/menu-templates.ts`.
-3. Add matching admin picker metadata in `apps/admin-web/app/lib/menu-templates.ts`.
-4. Add a CSS file under `apps/customer-web/app/styles/menu-templates/`.
-5. Import the CSS file from `apps/customer-web/app/layout.tsx`.
-6. Style only the fixed public menu contract documented in `docs/public-menu-html-contract.md`.
-7. Verify `/dev/menu-templates` renders the same menu data with the new template.
+1. Add a CSS file under `apps/customer-web/app/styles/menu-templates/`.
+2. Add template metadata to `packages/menu-templates/manifest.cjs`.
+3. Add preview metadata and thumbnail URLs when available.
+4. Import the CSS file from `apps/customer-web/app/layout.tsx`.
+5. Style only the fixed public menu contract documented in `docs/public-menu-html-contract.md`.
+6. Run API, customer-web, and admin-web tests/builds.
+7. Confirm the template appears in `GET /menu-templates`.
+8. Confirm admin/mobile can preview it without saving.
+9. Verify `/dev/menu-templates` renders the same menu data with the new template.
 
 Do not add a new React branch to `PublicMenuTemplateView` for a visual-only template.
 
 ## Admin Behavior
 
-- Owners can save the selected template through `PATCH /businesses/:id/menu-appearance`.
+- Owners can save the selected template through `PATCH /businesses/:id/appearance`.
+- `GET /businesses/:id/menu-appearance` and `PATCH /businesses/:id/menu-appearance` remain compatibility aliases.
 - Staff can view the current appearance but cannot save changes.
-- The admin picker displays template name, description, best-for copy, a CSS-reflective mini preview, current badge, and select action.
-- The picker includes an open-public-menu action using the existing public URL.
+- The admin picker displays template name, description, best-for copy, a CSS-reflective mini preview, current badge, draft selection, preview action, and save action.
+- The picker previews with the existing public URL plus `?previewTemplateId=<template-id>`.
 - Saving a template changes the public menu after the appearance setting is updated.
 
 ## Preview QA

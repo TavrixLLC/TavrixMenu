@@ -25,6 +25,12 @@ export class PublicMenuController {
           menuTemplateId: 'waflo-warm',
           menuThemeOverrides: null
         },
+        appearance: {
+          menuTemplateId: 'waflo-warm',
+          effectiveTemplateId: 'waflo-warm',
+          fallbackApplied: false,
+          menuThemeOverrides: null
+        },
         categories: [
           {
             id: 'cat_123',
