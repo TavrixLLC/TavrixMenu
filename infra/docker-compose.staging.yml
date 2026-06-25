@@ -1,0 +1,66 @@
+version: '3.8'
+
+services:
+  postgres_staging:
+    image: postgres:16
+    container_name: tavrix_staging_postgres
+    restart: unless-stopped
+    environment:
+      POSTGRES_USER: tavrix_menu_staging
+      POSTGRES_PASSWORD: tavrix_menu_staging_password
+      POSTGRES_DB: waflo_staging
+    ports:
+      - "127.0.0.1:5433:5432"
+    volumes:
+      - tavrix_staging_postgres_data:/var/lib/postgresql/data
+    networks:
+      - tavrix_staging_network
+
+  redis_staging:
+    image: redis:7
+    container_name: tavrix_staging_redis
+    restart: unless-stopped
+    ports:
+      - "127.0.0.1:6380:6379"
+    networks:
+      - tavrix_staging_network
+
+  api_staging:
+    build:
+      context: ../
+      dockerfile: apps/api/Dockerfile
+    container_name: tavrix_staging_api
+    restart: unless-stopped
+    ports:
+      - "127.0.0.1:3000:3000"
+    env_file:
+      - /opt/waflo/env/api.env
+    volumes:
+      - /opt/waflo/secrets:/opt/waflo/secrets
+    depends_on:
+      - postgres_staging
+      - redis_staging
+    networks:
+      - tavrix_staging_network
+
+  customer_staging:
+    build:
+      context: ../
+      dockerfile: apps/customer-web/Dockerfile
+    container_name: tavrix_staging_customer
+    restart: unless-stopped
+    ports:
+      - "127.0.0.1:3001:3001"
+    env_file:
+      - /opt/waflo/env/customer-web.env
+    depends_on:
+      - api_staging
+    networks:
+      - tavrix_staging_network
+
+volumes:
+  tavrix_staging_postgres_data:
+
+networks:
+  tavrix_staging_network:
+    name: tavrix_staging_network

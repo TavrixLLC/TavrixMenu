@@ -25,6 +25,7 @@ Use this folder as the team handoff source. Keep docs updated when API behavior,
 - [18-production-checklist.md](18-production-checklist.md): readiness checklist by product area.
 - [19-codex-prompts.md](19-codex-prompts.md): reusable scoped prompts for Codex work.
 - [20-roadmap.md](20-roadmap.md): sprint roadmap and acceptance criteria.
+- [21-sprint-12-launch-readiness.md](21-sprint-12-launch-readiness.md): Sprint 12 scope lock — launch readiness, go/no-go checklist, pilot restaurant prep.
 - [glossary.md](glossary.md): key Tavrix Menu terms.
 
 ## Legacy Docs

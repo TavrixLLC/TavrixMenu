@@ -1,5 +1,1 @@
-class ApiClient {
-  const ApiClient({required this.baseUrl});
-
-  final String baseUrl;
-}
+export '../network/api_client.dart';

@@ -132,3 +132,73 @@ Acceptance:
 
 - Wallet passes work for supported platforms.
 - Custom domains are validated and secure.
+
+## Sprint 11: Apple Wallet Visual and APNs Updates
+
+Status: Sprint 11 closed with staff scanner runtime caveat.
+
+Known caveat:
+Real authenticated Flutter staff scanner E2E was not executed on a physical device/emulator. Local bloc/widget tests pass and backend/APNs pipeline passed through controlled DB script.
+
+## Sprint 12: Launch Readiness, BTAQA Parity & Market-readiness
+
+Status: Scope locked. Implementation not started.
+
+Goal: Prepare Waflo for the first real restaurant pilot by adding market-readiness work, BTAQA visual parity, and safety safeguards, while preserving Waflo's restaurant-first differentiation.
+
+Full scope: [21-sprint-12-launch-readiness.md](21-sprint-12-launch-readiness.md)
+
+### Required Sprint 12 Structure
+
+#### 1. Sprint 12A — Safety and Runtime
+* **Fix unverified cross-device recovery security:** Hardens customer card token recovery against unauthorized access.
+* **Real Flutter staff scanner E2E smoke:** Proves the authenticated staff Add Stamp scan workflow works end-to-end on a physical device/emulator.
+
+#### 2. Sprint 12B — Premium Card Designer v1 (BTAQA Parity)
+* **Owner can customize card color**
+* **Upload/use logo**
+* **Select stamp icon/template**
+* **Select background/image/preset**
+* **Preview Apple Wallet and Google Wallet**
+* **Goal:** Produce card designs that look sellable, premium, and distinct, not developer demos.
+
+#### 3. Sprint 12C — Bilingual Landing and Demo (BTAQA Parity)
+* **Arabic/English landing page**
+* **Features section** (QR menus + loyalty)
+* **How it works**
+* **Pricing placeholder or plan proposal**
+* **Demo card carousel**
+* **FAQ**
+* **CTA for first pilot**
+
+#### 4. Sprint 12D — Engagement MVP (BTAQA Parity)
+* **Branch/location coordinates**
+* **Apple Wallet relevant locations** (GPS coordinate tags)
+* **Google Wallet merchant locations** if available
+* **Inactive customer reminder rule** (automated push/email triggers)
+* **Reward-ready reminder**
+* **Notification throttling/frequency safety**
+
+#### 5. Sprint 12E — Pilot Sales Kit
+* **Printable QR/PDF kit**
+* **First restaurant onboarding checklist**
+* **Staff training checklist**
+* **Owner demo script**
+* **Pilot go/no-go checklist**
+
+### Waflo Differentiation
+* **Restaurant/cafe first:** Highly integrated table QR menu + Wallet loyalty together.
+* **Iraq-first localized support:** Seamless Arabic/Kurdish/English localization for customers.
+* **Local pricing & onboarding:** Tailored pricing/onboarding models optimized for local merchants.
+* **Restaurant cashier workflow:** Custom cashier-friendly staff scanner workflow built to match high-volume POS situations.
+
+### Out of Scope
+* Loyalty v2 (multi-tier rewards, advanced analytics)
+* Multi-branch v2
+* Global pricing
+* AI recommendations
+* Custom domains
+* Advanced analytics
+
+### First Acceptance Gate
+Staff scanner E2E smoke must pass before pilot restaurant onboarding begins.
