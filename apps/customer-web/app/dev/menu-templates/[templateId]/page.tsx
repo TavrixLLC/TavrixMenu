@@ -10,6 +10,13 @@ type TemplatePreviewPageProps = {
 };
 
 export default async function SingleMenuTemplatePreviewPage({ params }: TemplatePreviewPageProps) {
+  if (
+    process.env.NODE_ENV === 'production' &&
+    process.env.NEXT_PUBLIC_ENABLE_MENU_TEMPLATE_DEV_PREVIEWS !== 'true'
+  ) {
+    notFound();
+  }
+
   const { templateId } = await params;
   const template = publicMenuTemplates.find((candidate) => candidate.id === templateId);
 

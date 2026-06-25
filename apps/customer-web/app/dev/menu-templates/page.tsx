@@ -1,7 +1,15 @@
+import { notFound } from 'next/navigation';
 import Link from 'next/link';
 import { publicMenuTemplates } from '../../lib/menu-templates';
 
 export default function MenuTemplatePreviewPage() {
+  if (
+    process.env.NODE_ENV === 'production' &&
+    process.env.NEXT_PUBLIC_ENABLE_MENU_TEMPLATE_DEV_PREVIEWS !== 'true'
+  ) {
+    notFound();
+  }
+
   return (
     <main className="min-h-screen bg-[#111827] text-white">
       <section className="mx-auto max-w-7xl px-4 py-6">
