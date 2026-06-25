@@ -22,6 +22,10 @@ void main() {
 
     expect(find.text('Continue in dev mode'), findsNothing);
     expect(find.textContaining('Set CLERK_PUBLISHABLE_KEY'), findsOneWidget);
+    expect(find.textContaining('sign up'), findsNothing);
+    expect(find.textContaining('customer signup'), findsNothing);
+    expect(find.textContaining('Invite staff'), findsNothing);
+    expect(find.textContaining('Create staff'), findsNothing);
 
     await cubit.close();
   });
@@ -32,6 +36,10 @@ void main() {
     await tester.pumpWidget(_loginWidget(cubit: cubit, config: config));
 
     expect(find.text('Continue in dev mode'), findsOneWidget);
+    expect(find.text('Waflo Workspace'), findsOneWidget);
+    expect(find.textContaining('business owners'), findsOneWidget);
+    expect(find.textContaining('customer signup'), findsNothing);
+    expect(find.textContaining('Invite staff'), findsNothing);
 
     await cubit.close();
   });

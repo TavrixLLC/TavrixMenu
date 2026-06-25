@@ -2,11 +2,12 @@ class BusinessRole {
   const BusinessRole._();
 
   static const owner = 'OWNER';
+  static const admin = 'ADMIN';
   static const manager = 'MANAGER';
   static const staff = 'STAFF';
   static const operator = 'BUSINESS_OPERATOR';
 
-  static const _knownRoles = {owner, manager, staff};
+  static const _knownRoles = {owner, admin, manager, staff};
 
   static String normalize(String? role) {
     final normalized = role?.trim().toUpperCase();
@@ -24,6 +25,7 @@ class BusinessRole {
   static String displayLabel(String? role) {
     return switch (normalize(role)) {
       owner => 'Owner',
+      admin => 'Admin',
       manager => 'Manager',
       staff => 'Staff',
       _ => 'Business Operator',

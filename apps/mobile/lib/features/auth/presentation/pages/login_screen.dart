@@ -20,6 +20,7 @@ import '../../../../shared/widgets/waflo_status_badge.dart';
 import '../../../../shared/widgets/waflo_text_field.dart';
 import '../bloc/auth_cubit.dart';
 import '../bloc/auth_state.dart';
+import '../utils/auth_error_copy.dart';
 
 class LoginScreen extends StatelessWidget {
   const LoginScreen({required this.config, super.key});
@@ -53,7 +54,10 @@ class LoginScreen extends StatelessWidget {
               if (state.status == AuthStatus.failure &&
                   state.errorMessage != null) ...[
                 const SizedBox(height: AppSpacing.md),
-                ErrorView(message: state.errorMessage!),
+                ErrorView(
+                  title: state.errorTitle ?? 'Something needs attention',
+                  message: state.errorMessage!,
+                ),
               ],
               const SizedBox(height: AppSpacing.lg),
               if (config.hasClerkPublishableKey)
@@ -61,7 +65,7 @@ class LoginScreen extends StatelessWidget {
               else
                 const AppCard(
                   child: Text(
-                    'Set CLERK_PUBLISHABLE_KEY to enable owner sign in and sign up.',
+                    'Set CLERK_PUBLISHABLE_KEY to enable Waflo business account access.',
                   ),
                 ),
               if (config.isDevAuthEnabled) ...[
@@ -108,7 +112,7 @@ class _AuthHero extends StatelessWidget {
             ),
             const SizedBox(height: AppSpacing.xl),
             Text(
-              'Waflo Operator',
+              'Waflo Workspace',
               style: Theme.of(context).textTheme.headlineMedium?.copyWith(
                 color: AppColors.surfaceWhite,
                 fontWeight: FontWeight.w900,
@@ -116,7 +120,7 @@ class _AuthHero extends StatelessWidget {
             ),
             const SizedBox(height: AppSpacing.sm),
             Text(
-              'A focused workspace for restaurant and cafe teams to scan wallets, manage loyalty, and keep public menus accurate.',
+              'A focused workspace for business owners to set up menus, manage loyalty, and scan customer wallets.',
               style: Theme.of(context).textTheme.bodyLarge?.copyWith(
                 color: AppColors.surfaceWhite.withValues(alpha: 0.84),
                 height: 1.35,
@@ -209,6 +213,7 @@ class _CustomClerkAuthFormState extends State<_CustomClerkAuthForm> {
   clerk.Strategy? _otpStrategy;
   bool _isBusy = false;
   bool _isGoogleBusy = false;
+  String? _localErrorTitle;
   String? _localMessage;
 
   @override
@@ -230,7 +235,7 @@ class _CustomClerkAuthFormState extends State<_CustomClerkAuthForm> {
           ),
           const SizedBox(height: AppSpacing.xs),
           Text(
-            'Use the phone or email attached to your operator account.',
+            'Use the phone or email attached to your Waflo business account.',
             style: Theme.of(context).textTheme.bodyMedium,
           ),
           const SizedBox(height: AppSpacing.lg),
@@ -265,7 +270,10 @@ class _CustomClerkAuthFormState extends State<_CustomClerkAuthForm> {
           ],
           if (_localMessage != null) ...[
             const SizedBox(height: AppSpacing.md),
-            ErrorView(message: _localMessage!),
+            ErrorView(
+              title: _localErrorTitle ?? 'Something needs attention',
+              message: _localMessage!,
+            ),
           ],
           const SizedBox(height: AppSpacing.lg),
           const _TrustLinks(),
@@ -277,7 +285,10 @@ class _CustomClerkAuthFormState extends State<_CustomClerkAuthForm> {
   Future<void> _sendCode() async {
     final identifier = _identifierController.text.trim();
     if (identifier.isEmpty) {
-      setState(() => _localMessage = 'Enter your work email or phone number.');
+      setState(() {
+        _localErrorTitle = null;
+        _localMessage = 'Enter your business email or phone number.';
+      });
       return;
     }
 
@@ -286,6 +297,7 @@ class _CustomClerkAuthFormState extends State<_CustomClerkAuthForm> {
         : clerk.Strategy.phoneCode;
     setState(() {
       _isBusy = true;
+      _localErrorTitle = null;
       _localMessage = null;
       _otpStrategy = strategy;
     });
@@ -303,10 +315,11 @@ class _CustomClerkAuthFormState extends State<_CustomClerkAuthForm> {
         _isBusy = false;
       });
     } on clerk.ClerkError catch (error) {
-      _setAuthError(error.toString());
+      _setClerkAuthError(error);
     } on Object {
       _setAuthError(
-        'We could not send a code. Check your account and try again.',
+        technicalSignInErrorCopy.body,
+        title: technicalSignInErrorCopy.title,
       );
     }
   }
@@ -315,16 +328,23 @@ class _CustomClerkAuthFormState extends State<_CustomClerkAuthForm> {
     final strategy = _otpStrategy;
     final code = _codeController.text.trim();
     if (strategy == null) {
-      setState(() => _localMessage = 'Start again to request a fresh code.');
+      setState(() {
+        _localErrorTitle = null;
+        _localMessage = 'Start again to request a fresh code.';
+      });
       return;
     }
     if (code.length < 4) {
-      setState(() => _localMessage = 'Enter the verification code.');
+      setState(() {
+        _localErrorTitle = invalidOtpCopy.title;
+        _localMessage = invalidOtpCopy.body;
+      });
       return;
     }
 
     setState(() {
       _isBusy = true;
+      _localErrorTitle = null;
       _localMessage = null;
     });
 
@@ -339,20 +359,24 @@ class _CustomClerkAuthFormState extends State<_CustomClerkAuthForm> {
         _setAuthError('We need one more verification step for this account.');
       }
     } on clerk.ClerkError catch (error) {
-      _setAuthError(error.toString());
+      _setClerkAuthError(error);
     } on Object {
-      _setAuthError('The code could not be verified. Try again.');
+      _setAuthError(invalidOtpCopy.body, title: invalidOtpCopy.title);
     }
   }
 
   Future<void> _signInWithGoogle() async {
     if (!widget.config.hasGoogleNativeClientConfig) {
-      setState(() => _localMessage = 'Google sign-in is not configured yet.');
+      setState(() {
+        _localErrorTitle = null;
+        _localMessage = 'Google sign-in is not configured yet.';
+      });
       return;
     }
 
     setState(() {
       _isGoogleBusy = true;
+      _localErrorTitle = null;
       _localMessage = null;
     });
 
@@ -383,15 +407,19 @@ class _CustomClerkAuthFormState extends State<_CustomClerkAuthForm> {
         context.read<AuthCubit>().signInWithClerk();
       } else {
         _setAuthError(
-          'This Google account is not connected to a Waflo operator account.',
+          businessAccountNotFoundCopy.body,
+          title: businessAccountNotFoundCopy.title,
         );
       }
     } on GoogleSignInException catch (error) {
       _setAuthError(_googleMessage(error));
     } on clerk.ClerkError catch (error) {
-      _setAuthError(error.toString());
+      _setClerkAuthError(error);
     } on Object {
-      _setAuthError('Google sign-in could not be completed.');
+      _setAuthError(
+        technicalSignInErrorCopy.body,
+        title: technicalSignInErrorCopy.title,
+      );
     }
   }
 
@@ -425,18 +453,25 @@ class _CustomClerkAuthFormState extends State<_CustomClerkAuthForm> {
       _step = _AuthStep.identifier;
       _otpStrategy = null;
       _codeController.clear();
+      _localErrorTitle = null;
       _localMessage = null;
       _isBusy = false;
     });
   }
 
-  void _setAuthError(String message) {
+  void _setClerkAuthError(Object error) {
+    final copy = authErrorCopyFromClerkError(error);
+    _setAuthError(copy.body, title: copy.title);
+  }
+
+  void _setAuthError(String message, {String? title}) {
     if (!mounted) {
       return;
     }
     setState(() {
       _isBusy = false;
       _isGoogleBusy = false;
+      _localErrorTitle = title;
       _localMessage = message;
     });
   }
@@ -458,7 +493,7 @@ class _IdentifierStep extends StatelessWidget {
     return Column(
       children: [
         WafloTextField(
-          label: 'Work email or phone',
+          label: 'Business email or phone',
           hint: 'owner@example.com',
           controller: controller,
           keyboardType: TextInputType.emailAddress,

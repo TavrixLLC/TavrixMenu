@@ -53,21 +53,21 @@ class ScannerActionPanel extends StatelessWidget {
                     WafloStatusBadge(
                       label: businessName?.trim().isNotEmpty == true
                           ? businessName!.trim()
-                          : 'Scanner ready',
+                          : 'Business tool ready',
                       icon: Icons.shield_outlined,
                       color: AppColors.charcoalSoft,
                       foregroundColor: AppColors.surfaceWhite,
                     ),
                     const SizedBox(height: AppSpacing.sm),
                     Text(
-                      'Scan customer QR',
+                      'Scan customer wallet',
                       style: Theme.of(context).textTheme.titleLarge?.copyWith(
                         color: AppColors.surfaceWhite,
                       ),
                     ),
                     const SizedBox(height: AppSpacing.xs),
                     Text(
-                      'Tokens stay hidden from operator screens.',
+                      'Wallet codes stay hidden from business screens.',
                       style: Theme.of(context).textTheme.bodyMedium?.copyWith(
                         color: AppColors.surfaceWhite.withValues(alpha: 0.78),
                       ),
@@ -80,7 +80,7 @@ class ScannerActionPanel extends StatelessWidget {
           const SizedBox(height: AppSpacing.md),
           WafloButton(
             key: const ValueKey('walletOpenCameraButton'),
-            label: isBusy ? 'Scanner busy' : 'Open camera scanner',
+            label: isBusy ? 'Scanner busy' : 'Open wallet scanner',
             icon: Icons.qr_code_scanner,
             onPressed: isBusy ? null : onScan,
           ),

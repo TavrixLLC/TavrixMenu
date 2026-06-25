@@ -41,7 +41,7 @@ class SubscriptionScreen extends StatelessWidget {
             price: 'Advanced tools later',
             badge: 'Later',
             features: const [
-              'Team scanner',
+              'Customer wallet scanning',
               'AI recommendations later',
               'Advanced loyalty management',
             ],

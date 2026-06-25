@@ -53,6 +53,7 @@ class LoyaltyState extends Equatable {
     }
     final role = currentRole.toUpperCase();
     return role == BusinessRole.owner ||
+        role == BusinessRole.admin ||
         role == BusinessRole.manager ||
         role == BusinessRole.staff ||
         !BusinessRole.isKnown(role);
@@ -68,7 +69,9 @@ class LoyaltyState extends Equatable {
     if (!BusinessRole.isKnown(role)) {
       return true;
     }
-    return role == BusinessRole.owner || role == BusinessRole.manager;
+    return role == BusinessRole.owner ||
+        role == BusinessRole.admin ||
+        role == BusinessRole.manager;
   }
 
   bool get canViewEnrollmentLink {
@@ -80,6 +83,7 @@ class LoyaltyState extends Equatable {
     }
     final role = currentRole.toUpperCase();
     return role == BusinessRole.owner ||
+        role == BusinessRole.admin ||
         role == BusinessRole.manager ||
         role == BusinessRole.staff ||
         !BusinessRole.isKnown(role);

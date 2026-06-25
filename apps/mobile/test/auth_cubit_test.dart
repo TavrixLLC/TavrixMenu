@@ -31,6 +31,29 @@ void main() {
     await cubit.close();
   });
 
+  test(
+    'new authenticated owner without business routes to business setup',
+    () async {
+      final cubit = _authCubit(
+        const CurrentUser(
+          id: 'usr_new_owner',
+          email: 'owner@tavrix.local',
+          fullName: 'New Business Owner',
+          role: 'OWNER',
+          onboarding: CurrentUserOnboarding(hasBusiness: false),
+        ),
+      );
+
+      await cubit.signInWithClerk();
+
+      expect(cubit.state.status, AuthStatus.authenticated);
+      expect(cubit.state.shouldOpenDashboard, isFalse);
+      expect(cubit.state.errorMessage, isNull);
+
+      await cubit.close();
+    },
+  );
+
   test('onboarding.hasBusiness true opens dashboard path', () async {
     final cubit = _authCubit(
       const CurrentUser(
@@ -87,6 +110,25 @@ void main() {
       await cubit.close();
     },
   );
+
+  test(
+    'backend no-business account rejection shows business support copy',
+    () async {
+      final cubit = _authCubitFailure(const NotFoundFailure());
+
+      await cubit.signInWithClerk();
+
+      expect(cubit.state.status, AuthStatus.failure);
+      expect(cubit.state.errorTitle, 'Business account not found');
+      expect(
+        cubit.state.errorMessage,
+        'This mobile app is for Waflo business accounts. Contact Waflo support to activate your business workspace.',
+      );
+      expect(cubit.state.errorMessage, isNot(contains('ERROR_RECEIVED')));
+
+      await cubit.close();
+    },
+  );
 }
 
 AuthCubit _authCubit(CurrentUser user) {
@@ -110,6 +152,27 @@ AuthCubit _authCubit(CurrentUser user) {
   );
 }
 
+AuthCubit _authCubitFailure(Failure failure) {
+  final config = const AppConfig(
+    apiBaseUrl: 'https://api.example.test',
+    customerWebBaseUrl: 'https://menu.example.test',
+    devAuthToken: '',
+    appEnv: 'development',
+    enableDevAuth: false,
+    clerkPublishableKey: 'pk_test_example',
+  );
+  final sessionController = AuthSessionController(
+    config: config,
+    clerkTokenProvider: ClerkTokenProvider(),
+    devTokenProvider: const DevTokenProvider(''),
+  );
+
+  return AuthCubit(
+    getCurrentUser: GetCurrentUser(_FailureMeRepository(failure)),
+    authSessionController: sessionController,
+  );
+}
+
 class _FakeMeRepository implements MeRepository {
   const _FakeMeRepository(this.user);
 
@@ -117,4 +180,13 @@ class _FakeMeRepository implements MeRepository {
 
   @override
   Future<Either<Failure, CurrentUser>> getMe() async => Right(user);
+}
+
+class _FailureMeRepository implements MeRepository {
+  const _FailureMeRepository(this.failure);
+
+  final Failure failure;
+
+  @override
+  Future<Either<Failure, CurrentUser>> getMe() async => Left(failure);
 }

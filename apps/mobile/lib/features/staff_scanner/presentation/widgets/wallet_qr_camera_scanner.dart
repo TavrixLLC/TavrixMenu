@@ -45,7 +45,7 @@ class _WalletQrCameraScannerState extends State<WalletQrCameraScanner> {
       child: Column(
         crossAxisAlignment: CrossAxisAlignment.start,
         children: [
-          Text('Camera scanner', style: Theme.of(context).textTheme.titleLarge),
+          Text('Wallet scanner', style: Theme.of(context).textTheme.titleLarge),
           const SizedBox(height: AppSpacing.xs),
           const Text(
             'Point the frame at the customer wallet QR. The code is processed without displaying the raw token.',

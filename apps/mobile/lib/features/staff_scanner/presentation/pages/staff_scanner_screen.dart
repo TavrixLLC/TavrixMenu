@@ -55,7 +55,7 @@ class _StaffScannerScreenState extends State<StaffScannerScreen> {
   @override
   Widget build(BuildContext context) {
     return AppScaffold(
-      title: 'Wallet Scan',
+      title: 'Scan customer wallet',
       scrollable: true,
       child: BlocBuilder<WalletScanCubit, WalletScanState>(
         builder: (context, state) {
@@ -82,9 +82,8 @@ class _StaffScannerScreenState extends State<StaffScannerScreen> {
             crossAxisAlignment: CrossAxisAlignment.start,
             children: [
               const SectionHeader(
-                title: 'Operator scan',
-                subtitle:
-                    'Fast loyalty lookup for team members during live customer interactions.',
+                title: 'Customer wallet scan',
+                subtitle: 'Fast loyalty lookup during customer interactions.',
               ),
               const SizedBox(height: AppSpacing.md),
               if (_cameraOpen)

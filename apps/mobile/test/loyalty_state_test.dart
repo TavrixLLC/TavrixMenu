@@ -3,11 +3,15 @@ import 'package:tavrix_menu_mobile/features/loyalty/presentation/bloc/loyalty_st
 
 void main() {
   test(
-    'OWNER and MANAGER can configure while STAFF can run daily operations',
+    'OWNER ADMIN and MANAGER can configure while STAFF can run daily operations',
     () {
       const owner = LoyaltyState(
         status: LoyaltyStatus.success,
         currentRole: 'OWNER',
+      );
+      const admin = LoyaltyState(
+        status: LoyaltyStatus.success,
+        currentRole: 'ADMIN',
       );
       const manager = LoyaltyState(
         status: LoyaltyStatus.success,
@@ -19,10 +23,12 @@ void main() {
       );
 
       expect(owner.canConfigureProgram, isTrue);
+      expect(admin.canConfigureProgram, isTrue);
       expect(manager.canConfigureProgram, isTrue);
       expect(staff.canConfigureProgram, isFalse);
       expect(staff.canUseDailyOperations, isTrue);
       expect(owner.canViewEnrollmentLink, isTrue);
+      expect(admin.canViewEnrollmentLink, isTrue);
       expect(manager.canViewEnrollmentLink, isTrue);
       expect(staff.canViewEnrollmentLink, isTrue);
     },

@@ -5,6 +5,7 @@ import '../../../../app/router/route_names.dart';
 import '../../../../core/constants/app_colors.dart';
 import '../../../../core/constants/app_radius.dart';
 import '../../../../core/constants/app_spacing.dart';
+import '../../../../core/utils/business_role.dart';
 import '../../../../shared/widgets/app_card.dart';
 import '../../../../shared/widgets/app_scaffold.dart';
 import '../../../../shared/widgets/business_header_card.dart';
@@ -40,7 +41,7 @@ class _DashboardScreenState extends State<DashboardScreen> {
   @override
   Widget build(BuildContext context) {
     return AppScaffold(
-      title: 'Dashboard',
+      title: 'Business Workspace',
       actions: [
         IconButton(
           tooltip: 'Sign out',
@@ -89,9 +90,9 @@ class _DashboardScreenState extends State<DashboardScreen> {
               _AccessCard(state: state),
               const SizedBox(height: AppSpacing.lg),
               _DashboardActionCard(
-                title: 'Scan customer QR',
+                title: 'Scan customer wallet',
                 subtitle:
-                    'Open the scanner for stamps, rewards, and member lookup.',
+                    'Open the scanner for loyalty stamps, rewards, and member lookup.',
                 icon: Icons.qr_code_scanner,
                 routeName: AppRouteNames.walletScan,
                 accentColor: AppColors.primaryCoral,
@@ -103,8 +104,8 @@ class _DashboardScreenState extends State<DashboardScreen> {
               ],
               const SizedBox(height: AppSpacing.lg),
               const SectionHeader(
-                title: 'Quick actions',
-                subtitle: 'Business operations for your workspace team.',
+                title: 'Business tools',
+                subtitle: 'Owner tools for menu, loyalty, and workspace setup.',
               ),
               const SizedBox(height: AppSpacing.md),
               _DashboardActionCard(
@@ -120,7 +121,7 @@ class _DashboardScreenState extends State<DashboardScreen> {
               const SizedBox(height: AppSpacing.sm),
               _DashboardActionCard(
                 enabled: _canManageMenu(state),
-                title: 'Manage Menu',
+                title: 'Menu tools',
                 subtitle: _canManageMenu(state)
                     ? 'Edit categories and menu items.'
                     : 'Restricted by your business permissions.',
@@ -130,7 +131,7 @@ class _DashboardScreenState extends State<DashboardScreen> {
               ),
               const SizedBox(height: AppSpacing.sm),
               _DashboardActionCard(
-                title: 'Loyalty',
+                title: 'Loyalty tools',
                 subtitle: 'Enroll customers, add stamps, and redeem rewards.',
                 icon: Icons.loyalty_outlined,
                 routeName: AppRouteNames.loyalty,
@@ -153,7 +154,7 @@ class _DashboardScreenState extends State<DashboardScreen> {
                 title: 'Business Profile',
                 subtitle: _canManageBusiness(state)
                     ? 'Update name, type, city, language, and media URLs.'
-                    : 'Only permitted business managers can edit this profile.',
+                    : 'Only permitted workspace roles can edit this profile.',
                 icon: Icons.storefront,
                 routeName: AppRouteNames.businessProfile,
                 accentColor: AppColors.rewardGold,
@@ -182,7 +183,8 @@ bool _canManageBusiness(DashboardState state) {
   if (!state.hasKnownRole) {
     return true;
   }
-  return state.effectiveRole == 'OWNER';
+  return state.effectiveRole == BusinessRole.owner ||
+      state.effectiveRole == BusinessRole.admin;
 }
 
 bool _canManageMenu(DashboardState state) {
@@ -193,7 +195,9 @@ bool _canManageMenu(DashboardState state) {
   if (!state.hasKnownRole) {
     return true;
   }
-  return state.effectiveRole == 'OWNER' || state.effectiveRole == 'MANAGER';
+  return state.effectiveRole == BusinessRole.owner ||
+      state.effectiveRole == BusinessRole.admin ||
+      state.effectiveRole == BusinessRole.manager;
 }
 
 bool _canViewPublicLink(DashboardState state) {

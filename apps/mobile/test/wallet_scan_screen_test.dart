@@ -29,6 +29,24 @@ import 'package:tavrix_menu_mobile/shared/widgets/app_button.dart';
 import 'helpers/stub_http_client_adapter.dart';
 
 void main() {
+  testWidgets('scanner screen is labeled as a customer wallet business tool', (
+    tester,
+  ) async {
+    final repository = _FakeWalletScanRepository(
+      (_) async => const Right(_scanResult),
+    );
+    final cubit = _cubit(repository);
+    addTearDown(cubit.close);
+
+    await tester.pumpWidget(_screen(cubit));
+    await tester.pumpAndSettle();
+
+    expect(find.text('Scan customer wallet'), findsWidgets);
+    expect(find.text('Customer wallet scan'), findsOneWidget);
+    expect(find.textContaining('Staff scanner'), findsNothing);
+    expect(find.textContaining('Staff dashboard'), findsNothing);
+  });
+
   testWidgets('requires a manual token without calling the backend', (
     tester,
   ) async {
@@ -40,7 +58,7 @@ void main() {
 
     await tester.pumpWidget(_screen(cubit));
     await tester.pumpAndSettle();
-    await tester.tap(find.byKey(const ValueKey('walletScanButton')));
+    await _tapWalletScanButton(tester);
     await tester.pump();
 
     expect(find.text('Enter a wallet QR token.'), findsOneWidget);
@@ -72,7 +90,7 @@ void main() {
         find.byKey(const ValueKey('walletScanTokenField')),
         'invalid-token',
       );
-      await tester.tap(find.byKey(const ValueKey('walletScanButton')));
+      await _tapWalletScanButton(tester);
       await tester.pumpAndSettle();
 
       expect(
@@ -97,7 +115,7 @@ void main() {
       find.byKey(const ValueKey('walletScanTokenField')),
       'valid-token',
     );
-    await tester.tap(find.byKey(const ValueKey('walletScanButton')));
+    await _tapWalletScanButton(tester);
     await tester.pump();
 
     expect(find.byKey(const ValueKey('walletScanLoading')), findsOneWidget);
@@ -342,7 +360,7 @@ void main() {
       find.byKey(const ValueKey('walletScanTokenField')),
       'manual-sensitive-token',
     );
-    await tester.tap(find.byKey(const ValueKey('walletScanButton')));
+    await _tapWalletScanButton(tester);
     await tester.pumpAndSettle();
 
     expect(repository.receivedTokens, [
@@ -382,7 +400,7 @@ void main() {
       find.byKey(const ValueKey('walletScanTokenField')),
       'manual-fallback-token',
     );
-    await tester.tap(find.byKey(const ValueKey('walletScanButton')));
+    await _tapWalletScanButton(tester);
     await tester.pumpAndSettle();
 
     expect(repository.receivedTokens, ['manual-fallback-token']);
@@ -426,7 +444,7 @@ void main() {
         find.byKey(const ValueKey('walletScanTokenField')),
         'valid-token',
       );
-      await tester.tap(find.byKey(const ValueKey('walletScanButton')));
+      await _tapWalletScanButton(tester);
       await tester.pumpAndSettle();
 
       expect(find.text('3 of 10 stamps'), findsOneWidget);
@@ -474,7 +492,7 @@ void main() {
       find.byKey(const ValueKey('walletScanTokenField')),
       'valid-token',
     );
-    await tester.tap(find.byKey(const ValueKey('walletScanButton')));
+    await _tapWalletScanButton(tester);
     await tester.pumpAndSettle();
 
     // First tap — scroll into view first
@@ -535,7 +553,7 @@ void main() {
       find.byKey(const ValueKey('walletScanTokenField')),
       'valid-token',
     );
-    await tester.tap(find.byKey(const ValueKey('walletScanButton')));
+    await _tapWalletScanButton(tester);
     await tester.pumpAndSettle();
 
     await tester.ensureVisible(
@@ -580,7 +598,7 @@ void main() {
       find.byKey(const ValueKey('walletScanTokenField')),
       'valid-token',
     );
-    await tester.tap(find.byKey(const ValueKey('walletScanButton')));
+    await _tapWalletScanButton(tester);
     await tester.pumpAndSettle();
 
     await tester.ensureVisible(
@@ -636,6 +654,13 @@ TextField _tokenField(WidgetTester tester) {
   return tester.widget<TextField>(
     find.byKey(const ValueKey('walletScanTokenField')),
   );
+}
+
+Future<void> _tapWalletScanButton(WidgetTester tester) async {
+  final button = find.byKey(const ValueKey('walletScanButton'));
+  await tester.ensureVisible(button);
+  await tester.pump();
+  await tester.tap(button);
 }
 
 const _business = Business(

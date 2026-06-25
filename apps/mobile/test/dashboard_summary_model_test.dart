@@ -72,4 +72,18 @@ void main() {
     expect(model.business.permissions, isNull);
     expect(model.currentUser.role, isNot('STAFF'));
   });
+
+  test('admin summary role is preserved and does not default to staff', () {
+    final model = DashboardSummaryModel.fromJson({
+      'business': {
+        'id': 'bus_123',
+        'name': 'Tavrix Cafe',
+        'slug': 'tavrix-cafe',
+      },
+      'currentUser': {'role': 'ADMIN'},
+    });
+
+    expect(model.currentUser.role, 'ADMIN');
+    expect(model.currentUser.role, isNot('STAFF'));
+  });
 }

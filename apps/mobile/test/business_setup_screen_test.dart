@@ -68,7 +68,16 @@ void main() {
     await tester.enterText(find.byType(TextField).first, 'Tavrix Cafe');
 
     final meCallsBeforeSubmit = meRepository.getMeCalls;
-    await tester.tap(find.text('Save business'));
+    expect(find.text('Create your Waflo business workspace'), findsOneWidget);
+    expect(
+      find.text('Set up your menu and loyalty tools for the business you own.'),
+      findsOneWidget,
+    );
+
+    final submitButton = find.text('Create business workspace');
+    await tester.ensureVisible(submitButton);
+    await tester.pump();
+    await tester.tap(submitButton);
     await tester.pumpAndSettle();
 
     expect(businessRepository.createBusinessCalls, 1);
