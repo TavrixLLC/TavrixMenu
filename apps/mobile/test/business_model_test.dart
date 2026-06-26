@@ -40,6 +40,7 @@ void main() {
     expect(model.currency, 'IQD');
     expect(model.language, 'ar');
     expect(model.publicMenuUrl, 'http://localhost:3001/m/tavrix-cafe');
+    expect(model.role, 'OWNER');
   });
 
   test('fallback public menu URL uses slug route', () {
@@ -52,5 +53,23 @@ void main() {
     });
 
     expect(model.publicMenuUrl, 'https://menu.tavrix.com/m/tavrix-cafe');
+  });
+
+  test('appContext currentMembership role beats business role', () {
+    final model = BusinessModel.fromJson({
+      'appContext': {
+        'business': {
+          'id': 'bus_123',
+          'name': 'Tavrix Cafe',
+          'slug': 'tavrix-cafe',
+          'role': 'STAFF',
+        },
+        'currentMembership': {'role': 'MANAGER'},
+        'publicMenu': {'url': 'https://menu.example.test/m/tavrix-cafe'},
+      },
+    });
+
+    expect(model.role, 'MANAGER');
+    expect(model.role, isNot('STAFF'));
   });
 }

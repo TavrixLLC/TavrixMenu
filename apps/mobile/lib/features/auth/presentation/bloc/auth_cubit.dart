@@ -32,7 +32,8 @@ class AuthCubit extends Cubit<AuthState> {
       emit(
         const AuthState(
           status: AuthStatus.failure,
-          errorMessage: 'Operator sign-in is not ready for this app build.',
+          errorMessage:
+              'Operator sign-in is missing required configuration. Rebuild the QA APK with the documented config keys.',
         ),
       );
       return;

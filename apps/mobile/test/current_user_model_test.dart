@@ -112,4 +112,33 @@ void main() {
     expect(model.onboarding.recommendedNextStep, 'CREATE_BUSINESS');
     expect(model.primaryBusinessId, isNull);
   });
+
+  test('active membership role wins over stale top-level role', () {
+    final model = CurrentUserModel.fromJson({
+      'user': {'id': 'usr_owner', 'role': 'STAFF'},
+      'role': 'STAFF',
+      'memberships': [
+        {
+          'id': 'mem_123',
+          'role': 'OWNER',
+          'isActive': true,
+          'business': {
+            'id': 'bus_123',
+            'name': 'Tavrix Cafe',
+            'slug': 'tavrix-cafe',
+            'type': 'cafe',
+          },
+        },
+      ],
+      'onboarding': {
+        'hasBusiness': true,
+        'activeBusinessCount': 1,
+        'recommendedNextStep': 'OPEN_DASHBOARD',
+      },
+    });
+
+    expect(model.role, 'OWNER');
+    expect(model.role, isNot('STAFF'));
+    expect(model.hasBusiness, isTrue);
+  });
 }

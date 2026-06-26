@@ -13,6 +13,7 @@ class Business extends Equatable {
     this.logoUrl,
     this.coverUrl,
     this.status,
+    this.role,
     this.permissions,
   });
 
@@ -27,6 +28,7 @@ class Business extends Equatable {
   final String? logoUrl;
   final String? coverUrl;
   final String? status;
+  final String? role;
   final BusinessPermissions? permissions;
 
   @override
@@ -42,6 +44,7 @@ class Business extends Equatable {
     logoUrl,
     coverUrl,
     status,
+    role,
     permissions,
   ];
 }

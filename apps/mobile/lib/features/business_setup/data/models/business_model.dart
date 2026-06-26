@@ -1,3 +1,4 @@
+import '../../../../core/utils/business_role.dart';
 import '../../domain/entities/business.dart';
 
 class BusinessModel extends Business {
@@ -13,6 +14,7 @@ class BusinessModel extends Business {
     super.logoUrl,
     super.coverUrl,
     super.status,
+    super.role,
     super.permissions,
   });
 
@@ -21,7 +23,14 @@ class BusinessModel extends Business {
     final appContext =
         _asObject(json['appContext']) ?? _asObject(json['app_context']);
     if (appContext != null) {
-      return BusinessModel.fromAppContext(appContext);
+      final currentMembership =
+          _asObject(json['currentMembership']) ??
+          _asObject(json['current_membership']);
+      final mergedAppContext = Map<String, dynamic>.of(appContext);
+      if (currentMembership != null) {
+        mergedAppContext['currentMembership'] = currentMembership;
+      }
+      return BusinessModel.fromAppContext(mergedAppContext);
     }
 
     final slug = _string(business['slug']) ?? '';
@@ -42,6 +51,12 @@ class BusinessModel extends Business {
       logoUrl: _string(business['logoUrl']) ?? _string(business['logo_url']),
       coverUrl: _string(business['coverUrl']) ?? _string(business['cover_url']),
       status: _string(business['status']),
+      role: _roleFrom(
+        _string(_asObject(json['currentMembership'])?['role']) ??
+            _string(_asObject(json['current_membership'])?['role']) ??
+            _string(business['role']) ??
+            _string(json['role']),
+      ),
       permissions: _permissionsFromJson(_asObject(json['permissions'])),
     );
   }
@@ -50,6 +65,9 @@ class BusinessModel extends Business {
     final business = _asObject(json['business']) ?? const <String, dynamic>{};
     final publicMenu =
         _asObject(json['publicMenu']) ?? _asObject(json['public_menu']);
+    final currentMembership =
+        _asObject(json['currentMembership']) ??
+        _asObject(json['current_membership']);
     final slug =
         _string(business['slug']) ?? _string(publicMenu?['slug']) ?? '';
 
@@ -71,6 +89,11 @@ class BusinessModel extends Business {
       logoUrl: _string(business['logoUrl']) ?? _string(business['logo_url']),
       coverUrl: _string(business['coverUrl']) ?? _string(business['cover_url']),
       status: _string(business['status']),
+      role: _roleFrom(
+        _string(currentMembership?['role']) ??
+            _string(json['role']) ??
+            _string(business['role']),
+      ),
       permissions: _permissionsFromJson(_asObject(json['permissions'])),
     );
   }
@@ -88,6 +111,7 @@ class BusinessModel extends Business {
       logoUrl: logoUrl,
       coverUrl: coverUrl,
       status: status,
+      role: role,
       permissions: permissions,
     );
   }
@@ -152,4 +176,9 @@ bool? _bool(Object? value) {
 
 String _fallbackPublicMenuUrl(String slug) {
   return slug.trim().isEmpty ? '' : 'https://menu.tavrix.com/m/$slug';
+}
+
+String? _roleFrom(String? role) {
+  final normalized = BusinessRole.normalize(role);
+  return normalized == BusinessRole.operator ? null : normalized;
 }

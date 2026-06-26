@@ -3,6 +3,7 @@ import 'package:flutter_bloc/flutter_bloc.dart';
 
 import '../../../../app/router/route_names.dart';
 import '../../../../core/constants/app_spacing.dart';
+import '../../../../core/debug/qa_context_snapshot.dart';
 import '../../../../shared/widgets/app_button.dart';
 import '../../../../shared/widgets/app_card.dart';
 import '../../../../shared/widgets/app_scaffold.dart';
@@ -54,6 +55,8 @@ class _BusinessSetupScreenState extends State<BusinessSetupScreen> {
       },
       builder: (context, state) {
         final isLoading = state.status == BusinessSetupStatus.loading;
+        final authState = context.watch<AuthCubit>().state;
+        final dashboardState = context.watch<DashboardCubit>().state;
 
         return AppScaffold(
           title: 'Business Setup',
@@ -64,6 +67,13 @@ class _BusinessSetupScreenState extends State<BusinessSetupScreen> {
               const SectionHeader(
                 title: 'Create your Waflo business workspace',
                 subtitle: 'Set up your menu and loyalty tools.',
+              ),
+              DebugQaContextPanel(
+                snapshot: buildDebugQaContextSnapshot(
+                  authState: authState,
+                  dashboardState: dashboardState,
+                  selectedRoute: 'business setup',
+                ),
               ),
               const SizedBox(height: AppSpacing.lg),
               const AppCard(

@@ -45,6 +45,35 @@ class AppConfig {
       googleClientId.trim().isNotEmpty ||
       googleServerClientId.trim().isNotEmpty;
 
+  List<String> get missingOperatorAuthConfigKeys {
+    final missing = <String>[];
+    if (!hasApiBaseUrl) {
+      missing.add('API_BASE_URL');
+    }
+    if (!hasClerkPublishableKey) {
+      missing.add('CLERK_PUBLISHABLE_KEY');
+    }
+    return List.unmodifiable(missing);
+  }
+
+  List<String> get missingQaConfigKeys {
+    final missing = [...missingOperatorAuthConfigKeys];
+    if (customerWebBaseUrl.trim().isEmpty) {
+      missing.add('CUSTOMER_WEB_BASE_URL');
+    }
+    return List.unmodifiable(missing);
+  }
+
+  bool get hasOperatorAuthConfig => missingOperatorAuthConfigKeys.isEmpty;
+
+  Map<String, Object> get sanitizedAuthConfigStatus {
+    final missing = missingQaConfigKeys;
+    return {
+      'status': missing.isEmpty ? 'configured' : 'missing',
+      'missingKeys': missing,
+    };
+  }
+
   bool get isDevelopment => appEnv.trim().toLowerCase() == 'development';
 
   bool get isProduction => appEnv.trim().toLowerCase() == 'production';

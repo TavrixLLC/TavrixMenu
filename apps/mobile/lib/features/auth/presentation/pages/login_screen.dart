@@ -1,5 +1,6 @@
 import 'package:clerk_auth/clerk_auth.dart' as clerk;
 import 'package:clerk_flutter/clerk_flutter.dart';
+import 'package:flutter/foundation.dart';
 import 'package:flutter/material.dart';
 import 'package:flutter_bloc/flutter_bloc.dart';
 import 'package:google_sign_in/google_sign_in.dart';
@@ -10,6 +11,7 @@ import '../../../../core/config/app_config.dart';
 import '../../../../core/constants/app_colors.dart';
 import '../../../../core/constants/app_radius.dart';
 import '../../../../core/constants/app_spacing.dart';
+import '../../../../core/debug/qa_context_snapshot.dart';
 import '../../../../shared/widgets/app_button.dart';
 import '../../../../shared/widgets/app_card.dart';
 import '../../../../shared/widgets/app_scaffold.dart';
@@ -18,13 +20,18 @@ import '../../../../shared/widgets/loading_view.dart';
 import '../../../../shared/widgets/waflo_button.dart';
 import '../../../../shared/widgets/waflo_status_badge.dart';
 import '../../../../shared/widgets/waflo_text_field.dart';
+import '../../../dashboard/presentation/bloc/dashboard_state.dart';
 import '../bloc/auth_cubit.dart';
 import '../bloc/auth_state.dart';
 
+typedef ClerkSignInPanelBuilder =
+    Widget Function(BuildContext context, AuthStatus authStatus);
+
 class LoginScreen extends StatelessWidget {
-  const LoginScreen({required this.config, super.key});
+  const LoginScreen({required this.config, super.key, this.clerkPanelBuilder});
 
   final AppConfig config;
+  final ClerkSignInPanelBuilder? clerkPanelBuilder;
 
   @override
   Widget build(BuildContext context) {
@@ -56,14 +63,14 @@ class LoginScreen extends StatelessWidget {
                 ErrorView(message: state.errorMessage!),
               ],
               const SizedBox(height: AppSpacing.lg),
-              if (config.hasClerkPublishableKey)
-                _ClerkSignInPanel(config: config, authStatus: state.status)
-              else
-                const AppCard(
-                  child: Text(
-                    'Operator sign-in is not available in this app build yet. Ask the Waflo team for the ready pilot build.',
-                  ),
-                ),
+              if (config.missingQaConfigKeys.isNotEmpty)
+                _AuthConfigurationNotice(config: config),
+              if (config.hasClerkPublishableKey) ...[
+                if (config.missingQaConfigKeys.isNotEmpty)
+                  const SizedBox(height: AppSpacing.md),
+                clerkPanelBuilder?.call(context, state.status) ??
+                    _ClerkSignInPanel(config: config, authStatus: state.status),
+              ],
               if (config.isDevAuthEnabled) ...[
                 const SizedBox(height: AppSpacing.md),
                 AppButton(
@@ -77,10 +84,67 @@ class LoginScreen extends StatelessWidget {
                       : () => context.read<AuthCubit>().signInDevMode(),
                 ),
               ],
+              DebugQaContextPanel(
+                snapshot: buildDebugQaContextSnapshot(
+                  authState: state,
+                  dashboardState: const DashboardState.initial(),
+                  selectedRoute: _selectedRoute(state),
+                  config: config,
+                ),
+              ),
             ],
           ),
         );
       },
+    );
+  }
+
+  String _selectedRoute(AuthState state) {
+    if (state.status == AuthStatus.failure) {
+      return 'error';
+    }
+    if (state.status != AuthStatus.authenticated) {
+      return 'error';
+    }
+    return state.shouldOpenDashboard ? 'dashboard' : 'business setup';
+  }
+}
+
+class _AuthConfigurationNotice extends StatelessWidget {
+  const _AuthConfigurationNotice({required this.config});
+
+  final AppConfig config;
+
+  @override
+  Widget build(BuildContext context) {
+    final missing = config.missingQaConfigKeys;
+    final missingList = missing.join(', ');
+    final isAuthBlocked = config.missingOperatorAuthConfigKeys.isNotEmpty;
+
+    return AppCard(
+      child: Column(
+        crossAxisAlignment: CrossAxisAlignment.start,
+        children: [
+          Text(
+            kDebugMode
+                ? 'Debug configuration missing'
+                : 'Operator sign-in is not configured',
+            style: Theme.of(context).textTheme.titleMedium,
+          ),
+          const SizedBox(height: AppSpacing.xs),
+          Text(
+            kDebugMode
+                ? 'Missing config keys: $missingList. Rebuild the QA APK with the documented --dart-define values.'
+                : 'Contact Waflo support for the configured operator build.',
+          ),
+          if (kDebugMode && !isAuthBlocked) ...[
+            const SizedBox(height: AppSpacing.xs),
+            const Text(
+              'Operator sign-in can continue, but QA should rebuild with all required keys.',
+            ),
+          ],
+        ],
+      ),
     );
   }
 }

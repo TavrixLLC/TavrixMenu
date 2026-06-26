@@ -14,16 +14,42 @@ import 'package:tavrix_menu_mobile/features/auth/presentation/bloc/auth_cubit.da
 import 'package:tavrix_menu_mobile/features/auth/presentation/pages/login_screen.dart';
 
 void main() {
-  testWidgets('production config hides dev mode', (tester) async {
-    final cubit = _authCubit(_productionConfig());
+  testWidgets('QA-ready config shows operator sign-in form', (tester) async {
+    final config = _qaReadyConfig();
+    final cubit = _authCubit(config);
     await tester.pumpWidget(
-      _loginWidget(cubit: cubit, config: _productionConfig()),
+      _loginWidget(
+        cubit: cubit,
+        config: config,
+        clerkPanelBuilder: (_, _) =>
+            const Text('Sign in to Waflo', key: ValueKey('qaSignInForm')),
+      ),
     );
 
     expect(find.text('Continue in dev mode'), findsNothing);
+    expect(find.byKey(const ValueKey('qaSignInForm')), findsOneWidget);
     expect(
       find.textContaining('Operator sign-in is not available'),
-      findsOneWidget,
+      findsNothing,
+    );
+
+    await cubit.close();
+  });
+
+  testWidgets('missing config shows debug key names only', (tester) async {
+    final config = _missingConfig();
+    final cubit = _authCubit(config);
+    await tester.pumpWidget(_loginWidget(cubit: cubit, config: config));
+
+    expect(find.text('Debug configuration missing'), findsOneWidget);
+    expect(find.textContaining('API_BASE_URL'), findsWidgets);
+    expect(find.textContaining('CLERK_PUBLISHABLE_KEY'), findsWidgets);
+    expect(find.textContaining('CUSTOMER_WEB_BASE_URL'), findsWidgets);
+    expect(find.textContaining('https://api.example.test'), findsNothing);
+    expect(find.textContaining('pk_test'), findsNothing);
+    expect(
+      find.textContaining('Operator sign-in is not available'),
+      findsNothing,
     );
 
     await cubit.close();
@@ -40,11 +66,15 @@ void main() {
   });
 }
 
-Widget _loginWidget({required AuthCubit cubit, required AppConfig config}) {
+Widget _loginWidget({
+  required AuthCubit cubit,
+  required AppConfig config,
+  ClerkSignInPanelBuilder? clerkPanelBuilder,
+}) {
   return MaterialApp(
     home: BlocProvider<AuthCubit>.value(
       value: cubit,
-      child: LoginScreen(config: config),
+      child: LoginScreen(config: config, clerkPanelBuilder: clerkPanelBuilder),
     ),
   );
 }
@@ -62,13 +92,24 @@ AuthCubit _authCubit(AppConfig config) {
   );
 }
 
-AppConfig _productionConfig() {
+AppConfig _qaReadyConfig() {
   return const AppConfig(
     apiBaseUrl: 'https://api.example.test',
     customerWebBaseUrl: 'https://menu.example.test',
     devAuthToken: 'dev:user',
     appEnv: 'production',
     enableDevAuth: true,
+    clerkPublishableKey: 'pk_test_configured',
+  );
+}
+
+AppConfig _missingConfig() {
+  return const AppConfig(
+    apiBaseUrl: '',
+    customerWebBaseUrl: '',
+    devAuthToken: '',
+    appEnv: 'development',
+    enableDevAuth: false,
     clerkPublishableKey: '',
   );
 }

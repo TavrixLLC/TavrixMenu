@@ -19,26 +19,37 @@ class DashboardSummaryModel extends DashboardSummary {
         _asObject(json['currentUser']) ??
         _asObject(json['current_user']) ??
         const <String, dynamic>{};
+    final currentMembershipJson =
+        _asObject(json['currentMembership']) ??
+        _asObject(json['current_membership']);
     final permissionsJson = _asObject(currentUserJson['permissions']);
     final publicMenu = _publicMenuFromJson(
       _asObject(json['publicMenu']) ?? _asObject(json['public_menu']),
       slug: _string(businessJson['slug']) ?? '',
     );
 
+    final appContextJson = <String, dynamic>{
+      'business': businessJson,
+      'publicMenu': {
+        'path': publicMenu.path,
+        'url': publicMenu.url,
+        'qrPayload': publicMenu.qrPayload,
+      },
+    };
+    if (permissionsJson != null) {
+      appContextJson['permissions'] = permissionsJson;
+    }
+    if (currentMembershipJson != null) {
+      appContextJson['currentMembership'] = currentMembershipJson;
+    }
+
     return DashboardSummaryModel(
-      business: BusinessModel.fromAppContext({
-        'business': businessJson,
-        ...permissionsJson == null
-            ? const <String, dynamic>{}
-            : {'permissions': permissionsJson},
-        'publicMenu': {
-          'path': publicMenu.path,
-          'url': publicMenu.url,
-          'qrPayload': publicMenu.qrPayload,
-        },
-      }).toEntity(),
+      business: BusinessModel.fromAppContext(appContextJson).toEntity(),
       currentUser: DashboardCurrentUser(
-        role: BusinessRole.normalize(_string(currentUserJson['role'])),
+        role: BusinessRole.normalize(
+          _string(currentMembershipJson?['role']) ??
+              _string(currentUserJson['role']),
+        ),
         permissions: _permissionsFromJson(permissionsJson),
         permissionsAvailable: permissionsJson != null,
       ),

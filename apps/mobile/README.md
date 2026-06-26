@@ -23,7 +23,20 @@ flutter test
 flutter run
 ```
 
+## Product Owner QA Debug APK
+
+Build the debug APK with the staging operator auth configuration supplied as
+Dart defines. Use the real staging values locally, but do not commit them:
+
+```bash
+flutter build apk --debug \
+  --dart-define=API_BASE_URL=<staging-api-url> \
+  --dart-define=CLERK_PUBLISHABLE_KEY=<staging-clerk-publishable-key> \
+  --dart-define=CUSTOMER_WEB_BASE_URL=<staging-customer-web-url>
+```
+
 ## Environment variables
 
 - `API_BASE_URL`
 - `CLERK_PUBLISHABLE_KEY`
+- `CUSTOMER_WEB_BASE_URL`

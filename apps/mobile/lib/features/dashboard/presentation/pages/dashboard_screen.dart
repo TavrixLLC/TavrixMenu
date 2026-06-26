@@ -7,6 +7,7 @@ import '../../../../app/router/route_names.dart';
 import '../../../../core/constants/app_colors.dart';
 import '../../../../core/constants/app_radius.dart';
 import '../../../../core/constants/app_spacing.dart';
+import '../../../../core/debug/qa_context_snapshot.dart';
 import '../../../../shared/widgets/app_card.dart';
 import '../../../../shared/widgets/app_scaffold.dart';
 import '../../../../shared/widgets/business_header_card.dart';
@@ -36,6 +37,8 @@ class _DashboardScreenState extends State<DashboardScreen> {
 
   @override
   Widget build(BuildContext context) {
+    final authState = context.watch<AuthCubit>().state;
+
     return AppScaffold(
       title: 'Waflo Workspace',
       actions: [
@@ -72,7 +75,14 @@ class _DashboardScreenState extends State<DashboardScreen> {
             children: [
               BusinessHeaderCard(
                 business: state.business,
-                role: state.roleDisplayLabel,
+                role: state.workspaceRoleDisplayLabel,
+              ),
+              DebugQaContextPanel(
+                snapshot: buildDebugQaContextSnapshot(
+                  authState: authState,
+                  dashboardState: state,
+                  selectedRoute: 'dashboard',
+                ),
               ),
               if (state.summaryErrorMessage != null) ...[
                 const SizedBox(height: AppSpacing.md),
@@ -232,7 +242,7 @@ class _AccessCard extends StatelessWidget {
             ),
           ),
           const SizedBox(width: AppSpacing.md),
-          RoleBadge(role: state.roleDisplayLabel),
+          RoleBadge(role: state.workspaceRoleDisplayLabel),
         ],
       ),
     );

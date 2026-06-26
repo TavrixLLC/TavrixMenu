@@ -72,4 +72,19 @@ void main() {
     expect(model.business.permissions, isNull);
     expect(model.currentUser.role, isNot('STAFF'));
   });
+
+  test('currentMembership role wins over stale currentUser role', () {
+    final model = DashboardSummaryModel.fromJson({
+      'business': {
+        'id': 'bus_123',
+        'name': 'Tavrix Cafe',
+        'slug': 'tavrix-cafe',
+      },
+      'currentUser': {'role': 'STAFF'},
+      'currentMembership': {'role': 'OWNER'},
+    });
+
+    expect(model.currentUser.role, 'OWNER');
+    expect(model.business.role, 'OWNER');
+  });
 }

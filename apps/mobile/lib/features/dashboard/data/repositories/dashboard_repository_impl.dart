@@ -38,6 +38,7 @@ class DashboardRepositoryImpl implements DashboardRepository {
             currency: 'IQD',
             language: 'ar',
             status: 'ACTIVE',
+            role: 'OWNER',
             permissions: BusinessPermissions.owner(),
           ),
           currentUser: const DashboardCurrentUser(

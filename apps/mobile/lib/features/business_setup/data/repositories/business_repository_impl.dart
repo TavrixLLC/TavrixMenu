@@ -29,6 +29,7 @@ class BusinessRepositoryImpl implements BusinessRepository {
     currency: 'IQD',
     language: 'ar',
     status: 'ACTIVE',
+    role: 'OWNER',
     permissions: BusinessPermissions.owner(),
   );
 
@@ -65,6 +66,7 @@ class BusinessRepositoryImpl implements BusinessRepository {
           currency: currency,
           language: language,
           status: 'ACTIVE',
+          role: 'OWNER',
           permissions: BusinessPermissions.owner(),
         );
         return _devBusiness;
@@ -106,6 +108,7 @@ class BusinessRepositoryImpl implements BusinessRepository {
           logoUrl: logoUrl,
           coverUrl: coverUrl,
           status: _devBusiness.status,
+          role: _devBusiness.role,
           permissions: _devBusiness.permissions,
         );
         return _devBusiness;

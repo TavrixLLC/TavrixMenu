@@ -116,10 +116,39 @@ class DashboardCubit extends Cubit<DashboardState> {
         DashboardState(
           status: DashboardStatus.success,
           user: user,
-          business: summary.business,
+          business: _mergeBusinessContext(
+            appContextBusiness: business,
+            summaryBusiness: summary.business,
+          ),
           summary: summary,
         ),
       ),
     );
   }
+}
+
+Business _mergeBusinessContext({
+  required Business appContextBusiness,
+  required Business summaryBusiness,
+}) {
+  if ((summaryBusiness.role?.trim().isNotEmpty ?? false) ||
+      (appContextBusiness.role?.trim().isEmpty ?? true)) {
+    return summaryBusiness;
+  }
+
+  return Business(
+    id: summaryBusiness.id,
+    name: summaryBusiness.name,
+    slug: summaryBusiness.slug,
+    publicMenuUrl: summaryBusiness.publicMenuUrl,
+    type: summaryBusiness.type,
+    city: summaryBusiness.city,
+    currency: summaryBusiness.currency,
+    language: summaryBusiness.language,
+    logoUrl: summaryBusiness.logoUrl,
+    coverUrl: summaryBusiness.coverUrl,
+    status: summaryBusiness.status,
+    role: appContextBusiness.role,
+    permissions: summaryBusiness.permissions ?? appContextBusiness.permissions,
+  );
 }

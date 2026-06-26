@@ -31,13 +31,13 @@ class CurrentUserModel extends CurrentUser {
       memberships: memberships,
     );
     final role =
-        _string(json['role']) ??
-        _string(user['role']) ??
         memberships
             .where((membership) => membership.isActive)
             .firstOrNull
             ?.role ??
         businesses.firstOrNull?.role ??
+        _string(json['role']) ??
+        _string(user['role']) ??
         BusinessRole.operator;
 
     return CurrentUserModel(

@@ -1,4 +1,5 @@
 import 'package:flutter_test/flutter_test.dart';
+import 'package:tavrix_menu_mobile/app/config/app_config.dart';
 import 'package:tavrix_menu_mobile/core/debug/qa_context_snapshot.dart';
 import 'package:tavrix_menu_mobile/features/auth/domain/entities/current_user.dart';
 import 'package:tavrix_menu_mobile/features/auth/presentation/bloc/auth_state.dart';
@@ -60,6 +61,14 @@ void main() {
         ),
       ),
       selectedRoute: '/dashboard',
+      config: const AppConfig(
+        apiBaseUrl: '',
+        customerWebBaseUrl: '',
+        devAuthToken: '',
+        appEnv: 'development',
+        enableDevAuth: false,
+        clerkPublishableKey: '',
+      ),
       meStatusCode: 200,
     );
 
@@ -67,6 +76,9 @@ void main() {
     expect(snapshot?['membershipsCount'], 1);
     expect(snapshot?['rolesReturned'], ['OWNER']);
     expect(snapshot?['selectedRoute'], 'dashboard');
+    expect(snapshot.toString(), contains('API_BASE_URL'));
+    expect(snapshot.toString(), contains('CLERK_PUBLISHABLE_KEY'));
+    expect(snapshot.toString(), contains('CUSTOMER_WEB_BASE_URL'));
     expect(snapshot.toString(), isNot(contains('owner@example.test')));
     expect(snapshot.toString(), isNot(contains('usr_secret')));
     expect(snapshot.toString(), isNot(contains('bus_secret')));

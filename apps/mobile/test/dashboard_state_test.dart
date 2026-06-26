@@ -88,4 +88,43 @@ void main() {
     expect(state.roleDisplayLabel, 'Admin');
     expect(state.roleDisplayLabel, isNot('Staff'));
   });
+
+  test('workspace label remains business operator for explicit staff role', () {
+    const state = DashboardState(
+      status: DashboardStatus.success,
+      business: Business(
+        id: 'bus_123',
+        name: 'Tavrix Cafe',
+        slug: 'tavrix-cafe',
+        publicMenuUrl: 'https://menu.example.test/m/tavrix-cafe',
+        role: 'STAFF',
+      ),
+    );
+
+    expect(state.roleDisplayLabel, 'Staff');
+    expect(state.workspaceRoleDisplayLabel, 'Business Operator');
+  });
+
+  test('business app-context role beats stale user role', () {
+    const state = DashboardState(
+      status: DashboardStatus.success,
+      user: CurrentUser(
+        id: 'usr_owner',
+        email: '',
+        fullName: 'Owner',
+        role: 'STAFF',
+        onboarding: CurrentUserOnboarding(hasBusiness: true),
+      ),
+      business: Business(
+        id: 'bus_123',
+        name: 'Tavrix Cafe',
+        slug: 'tavrix-cafe',
+        publicMenuUrl: 'https://menu.example.test/m/tavrix-cafe',
+        role: 'OWNER',
+      ),
+    );
+
+    expect(state.roleDisplayLabel, 'Owner');
+    expect(state.roleDisplayLabel, isNot('Staff'));
+  });
 }

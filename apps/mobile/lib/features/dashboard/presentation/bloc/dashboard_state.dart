@@ -36,13 +36,24 @@ class DashboardState extends Equatable {
   }
 
   String? get backendRole {
-    final role = summary?.currentUser.role ?? user?.role;
-    return BusinessRole.isKnown(role) ? BusinessRole.normalize(role) : null;
+    final summaryRole = _knownRole(summary?.currentUser.role);
+    if (summaryRole != null) {
+      return summaryRole;
+    }
+    final businessRole = _knownRole(business?.role ?? summary?.business.role);
+    if (businessRole != null) {
+      return businessRole;
+    }
+    return _knownRole(user?.role);
   }
 
   String get effectiveRole => backendRole ?? BusinessRole.operator;
 
   String get roleDisplayLabel => BusinessRole.displayLabel(effectiveRole);
+
+  String get workspaceRoleDisplayLabel => effectiveRole == BusinessRole.staff
+      ? BusinessRole.displayLabel(BusinessRole.operator)
+      : roleDisplayLabel;
 
   bool get hasKnownRole => backendRole != null;
 
@@ -77,4 +88,8 @@ class DashboardState extends Equatable {
     errorMessage,
     summaryErrorMessage,
   ];
+}
+
+String? _knownRole(String? role) {
+  return BusinessRole.isKnown(role) ? BusinessRole.normalize(role) : null;
 }
