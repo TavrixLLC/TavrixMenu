@@ -2,6 +2,7 @@
 
 import Link from 'next/link';
 import { SignInButton, SignOutButton, SignedIn, SignedOut, UserButton } from '@clerk/nextjs';
+import { WafloButton, WafloEmptyState, WafloErrorState, WafloLinkButton } from './waflo';
 
 type ClerkConfigProps = {
   clerkConfigured: boolean;
@@ -10,10 +11,7 @@ type ClerkConfigProps = {
 export function AdminAuthControls({ clerkConfigured }: ClerkConfigProps) {
   if (!clerkConfigured) {
     return (
-      <Link
-        href="/login"
-        className="rounded-md border border-amber-200 bg-amber-50 px-3 py-2 text-sm font-semibold text-amber-800"
-      >
+      <Link href="/login" className="rounded-lg border border-waflo-gold/25 bg-waflo-goldSoft px-3 py-2 text-sm font-bold text-waflo-goldDark">
         Sign-in unavailable
       </Link>
     );
@@ -24,7 +22,7 @@ export function AdminAuthControls({ clerkConfigured }: ClerkConfigProps) {
       <SignedOut>
         <Link
           href="/login"
-          className="rounded-md border border-neutral-200 bg-white px-3 py-2 text-sm font-semibold text-neutral-700"
+          className="rounded-lg border border-waflo-border bg-white px-3 py-2 text-sm font-bold text-waflo-charcoal shadow-subtle transition hover:bg-waflo-cream"
         >
           Sign in
         </Link>
@@ -32,10 +30,7 @@ export function AdminAuthControls({ clerkConfigured }: ClerkConfigProps) {
       <SignedIn>
         <UserButton afterSignOutUrl="/login" />
         <SignOutButton>
-          <button
-            type="button"
-            className="rounded-md border border-neutral-200 bg-white px-3 py-2 text-sm font-semibold text-neutral-700"
-          >
+          <button type="button" className="rounded-lg border border-waflo-border bg-white px-3 py-2 text-sm font-bold text-waflo-charcoal shadow-subtle transition hover:bg-waflo-cream">
             Sign out
           </button>
         </SignOutButton>
@@ -54,33 +49,26 @@ export function AdminAuthBoundary({
 >) {
   if (!clerkConfigured) {
     return (
-      <section className="rounded-lg border border-amber-200 bg-amber-50 p-5">
-        <p className="text-sm font-semibold uppercase text-amber-700">Sign-in unavailable</p>
-        <h2 className="mt-2 text-xl font-bold text-ink">Owner access is not ready yet</h2>
-        <p className="mt-2 max-w-3xl text-sm leading-6 text-amber-900">
-          The owner dashboard needs sign-in to be enabled before restaurant teams can manage their menu here.
-        </p>
-      </section>
+      <WafloErrorState
+        title="Owner access is not ready yet"
+        description="The dashboard needs sign-in to be enabled before restaurant teams can manage their menu here."
+        action={<WafloLinkButton href="/login">Open login</WafloLinkButton>}
+      />
     );
   }
 
   return (
     <>
       <SignedOut>
-        <section className="rounded-lg border border-neutral-200 bg-white p-5">
-          <p className="text-sm font-semibold uppercase text-accent">Admin login required</p>
-          <h2 className="mt-2 text-xl font-bold text-ink">Sign in to manage your business</h2>
-          <p className="mt-2 max-w-3xl text-sm leading-6 text-neutral-600">
-            This area is for owners and approved team members. Customers can still browse public menus without signing in.
-          </p>
-          <div className="mt-4">
+        <WafloEmptyState
+          title="Sign in to manage your business"
+          description="This area is for owners and approved team members. Customers can still browse public menus without signing in."
+          action={
             <SignInButton mode="modal">
-              <button type="button" className="rounded-md bg-accent px-4 py-2 text-sm font-semibold text-white">
-                Sign in
-              </button>
+              <WafloButton>Sign in</WafloButton>
             </SignInButton>
-          </div>
-        </section>
+          }
+        />
       </SignedOut>
       <SignedIn>{children}</SignedIn>
     </>

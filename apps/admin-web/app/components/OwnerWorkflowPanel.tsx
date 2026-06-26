@@ -22,6 +22,20 @@ import {
   type AdminMenuTemplate,
   type AdminPermissions
 } from '../lib/admin-api';
+import {
+  WafloBadge,
+  WafloButton,
+  WafloCard,
+  WafloEmptyState,
+  WafloErrorState,
+  WafloLoadingSkeleton,
+  WafloMetricCard,
+  WafloPageHeader,
+  WafloPanel,
+  WafloSection,
+  WafloTable,
+  WafloToast
+} from './waflo';
 
 type OwnerWorkflowPanelProps = {
   apiBaseUrl: string;
@@ -121,14 +135,7 @@ function StatusPill({
   children: React.ReactNode;
   tone?: 'neutral' | 'success' | 'warning';
 }>) {
-  const toneClass =
-    tone === 'success'
-      ? 'bg-emerald-50 text-emerald-700 ring-emerald-200'
-      : tone === 'warning'
-        ? 'bg-amber-50 text-amber-800 ring-amber-200'
-        : 'bg-neutral-100 text-neutral-700 ring-neutral-200';
-
-  return <span className={`inline-flex rounded-full px-2 py-1 text-xs font-semibold ring-1 ${toneClass}`}>{children}</span>;
+  return <WafloBadge tone={tone === 'success' ? 'green' : tone === 'warning' ? 'gold' : 'neutral'}>{children}</WafloBadge>;
 }
 
 function getOwnerFacingErrorMessage(status: Exclude<WorkflowState, { status: 'ok' }>['status']) {
@@ -159,30 +166,22 @@ function BlockingState({ state }: { state: Exclude<WorkflowState, { status: 'ok'
     case 'idle':
     case 'loading':
       return (
-        <section className="rounded-lg border border-neutral-200 bg-white p-5">
-          <p className="text-sm font-semibold uppercase text-accent">Owner dashboard</p>
-          <h2 className="mt-2 text-xl font-bold text-ink">Loading your menu workspace</h2>
-          <p className="mt-2 text-sm leading-6 text-neutral-600">
-            Checking your business, menu, and appearance settings.
-          </p>
-        </section>
+        <WafloLoadingSkeleton lines={4} />
       );
     case 'missing-business':
       return (
-        <section className="rounded-lg border border-amber-200 bg-amber-50 p-5">
-          <p className="text-sm font-semibold uppercase text-amber-700">Missing selected business</p>
-          <h2 className="mt-2 text-xl font-bold text-ink">No business is available for this account</h2>
-          <p className="mt-2 text-sm leading-6 text-amber-900">{getOwnerFacingErrorMessage(state.status)}</p>
-        </section>
+        <WafloEmptyState
+          title="No business is available for this account"
+          description={getOwnerFacingErrorMessage(state.status)}
+        />
       );
   }
 
   return (
-    <section className="rounded-lg border border-rose-200 bg-rose-50 p-5">
-      <p className="text-sm font-semibold uppercase text-rose-700">{titleByStatus[state.status]}</p>
-      <h2 className="mt-2 text-xl font-bold text-ink">Could not load the owner dashboard</h2>
-      <p className="mt-2 text-sm leading-6 text-rose-900">{getOwnerFacingErrorMessage(state.status)}</p>
-    </section>
+    <WafloErrorState
+      title={titleByStatus[state.status] || 'Could not load the owner dashboard'}
+      description={getOwnerFacingErrorMessage(state.status)}
+    />
   );
 }
 
@@ -197,13 +196,10 @@ function DetailRow({ label, value }: Readonly<{ label: string; value: React.Reac
 
 function DashboardSummarySection({ summary }: { summary: AdminDashboardSummary }) {
   const counts = [
-    ['Active categories', summary.counts.activeCategories],
-    ['Inactive categories', summary.counts.inactiveCategories],
-    ['Active items', summary.counts.activeItems],
-    ['Inactive items', summary.counts.inactiveItems],
-    ['Available items', summary.counts.availableItems],
-    ['Unavailable items', summary.counts.unavailableItems],
-    ['Active members', summary.counts.activeMembers]
+    ['Active categories', summary.counts.activeCategories, 'green'],
+    ['Active items', summary.counts.activeItems, 'green'],
+    ['Available items', summary.counts.availableItems, 'coral'],
+    ['Active members', summary.counts.activeMembers, 'gold']
   ];
 
   const nextStep = summary.onboardingHints.recommendedNextStep || 'READY';
@@ -237,77 +233,77 @@ function DashboardSummarySection({ summary }: { summary: AdminDashboardSummary }
             };
 
   return (
-    <section className="grid gap-4">
-      <div className="grid gap-4 lg:grid-cols-[1.1fr_0.9fr]">
-        <article className="rounded-lg border border-neutral-200 bg-white p-5">
-          <div className="flex flex-col gap-3 sm:flex-row sm:items-start sm:justify-between">
-            <div>
-              <p className="text-sm font-semibold uppercase text-accent">Dashboard summary</p>
-              <h2 className="mt-2 text-xl font-bold text-ink">{summary.business.name}</h2>
-              <p className="mt-1 text-sm text-neutral-600">/m/{summary.business.slug}</p>
-            </div>
-            <StatusPill tone="success">{summary.business.status || 'ACTIVE'}</StatusPill>
-          </div>
+    <WafloSection>
+      <WafloPageHeader
+        eyebrow="Owner workspace"
+        title={summary.business.name}
+        description="Manage the live customer menu, loyalty program, and wallet appearance from one launch-ready dashboard."
+        meta={
+          <>
+            <WafloBadge tone="green">{summary.business.status || 'ACTIVE'}</WafloBadge>
+            <WafloBadge tone="neutral">/m/{summary.business.slug}</WafloBadge>
+            <WafloBadge tone="charcoal">{summary.currentUser.role}</WafloBadge>
+          </>
+        }
+        actions={
+          nextStepCopy.cta && nextStepCopy.href ? (
+            <a className="inline-flex min-h-11 items-center rounded-lg bg-waflo-charcoal px-4 py-2 text-sm font-bold text-white shadow-subtle transition hover:-translate-y-0.5" href={nextStepCopy.href}>
+              {nextStepCopy.cta}
+            </a>
+          ) : (
+            <WafloBadge tone="green">Ready</WafloBadge>
+          )
+        }
+      />
 
+      <div className="grid gap-4 lg:grid-cols-[1.2fr_0.8fr]">
+        <WafloCard className="p-5">
+          <p className="text-xs font-bold uppercase tracking-wide text-waflo-coral">Business identity</p>
           <div className="mt-5 grid gap-4 sm:grid-cols-2 lg:grid-cols-4">
             <DetailRow label="Type" value={summary.business.type} />
             <DetailRow label="City" value={summary.business.city || 'Not set'} />
             <DetailRow label="Currency" value={summary.business.currency} />
             <DetailRow label="Language" value={summary.business.language} />
           </div>
-        </article>
+        </WafloCard>
 
-        <article className="rounded-lg border border-neutral-200 bg-white p-5">
-          <p className="text-sm font-semibold uppercase text-accent">Current user</p>
-          <h2 className="mt-2 text-xl font-bold text-ink">{summary.currentUser.role}</h2>
+        <WafloCard className="p-5">
+          <p className="text-xs font-bold uppercase tracking-wide text-waflo-coral">Role and permissions</p>
           <div className="mt-4 flex flex-wrap gap-2">
             {permissionLabels.map(([key, label]) => (
               <StatusPill key={key} tone={summary.currentUser.permissions[key] ? 'success' : 'neutral'}>
-                {label}: {summary.currentUser.permissions[key] ? 'Yes' : 'No'}
+                {label}
               </StatusPill>
             ))}
           </div>
-        </article>
+        </WafloCard>
       </div>
 
-      <section className="grid gap-4 sm:grid-cols-2 lg:grid-cols-4">
-        {counts.map(([label, value]) => (
-          <article key={label} className="rounded-lg border border-neutral-200 bg-white p-4">
-            <p className="text-sm font-semibold text-neutral-500">{label}</p>
-            <p className="mt-3 text-3xl font-bold text-ink">{value}</p>
-          </article>
+      <section className="grid gap-4 sm:grid-cols-2 xl:grid-cols-4">
+        {counts.map(([label, value, tone]) => (
+          <WafloMetricCard key={label} label={String(label)} value={value} tone={tone as 'green' | 'coral' | 'gold'} />
         ))}
       </section>
 
-      <article className="rounded-lg border border-neutral-200 bg-white p-5">
-        <div className="flex flex-col gap-4 lg:flex-row lg:items-center lg:justify-between">
-          <div>
-            <p className="text-sm font-semibold uppercase text-accent">Onboarding hints</p>
-            <h2 className="mt-2 text-xl font-bold text-ink">{nextStepCopy.title}</h2>
-            <p className="mt-2 text-sm leading-6 text-neutral-600">{nextStepCopy.description}</p>
+      <WafloPanel
+        eyebrow="Quick actions"
+        title={nextStepCopy.title}
+        description={nextStepCopy.description}
+        actions={
+          <div className="flex flex-wrap gap-2">
+            <StatusPill tone={summary.onboardingHints.hasCategories ? 'success' : 'warning'}>
+              {summary.onboardingHints.hasCategories ? 'Categories ready' : 'Add category'}
+            </StatusPill>
+            <StatusPill tone={summary.onboardingHints.hasItems ? 'success' : 'warning'}>
+              {summary.onboardingHints.hasItems ? 'Items ready' : 'Add item'}
+            </StatusPill>
+            <StatusPill tone={summary.onboardingHints.hasPublicMenuReady ? 'success' : 'warning'}>
+              {summary.onboardingHints.hasPublicMenuReady ? 'Public menu ready' : 'Menu not ready'}
+            </StatusPill>
           </div>
-          {nextStepCopy.cta && nextStepCopy.href ? (
-            <a className="inline-flex rounded-md bg-accent px-4 py-2 text-sm font-semibold text-white" href={nextStepCopy.href}>
-              {nextStepCopy.cta}
-            </a>
-          ) : (
-            <StatusPill tone="success">READY</StatusPill>
-          )}
-        </div>
-        <div className="mt-4 flex flex-wrap gap-2">
-          <StatusPill tone={summary.onboardingHints.hasCategories ? 'success' : 'warning'}>
-            {summary.onboardingHints.hasCategories ? 'Categories ready' : 'Add a category'}
-          </StatusPill>
-          <StatusPill tone={summary.onboardingHints.hasItems ? 'success' : 'warning'}>
-            {summary.onboardingHints.hasItems ? 'Items ready' : 'Add an item'}
-          </StatusPill>
-          <StatusPill tone={summary.onboardingHints.hasPublicMenuReady ? 'success' : 'warning'}>
-            {summary.onboardingHints.hasPublicMenuReady ? 'Public menu ready' : 'Menu not ready'}
-          </StatusPill>
-          <StatusPill>{nextStepCopy.title}</StatusPill>
-        </div>
-      </article>
-    </section>
+        }
+      />
+    </WafloSection>
   );
 }
 
@@ -321,41 +317,34 @@ function PublicMenuShareSection({
   onCopy: (value: string, label: string) => void;
 }) {
   return (
-    <section id="public-menu-share" className="rounded-lg border border-neutral-200 bg-white p-5">
-      <div className="flex flex-col gap-4 lg:flex-row lg:items-start lg:justify-between">
-        <div>
-          <p className="text-sm font-semibold uppercase text-accent">Public menu share</p>
-          <h2 className="mt-2 text-xl font-bold text-ink">Share your live menu</h2>
-          <p className="mt-2 max-w-2xl text-sm leading-6 text-neutral-600">
-            Copy this link for table QR codes, social pages, or staff testing. Customers will see the live public menu.
-          </p>
-        </div>
-        <button
-          type="button"
-          className="inline-flex rounded-md bg-accent px-4 py-2 text-sm font-semibold text-white"
-          onClick={() => onCopy(summary.publicMenu.url, 'public menu URL')}
-        >
+    <WafloPanel
+      className="scroll-mt-24"
+      eyebrow="Public menu"
+      title="Share your live menu"
+      description="Copy this link for table QR codes, social pages, or staff testing. Customers will see the live public menu."
+      actions={
+        <WafloButton onClick={() => onCopy(summary.publicMenu.url, 'public menu URL')}>
           Copy menu link
-        </button>
-      </div>
-
-      <div className="mt-5 grid gap-4 lg:grid-cols-2">
+        </WafloButton>
+      }
+    >
+      <div className="grid gap-4 lg:grid-cols-2">
         <div>
-          <p className="text-xs font-semibold uppercase text-neutral-500">Live menu link</p>
-          <p className="mt-2 break-all rounded-md border border-neutral-200 bg-neutral-50 p-3 text-sm font-semibold text-ink">
+          <p className="text-xs font-bold uppercase tracking-wide text-waflo-muted">Live menu link</p>
+          <p className="mt-2 break-all rounded-lg border border-waflo-border bg-waflo-cream p-3 text-sm font-semibold text-waflo-charcoal">
             {summary.publicMenu.url}
           </p>
         </div>
         <div>
-          <p className="text-xs font-semibold uppercase text-neutral-500">QR handoff</p>
-          <p className="mt-2 rounded-md border border-neutral-200 bg-neutral-50 p-3 text-sm font-semibold text-neutral-700">
+          <p className="text-xs font-bold uppercase tracking-wide text-waflo-muted">QR handoff</p>
+          <p className="mt-2 rounded-lg border border-waflo-border bg-waflo-cream p-3 text-sm font-semibold text-waflo-muted">
             QR content stays hidden here. Use the copied menu link when creating printed table QR codes.
           </p>
         </div>
       </div>
 
-      {copyStatus ? <p className="mt-4 text-sm font-semibold text-neutral-700">{copyStatus}</p> : null}
-    </section>
+      {copyStatus ? <div className="mt-4"><WafloToast tone="green">{copyStatus}</WafloToast></div> : null}
+    </WafloPanel>
   );
 }
 
@@ -386,47 +375,28 @@ function MenuAppearanceSection({
   const hasDraftChange = draftTemplateId !== currentTemplateId;
 
   return (
-    <section className="rounded-lg border border-neutral-200 bg-white p-5">
-      <div className="flex flex-col gap-4 lg:flex-row lg:items-start lg:justify-between">
-        <div>
-          <p className="text-sm font-semibold uppercase text-accent">Menu appearance</p>
-          <h2 className="mt-2 text-xl font-bold text-ink">Public menu template</h2>
-          <p className="mt-2 max-w-2xl text-sm leading-6 text-neutral-600">
-            Current template: {currentTemplate?.displayName || currentTemplateId}. Existing menu data and public URLs stay unchanged.
-          </p>
-          {draftTemplate ? (
-            <p className="mt-1 text-sm leading-6 text-neutral-600">
-              Draft selection: {draftTemplate.displayName}.
-            </p>
-          ) : null}
-        </div>
-        <div className="flex flex-wrap gap-2">
-          <button
-            type="button"
-            className="inline-flex w-fit rounded-md border border-neutral-200 bg-white px-4 py-2 text-sm font-semibold text-ink disabled:cursor-not-allowed disabled:text-neutral-400"
-            disabled={!draftTemplate || actionPending}
-            onClick={() => onPreview(draftTemplateId)}
-          >
+    <WafloPanel
+      eyebrow="Menu appearance"
+      title="Public menu template"
+      description={`Current template: ${currentTemplate?.displayName || currentTemplateId}. Existing menu data and public URLs stay unchanged.${draftTemplate ? ` Draft selection: ${draftTemplate.displayName}.` : ''}`}
+      actions={
+        <>
+          <WafloButton variant="secondary" disabled={!draftTemplate || actionPending} onClick={() => onPreview(draftTemplateId)}>
             Preview draft
-          </button>
-          <button
-            type="button"
-            className="inline-flex w-fit rounded-md bg-accent px-4 py-2 text-sm font-semibold text-white disabled:cursor-not-allowed disabled:bg-neutral-300"
-            disabled={!canManage || actionPending || !draftTemplate || !hasDraftChange}
-            onClick={onSave}
-          >
+          </WafloButton>
+          <WafloButton disabled={!canManage || actionPending || !draftTemplate || !hasDraftChange} onClick={onSave}>
             Save template
-          </button>
-        </div>
-      </div>
-
+          </WafloButton>
+        </>
+      }
+    >
       {!canManage ? (
-        <p className="mt-4 rounded-md border border-amber-200 bg-amber-50 p-3 text-sm font-semibold text-amber-900">
-          Template changes require owner appearance permission.
-        </p>
+        <div className="mb-4">
+          <WafloToast tone="gold">Template changes require owner appearance permission.</WafloToast>
+        </div>
       ) : null}
 
-      <div className="mt-5 grid gap-4 xl:grid-cols-4">
+      <div className="grid gap-4 xl:grid-cols-4">
         {templates.map((template) => {
           const current = template.id === currentTemplateId;
           const draft = template.id === draftTemplateId;
@@ -434,23 +404,23 @@ function MenuAppearanceSection({
           return (
             <article
               key={template.id}
-              className={`rounded-lg border p-4 ${
-                draft ? 'border-accent bg-[#fff8f2]' : 'border-neutral-200 bg-white'
+              className={`rounded-xl border p-4 shadow-subtle transition hover:-translate-y-0.5 ${
+                draft ? 'border-waflo-coral bg-waflo-coralSoft' : 'border-waflo-border bg-white'
               }`}
             >
               <div className="flex items-start justify-between gap-3">
                 <div>
-                  <h3 className="font-bold text-ink">{template.displayName}</h3>
-                  <p className="mt-1 text-xs font-semibold uppercase text-neutral-500">{template.id}</p>
+                  <h3 className="font-bold text-waflo-charcoal">{template.displayName}</h3>
+                  <p className="mt-1 text-xs font-bold uppercase tracking-wide text-waflo-muted">{template.id}</p>
                 </div>
                 <div className="flex flex-wrap justify-end gap-2">
                   {current ? <StatusPill tone="success">Current</StatusPill> : null}
                   {draft && !current ? <StatusPill tone="warning">Draft</StatusPill> : null}
                 </div>
               </div>
-              <p className="mt-3 text-sm leading-6 text-neutral-600">{template.description}</p>
-              <p className="mt-3 text-xs font-semibold uppercase text-neutral-500">Best for</p>
-              <p className="mt-1 text-sm leading-6 text-neutral-700">{template.bestFor}</p>
+              <p className="mt-3 text-sm leading-6 text-waflo-muted">{template.description}</p>
+              <p className="mt-3 text-xs font-bold uppercase tracking-wide text-waflo-muted">Best for</p>
+              <p className="mt-1 text-sm leading-6 text-waflo-charcoal">{template.bestFor}</p>
               <div
                 className="admin-template-preview"
                 data-template={template.id}
@@ -472,8 +442,8 @@ function MenuAppearanceSection({
                 </div>
                 <div data-slot="loyalty-block" />
               </div>
-              <div className="mt-3 flex items-center justify-between gap-3 rounded-md border border-neutral-200 bg-white p-3">
-                <p className="text-xs font-semibold uppercase text-neutral-500">{template.preview.previewLayout}</p>
+              <div className="mt-3 flex items-center justify-between gap-3 rounded-lg border border-waflo-border bg-white p-3">
+                <p className="text-xs font-bold uppercase tracking-wide text-waflo-muted">{template.preview.previewLayout}</p>
                 <div className="flex gap-1.5">
                   {template.preview.previewColors.map((swatch) => (
                     <span key={swatch} className="h-5 w-5 rounded-full border border-neutral-200" style={{ backgroundColor: swatch }} />
@@ -483,7 +453,7 @@ function MenuAppearanceSection({
               <div className="mt-4 grid gap-2 sm:grid-cols-2">
                 <button
                   type="button"
-                  className="rounded-md border border-neutral-200 bg-white px-4 py-2 text-sm font-semibold text-ink disabled:cursor-not-allowed disabled:text-neutral-400"
+                  className="rounded-lg border border-waflo-border bg-white px-4 py-2 text-sm font-bold text-waflo-charcoal transition hover:bg-waflo-cream disabled:cursor-not-allowed disabled:text-waflo-muted"
                   disabled={actionPending}
                   onClick={() => onPreview(template.id)}
                 >
@@ -491,7 +461,7 @@ function MenuAppearanceSection({
                 </button>
                 <button
                   type="button"
-                  className="rounded-md bg-accent px-4 py-2 text-sm font-semibold text-white disabled:cursor-not-allowed disabled:bg-neutral-300"
+                  className="rounded-lg bg-waflo-charcoal px-4 py-2 text-sm font-bold text-white transition hover:-translate-y-0.5 disabled:cursor-not-allowed disabled:translate-y-0 disabled:bg-neutral-300"
                   disabled={!canManage || actionPending || draft}
                   onClick={() => onDraftTemplate(template.id)}
                 >
@@ -502,7 +472,7 @@ function MenuAppearanceSection({
           );
         })}
       </div>
-    </section>
+    </WafloPanel>
   );
 }
 
@@ -523,7 +493,7 @@ function ActionBanner({ actionState }: { actionState: ActionState }) {
       ? 'That change could not be saved. Please try again or check your permission for this business.'
       : actionState.message;
 
-  return <p className={`rounded-lg border p-3 text-sm font-semibold ${toneClass}`}>{message}</p>;
+  return <WafloToast tone={actionState.status === 'success' ? 'green' : actionState.status === 'error' ? 'red' : 'gold'}>{message}</WafloToast>;
 }
 
 function CategoryManager({
@@ -542,51 +512,35 @@ function CategoryManager({
   onRestore: (category: AdminCategory) => void;
 }) {
   return (
-    <article className="rounded-lg border border-neutral-200 bg-white">
-      <div className="border-b border-neutral-200 p-4">
-        <div className="flex flex-col gap-3 sm:flex-row sm:items-start sm:justify-between">
-          <div>
-            <p className="text-sm font-semibold uppercase text-accent">Categories</p>
-            <h2 className="mt-2 text-xl font-bold text-ink">Category reorder and restore</h2>
-          </div>
-          <button
-            type="button"
-            className="rounded-md bg-accent px-4 py-2 text-sm font-semibold text-white disabled:cursor-not-allowed disabled:bg-neutral-300"
-            disabled={!canManage || actionPending || categories.length === 0}
-            onClick={onSave}
-          >
-            Save category order
-          </button>
-        </div>
-        {!canManage ? (
-          <p className="mt-3 rounded-md border border-amber-200 bg-amber-50 p-3 text-sm font-semibold text-amber-900">
-            Reorder and restore require OWNER or MANAGER with canManageMenu.
-          </p>
-        ) : null}
-      </div>
-
+    <WafloPanel
+      eyebrow="Categories"
+      title="Category order"
+      description="Reorder sections and restore inactive categories without changing menu content."
+      actions={
+        <WafloButton disabled={!canManage || actionPending || categories.length === 0} onClick={onSave}>
+          Save order
+        </WafloButton>
+      }
+    >
+      {!canManage ? <div className="mb-4"><WafloToast tone="gold">Reorder and restore require owner or manager menu permission.</WafloToast></div> : null}
       {categories.length === 0 ? (
-        <div className="p-4">
-          <p className="text-sm font-semibold text-neutral-700">No categories returned for this business.</p>
-        </div>
+        <WafloEmptyState title="No categories yet" description="Add the first category before launching a public menu." />
       ) : (
-        <div className="divide-y divide-neutral-100">
-          {categories.map((category, index) => (
-            <div key={category.id} className="grid gap-3 p-4 lg:grid-cols-[1fr_auto] lg:items-center">
-              <div>
-                <div className="flex flex-wrap items-center gap-2">
-                  <p className="font-semibold text-ink">{category.nameAr}</p>
-                  {category.nameEn ? <span className="text-sm text-neutral-500">{category.nameEn}</span> : null}
-                  <StatusPill tone={category.isActive ? 'success' : 'warning'}>
-                    {category.isActive ? 'active' : 'archived/inactive'}
-                  </StatusPill>
-                </div>
-                <p className="mt-1 text-sm text-neutral-500">sortOrder {category.sortOrder}</p>
-              </div>
-              <div className="flex flex-wrap gap-2">
+        <WafloTable
+          columns={['Category', 'Status', 'Order', 'Actions']}
+          rows={categories.map((category, index) => [
+            <div key="category">
+              <p className="font-bold text-waflo-charcoal">{category.nameAr}</p>
+              {category.nameEn ? <p className="mt-1 text-sm text-waflo-muted">{category.nameEn}</p> : null}
+            </div>,
+            <StatusPill key="status" tone={category.isActive ? 'success' : 'warning'}>
+              {category.isActive ? 'Active' : 'Inactive'}
+            </StatusPill>,
+            <span key="order" className="text-sm font-semibold text-waflo-muted">{category.sortOrder}</span>,
+            <div key="actions" className="flex flex-wrap gap-2">
                 <button
                   type="button"
-                  className="rounded-md border border-neutral-200 bg-white px-3 py-2 text-sm font-semibold text-neutral-700 disabled:cursor-not-allowed disabled:text-neutral-300"
+                  className="rounded-lg border border-waflo-border bg-white px-3 py-2 text-sm font-bold text-waflo-charcoal disabled:cursor-not-allowed disabled:text-waflo-muted"
                   disabled={!canManage || actionPending || index === 0}
                   onClick={() => onMove(index, -1)}
                 >
@@ -594,7 +548,7 @@ function CategoryManager({
                 </button>
                 <button
                   type="button"
-                  className="rounded-md border border-neutral-200 bg-white px-3 py-2 text-sm font-semibold text-neutral-700 disabled:cursor-not-allowed disabled:text-neutral-300"
+                  className="rounded-lg border border-waflo-border bg-white px-3 py-2 text-sm font-bold text-waflo-charcoal disabled:cursor-not-allowed disabled:text-waflo-muted"
                   disabled={!canManage || actionPending || index === categories.length - 1}
                   onClick={() => onMove(index, 1)}
                 >
@@ -603,19 +557,18 @@ function CategoryManager({
                 {!category.isActive ? (
                   <button
                     type="button"
-                    className="rounded-md border border-emerald-200 bg-emerald-50 px-3 py-2 text-sm font-semibold text-emerald-700 disabled:cursor-not-allowed disabled:bg-neutral-100 disabled:text-neutral-400"
+                    className="rounded-lg border border-waflo-green/25 bg-waflo-greenSoft px-3 py-2 text-sm font-bold text-waflo-greenDark disabled:cursor-not-allowed disabled:bg-neutral-100 disabled:text-neutral-400"
                     disabled={!canManage || actionPending}
                     onClick={() => onRestore(category)}
                   >
                     Restore
                   </button>
                 ) : null}
-              </div>
             </div>
-          ))}
-        </div>
+          ])}
+        />
       )}
-    </article>
+    </WafloPanel>
   );
 }
 
@@ -637,53 +590,36 @@ function ItemManager({
   onRestore: (item: AdminMenuItem) => void;
 }) {
   return (
-    <article className="rounded-lg border border-neutral-200 bg-white">
-      <div className="border-b border-neutral-200 p-4">
-        <div className="flex flex-col gap-3 sm:flex-row sm:items-start sm:justify-between">
-          <div>
-            <p className="text-sm font-semibold uppercase text-accent">Items</p>
-            <h2 className="mt-2 text-xl font-bold text-ink">Item reorder and restore</h2>
-          </div>
-          <button
-            type="button"
-            className="rounded-md bg-accent px-4 py-2 text-sm font-semibold text-white disabled:cursor-not-allowed disabled:bg-neutral-300"
-            disabled={!canManage || actionPending || items.length === 0}
-            onClick={onSave}
-          >
-            Save item order
-          </button>
-        </div>
-        {!canManage ? (
-          <p className="mt-3 rounded-md border border-amber-200 bg-amber-50 p-3 text-sm font-semibold text-amber-900">
-            Reorder and restore require OWNER or MANAGER with canManageMenu.
-          </p>
-        ) : null}
-      </div>
-
+    <WafloPanel
+      eyebrow="Items"
+      title="Item order"
+      description="Keep inactive and unavailable items visible for controlled restoration."
+      actions={
+        <WafloButton disabled={!canManage || actionPending || items.length === 0} onClick={onSave}>
+          Save order
+        </WafloButton>
+      }
+    >
+      {!canManage ? <div className="mb-4"><WafloToast tone="gold">Reorder and restore require owner or manager menu permission.</WafloToast></div> : null}
       {items.length === 0 ? (
-        <div className="p-4">
-          <p className="text-sm font-semibold text-neutral-700">No items returned for this business.</p>
-        </div>
+        <WafloEmptyState title="No items yet" description="Add menu items before sharing the public menu with customers." />
       ) : (
-        <div className="divide-y divide-neutral-100">
-          {items.map((item, index) => (
-            <div key={item.id} className="grid gap-3 p-4 lg:grid-cols-[1fr_auto] lg:items-center">
-              <div>
-                <div className="flex flex-wrap items-center gap-2">
-                  <p className="font-semibold text-ink">{item.nameAr}</p>
-                  {item.nameEn ? <span className="text-sm text-neutral-500">{item.nameEn}</span> : null}
-                  <StatusPill tone={item.isAvailable ? 'success' : 'warning'}>
-                    {item.isAvailable ? 'available' : 'archived/unavailable'}
-                  </StatusPill>
-                </div>
-                <p className="mt-1 text-sm text-neutral-500">
-                  {categoryNameById.get(item.categoryId) || item.categoryId} - {item.price} - sortOrder {item.sortOrder}
-                </p>
-              </div>
-              <div className="flex flex-wrap gap-2">
+        <WafloTable
+          columns={['Item', 'Category', 'Status', 'Actions']}
+          rows={items.map((item, index) => [
+            <div key="item">
+              <p className="font-bold text-waflo-charcoal">{item.nameAr}</p>
+              {item.nameEn ? <p className="mt-1 text-sm text-waflo-muted">{item.nameEn}</p> : null}
+              <p className="mt-1 text-sm font-semibold text-waflo-muted">{item.price}</p>
+            </div>,
+            <span key="category" className="text-sm font-semibold text-waflo-muted">{categoryNameById.get(item.categoryId) || item.categoryId}</span>,
+            <StatusPill key="status" tone={item.isAvailable ? 'success' : 'warning'}>
+              {item.isAvailable ? 'Available' : 'Unavailable'}
+            </StatusPill>,
+            <div key="actions" className="flex flex-wrap gap-2">
                 <button
                   type="button"
-                  className="rounded-md border border-neutral-200 bg-white px-3 py-2 text-sm font-semibold text-neutral-700 disabled:cursor-not-allowed disabled:text-neutral-300"
+                  className="rounded-lg border border-waflo-border bg-white px-3 py-2 text-sm font-bold text-waflo-charcoal disabled:cursor-not-allowed disabled:text-waflo-muted"
                   disabled={!canManage || actionPending || index === 0}
                   onClick={() => onMove(index, -1)}
                 >
@@ -691,7 +627,7 @@ function ItemManager({
                 </button>
                 <button
                   type="button"
-                  className="rounded-md border border-neutral-200 bg-white px-3 py-2 text-sm font-semibold text-neutral-700 disabled:cursor-not-allowed disabled:text-neutral-300"
+                  className="rounded-lg border border-waflo-border bg-white px-3 py-2 text-sm font-bold text-waflo-charcoal disabled:cursor-not-allowed disabled:text-waflo-muted"
                   disabled={!canManage || actionPending || index === items.length - 1}
                   onClick={() => onMove(index, 1)}
                 >
@@ -700,19 +636,18 @@ function ItemManager({
                 {!item.isAvailable ? (
                   <button
                     type="button"
-                    className="rounded-md border border-emerald-200 bg-emerald-50 px-3 py-2 text-sm font-semibold text-emerald-700 disabled:cursor-not-allowed disabled:bg-neutral-100 disabled:text-neutral-400"
+                    className="rounded-lg border border-waflo-green/25 bg-waflo-greenSoft px-3 py-2 text-sm font-bold text-waflo-greenDark disabled:cursor-not-allowed disabled:bg-neutral-100 disabled:text-neutral-400"
                     disabled={!canManage || actionPending}
                     onClick={() => onRestore(item)}
                   >
                     Restore
                   </button>
                 ) : null}
-              </div>
             </div>
-          ))}
-        </div>
+          ])}
+        />
       )}
-    </article>
+    </WafloPanel>
   );
 }
 
@@ -1090,24 +1025,17 @@ export function OwnerWorkflowPanel({ apiBaseUrl }: OwnerWorkflowPanelProps) {
         }}
       />
 
-      <section id="menu-workflow" className="grid gap-4">
-        <div className="flex flex-col gap-3 lg:flex-row lg:items-end lg:justify-between">
-          <div>
-            <p className="text-sm font-semibold uppercase text-accent">Menu management</p>
-            <h2 className="mt-2 text-xl font-bold text-ink">Reorder and restore menu content</h2>
-            <p className="mt-2 max-w-3xl text-sm leading-6 text-neutral-600">
-              Archived categories and sold-out items stay visible here so owners can restore or reorder them safely.
-            </p>
-          </div>
-          <button
-            type="button"
-            className="w-fit rounded-md border border-neutral-200 bg-white px-4 py-2 text-sm font-semibold text-neutral-700"
-            disabled={actionPending}
-            onClick={() => void loadWorkflow()}
-          >
-            Refresh
-          </button>
-        </div>
+      <section id="menu-workflow" className="grid scroll-mt-24 gap-4">
+        <WafloPageHeader
+          eyebrow="Menu management"
+          title="Reorder and restore menu content"
+          description="Archived categories and sold-out items stay visible here so owners can restore or reorder them safely."
+          actions={
+            <WafloButton variant="secondary" disabled={actionPending} onClick={() => void loadWorkflow()}>
+              Refresh
+            </WafloButton>
+          }
+        />
 
         <div className="grid gap-4 xl:grid-cols-2">
           <CategoryManager

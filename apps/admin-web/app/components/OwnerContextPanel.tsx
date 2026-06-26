@@ -3,6 +3,7 @@
 import { useEffect, useState } from 'react';
 import { useAuth } from '@clerk/nextjs';
 import { fetchAdminMe, type AdminMeFetchResult, type AdminMeResponse } from '../lib/admin-api';
+import { WafloBadge, WafloCard, WafloEmptyState, WafloErrorState, WafloLoadingSkeleton, WafloMetricCard, WafloPanel, WafloTable } from './waflo';
 
 type OwnerContextPanelProps = {
   apiBaseUrl: string;
@@ -16,11 +17,7 @@ type LoadState =
   | AdminMeFetchResult;
 
 function StatusPill({ children }: Readonly<{ children: React.ReactNode }>) {
-  return (
-    <span className="inline-flex rounded-full bg-neutral-100 px-2 py-1 text-xs font-semibold text-neutral-700">
-      {children}
-    </span>
-  );
+  return <WafloBadge tone="neutral">{children}</WafloBadge>;
 }
 
 function formatNextStep(value: string | null | undefined) {
@@ -38,26 +35,10 @@ function ContextStatus({ state }: { state: LoadState }) {
   switch (state.status) {
     case 'idle':
     case 'loading':
-      return (
-        <section className="rounded-lg border border-neutral-200 bg-white p-5">
-          <p className="text-sm font-semibold uppercase text-accent">Owner context</p>
-          <h2 className="mt-2 text-xl font-bold text-ink">Loading your workspace</h2>
-          <p className="mt-2 text-sm leading-6 text-neutral-600">
-            Checking your account and active business access.
-          </p>
-        </section>
-      );
+      return <WafloLoadingSkeleton lines={3} />;
     case 'auth-error':
     case 'error':
-      return (
-        <section className="rounded-lg border border-rose-200 bg-rose-50 p-5">
-          <p className="text-sm font-semibold uppercase text-rose-700">Owner context unavailable</p>
-          <h2 className="mt-2 text-xl font-bold text-ink">Could not load your workspace</h2>
-          <p className="mt-2 text-sm leading-6 text-rose-900">
-            Please sign in again or ask an owner to confirm your business access.
-          </p>
-        </section>
-      );
+      return <WafloErrorState title="Could not load your workspace" description="Please sign in again or ask an owner to confirm your business access." />;
     case 'ok':
       return null;
   }
@@ -68,12 +49,12 @@ function SummaryView({ me }: { me: AdminMeResponse }) {
 
   return (
     <section className="grid gap-4 lg:grid-cols-[1.2fr_0.8fr]">
-      <article className="rounded-lg border border-neutral-200 bg-white p-5">
+      <WafloCard className="p-5">
         <div className="flex flex-col gap-3 sm:flex-row sm:items-start sm:justify-between">
           <div>
-            <p className="text-sm font-semibold uppercase text-accent">Account</p>
-            <h2 className="mt-2 text-xl font-bold text-ink">{me.user.name || 'Signed-in user'}</h2>
-            <p className="mt-1 text-sm text-neutral-600">
+            <p className="text-xs font-bold uppercase tracking-wide text-waflo-coral">Account</p>
+            <h2 className="mt-2 text-xl font-bold text-waflo-charcoal">{me.user.name || 'Signed-in user'}</h2>
+            <p className="mt-1 text-sm text-waflo-muted">
               {me.onboarding.hasBusiness ? 'Business access found' : 'No business access yet'}
             </p>
           </div>
@@ -81,38 +62,29 @@ function SummaryView({ me }: { me: AdminMeResponse }) {
         </div>
 
         <div className="mt-5 grid gap-3 sm:grid-cols-3">
-          <div className="rounded-lg bg-neutral-50 p-3">
-            <p className="text-xs font-semibold uppercase text-neutral-500">Memberships</p>
-            <p className="mt-2 text-2xl font-bold text-ink">{me.memberships.length}</p>
-          </div>
-          <div className="rounded-lg bg-neutral-50 p-3">
-            <p className="text-xs font-semibold uppercase text-neutral-500">Active businesses</p>
-            <p className="mt-2 text-2xl font-bold text-ink">{me.onboarding.activeBusinessCount}</p>
-          </div>
-          <div className="rounded-lg bg-neutral-50 p-3">
-            <p className="text-xs font-semibold uppercase text-neutral-500">Next step</p>
-            <p className="mt-2 text-sm font-bold text-ink">{formatNextStep(me.onboarding.recommendedNextStep)}</p>
-          </div>
+          <WafloMetricCard label="Memberships" value={me.memberships.length} />
+          <WafloMetricCard label="Active businesses" value={me.onboarding.activeBusinessCount} tone="green" />
+          <WafloMetricCard label="Next step" value={formatNextStep(me.onboarding.recommendedNextStep)} tone="gold" />
         </div>
 
         {primaryMembership ? (
-          <div className="mt-5 rounded-lg border border-neutral-200 p-4">
-            <p className="text-sm font-semibold text-neutral-500">Current business context</p>
-            <h3 className="mt-2 text-lg font-bold text-ink">{primaryMembership.business.name}</h3>
-            <p className="mt-1 text-sm text-neutral-600">
+          <div className="mt-5 rounded-xl border border-waflo-border p-4">
+            <p className="text-sm font-semibold text-waflo-muted">Current business context</p>
+            <h3 className="mt-2 text-lg font-bold text-waflo-charcoal">{primaryMembership.business.name}</h3>
+            <p className="mt-1 text-sm text-waflo-muted">
               /m/{primaryMembership.business.slug} - {primaryMembership.business.city || 'No city'} -{' '}
               {primaryMembership.role}
             </p>
           </div>
         ) : null}
-      </article>
+      </WafloCard>
 
-      <article className="rounded-lg border border-neutral-200 bg-white p-5">
-        <p className="text-sm font-semibold uppercase text-accent">Owner onboarding</p>
-        <h2 className="mt-2 text-xl font-bold text-ink">
+      <WafloCard className="p-5">
+        <p className="text-xs font-bold uppercase tracking-wide text-waflo-coral">Owner onboarding</p>
+        <h2 className="mt-2 text-xl font-bold text-waflo-charcoal">
           {me.onboarding.hasBusiness ? 'Business context available' : 'No business created yet'}
         </h2>
-        <p className="mt-2 text-sm leading-6 text-neutral-600">
+        <p className="mt-2 text-sm leading-6 text-waflo-muted">
           {me.onboarding.hasBusiness
             ? 'Your account has at least one active business ready to manage.'
             : 'Create your first business before opening the dashboard.'}
@@ -120,7 +92,7 @@ function SummaryView({ me }: { me: AdminMeResponse }) {
         <div className="mt-4">
           <StatusPill>{formatNextStep(me.onboarding.recommendedNextStep)}</StatusPill>
         </div>
-      </article>
+      </WafloCard>
     </section>
   );
 }
@@ -128,45 +100,22 @@ function SummaryView({ me }: { me: AdminMeResponse }) {
 function BusinessesView({ me }: { me: AdminMeResponse }) {
   if (!me.onboarding.hasBusiness || me.businesses.length === 0) {
     return (
-      <section className="rounded-lg border border-neutral-200 bg-white p-5">
-        <p className="text-sm font-semibold uppercase text-accent">Businesses</p>
-        <h2 className="mt-2 text-xl font-bold text-ink">No business created yet</h2>
-        <p className="mt-2 text-sm leading-6 text-neutral-600">
-          Create your first business before using the dashboard. Once a business exists, it will appear here.
-        </p>
-      </section>
+      <WafloEmptyState title="No business created yet" description="Create your first business before using the dashboard. Once a business exists, it will appear here." />
     );
   }
 
   return (
-    <section className="rounded-lg border border-neutral-200 bg-white">
-      <div className="border-b border-neutral-200 p-4">
-        <p className="text-sm font-semibold uppercase text-accent">Businesses</p>
-        <h2 className="mt-2 text-xl font-bold text-ink">Your businesses</h2>
-      </div>
-      <div className="overflow-x-auto">
-        <table className="w-full min-w-[640px] text-left text-sm">
-          <thead className="bg-neutral-50 text-neutral-500">
-            <tr>
-              <th className="px-4 py-3">Name</th>
-              <th className="px-4 py-3">Slug</th>
-              <th className="px-4 py-3">Type</th>
-              <th className="px-4 py-3">Role</th>
-            </tr>
-          </thead>
-          <tbody>
-            {me.businesses.map((business) => (
-              <tr key={business.id} className="border-t border-neutral-100">
-                <td className="px-4 py-3 font-semibold text-ink">{business.name}</td>
-                <td className="px-4 py-3 text-neutral-600">/m/{business.slug}</td>
-                <td className="px-4 py-3 text-neutral-600">{business.type}</td>
-                <td className="px-4 py-3 text-neutral-600">{business.role}</td>
-              </tr>
-            ))}
-          </tbody>
-        </table>
-      </div>
-    </section>
+    <WafloPanel eyebrow="Businesses" title="Your businesses">
+      <WafloTable
+        columns={['Name', 'Slug', 'Type', 'Role']}
+        rows={me.businesses.map((business) => [
+          <span key="name" className="font-bold text-waflo-charcoal">{business.name}</span>,
+          `/m/${business.slug}`,
+          business.type,
+          <WafloBadge key="role" tone="charcoal">{business.role}</WafloBadge>
+        ])}
+      />
+    </WafloPanel>
   );
 }
 

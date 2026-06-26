@@ -12,6 +12,7 @@ import {
   type AdminWalletThemePreset,
   type AdminWalletThemePresetKey
 } from '../lib/admin-api';
+import { WafloBadge, WafloButton, WafloPanel, WafloToast } from './waflo';
 
 const colorFields = [
   ['walletBackgroundColor', 'Wallet background'],
@@ -118,30 +119,23 @@ export function WalletAppearancePanel({
   }
 
   return (
-    <section className="rounded-lg border border-neutral-200 bg-white">
-      <div className="border-b border-neutral-200 p-4">
-        <div className="flex flex-col gap-3 lg:flex-row lg:items-start lg:justify-between">
-          <div>
-            <p className="text-sm font-semibold uppercase text-accent">Wallet &amp; Stamp Appearance</p>
-            <h2 className="mt-2 text-xl font-bold text-ink">Customize wallet card visuals</h2>
-            <p className="mt-2 max-w-3xl text-sm leading-6 text-neutral-600">
-              These settings shape the loyalty card artwork used for supported wallet platforms and web previews.
-            </p>
-          </div>
-          <div className="flex flex-wrap gap-2">
-            <StatusPill tone={draft.colorMode === 'CUSTOM' ? 'warning' : 'neutral'}>{draft.colorMode}</StatusPill>
-            {isDirty ? <StatusPill tone="warning">Unsaved</StatusPill> : <StatusPill tone="success">Saved</StatusPill>}
-          </div>
-        </div>
-      </div>
+    <WafloPanel
+      eyebrow="Wallet and stamp appearance"
+      title="Customize wallet card visuals"
+      description="These settings shape the loyalty card artwork used for supported wallet platforms and web previews."
+      actions={
+        <>
+          <WafloBadge tone={draft.colorMode === 'CUSTOM' ? 'gold' : 'neutral'}>{draft.colorMode}</WafloBadge>
+          {isDirty ? <WafloBadge tone="gold">Unsaved</WafloBadge> : <WafloBadge tone="green">Saved</WafloBadge>}
+        </>
+      }
+    >
 
       {!canConfigure ? (
-        <div className="border-b border-amber-200 bg-amber-50 p-4 text-sm font-semibold text-amber-900">
-          STAFF can preview wallet appearance, but only OWNER and MANAGER can update it.
-        </div>
+        <div className="mb-4"><WafloToast tone="gold">Staff can preview wallet appearance, but only owners and managers can update it.</WafloToast></div>
       ) : null}
 
-      <form className="grid gap-5 p-4" onSubmit={submit}>
+      <form className="grid gap-5" onSubmit={submit}>
         <div className="grid gap-5 xl:grid-cols-[minmax(0,1fr)_420px]">
           <div className="grid gap-5">
             <ControlGroup title="Theme preset">
@@ -150,15 +144,15 @@ export function WalletAppearancePanel({
                   <button
                     key={preset.key}
                     type="button"
-                    className={`rounded-lg border p-3 text-left transition ${
+                    className={`rounded-xl border p-3 text-left transition ${
                       draft.themePreset === preset.key
-                        ? 'border-accent bg-[#fff8f2] ring-2 ring-[#ffd9c7]'
-                        : 'border-neutral-200 bg-white hover:border-neutral-300'
+                        ? 'border-waflo-coral bg-waflo-coralSoft ring-2 ring-waflo-coral/20'
+                        : 'border-waflo-border bg-white hover:border-waflo-coral/35'
                     } disabled:cursor-not-allowed disabled:opacity-60`}
                     disabled={!canConfigure || actionPending}
                     onClick={() => applyThemePreset(preset)}
                   >
-                    <span className="text-sm font-bold text-ink">{preset.label}</span>
+                    <span className="text-sm font-bold text-waflo-charcoal">{preset.label}</span>
                     <span className="mt-3 flex gap-1">
                       {Object.values(preset.recommendedPalette)
                         .slice(0, 5)
@@ -182,8 +176,8 @@ export function WalletAppearancePanel({
                     <button
                       key={mode}
                       type="button"
-                      className={`rounded-md border px-3 py-2 text-sm font-semibold ${
-                        draft.colorMode === mode ? 'border-accent bg-[#fff8f2] text-accent' : 'border-neutral-200 text-neutral-700'
+                      className={`rounded-lg border px-3 py-2 text-sm font-bold ${
+                        draft.colorMode === mode ? 'border-waflo-coral bg-waflo-coralSoft text-waflo-coralDark' : 'border-waflo-border text-waflo-muted'
                       } disabled:cursor-not-allowed disabled:opacity-60`}
                       disabled={!canConfigure || actionPending}
                       onClick={() => setColorMode(mode)}
@@ -200,8 +194,8 @@ export function WalletAppearancePanel({
                     <button
                       key={variant}
                       type="button"
-                      className={`rounded-md border px-3 py-2 text-sm font-semibold ${
-                        draft.layoutVariant === variant ? 'border-accent bg-[#fff8f2] text-accent' : 'border-neutral-200 text-neutral-700'
+                      className={`rounded-lg border px-3 py-2 text-sm font-bold ${
+                        draft.layoutVariant === variant ? 'border-waflo-coral bg-waflo-coralSoft text-waflo-coralDark' : 'border-waflo-border text-waflo-muted'
                       } disabled:cursor-not-allowed disabled:opacity-60`}
                       disabled={!canConfigure || actionPending}
                       onClick={() => onDraftChange({ ...draft, layoutVariant: variant })}
@@ -230,7 +224,7 @@ export function WalletAppearancePanel({
 
             <ControlGroup title="Colors">
               {draft.colorMode !== 'CUSTOM' ? (
-                <p className="rounded-md border border-neutral-200 bg-neutral-50 p-3 text-sm font-semibold text-neutral-600">
+                <p className="rounded-lg border border-waflo-border bg-waflo-cream p-3 text-sm font-semibold text-waflo-muted">
                   Select CUSTOM to tune colors manually. Presets apply their recommended palette.
                 </p>
               ) : null}
@@ -252,49 +246,28 @@ export function WalletAppearancePanel({
           <WalletAppearancePreview draft={draft} />
         </div>
 
-        <div className="flex flex-col gap-3 border-t border-neutral-100 pt-4 sm:flex-row sm:items-center sm:justify-between">
-          <p className="text-sm leading-6 text-neutral-600">
+        <div className="flex flex-col gap-3 border-t border-waflo-border pt-4 sm:flex-row sm:items-center sm:justify-between">
+          <p className="text-sm leading-6 text-waflo-muted">
             Existing saved cards are not refreshed automatically after appearance changes.
           </p>
           {canConfigure ? (
-            <button
-              type="submit"
-              className="rounded-md bg-accent px-4 py-2 text-sm font-semibold text-white disabled:cursor-not-allowed disabled:bg-neutral-300"
-              disabled={actionPending || hasValidationErrors || !isDirty}
-            >
+            <WafloButton type="submit" disabled={actionPending || hasValidationErrors || !isDirty}>
               {actionPending ? 'Saving appearance...' : 'Save appearance'}
-            </button>
+            </WafloButton>
           ) : null}
         </div>
       </form>
-    </section>
+    </WafloPanel>
   );
 }
 
 function ControlGroup({ children, title }: Readonly<{ children: React.ReactNode; title: string }>) {
   return (
     <fieldset className="grid gap-3">
-      <legend className="text-sm font-bold text-ink">{title}</legend>
+      <legend className="text-sm font-bold text-waflo-charcoal">{title}</legend>
       {children}
     </fieldset>
   );
-}
-
-function StatusPill({
-  children,
-  tone = 'neutral'
-}: Readonly<{
-  children: React.ReactNode;
-  tone?: 'neutral' | 'success' | 'warning';
-}>) {
-  const toneClass =
-    tone === 'success'
-      ? 'bg-emerald-50 text-emerald-700 ring-emerald-200'
-      : tone === 'warning'
-        ? 'bg-amber-50 text-amber-800 ring-amber-200'
-        : 'bg-neutral-100 text-neutral-700 ring-neutral-200';
-
-  return <span className={`inline-flex rounded-full px-2 py-1 text-xs font-semibold ring-1 ${toneClass}`}>{children}</span>;
 }
 
 function ColorField({
