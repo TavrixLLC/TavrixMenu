@@ -60,7 +60,7 @@ class ScannerActionPanel extends StatelessWidget {
                     ),
                     const SizedBox(height: AppSpacing.sm),
                     Text(
-                      'Scan customer QR',
+                      'Scan customer wallet',
                       style: Theme.of(context).textTheme.titleLarge?.copyWith(
                         color: AppColors.surfaceWhite,
                       ),
@@ -80,7 +80,7 @@ class ScannerActionPanel extends StatelessWidget {
           const SizedBox(height: AppSpacing.md),
           WafloButton(
             key: const ValueKey('walletOpenCameraButton'),
-            label: isBusy ? 'Scanner busy' : 'Open camera scanner',
+            label: isBusy ? 'Scanner busy' : 'Open wallet scanner',
             icon: Icons.qr_code_scanner,
             onPressed: isBusy ? null : onScan,
           ),

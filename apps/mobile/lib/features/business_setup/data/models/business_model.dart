@@ -34,7 +34,7 @@ class BusinessModel extends Business {
           _string(business['publicMenuUrl']) ??
           _string(business['public_menu_url']) ??
           _string(business['publicMenuUrl']) ??
-          'https://menu.tavrix.com/$slug',
+          _fallbackPublicMenuUrl(slug),
       type: _string(business['type']) ?? 'cafe',
       city: _string(business['city']),
       currency: _string(business['currency']) ?? 'IQD',
@@ -63,7 +63,7 @@ class BusinessModel extends Business {
           _string(publicMenu?['qr_payload']) ??
           _string(business['publicMenuUrl']) ??
           _string(business['public_menu_url']) ??
-          'https://menu.tavrix.com/$slug',
+          _fallbackPublicMenuUrl(slug),
       type: _string(business['type']) ?? 'cafe',
       city: _string(business['city']),
       currency: _string(business['currency']) ?? 'IQD',
@@ -148,4 +148,8 @@ bool? _bool(Object? value) {
     return bool.tryParse(value);
   }
   return null;
+}
+
+String _fallbackPublicMenuUrl(String slug) {
+  return slug.trim().isEmpty ? '' : 'https://menu.tavrix.com/m/$slug';
 }

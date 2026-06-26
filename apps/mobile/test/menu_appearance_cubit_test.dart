@@ -15,6 +15,8 @@ import 'package:tavrix_menu_mobile/features/menu_appearance/domain/usecases/upda
 import 'package:tavrix_menu_mobile/features/menu_appearance/presentation/bloc/menu_appearance_cubit.dart';
 import 'package:tavrix_menu_mobile/features/menu_appearance/presentation/bloc/menu_appearance_state.dart';
 import 'package:tavrix_menu_mobile/features/menu_appearance/presentation/pages/menu_appearance_screen.dart';
+import 'package:tavrix_menu_mobile/features/menu_appearance/presentation/utils/menu_template_preview_url.dart';
+import 'package:tavrix_menu_mobile/shared/widgets/waflo_button.dart';
 
 void main() {
   test('loads catalog and saves selected template', () async {
@@ -79,12 +81,114 @@ void main() {
       ),
       findsOneWidget,
     );
+    expect(find.text('Waflo Warm'), findsOneWidget);
+    expect(find.text('Minimal Modern'), findsOneWidget);
     expect(find.textContaining('previewTemplateId'), findsNothing);
+  });
+
+  testWidgets('preview is disabled when public menu link is not ready', (
+    tester,
+  ) async {
+    final appearanceRepository = _FakeMenuAppearanceRepository();
+    final cubit = _cubit(
+      appearanceRepository,
+      business: const Business(
+        id: 'bus_123',
+        name: 'Tavrix Cafe',
+        slug: '',
+        publicMenuUrl: '',
+      ),
+    );
+    addTearDown(cubit.close);
+
+    await tester.pumpWidget(
+      BlocProvider<MenuAppearanceCubit>.value(
+        value: cubit,
+        child: const MaterialApp(
+          home: MenuAppearanceScreen(customerWebBaseUrl: ''),
+        ),
+      ),
+    );
+    await tester.pumpAndSettle();
+
+    expect(find.text(unavailablePreviewMessage), findsWidgets);
+    final previewButton = tester.widget<WafloButton>(
+      find.widgetWithText(WafloButton, 'Preview').first,
+    );
+    expect(previewButton.onPressed, isNull);
+  });
+
+  test('preview URL builder uses business slug and template id', () {
+    final uri = buildMenuTemplatePreviewUri(
+      business: const Business(
+        id: 'bus_123',
+        name: 'Happy Birthday',
+        slug: 'happy-birthday-2',
+        publicMenuUrl: 'https://card.waflo.app/m/happy-birthday-2',
+      ),
+      templateId: 'waflo-warm',
+      customerWebBaseUrl: '',
+    );
+
+    expect(
+      uri.toString(),
+      'https://card.waflo.app/m/happy-birthday-2?previewTemplateId=waflo-warm',
+    );
+  });
+
+  test(
+    'preview URL builder uses configured customer web base when available',
+    () {
+      final uri = buildMenuTemplatePreviewUri(
+        business: const Business(
+          id: 'bus_123',
+          name: 'Tavrix Cafe',
+          slug: 'tavrix-cafe',
+          publicMenuUrl: '',
+        ),
+        templateId: 'minimal-modern',
+        customerWebBaseUrl: 'http://localhost:3001/',
+      );
+
+      expect(
+        uri.toString(),
+        'http://localhost:3001/m/tavrix-cafe?previewTemplateId=minimal-modern',
+      );
+    },
+  );
+
+  test('preview URL builder returns null when slug or base is missing', () {
+    final missingSlug = buildMenuTemplatePreviewUri(
+      business: const Business(
+        id: 'bus_123',
+        name: 'Tavrix Cafe',
+        slug: '',
+        publicMenuUrl: 'https://menu.example.test/m/tavrix-cafe',
+      ),
+      templateId: 'waflo-warm',
+      customerWebBaseUrl: '',
+    );
+    final missingBase = buildMenuTemplatePreviewUri(
+      business: const Business(
+        id: 'bus_123',
+        name: 'Tavrix Cafe',
+        slug: 'tavrix-cafe',
+        publicMenuUrl: '',
+      ),
+      templateId: 'waflo-warm',
+      customerWebBaseUrl: '',
+    );
+
+    expect(missingSlug, isNull);
+    expect(missingBase, isNull);
   });
 }
 
-MenuAppearanceCubit _cubit(_FakeMenuAppearanceRepository appearanceRepository) {
-  final businessRepository = _FakeBusinessRepository();
+MenuAppearanceCubit _cubit(
+  _FakeMenuAppearanceRepository appearanceRepository, {
+  Business business = _readyBusiness,
+}) {
+  final businessRepository = _FakeBusinessRepository(business);
   return MenuAppearanceCubit(
     getMyBusiness: GetMyBusiness(businessRepository),
     getMenuTemplateCatalog: GetMenuTemplateCatalog(appearanceRepository),
@@ -93,18 +197,22 @@ MenuAppearanceCubit _cubit(_FakeMenuAppearanceRepository appearanceRepository) {
   );
 }
 
+const _readyBusiness = Business(
+  id: 'bus_123',
+  name: 'Tavrix Cafe',
+  slug: 'tavrix-cafe',
+  publicMenuUrl: 'https://menu.example.test/m/tavrix-cafe',
+  permissions: BusinessPermissions.owner(),
+);
+
 class _FakeBusinessRepository implements BusinessRepository {
+  const _FakeBusinessRepository(this.business);
+
+  final Business business;
+
   @override
   Future<Either<Failure, Business>> getMyBusiness() async {
-    return const Right(
-      Business(
-        id: 'bus_123',
-        name: 'Tavrix Cafe',
-        slug: 'tavrix-cafe',
-        publicMenuUrl: 'https://menu.example.test/m/tavrix-cafe',
-        permissions: BusinessPermissions.owner(),
-      ),
-    );
+    return Right(business);
   }
 
   @override

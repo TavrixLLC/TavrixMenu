@@ -41,4 +41,16 @@ void main() {
     expect(model.language, 'ar');
     expect(model.publicMenuUrl, 'http://localhost:3001/m/tavrix-cafe');
   });
+
+  test('fallback public menu URL uses slug route', () {
+    final model = BusinessModel.fromJson({
+      'business': {
+        'id': 'bus_123',
+        'name': 'Tavrix Cafe',
+        'slug': 'tavrix-cafe',
+      },
+    });
+
+    expect(model.publicMenuUrl, 'https://menu.tavrix.com/m/tavrix-cafe');
+  });
 }

@@ -22,6 +22,10 @@ class DashboardCubit extends Cubit<DashboardState> {
   final GetMyBusiness _getMyBusiness;
   final GetDashboardSummary _getDashboardSummary;
 
+  void reset() {
+    emit(const DashboardState.initial());
+  }
+
   void primeBusiness(Business business) {
     emit(DashboardState(status: DashboardStatus.success, business: business));
   }
@@ -45,15 +49,15 @@ class DashboardCubit extends Cubit<DashboardState> {
       ),
       (user) async {
         final businessResult = await _getMyBusiness();
-        businessResult.fold(
-          (failure) => emit(
+        await businessResult.fold(
+          (failure) async => emit(
             DashboardState(
               status: DashboardStatus.failure,
               user: user,
               errorMessage: failureMessage(failure),
             ),
           ),
-          (business) async => _loadSummary(user: user, business: business),
+          (business) => _loadSummary(user: user, business: business),
         );
       },
     );

@@ -16,6 +16,7 @@ import '../../../business_setup/domain/entities/business.dart';
 import '../../domain/entities/menu_template.dart';
 import '../bloc/menu_appearance_cubit.dart';
 import '../bloc/menu_appearance_state.dart';
+import '../utils/menu_template_preview_url.dart';
 
 class MenuAppearanceScreen extends StatefulWidget {
   const MenuAppearanceScreen({required this.customerWebBaseUrl, super.key});
@@ -98,15 +99,28 @@ class _MenuAppearanceScreenState extends State<MenuAppearanceScreen> {
               ],
               const SizedBox(height: AppSpacing.lg),
               for (final template in state.templates) ...[
-                _TemplateCard(
-                  template: template,
-                  isCurrent: template.id == state.currentTemplateId,
-                  isDraft: template.id == state.draftTemplateId,
-                  isSaving: state.isSaving,
-                  onSelect: () => context
-                      .read<MenuAppearanceCubit>()
-                      .selectTemplate(template.id),
-                  onPreview: () => _openPreview(context, business, template),
+                Builder(
+                  builder: (context) {
+                    final canPreview =
+                        buildMenuTemplatePreviewUri(
+                          business: business,
+                          templateId: template.id,
+                          customerWebBaseUrl: widget.customerWebBaseUrl,
+                        ) !=
+                        null;
+                    return _TemplateCard(
+                      template: template,
+                      isCurrent: template.id == state.currentTemplateId,
+                      isDraft: template.id == state.draftTemplateId,
+                      isSaving: state.isSaving,
+                      canPreview: canPreview,
+                      onSelect: () => context
+                          .read<MenuAppearanceCubit>()
+                          .selectTemplate(template.id),
+                      onPreview: () =>
+                          _openPreview(context, business, template),
+                    );
+                  },
                 ),
                 const SizedBox(height: AppSpacing.md),
               ],
@@ -140,13 +154,15 @@ class _MenuAppearanceScreenState extends State<MenuAppearanceScreen> {
     Business? business,
     MenuTemplate template,
   ) async {
-    final uri = _previewUri(business, template.id);
+    final uri = buildMenuTemplatePreviewUri(
+      business: business,
+      templateId: template.id,
+      customerWebBaseUrl: widget.customerWebBaseUrl,
+    );
     if (uri == null) {
-      ScaffoldMessenger.of(context).showSnackBar(
-        const SnackBar(
-          content: Text('A business slug is required before previewing.'),
-        ),
-      );
+      ScaffoldMessenger.of(
+        context,
+      ).showSnackBar(const SnackBar(content: Text(unavailablePreviewMessage)));
       return;
     }
 
@@ -158,44 +174,6 @@ class _MenuAppearanceScreenState extends State<MenuAppearanceScreen> {
     ScaffoldMessenger.of(context).showSnackBar(
       const SnackBar(content: Text('Preview could not be opened.')),
     );
-  }
-
-  Uri? _previewUri(Business? business, String templateId) {
-    final currentBusiness = business;
-    if (currentBusiness == null) {
-      return null;
-    }
-    final slug = currentBusiness.slug.trim();
-    if (slug.isEmpty) {
-      return null;
-    }
-
-    final base = _previewBase(currentBusiness);
-    if (base == null) {
-      return null;
-    }
-
-    return Uri.parse(
-      '$base/m/${Uri.encodeComponent(slug)}',
-    ).replace(queryParameters: {'previewTemplateId': templateId});
-  }
-
-  String? _previewBase(Business business) {
-    final configuredBase = widget.customerWebBaseUrl.trim();
-    if (configuredBase.isNotEmpty) {
-      return configuredBase.endsWith('/')
-          ? configuredBase.substring(0, configuredBase.length - 1)
-          : configuredBase;
-    }
-
-    final publicMenuUri = Uri.tryParse(business.publicMenuUrl.trim());
-    if (publicMenuUri == null ||
-        !publicMenuUri.hasScheme ||
-        !publicMenuUri.hasAuthority) {
-      return null;
-    }
-
-    return '${publicMenuUri.scheme}://${publicMenuUri.authority}';
   }
 }
 
@@ -233,6 +211,7 @@ class _TemplateCard extends StatelessWidget {
     required this.isCurrent,
     required this.isDraft,
     required this.isSaving,
+    required this.canPreview,
     required this.onSelect,
     required this.onPreview,
   });
@@ -241,6 +220,7 @@ class _TemplateCard extends StatelessWidget {
   final bool isCurrent;
   final bool isDraft;
   final bool isSaving;
+  final bool canPreview;
   final VoidCallback onSelect;
   final VoidCallback onPreview;
 
@@ -314,7 +294,7 @@ class _TemplateCard extends StatelessWidget {
                   label: 'Preview',
                   icon: Icons.open_in_new,
                   variant: WafloButtonVariant.secondary,
-                  onPressed: onPreview,
+                  onPressed: canPreview ? onPreview : null,
                 ),
               ),
               const SizedBox(width: AppSpacing.sm),
@@ -332,6 +312,15 @@ class _TemplateCard extends StatelessWidget {
               ),
             ],
           ),
+          if (!canPreview) ...[
+            const SizedBox(height: AppSpacing.sm),
+            Text(
+              unavailablePreviewMessage,
+              style: Theme.of(
+                context,
+              ).textTheme.bodyMedium?.copyWith(color: AppColors.mutedText),
+            ),
+          ],
         ],
       ),
     );

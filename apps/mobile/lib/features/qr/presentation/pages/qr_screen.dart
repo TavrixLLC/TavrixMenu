@@ -55,7 +55,7 @@ class _QRScreenState extends State<QRScreen> {
           final publicUrl =
               state.summary?.publicMenu.url ??
               state.business?.publicMenuUrl ??
-              'https://menu.tavrix.com/your-business';
+              'https://menu.tavrix.com/m/your-business';
           final qrPayload = state.summary?.publicMenu.qrPayload ?? publicUrl;
 
           return Column(
@@ -64,7 +64,7 @@ class _QRScreenState extends State<QRScreen> {
               const SectionHeader(
                 title: 'Public menu preview',
                 subtitle:
-                    'Copy the public menu link for table cards, stickers, or staff sharing.',
+                    'Copy the public menu link for table cards, stickers, or operator sharing.',
               ),
               const SizedBox(height: AppSpacing.lg),
               QRPreviewCard(publicUrl: publicUrl, qrPayload: qrPayload),

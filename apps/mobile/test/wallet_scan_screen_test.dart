@@ -47,6 +47,21 @@ void main() {
     expect(repository.scanCalls, 0);
   });
 
+  testWidgets('scanner action uses customer wallet copy', (tester) async {
+    final repository = _FakeWalletScanRepository(
+      (_) async => const Right(_scanResult),
+    );
+    final cubit = _cubit(repository);
+    addTearDown(cubit.close);
+
+    await tester.pumpWidget(_screen(cubit));
+    await tester.pumpAndSettle();
+
+    expect(find.text('Scan customer wallet'), findsWidgets);
+    expect(find.text('Staff loyalty scan'), findsNothing);
+    expect(find.text('Staff scanner'), findsNothing);
+  });
+
   testWidgets(
     'HTTP 400 shows safe invalid QR error and keeps code for correction',
     (tester) async {

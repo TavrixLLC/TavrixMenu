@@ -55,7 +55,7 @@ class _StaffScannerScreenState extends State<StaffScannerScreen> {
   @override
   Widget build(BuildContext context) {
     return AppScaffold(
-      title: 'Wallet Scan',
+      title: 'Scan customer wallet',
       scrollable: true,
       child: BlocBuilder<WalletScanCubit, WalletScanState>(
         builder: (context, state) {
@@ -83,9 +83,9 @@ class _StaffScannerScreenState extends State<StaffScannerScreen> {
             crossAxisAlignment: CrossAxisAlignment.start,
             children: [
               const SectionHeader(
-                title: 'Staff loyalty scan',
+                title: 'Scan customer wallet',
                 subtitle:
-                    'Scan the customer loyalty QR to confirm the card before changing progress.',
+                    'Scan the customer wallet to confirm the card before changing progress.',
               ),
               const SizedBox(height: AppSpacing.md),
               if (_cameraOpen)
@@ -303,7 +303,7 @@ class _CameraRetryCard extends StatelessWidget {
           ),
           const SizedBox(height: AppSpacing.xs),
           const Text(
-            'Retry the captured code or scan the customer loyalty QR again.',
+            'Retry the captured code or scan the customer wallet again.',
           ),
           const SizedBox(height: AppSpacing.md),
           Wrap(

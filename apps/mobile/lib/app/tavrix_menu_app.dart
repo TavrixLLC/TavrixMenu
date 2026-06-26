@@ -5,6 +5,7 @@ import 'package:flutter_bloc/flutter_bloc.dart';
 import '../core/auth/auth_session_controller.dart';
 import '../core/theme/app_theme.dart';
 import '../features/auth/presentation/bloc/auth_cubit.dart';
+import '../features/auth/presentation/bloc/auth_state.dart';
 import '../features/business_setup/presentation/bloc/business_setup_cubit.dart';
 import '../features/dashboard/presentation/bloc/dashboard_cubit.dart';
 import '../features/loyalty/presentation/bloc/loyalty_cubit.dart';
@@ -52,23 +53,26 @@ class _TavrixMenuAppState extends State<TavrixMenuApp> {
           value: _dependencies.walletScanCubit,
         ),
       ],
-      child: MaterialApp(
-        title: 'Waflo Operator',
-        debugShowCheckedModeBanner: false,
-        theme: AppTheme.light,
-        initialRoute: AppRouteNames.splash,
-        routes: AppRouter.routes(config: _dependencies.config),
-        builder: (context, child) {
-          final page = child ?? const SizedBox.shrink();
-          if (!_dependencies.config.hasClerkPublishableKey) {
-            return page;
-          }
+      child: _WorkspaceSessionResetter(
+        dependencies: _dependencies,
+        child: MaterialApp(
+          title: 'Waflo Operator',
+          debugShowCheckedModeBanner: false,
+          theme: AppTheme.light,
+          initialRoute: AppRouteNames.splash,
+          routes: AppRouter.routes(config: _dependencies.config),
+          builder: (context, child) {
+            final page = child ?? const SizedBox.shrink();
+            if (!_dependencies.config.hasClerkPublishableKey) {
+              return page;
+            }
 
-          return _ClerkAuthStateBinder(
-            authSessionController: _dependencies.authSessionController,
-            child: page,
-          );
-        },
+            return _ClerkAuthStateBinder(
+              authSessionController: _dependencies.authSessionController,
+              child: page,
+            );
+          },
+        ),
       ),
     );
 
@@ -81,6 +85,28 @@ class _TavrixMenuAppState extends State<TavrixMenuApp> {
         publishableKey: _dependencies.config.clerkPublishableKey,
       ),
       child: app,
+    );
+  }
+}
+
+class _WorkspaceSessionResetter extends StatelessWidget {
+  const _WorkspaceSessionResetter({
+    required this.dependencies,
+    required this.child,
+  });
+
+  final AppDependencies dependencies;
+  final Widget child;
+
+  @override
+  Widget build(BuildContext context) {
+    return BlocListener<AuthCubit, AuthState>(
+      listenWhen: (previous, current) =>
+          previous.status != current.status &&
+          (current.status == AuthStatus.unauthenticated ||
+              current.status == AuthStatus.failure),
+      listener: (_, _) => dependencies.dashboardCubit.reset(),
+      child: child,
     );
   }
 }

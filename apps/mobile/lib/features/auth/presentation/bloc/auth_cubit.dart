@@ -1,6 +1,7 @@
 import 'package:flutter_bloc/flutter_bloc.dart';
 
 import '../../../../core/auth/auth_session_controller.dart';
+import '../../../../core/errors/failures.dart';
 import '../../../../core/utils/failure_message.dart';
 import '../../domain/usecases/get_current_user.dart';
 import 'auth_state.dart';
@@ -68,7 +69,7 @@ class AuthCubit extends Cubit<AuthState> {
       (failure) => emit(
         AuthState(
           status: AuthStatus.failure,
-          errorMessage: failureMessage(failure),
+          errorMessage: _workspaceAccessFailureMessage(failure),
         ),
       ),
       (user) => emit(AuthState(status: AuthStatus.authenticated, user: user)),
@@ -79,4 +80,14 @@ class AuthCubit extends Cubit<AuthState> {
     await _authSessionController.signOut();
     emit(const AuthState(status: AuthStatus.unauthenticated));
   }
+}
+
+String _workspaceAccessFailureMessage(Failure failure) {
+  return switch (failure) {
+    OfflineFailure() ||
+    TimeoutFailure() ||
+    UnauthorizedFailure() => failureMessage(failure),
+    _ =>
+      'We could not confirm your Waflo business workspace. Contact Waflo support if this continues.',
+  };
 }

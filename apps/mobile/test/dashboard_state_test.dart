@@ -59,4 +59,33 @@ void main() {
     expect(state.roleDisplayLabel, 'Owner');
     expect(state.permissions?.canManageBusiness, isTrue);
   });
+
+  test('admin role does not render staff', () {
+    const state = DashboardState(
+      status: DashboardStatus.success,
+      summary: DashboardSummary(
+        business: Business(
+          id: 'bus_123',
+          name: 'Tavrix Cafe',
+          slug: 'tavrix-cafe',
+          publicMenuUrl: 'https://menu.example.test/m/tavrix-cafe',
+        ),
+        currentUser: DashboardCurrentUser(
+          role: 'ADMIN',
+          permissions: BusinessPermissions.owner(),
+          permissionsAvailable: true,
+        ),
+        counts: DashboardCounts(),
+        publicMenu: DashboardPublicMenu(
+          path: '/m/tavrix-cafe',
+          url: 'https://menu.example.test/m/tavrix-cafe',
+          qrPayload: '',
+        ),
+        onboardingHints: DashboardOnboardingHints(),
+      ),
+    );
+
+    expect(state.roleDisplayLabel, 'Admin');
+    expect(state.roleDisplayLabel, isNot('Staff'));
+  });
 }

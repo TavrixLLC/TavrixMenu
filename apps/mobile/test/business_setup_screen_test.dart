@@ -65,6 +65,21 @@ void main() {
       ),
     );
 
+    expect(find.text('Create your Waflo business workspace'), findsOneWidget);
+    expect(find.text('Set up your menu and loyalty tools.'), findsOneWidget);
+    expect(
+      find.textContaining(RegExp('customer signup', caseSensitive: false)),
+      findsNothing,
+    );
+    expect(
+      find.textContaining(RegExp('staff invite', caseSensitive: false)),
+      findsNothing,
+    );
+    expect(
+      find.textContaining(RegExp('create staff', caseSensitive: false)),
+      findsNothing,
+    );
+
     await tester.enterText(find.byType(TextField).first, 'Tavrix Cafe');
 
     final meCallsBeforeSubmit = meRepository.getMeCalls;
@@ -77,6 +92,11 @@ void main() {
     await tester.pumpAndSettle();
 
     expect(businessRepository.createBusinessCalls, 1);
+    expect(businessRepository.lastName, 'Tavrix Cafe');
+    expect(businessRepository.lastType, 'cafe');
+    expect(businessRepository.lastCity, '');
+    expect(businessRepository.lastCurrency, 'IQD');
+    expect(businessRepository.lastLanguage, 'ar');
     expect(
       meRepository.getMeCalls,
       meCallsBeforeSubmit + 1,
@@ -201,6 +221,11 @@ class _QueuedMeRepository implements MeRepository {
 
 class _FakeBusinessRepository implements BusinessRepository {
   int createBusinessCalls = 0;
+  String? lastName;
+  String? lastType;
+  String? lastCity;
+  String? lastCurrency;
+  String? lastLanguage;
 
   @override
   Future<Either<Failure, Business>> createBusiness({
@@ -211,6 +236,11 @@ class _FakeBusinessRepository implements BusinessRepository {
     required String language,
   }) async {
     createBusinessCalls += 1;
+    lastName = name;
+    lastType = type;
+    lastCity = city;
+    lastCurrency = currency;
+    lastLanguage = language;
     return const Right(_createdBusiness);
   }
 

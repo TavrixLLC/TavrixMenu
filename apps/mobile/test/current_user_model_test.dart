@@ -86,4 +86,30 @@ void main() {
     expect(model.businesses.single.role, 'BUSINESS_OPERATOR');
     expect(model.role, isNot('STAFF'));
   });
+
+  test('parses authenticated owner with no business for setup routing', () {
+    final model = CurrentUserModel.fromJson({
+      'user': {
+        'id': 'usr_new_owner',
+        'name': 'New Owner',
+        'email': 'new-owner@tavrix.local',
+      },
+      'memberships': <Map<String, dynamic>>[],
+      'businesses': <Map<String, dynamic>>[],
+      'role': 'OWNER',
+      'onboarding': {
+        'hasBusiness': false,
+        'activeBusinessCount': 0,
+        'recommendedNextStep': 'CREATE_BUSINESS',
+      },
+    });
+
+    expect(model.role, 'OWNER');
+    expect(model.memberships, isEmpty);
+    expect(model.businesses, isEmpty);
+    expect(model.hasBusiness, isFalse);
+    expect(model.onboarding.activeBusinessCount, 0);
+    expect(model.onboarding.recommendedNextStep, 'CREATE_BUSINESS');
+    expect(model.primaryBusinessId, isNull);
+  });
 }

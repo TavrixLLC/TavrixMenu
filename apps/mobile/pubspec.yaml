@@ -1,5 +1,5 @@
 name: tavrix_menu_mobile
-description: "Flutter operator app for Waflo business owners, managers, and staff."
+description: "Flutter operator app for Waflo business owners and operators."
 publish_to: 'none'
 
 version: 1.0.0+1

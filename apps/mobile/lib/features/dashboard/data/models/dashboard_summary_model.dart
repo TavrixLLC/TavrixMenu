@@ -99,7 +99,7 @@ DashboardPublicMenu _publicMenuFromJson(
       _string(json?['url']) ??
       _string(json?['publicMenuUrl']) ??
       _string(json?['public_menu_url']) ??
-      (slug.isEmpty ? '' : 'https://menu.tavrix.com/$slug');
+      (slug.isEmpty ? '' : 'https://menu.tavrix.com/m/$slug');
   final qrPayload =
       _string(json?['qrPayload']) ?? _string(json?['qr_payload']) ?? url;
 

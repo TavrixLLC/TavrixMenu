@@ -1,6 +1,6 @@
 # Tavrix Menu Mobile
 
-Flutter app for Tavrix Menu business owners, managers, and staff.
+Flutter app for Tavrix Menu business owners and operators.
 
 Customers do not use this app. Customers browse menus through customer-web. Customer ordering, cart, and checkout are not part of the Flutter app.
 

@@ -56,15 +56,14 @@ class _BusinessSetupScreenState extends State<BusinessSetupScreen> {
         final isLoading = state.status == BusinessSetupStatus.loading;
 
         return AppScaffold(
-          title: 'Business setup',
+          title: 'Business Setup',
           scrollable: true,
           child: Column(
             crossAxisAlignment: CrossAxisAlignment.start,
             children: [
               const SectionHeader(
-                title: 'Create your business profile',
-                subtitle:
-                    'Start with the details customers will recognize on your public menu.',
+                title: 'Create your Waflo business workspace',
+                subtitle: 'Set up your menu and loyalty tools.',
               ),
               const SizedBox(height: AppSpacing.lg),
               const AppCard(
@@ -75,7 +74,7 @@ class _BusinessSetupScreenState extends State<BusinessSetupScreen> {
                     SizedBox(width: AppSpacing.md),
                     Expanded(
                       child: Text(
-                        'After saving, your dashboard opens and Waflo prepares a public QR menu for this business.',
+                        'After saving, your Waflo Workspace opens and Waflo prepares a public QR menu for this business.',
                       ),
                     ),
                   ],

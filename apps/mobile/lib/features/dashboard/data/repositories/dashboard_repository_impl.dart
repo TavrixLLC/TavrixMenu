@@ -32,7 +32,7 @@ class DashboardRepositoryImpl implements DashboardRepository {
             id: 'dev-business',
             name: 'Tavrix Demo Cafe',
             slug: 'tavrix-demo-cafe',
-            publicMenuUrl: 'https://menu.tavrix.com/tavrix-demo-cafe',
+            publicMenuUrl: 'https://menu.tavrix.com/m/tavrix-demo-cafe',
             type: 'cafe',
             city: 'Baghdad',
             currency: 'IQD',
@@ -52,8 +52,8 @@ class DashboardRepositoryImpl implements DashboardRepository {
           ),
           publicMenu: const DashboardPublicMenu(
             path: '/m/tavrix-demo-cafe',
-            url: 'https://menu.tavrix.com/tavrix-demo-cafe',
-            qrPayload: 'https://menu.tavrix.com/tavrix-demo-cafe',
+            url: 'https://menu.tavrix.com/m/tavrix-demo-cafe',
+            qrPayload: 'https://menu.tavrix.com/m/tavrix-demo-cafe',
           ),
           onboardingHints: const DashboardOnboardingHints(
             hasCategories: true,

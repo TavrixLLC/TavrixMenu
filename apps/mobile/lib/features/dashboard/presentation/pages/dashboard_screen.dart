@@ -1,3 +1,5 @@
+import 'dart:async';
+
 import 'package:flutter/material.dart';
 import 'package:flutter_bloc/flutter_bloc.dart';
 
@@ -29,18 +31,13 @@ class _DashboardScreenState extends State<DashboardScreen> {
   @override
   void initState() {
     super.initState();
-    WidgetsBinding.instance.addPostFrameCallback((_) {
-      final cubit = context.read<DashboardCubit>();
-      if (cubit.state.status != DashboardStatus.success) {
-        cubit.load();
-      }
-    });
+    unawaited(context.read<DashboardCubit>().load());
   }
 
   @override
   Widget build(BuildContext context) {
     return AppScaffold(
-      title: 'Dashboard',
+      title: 'Waflo Workspace',
       actions: [
         IconButton(
           tooltip: 'Sign out',
@@ -60,7 +57,7 @@ class _DashboardScreenState extends State<DashboardScreen> {
         builder: (context, state) {
           if (state.status == DashboardStatus.loading ||
               state.status == DashboardStatus.initial) {
-            return const LoadingView(message: 'Loading dashboard');
+            return const LoadingView(message: 'Loading Waflo Workspace');
           }
 
           if (state.status == DashboardStatus.failure) {
@@ -89,7 +86,7 @@ class _DashboardScreenState extends State<DashboardScreen> {
               _AccessCard(state: state),
               const SizedBox(height: AppSpacing.lg),
               _DashboardActionCard(
-                title: 'Scan customer loyalty QR',
+                title: 'Scan customer wallet',
                 subtitle:
                     'Find the customer card, confirm progress, and add a stamp.',
                 icon: Icons.qr_code_scanner,
@@ -109,7 +106,7 @@ class _DashboardScreenState extends State<DashboardScreen> {
               const SizedBox(height: AppSpacing.md),
               _DashboardActionCard(
                 enabled: _canManageMenu(state),
-                title: 'Customize menu design',
+                title: 'Menu Appearance',
                 subtitle: _canManageMenu(state)
                     ? 'Choose the public menu template customers see.'
                     : 'Only an owner or manager can save menu design changes.',
@@ -120,7 +117,7 @@ class _DashboardScreenState extends State<DashboardScreen> {
               const SizedBox(height: AppSpacing.sm),
               _DashboardActionCard(
                 enabled: _canManageMenu(state),
-                title: 'Manage menu',
+                title: 'Menu tools',
                 subtitle: _canManageMenu(state)
                     ? 'Edit categories and menu items.'
                     : 'Only an owner or manager can edit the menu.',
@@ -130,7 +127,7 @@ class _DashboardScreenState extends State<DashboardScreen> {
               ),
               const SizedBox(height: AppSpacing.sm),
               _DashboardActionCard(
-                title: 'Loyalty',
+                title: 'Loyalty tools',
                 subtitle: 'Enroll customers, add stamps, and redeem rewards.',
                 icon: Icons.loyalty_outlined,
                 routeName: AppRouteNames.loyalty,
@@ -139,7 +136,7 @@ class _DashboardScreenState extends State<DashboardScreen> {
               const SizedBox(height: AppSpacing.sm),
               _DashboardActionCard(
                 enabled: _canViewPublicLink(state),
-                title: 'QR Menu',
+                title: 'Public menu link',
                 subtitle: _canViewPublicLink(state)
                     ? 'Copy the public menu URL for table displays.'
                     : 'Ask an owner for access to the public menu link.',
@@ -150,7 +147,7 @@ class _DashboardScreenState extends State<DashboardScreen> {
               const SizedBox(height: AppSpacing.sm),
               _DashboardActionCard(
                 enabled: _canManageBusiness(state),
-                title: 'Business Profile',
+                title: 'Business Workspace',
                 subtitle: _canManageBusiness(state)
                     ? 'Update name, type, city, language, and media URLs.'
                     : 'Only an owner or manager can edit this profile.',
@@ -182,7 +179,9 @@ bool _canManageBusiness(DashboardState state) {
   if (!state.hasKnownRole) {
     return true;
   }
-  return state.effectiveRole == 'OWNER';
+  return state.effectiveRole == 'OWNER' ||
+      state.effectiveRole == 'ADMIN' ||
+      state.effectiveRole == 'MANAGER';
 }
 
 bool _canManageMenu(DashboardState state) {
@@ -193,7 +192,9 @@ bool _canManageMenu(DashboardState state) {
   if (!state.hasKnownRole) {
     return true;
   }
-  return state.effectiveRole == 'OWNER' || state.effectiveRole == 'MANAGER';
+  return state.effectiveRole == 'OWNER' ||
+      state.effectiveRole == 'ADMIN' ||
+      state.effectiveRole == 'MANAGER';
 }
 
 bool _canViewPublicLink(DashboardState state) {
@@ -240,11 +241,13 @@ class _AccessCard extends StatelessWidget {
   String _roleGuidance(DashboardState state, String businessName) {
     return switch (state.effectiveRole) {
       'OWNER' =>
-        'Owner access for $businessName. You can manage setup, menu, loyalty, and staff workflows.',
+        'Owner access for $businessName. You can manage setup, menu, loyalty, and business tools.',
+      'ADMIN' =>
+        'Admin access for $businessName. You can manage setup, menu, loyalty, and business tools.',
       'MANAGER' =>
         'Manager access for $businessName. You can help run menu and loyalty operations.',
       'STAFF' =>
-        'Staff access for $businessName. Your main job is scanning customer loyalty cards.',
+        'Business tools access for $businessName. Your main job is scanning customer wallets.',
       _ =>
         'Workspace access for $businessName. Ask the owner if an action is unavailable.',
     };
@@ -277,7 +280,7 @@ class _DashboardSummarySection extends StatelessWidget {
                       crossAxisAlignment: CrossAxisAlignment.start,
                       children: [
                         Text(
-                          'Owner workflow',
+                          'Business Workspace',
                           style: Theme.of(context).textTheme.titleLarge,
                         ),
                         const SizedBox(height: AppSpacing.xxs),

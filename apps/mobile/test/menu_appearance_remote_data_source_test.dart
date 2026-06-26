@@ -19,6 +19,16 @@ void main() {
             },
             'layoutVariant': 'Rounded cards',
           },
+          {
+            'id': 'launch-special',
+            'displayName': 'Launch Special',
+            'description': 'Seasonal campaign template.',
+            'bestFor': ['Campaigns'],
+            'themeTokens': {
+              'colors': ['#111111', '#FFFFFF', '#FF6B4A'],
+            },
+            'layoutVariant': 'Campaign layout',
+          },
         ],
       },
     );
@@ -27,8 +37,11 @@ void main() {
     final templates = await dataSource.getTemplates();
 
     expect(apiClient.lastGetPath, '/menu-templates');
-    expect(templates.single.id, 'waflo-warm');
-    expect(templates.single.previewColors, ['#FF6B4A', '#FFF8F2', '#43A047']);
+    expect(templates.map((template) => template.id), [
+      'waflo-warm',
+      'launch-special',
+    ]);
+    expect(templates.first.previewColors, ['#FF6B4A', '#FFF8F2', '#43A047']);
   });
 
   test('loads and patches business appearance with template id body', () async {
