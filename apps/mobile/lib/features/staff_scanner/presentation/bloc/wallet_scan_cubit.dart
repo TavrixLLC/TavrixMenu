@@ -65,7 +65,7 @@ class WalletScanCubit extends Cubit<WalletScanState> {
       emit(
         state.copyWith(
           status: WalletScanStatus.failure,
-          errorMessage: 'Enter a wallet QR token.',
+          errorMessage: 'Enter the customer loyalty QR code.',
           clearResult: true,
         ),
       );
@@ -77,7 +77,8 @@ class WalletScanCubit extends Cubit<WalletScanState> {
       emit(
         state.copyWith(
           status: WalletScanStatus.failure,
-          errorMessage: 'Business access is not ready. Please try again.',
+          errorMessage:
+              'This business workspace is not ready yet. Try again from the dashboard.',
           clearResult: true,
         ),
       );

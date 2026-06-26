@@ -61,7 +61,7 @@ class LoginScreen extends StatelessWidget {
               else
                 const AppCard(
                   child: Text(
-                    'Set CLERK_PUBLISHABLE_KEY to enable owner sign in and sign up.',
+                    'Operator sign-in is not available in this app build yet. Ask the Waflo team for the ready pilot build.',
                   ),
                 ),
               if (config.isDevAuthEnabled) ...[
@@ -156,12 +156,12 @@ class _ClerkSignInPanel extends StatelessWidget {
               crossAxisAlignment: CrossAxisAlignment.start,
               children: [
                 Text(
-                  'Clerk session found',
+                  'Signed in',
                   style: Theme.of(context).textTheme.titleMedium,
                 ),
                 const SizedBox(height: AppSpacing.xs),
                 const Text(
-                  'We still need to confirm your Waflo business access.',
+                  'We still need to confirm which business workspace you can use.',
                 ),
                 const SizedBox(height: AppSpacing.md),
                 AppButton(
@@ -259,7 +259,7 @@ class _CustomClerkAuthFormState extends State<_CustomClerkAuthForm> {
           if (!widget.config.hasGoogleNativeClientConfig) ...[
             const SizedBox(height: AppSpacing.sm),
             Text(
-              'Google sign-in is not configured yet.',
+              'Google sign-in will appear here when it is enabled for this build.',
               style: Theme.of(context).textTheme.bodyMedium,
             ),
           ],
@@ -347,7 +347,10 @@ class _CustomClerkAuthFormState extends State<_CustomClerkAuthForm> {
 
   Future<void> _signInWithGoogle() async {
     if (!widget.config.hasGoogleNativeClientConfig) {
-      setState(() => _localMessage = 'Google sign-in is not configured yet.');
+      setState(
+        () => _localMessage =
+            'Google sign-in is not available in this app build yet.',
+      );
       return;
     }
 
@@ -368,7 +371,9 @@ class _CustomClerkAuthFormState extends State<_CustomClerkAuthForm> {
       final account = await GoogleSignIn.instance.authenticate();
       final idToken = account.authentication.idToken;
       if (idToken == null || idToken.isEmpty) {
-        _setAuthError('Google did not return an ID token for Clerk.');
+        _setAuthError(
+          'Google sign-in could not be verified. Try phone or email instead.',
+        );
         return;
       }
 

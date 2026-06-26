@@ -68,7 +68,8 @@ class _StaffScannerScreenState extends State<StaffScannerScreen> {
           if (state.business == null) {
             return ErrorView(
               message:
-                  state.errorMessage ?? 'Business access could not be loaded.',
+                  state.errorMessage ??
+                  'We could not load the business workspace for scanning.',
               onRetry: () => context.read<WalletScanCubit>().load(),
             );
           }
@@ -82,9 +83,9 @@ class _StaffScannerScreenState extends State<StaffScannerScreen> {
             crossAxisAlignment: CrossAxisAlignment.start,
             children: [
               const SectionHeader(
-                title: 'Operator scan',
+                title: 'Staff loyalty scan',
                 subtitle:
-                    'Fast loyalty lookup for team members during live customer interactions.',
+                    'Scan the customer loyalty QR to confirm the card before changing progress.',
               ),
               const SizedBox(height: AppSpacing.md),
               if (_cameraOpen)
@@ -105,9 +106,9 @@ class _StaffScannerScreenState extends State<StaffScannerScreen> {
               ],
               const SizedBox(height: AppSpacing.lg),
               const SectionHeader(
-                title: 'Secure manual fallback',
+                title: 'Enter code manually',
                 subtitle:
-                    'Use only when the camera is unavailable. Token text is never shown in result states.',
+                    'Use this only when the camera cannot scan. Do not write down or share the code.',
               ),
               const SizedBox(height: AppSpacing.md),
               AppCard(
@@ -123,15 +124,15 @@ class _StaffScannerScreenState extends State<StaffScannerScreen> {
                       textInputAction: TextInputAction.done,
                       onSubmitted: isScanning ? null : (_) => _scanManual(),
                       decoration: const InputDecoration(
-                        labelText: 'Wallet token',
-                        hintText: 'Paste wallet token',
-                        prefixIcon: Icon(Icons.password_outlined),
+                        labelText: 'Loyalty QR code',
+                        hintText: 'Paste the code from the customer QR',
+                        prefixIcon: Icon(Icons.qr_code_2_outlined),
                       ),
                     ),
                     const SizedBox(height: AppSpacing.md),
                     AppButton(
                       key: const ValueKey('walletScanButton'),
-                      label: isScanning ? 'Scanning...' : 'Scan',
+                      label: isScanning ? 'Checking card' : 'Check card',
                       icon: Icons.document_scanner_outlined,
                       onPressed: isScanning ? null : _scanManual,
                     ),
@@ -163,7 +164,7 @@ class _StaffScannerScreenState extends State<StaffScannerScreen> {
                 const SizedBox(height: AppSpacing.md),
                 AppButton(
                   key: const ValueKey('walletScanAnotherButton'),
-                  label: 'Scan another wallet',
+                  label: 'Scan another card',
                   icon: Icons.qr_code_scanner,
                   onPressed: isScanning ? null : _rescan,
                   variant: AppButtonVariant.secondary,
@@ -297,12 +298,12 @@ class _CameraRetryCard extends StatelessWidget {
         crossAxisAlignment: CrossAxisAlignment.start,
         children: [
           Text(
-            'Camera scan was not accepted',
+            'Customer card was not accepted',
             style: Theme.of(context).textTheme.titleMedium,
           ),
           const SizedBox(height: AppSpacing.xs),
           const Text(
-            'Retry the captured code or scan the customer wallet again.',
+            'Retry the captured code or scan the customer loyalty QR again.',
           ),
           const SizedBox(height: AppSpacing.md),
           Wrap(
@@ -336,11 +337,29 @@ String? _safeErrorMessage(String? message, String sensitiveValue) {
   if (message == null) {
     return null;
   }
+  final friendlyMessage = _staffScanErrorMessage(message);
   final token = sensitiveValue.trim();
   if (token.isEmpty) {
-    return message;
+    return friendlyMessage;
   }
-  return message.replaceAll(token, '[redacted]');
+  return friendlyMessage.replaceAll(token, '[redacted]');
+}
+
+String _staffScanErrorMessage(String message) {
+  final normalized = message.toLowerCase();
+  if (normalized.contains('token') ||
+      normalized.contains('invalid') ||
+      normalized.contains('inactive') ||
+      normalized.contains('expired')) {
+    return 'That loyalty QR is invalid or expired. Ask the customer to open their latest card and scan again.';
+  }
+  if (normalized.contains('business') ||
+      normalized.contains('forbidden') ||
+      normalized.contains('not allow') ||
+      normalized.contains('denied')) {
+    return 'This loyalty card does not belong to the selected business, or your role cannot scan it.';
+  }
+  return message;
 }
 
 class _WalletScanResultCard extends StatelessWidget {
@@ -374,9 +393,8 @@ class _WalletScanResultCard extends StatelessWidget {
       crossAxisAlignment: CrossAxisAlignment.start,
       children: [
         const SectionHeader(
-          title: 'Scan result',
-          subtitle:
-              'Customer loyalty membership found. Sensitive details stay minimized.',
+          title: 'Card found',
+          subtitle: 'Confirm the customer and progress before adding a stamp.',
         ),
         const SizedBox(height: AppSpacing.md),
         LoyaltyProgressCard(
@@ -396,7 +414,9 @@ class _WalletScanResultCard extends StatelessWidget {
             crossAxisAlignment: CrossAxisAlignment.start,
             children: [
               StatusBadge(
-                label: result.canRedeem ? 'Reward ready' : 'In progress',
+                label: result.canRedeem
+                    ? 'Reward available'
+                    : 'Ready to add stamp',
                 color: result.canRedeem
                     ? AppColors.greenLight
                     : AppColors.ceramic,
@@ -405,7 +425,9 @@ class _WalletScanResultCard extends StatelessWidget {
               Text(
                 stampSucceeded
                     ? 'Stamp has been recorded for this scan.'
-                    : 'Add one stamp only after confirming the customer interaction.',
+                    : result.canRedeem
+                    ? 'A reward is available. Follow your store process before adding another stamp.'
+                    : 'Add one stamp after confirming the customer visit.',
                 style: Theme.of(context).textTheme.bodyMedium,
               ),
               const SizedBox(height: AppSpacing.lg),
@@ -475,7 +497,11 @@ class _StampSuccessBanner extends StatelessWidget {
             color: AppColors.freshGreenDark,
           ),
           const SizedBox(width: AppSpacing.sm),
-          const Text('Stamp added successfully.'),
+          const Expanded(
+            child: Text(
+              'Stamp added successfully. The live card is updated; Apple Wallet may refresh after sync.',
+            ),
+          ),
         ],
       ),
     );

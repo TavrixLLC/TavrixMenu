@@ -218,7 +218,7 @@ class _PreviewNotice extends StatelessWidget {
             child: Text(
               business == null
                   ? 'Preview opens the public QR menu with a draft template. It does not save changes.'
-                  : 'Preview opens /m/${business!.slug}?previewTemplateId=... without saving changes.',
+                  : 'Preview opens ${business!.name}\'s public menu with this design without saving changes.',
             ),
           ),
         ],

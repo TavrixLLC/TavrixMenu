@@ -64,7 +64,7 @@ class _QRScreenState extends State<QRScreen> {
               const SectionHeader(
                 title: 'Public menu preview',
                 subtitle:
-                    'Copy the public menu link or QR payload for sharing.',
+                    'Copy the public menu link for table cards, stickers, or staff sharing.',
               ),
               const SizedBox(height: AppSpacing.lg),
               QRPreviewCard(publicUrl: publicUrl, qrPayload: qrPayload),

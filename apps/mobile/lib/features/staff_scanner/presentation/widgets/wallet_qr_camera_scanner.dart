@@ -48,7 +48,7 @@ class _WalletQrCameraScannerState extends State<WalletQrCameraScanner> {
           Text('Camera scanner', style: Theme.of(context).textTheme.titleLarge),
           const SizedBox(height: AppSpacing.xs),
           const Text(
-            'Point the frame at the customer wallet QR. The code is processed without displaying the raw token.',
+            'Point the frame at the customer loyalty QR. Waflo checks the card without showing the code.',
           ),
           const SizedBox(height: AppSpacing.md),
           AspectRatio(
@@ -80,7 +80,7 @@ class _WalletQrCameraScannerState extends State<WalletQrCameraScanner> {
           const SizedBox(height: AppSpacing.md),
           AppButton(
             key: const ValueKey('walletCameraCancelButton'),
-            label: 'Use manual entry',
+            label: 'Enter code manually',
             icon: Icons.keyboard_outlined,
             onPressed: widget.onCancel,
             variant: AppButtonVariant.secondary,
@@ -150,8 +150,8 @@ class WalletCameraErrorView extends StatelessWidget {
     final message = permissionDenied
         ? 'Camera permission was denied. Allow camera access in system settings, then try again.'
         : unsupported
-        ? 'Camera scanning is not supported on this device. Use manual entry instead.'
-        : 'The camera could not start. Try again or use manual entry.';
+        ? 'Camera scanning is not supported on this device. Enter the code manually instead.'
+        : 'The camera could not start. Try again or enter the code manually.';
 
     return DecoratedBox(
       key: const ValueKey('walletCameraErrorState'),

@@ -68,7 +68,12 @@ void main() {
     await tester.enterText(find.byType(TextField).first, 'Tavrix Cafe');
 
     final meCallsBeforeSubmit = meRepository.getMeCalls;
-    await tester.tap(find.text('Save business'));
+    expect(find.text('Menu currency'), findsOneWidget);
+    expect(find.text('Iraqi dinar (IQD)'), findsOneWidget);
+
+    await tester.ensureVisible(find.text('Create business'));
+    await tester.pumpAndSettle();
+    await tester.tap(find.text('Create business'));
     await tester.pumpAndSettle();
 
     expect(businessRepository.createBusinessCalls, 1);

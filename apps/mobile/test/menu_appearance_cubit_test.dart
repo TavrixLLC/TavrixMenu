@@ -1,4 +1,6 @@
 import 'package:dartz/dartz.dart';
+import 'package:flutter/material.dart';
+import 'package:flutter_bloc/flutter_bloc.dart';
 import 'package:flutter_test/flutter_test.dart';
 import 'package:tavrix_menu_mobile/core/errors/failures.dart';
 import 'package:tavrix_menu_mobile/features/business_setup/domain/entities/business.dart';
@@ -12,6 +14,7 @@ import 'package:tavrix_menu_mobile/features/menu_appearance/domain/usecases/get_
 import 'package:tavrix_menu_mobile/features/menu_appearance/domain/usecases/update_business_appearance.dart';
 import 'package:tavrix_menu_mobile/features/menu_appearance/presentation/bloc/menu_appearance_cubit.dart';
 import 'package:tavrix_menu_mobile/features/menu_appearance/presentation/bloc/menu_appearance_state.dart';
+import 'package:tavrix_menu_mobile/features/menu_appearance/presentation/pages/menu_appearance_screen.dart';
 
 void main() {
   test('loads catalog and saves selected template', () async {
@@ -49,6 +52,34 @@ void main() {
     expect(cubit.state.errorMessage, contains('permission'));
 
     await cubit.close();
+  });
+
+  testWidgets('preview copy hides implementation query parameters', (
+    tester,
+  ) async {
+    final appearanceRepository = _FakeMenuAppearanceRepository();
+    final cubit = _cubit(appearanceRepository);
+    addTearDown(cubit.close);
+
+    await tester.pumpWidget(
+      BlocProvider<MenuAppearanceCubit>.value(
+        value: cubit,
+        child: const MaterialApp(
+          home: MenuAppearanceScreen(
+            customerWebBaseUrl: 'https://menu.example.test',
+          ),
+        ),
+      ),
+    );
+    await tester.pumpAndSettle();
+
+    expect(
+      find.text(
+        "Preview opens Tavrix Cafe's public menu with this design without saving changes.",
+      ),
+      findsOneWidget,
+    );
+    expect(find.textContaining('previewTemplateId'), findsNothing);
   });
 }
 

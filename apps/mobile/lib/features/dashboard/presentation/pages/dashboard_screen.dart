@@ -80,18 +80,18 @@ class _DashboardScreenState extends State<DashboardScreen> {
               if (state.summaryErrorMessage != null) ...[
                 const SizedBox(height: AppSpacing.md),
                 _InlineNotice(
-                  title: 'Dashboard summary unavailable',
+                  title: 'Latest counts did not load',
                   message:
-                      'Core business access is available, but the latest counts could not be loaded. ${state.summaryErrorMessage}',
+                      'You can keep using this business workspace. Pull to refresh later or try again from the dashboard.',
                 ),
               ],
               const SizedBox(height: AppSpacing.lg),
               _AccessCard(state: state),
               const SizedBox(height: AppSpacing.lg),
               _DashboardActionCard(
-                title: 'Scan customer QR',
+                title: 'Scan customer loyalty QR',
                 subtitle:
-                    'Open the scanner for stamps, rewards, and member lookup.',
+                    'Find the customer card, confirm progress, and add a stamp.',
                 icon: Icons.qr_code_scanner,
                 routeName: AppRouteNames.walletScan,
                 accentColor: AppColors.primaryCoral,
@@ -104,7 +104,7 @@ class _DashboardScreenState extends State<DashboardScreen> {
               const SizedBox(height: AppSpacing.lg),
               const SectionHeader(
                 title: 'Quick actions',
-                subtitle: 'Business operations for your workspace team.',
+                subtitle: 'Choose the next job for this business.',
               ),
               const SizedBox(height: AppSpacing.md),
               _DashboardActionCard(
@@ -112,7 +112,7 @@ class _DashboardScreenState extends State<DashboardScreen> {
                 title: 'Customize menu design',
                 subtitle: _canManageMenu(state)
                     ? 'Choose the public menu template customers see.'
-                    : 'Restricted by your business permissions.',
+                    : 'Only an owner or manager can save menu design changes.',
                 icon: Icons.palette_outlined,
                 routeName: AppRouteNames.menuAppearance,
                 accentColor: AppColors.primaryCoral,
@@ -120,10 +120,10 @@ class _DashboardScreenState extends State<DashboardScreen> {
               const SizedBox(height: AppSpacing.sm),
               _DashboardActionCard(
                 enabled: _canManageMenu(state),
-                title: 'Manage Menu',
+                title: 'Manage menu',
                 subtitle: _canManageMenu(state)
                     ? 'Edit categories and menu items.'
-                    : 'Restricted by your business permissions.',
+                    : 'Only an owner or manager can edit the menu.',
                 icon: Icons.restaurant_menu,
                 routeName: AppRouteNames.menu,
                 accentColor: AppColors.freshGreen,
@@ -142,7 +142,7 @@ class _DashboardScreenState extends State<DashboardScreen> {
                 title: 'QR Menu',
                 subtitle: _canViewPublicLink(state)
                     ? 'Copy the public menu URL for table displays.'
-                    : 'Public link access is restricted.',
+                    : 'Ask an owner for access to the public menu link.',
                 icon: Icons.qr_code_2,
                 routeName: AppRouteNames.qr,
                 accentColor: AppColors.primaryCoral,
@@ -153,7 +153,7 @@ class _DashboardScreenState extends State<DashboardScreen> {
                 title: 'Business Profile',
                 subtitle: _canManageBusiness(state)
                     ? 'Update name, type, city, language, and media URLs.'
-                    : 'Only permitted business managers can edit this profile.',
+                    : 'Only an owner or manager can edit this profile.',
                 icon: Icons.storefront,
                 routeName: AppRouteNames.businessProfile,
                 accentColor: AppColors.rewardGold,
@@ -210,8 +210,7 @@ class _AccessCard extends StatelessWidget {
     final fullName = state.user?.fullName.trim() ?? '';
     final businessName = state.business?.name.trim() ?? 'this business';
     final title = fullName.isNotEmpty ? fullName : 'Your access';
-    final subtitle =
-        'Signed in as ${state.roleDisplayLabel.toLowerCase()} for $businessName.';
+    final subtitle = _roleGuidance(state, businessName);
 
     return AppCard(
       child: Row(
@@ -236,6 +235,19 @@ class _AccessCard extends StatelessWidget {
         ],
       ),
     );
+  }
+
+  String _roleGuidance(DashboardState state, String businessName) {
+    return switch (state.effectiveRole) {
+      'OWNER' =>
+        'Owner access for $businessName. You can manage setup, menu, loyalty, and staff workflows.',
+      'MANAGER' =>
+        'Manager access for $businessName. You can help run menu and loyalty operations.',
+      'STAFF' =>
+        'Staff access for $businessName. Your main job is scanning customer loyalty cards.',
+      _ =>
+        'Workspace access for $businessName. Ask the owner if an action is unavailable.',
+    };
   }
 }
 

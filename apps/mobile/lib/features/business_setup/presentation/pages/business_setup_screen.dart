@@ -24,16 +24,14 @@ class BusinessSetupScreen extends StatefulWidget {
 class _BusinessSetupScreenState extends State<BusinessSetupScreen> {
   final _nameController = TextEditingController();
   final _cityController = TextEditingController();
-  final _currencyController = TextEditingController(text: 'IQD');
-  final _languageController = TextEditingController(text: 'ar');
   String _type = 'cafe';
+  String _currency = 'IQD';
+  String _language = 'ar';
 
   @override
   void dispose() {
     _nameController.dispose();
     _cityController.dispose();
-    _currencyController.dispose();
-    _languageController.dispose();
     super.dispose();
   }
 
@@ -66,9 +64,24 @@ class _BusinessSetupScreenState extends State<BusinessSetupScreen> {
               const SectionHeader(
                 title: 'Create your business profile',
                 subtitle:
-                    'This profile powers the business dashboard and public menu URL.',
+                    'Start with the details customers will recognize on your public menu.',
               ),
               const SizedBox(height: AppSpacing.lg),
+              const AppCard(
+                child: Row(
+                  crossAxisAlignment: CrossAxisAlignment.start,
+                  children: [
+                    Icon(Icons.visibility_outlined),
+                    SizedBox(width: AppSpacing.md),
+                    Expanded(
+                      child: Text(
+                        'After saving, your dashboard opens and Waflo prepares a public QR menu for this business.',
+                      ),
+                    ),
+                  ],
+                ),
+              ),
+              const SizedBox(height: AppSpacing.md),
               AppCard(
                 child: Column(
                   children: [
@@ -89,7 +102,10 @@ class _BusinessSetupScreenState extends State<BusinessSetupScreen> {
                           value: 'restaurant',
                           child: Text('Restaurant'),
                         ),
-                        DropdownMenuItem(value: 'shop', child: Text('Shop')),
+                        DropdownMenuItem(
+                          value: 'shop',
+                          child: Text('Retail shop'),
+                        ),
                       ],
                       onChanged: isLoading
                           ? null
@@ -104,14 +120,46 @@ class _BusinessSetupScreenState extends State<BusinessSetupScreen> {
                       hint: 'Baghdad',
                     ),
                     const SizedBox(height: AppSpacing.md),
-                    AppTextField(
-                      label: 'Currency',
-                      controller: _currencyController,
+                    DropdownButtonFormField<String>(
+                      initialValue: _currency,
+                      decoration: const InputDecoration(
+                        labelText: 'Menu currency',
+                        helperText: 'Used for prices customers see.',
+                      ),
+                      items: const [
+                        DropdownMenuItem(
+                          value: 'IQD',
+                          child: Text('Iraqi dinar (IQD)'),
+                        ),
+                        DropdownMenuItem(
+                          value: 'USD',
+                          child: Text('US dollar (USD)'),
+                        ),
+                      ],
+                      onChanged: isLoading
+                          ? null
+                          : (value) => setState(() {
+                              _currency = value ?? 'IQD';
+                            }),
                     ),
                     const SizedBox(height: AppSpacing.md),
-                    AppTextField(
-                      label: 'Language',
-                      controller: _languageController,
+                    DropdownButtonFormField<String>(
+                      initialValue: _language,
+                      decoration: const InputDecoration(
+                        labelText: 'Default menu language',
+                      ),
+                      items: const [
+                        DropdownMenuItem(
+                          value: 'ar',
+                          child: Text('Arabic / Kurdish ready'),
+                        ),
+                        DropdownMenuItem(value: 'en', child: Text('English')),
+                      ],
+                      onChanged: isLoading
+                          ? null
+                          : (value) => setState(() {
+                              _language = value ?? 'ar';
+                            }),
                     ),
                   ],
                 ),
@@ -123,7 +171,7 @@ class _BusinessSetupScreenState extends State<BusinessSetupScreen> {
               ],
               const SizedBox(height: AppSpacing.lg),
               AppButton(
-                label: isLoading ? 'Saving' : 'Save business',
+                label: isLoading ? 'Creating business' : 'Create business',
                 icon: Icons.storefront,
                 onPressed: isLoading
                     ? null
@@ -131,8 +179,8 @@ class _BusinessSetupScreenState extends State<BusinessSetupScreen> {
                         name: _nameController.text,
                         type: _type,
                         city: _cityController.text,
-                        currency: _currencyController.text,
-                        language: _languageController.text,
+                        currency: _currency,
+                        language: _language,
                       ),
               ),
             ],

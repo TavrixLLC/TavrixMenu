@@ -21,7 +21,10 @@ void main() {
     );
 
     expect(find.text('Continue in dev mode'), findsNothing);
-    expect(find.textContaining('Set CLERK_PUBLISHABLE_KEY'), findsOneWidget);
+    expect(
+      find.textContaining('Operator sign-in is not available'),
+      findsOneWidget,
+    );
 
     await cubit.close();
   });

@@ -31,7 +31,7 @@ class AuthCubit extends Cubit<AuthState> {
       emit(
         const AuthState(
           status: AuthStatus.failure,
-          errorMessage: 'Clerk is not configured for this build.',
+          errorMessage: 'Operator sign-in is not ready for this app build.',
         ),
       );
       return;
