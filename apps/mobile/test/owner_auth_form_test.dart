@@ -167,6 +167,40 @@ void main() {
     expect(meRepository.getMeCalls, 1);
     expect(authCubit.state.shouldOpenDashboard, isFalse);
     expect(find.text('Business Setup route'), findsOneWidget);
+    expect(find.text('Signup configuration needs attention'), findsNothing);
+    expect(find.textContaining('Add account password'), findsNothing);
+
+    await authCubit.close();
+  });
+
+  testWidgets('passwordless owner sign-up does not require a password step', (
+    tester,
+  ) async {
+    final authClient = _FakeOwnerAuthClient(signUpCompletesSession: true);
+    final meRepository = _FakeMeRepository(_noBusinessOwner);
+    final authCubit = _authCubit(meRepository);
+
+    await tester.pumpWidget(
+      _loginWidget(authClient: authClient, authCubit: authCubit),
+    );
+
+    await tester.tap(find.text('Create business workspace'));
+    await tester.pumpAndSettle();
+    await tester.enterText(find.byType(TextField).first, 'owner@example.test');
+    await tester.ensureVisible(find.byIcon(Icons.arrow_forward));
+    await tester.pumpAndSettle();
+    await tester.tap(find.byIcon(Icons.arrow_forward));
+    await tester.pumpAndSettle();
+    await tester.enterText(find.byType(TextField).first, '123456');
+    await tester.ensureVisible(find.text('Verify and create workspace'));
+    await tester.pumpAndSettle();
+    await tester.tap(find.text('Verify and create workspace'));
+    await tester.pumpAndSettle();
+
+    expect(authClient.ownerSignUpVerifyCalls, 1);
+    expect(meRepository.getMeCalls, 1);
+    expect(find.text('Business Setup route'), findsOneWidget);
+    expect(find.textContaining('password'), findsNothing);
 
     await authCubit.close();
   });
@@ -205,6 +239,45 @@ void main() {
       expect(find.text('Required step: Verify work phone.'), findsOneWidget);
       expect(meRepository.getMeCalls, 0);
       expect(find.textContaining('missing_requirements'), findsNothing);
+
+      await authCubit.close();
+    },
+  );
+
+  testWidgets(
+    'password-required signup state shows setup copy without raw enum',
+    (tester) async {
+      final authClient = _FakeOwnerAuthClient(signUpRequiresPassword: true);
+      final meRepository = _FakeMeRepository(_noBusinessOwner);
+      final authCubit = _authCubit(meRepository);
+
+      await tester.pumpWidget(
+        _loginWidget(authClient: authClient, authCubit: authCubit),
+      );
+
+      await tester.tap(find.text('Create business workspace'));
+      await tester.pumpAndSettle();
+      await tester.enterText(
+        find.byType(TextField).first,
+        'owner@example.test',
+      );
+      await tester.tap(find.byIcon(Icons.arrow_forward));
+      await tester.pumpAndSettle();
+      await tester.enterText(find.byType(TextField).first, '123456');
+      await tester.tap(find.text('Verify and create workspace'));
+      await tester.pumpAndSettle();
+
+      expect(find.text('Signup configuration needs attention'), findsOneWidget);
+      expect(
+        find.text(
+          'This build expects passwordless signup, but Clerk is requiring an account password. Update the staging Clerk signup settings or enable the password step.',
+        ),
+        findsOneWidget,
+      );
+      expect(find.text('More verification needed'), findsNothing);
+      expect(find.textContaining('Required step:'), findsNothing);
+      expect(find.textContaining('missing_requirements'), findsNothing);
+      expect(meRepository.getMeCalls, 0);
 
       await authCubit.close();
     },
@@ -301,11 +374,13 @@ class _FakeOwnerAuthClient implements OwnerAuthClient {
     this.signInStartError,
     this.signUpCompletesSession = false,
     this.signUpRequiredStep = 'Complete the required verification step',
+    this.signUpRequiresPassword = false,
   });
 
   final Object? signInStartError;
   final bool signUpCompletesSession;
   final String signUpRequiredStep;
+  final bool signUpRequiresPassword;
   bool _isSignedIn = false;
   int signInStartCalls = 0;
   int ownerSignUpStartCalls = 0;
@@ -350,6 +425,9 @@ class _FakeOwnerAuthClient implements OwnerAuthClient {
   }) async {
     ownerSignUpVerifyCalls += 1;
     _isSignedIn = signUpCompletesSession;
+    if (signUpRequiresPassword) {
+      return const OwnerAuthCompletion.passwordRequired();
+    }
     return _isSignedIn
         ? const OwnerAuthCompletion.complete()
         : OwnerAuthCompletion.incomplete(signUpRequiredStep);

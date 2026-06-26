@@ -254,15 +254,27 @@ abstract class OwnerAuthClient {
 }
 
 class OwnerAuthCompletion {
-  const OwnerAuthCompletion._({required this.isComplete, this.requiredStep});
+  const OwnerAuthCompletion._({
+    required this.isComplete,
+    this.requiredStep,
+    this.requiresPassword = false,
+  });
 
   const OwnerAuthCompletion.complete() : this._(isComplete: true);
 
   const OwnerAuthCompletion.incomplete(String requiredStep)
     : this._(isComplete: false, requiredStep: requiredStep);
 
+  const OwnerAuthCompletion.passwordRequired()
+    : this._(
+        isComplete: false,
+        requiredStep: 'Add account password',
+        requiresPassword: true,
+      );
+
   final bool isComplete;
   final String? requiredStep;
+  final bool requiresPassword;
 }
 
 class ClerkOwnerAuthClient implements OwnerAuthClient {
@@ -363,7 +375,7 @@ OwnerAuthCompletion _completionFromAuthState(ClerkAuthState authState) {
 
   final signUp = authState.signUp;
   if (signUp != null) {
-    return OwnerAuthCompletion.incomplete(_pendingSignUpStep(signUp));
+    return _completionFromSignUp(signUp);
   }
 
   final signIn = authState.signIn;
@@ -376,41 +388,46 @@ OwnerAuthCompletion _completionFromAuthState(ClerkAuthState authState) {
   );
 }
 
-String _pendingSignUpStep(clerk.SignUp signUp) {
+OwnerAuthCompletion _completionFromSignUp(clerk.SignUp signUp) {
   final unverified = signUp.unverifiedFields;
   if (unverified.contains(clerk.Field.emailAddress)) {
-    return 'Verify work email';
+    return const OwnerAuthCompletion.incomplete('Verify work email');
   }
   if (unverified.contains(clerk.Field.phoneNumber)) {
-    return 'Verify work phone';
+    return const OwnerAuthCompletion.incomplete('Verify work phone');
   }
 
   final missing = signUp.missingFields;
   if (missing.contains(clerk.Field.emailAddress)) {
-    return 'Add work email';
+    return const OwnerAuthCompletion.incomplete('Add work email');
   }
   if (missing.contains(clerk.Field.phoneNumber)) {
-    return 'Add work phone';
+    return const OwnerAuthCompletion.incomplete('Add work phone');
   }
   if (missing.contains(clerk.Field.firstName) ||
       missing.contains(clerk.Field.lastName)) {
-    return 'Complete business owner name';
+    return const OwnerAuthCompletion.incomplete('Complete business owner name');
   }
-  if (missing.contains(clerk.Field.password)) {
-    return 'Add account password';
+  if (signUp.status == clerk.Status.missingRequirements &&
+      missing.contains(clerk.Field.password)) {
+    return const OwnerAuthCompletion.passwordRequired();
   }
   if (missing.contains(clerk.Field.legalAccepted)) {
-    return 'Accept required terms';
+    return const OwnerAuthCompletion.incomplete('Accept required terms');
   }
   if (missing.contains(clerk.Field.enterpriseSSO) ||
       missing.contains(clerk.Field.saml)) {
-    return 'Complete enterprise sign-in';
+    return const OwnerAuthCompletion.incomplete('Complete enterprise sign-in');
   }
   if (missing.contains(clerk.Field.externalAccount)) {
-    return 'Complete external account verification';
+    return const OwnerAuthCompletion.incomplete(
+      'Complete external account verification',
+    );
   }
 
-  return 'Complete the required verification step';
+  return const OwnerAuthCompletion.incomplete(
+    'Complete the required verification step',
+  );
 }
 
 String _pendingSignInStep(clerk.SignIn signIn) {
@@ -599,7 +616,9 @@ class _OwnerAuthFormState extends State<OwnerAuthForm> {
           context.read<AuthCubit>().signInWithClerk();
         } else {
           _setAuthError(
-            _AuthNotice.needsMoreVerification(completion.requiredStep),
+            completion.requiresPassword
+                ? _AuthNotice.passwordlessSignupConfigNeeded
+                : _AuthNotice.needsMoreVerification(completion.requiredStep),
           );
         }
       } else {
@@ -727,6 +746,12 @@ class _AuthNotice {
     detail: requiredStep == null || requiredStep.trim().isEmpty
         ? null
         : 'Required step: ${requiredStep.trim()}.',
+  );
+
+  static const passwordlessSignupConfigNeeded = _AuthNotice(
+    title: 'Signup configuration needs attention',
+    body:
+        'This build expects passwordless signup, but Clerk is requiring an account password. Update the staging Clerk signup settings or enable the password step.',
   );
 
   static const tooManyAttempts = _AuthNotice(
