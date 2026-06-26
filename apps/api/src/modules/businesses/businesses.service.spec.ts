@@ -2,6 +2,11 @@ import { BadRequestException, ForbiddenException } from '@nestjs/common';
 import { strict as assert } from 'assert';
 import { validate } from 'class-validator';
 import { describe, it } from 'node:test';
+import {
+  BusinessUserRole,
+  BusinessUserStatus
+} from '../../generated/prisma';
+import { BusinessAccessService } from './business-access.service';
 import { UpdateMenuAppearanceDto } from './dto/update-menu-appearance.dto';
 import { MENU_TEMPLATE_IDS } from './menu-appearance.constants';
 import { BusinessesService } from './businesses.service';
@@ -137,6 +142,64 @@ describe('BusinessesService menu appearance contract', () => {
   });
 });
 
+describe('BusinessesService owner onboarding and app context contract', () => {
+  it('creates a business and assigns the authenticated user an OWNER membership', async () => {
+    const setup = createOnboardingService();
+
+    const response = await setup.service.createBusiness(user(), {
+      name: 'Pilot Cafe',
+      type: 'cafe',
+      city: 'Baghdad'
+    });
+
+    assert.equal(response.business.name, 'Pilot Cafe');
+    assert.equal(response.business.slug, 'pilot-cafe');
+    assert.equal(response.currentMembership.role, BusinessUserRole.OWNER);
+    assert.equal(response.appContext.currentMembership.role, BusinessUserRole.OWNER);
+    assert.equal(response.appContext.permissions.canManageBusiness, true);
+    assert.equal(response.appContext.permissions.canManageMembers, true);
+    assert.equal(response.appContext.permissions.canManageAppearance, true);
+    assert.equal(setup.createdMemberships.length, 1);
+    assert.equal(setup.createdMemberships[0].data.role, BusinessUserRole.OWNER);
+    assert.notEqual(setup.createdMemberships[0].data.role, BusinessUserRole.STAFF);
+  });
+
+  it('returns app-context role and permissions from the real current membership', async () => {
+    const setup = createOnboardingService({
+      appContextMembership: businessMembership({
+        id: 'membership_staff',
+        role: BusinessUserRole.STAFF
+      })
+    });
+
+    const response = await setup.service.getAppContext(user(), 'business_1');
+
+    assert.equal(response.currentMembership.role, BusinessUserRole.STAFF);
+    assert.equal(response.permissions.canManageBusiness, false);
+    assert.equal(response.permissions.canManageMenu, false);
+    assert.equal(response.permissions.canManageMembers, false);
+    assert.equal(response.permissions.canManageAppearance, false);
+    assert.equal(response.permissions.canViewPublicLink, true);
+  });
+
+  it('returns owner capabilities only for an OWNER app-context membership', async () => {
+    const setup = createOnboardingService({
+      appContextMembership: businessMembership({
+        id: 'membership_owner',
+        role: BusinessUserRole.OWNER
+      })
+    });
+
+    const response = await setup.service.getAppContext(user(), 'business_1');
+
+    assert.equal(response.currentMembership.role, BusinessUserRole.OWNER);
+    assert.equal(response.permissions.canManageBusiness, true);
+    assert.equal(response.permissions.canManageMenu, true);
+    assert.equal(response.permissions.canManageMembers, true);
+    assert.equal(response.permissions.canManageAppearance, true);
+  });
+});
+
 function createService({
   business = {
     id: 'business_1',
@@ -213,6 +276,98 @@ function createService({
 
 function user() {
   return {
-    id: 'user_1'
+    id: 'user_1',
+    clerkUserId: 'clerk_user_1',
+    name: 'Operator',
+    email: null,
+    phone: null
   } as any;
+}
+
+function createOnboardingService({
+  appContextMembership = businessMembership({
+    id: 'membership_owner',
+    role: BusinessUserRole.OWNER
+  })
+}: {
+  appContextMembership?: ReturnType<typeof businessMembership>;
+} = {}) {
+  const createdMemberships: Array<{ data: Record<string, unknown> }> = [];
+  const createdBusiness = {
+    id: 'business_1',
+    ownerId: 'user_1',
+    name: 'Pilot Cafe',
+    slug: 'pilot-cafe',
+    type: 'cafe',
+    city: 'Baghdad',
+    currency: 'IQD',
+    language: 'ar',
+    logoUrl: null,
+    coverUrl: null,
+    status: 'ACTIVE',
+    menuTemplateId: 'waflo-warm',
+    menuThemeOverrides: null
+  };
+  const transaction = {
+    business: {
+      findUnique: async () => null,
+      create: async (args: { data: Record<string, unknown> }) => ({
+        ...createdBusiness,
+        ...args.data
+      })
+    },
+    businessUser: {
+      create: async (args: { data: Record<string, unknown> }) => {
+        createdMemberships.push(args);
+
+        return businessMembership({
+          id: 'membership_created',
+          role: args.data.role as BusinessUserRole
+        });
+      }
+    }
+  };
+  const prisma = {
+    business: {
+      findUnique: async () => createdBusiness
+    },
+    $transaction: async <T>(callback: (client: typeof transaction) => Promise<T>) => callback(transaction)
+  };
+  const permissionPolicy = new BusinessAccessService({} as any);
+  const businessAccess = {
+    appContextRoles: [
+      BusinessUserRole.OWNER,
+      BusinessUserRole.MANAGER,
+      BusinessUserRole.STAFF
+    ],
+    assertRole: async () => appContextMembership,
+    assertOwner: async () => appContextMembership,
+    getPermissions: (role: BusinessUserRole) => permissionPolicy.getPermissions(role)
+  };
+  const configService = {
+    get: (_key: string, fallback: string) => fallback
+  };
+
+  return {
+    service: new BusinessesService(prisma as any, businessAccess as any, configService as any),
+    createdMemberships
+  };
+}
+
+function businessMembership({
+  id,
+  role
+}: {
+  id: string;
+  role: BusinessUserRole;
+}) {
+  return {
+    id,
+    businessId: 'business_1',
+    userId: 'user_1',
+    role,
+    status: BusinessUserStatus.ACTIVE,
+    createdAt: new Date('2026-06-26T00:00:00.000Z'),
+    updatedAt: new Date('2026-06-26T00:00:00.000Z')
+  };
 }
