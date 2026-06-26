@@ -202,8 +202,10 @@ class _ClerkSignInPanel extends StatelessWidget {
   @override
   Widget build(BuildContext context) {
     return ClerkAuthBuilder(
-      signedOutBuilder: (context, authState) =>
-          _CustomClerkAuthForm(config: config, authState: authState),
+      signedOutBuilder: (context, authState) => OwnerAuthForm(
+        config: config,
+        authClient: ClerkOwnerAuthClient(authState),
+      ),
       signedInBuilder: (context, authState) {
         if (authStatus == AuthStatus.initial ||
             authStatus == AuthStatus.unauthenticated) {
@@ -251,29 +253,128 @@ class _ClerkSignInPanel extends StatelessWidget {
   }
 }
 
-enum _AuthStep { identifier, code }
+abstract class OwnerAuthClient {
+  const OwnerAuthClient();
 
-class _CustomClerkAuthForm extends StatefulWidget {
-  const _CustomClerkAuthForm({required this.config, required this.authState});
+  bool get isSignedIn;
 
-  final AppConfig config;
-  final ClerkAuthState authState;
+  Future<void> requestSignInCode({
+    required clerk.Strategy strategy,
+    required String identifier,
+  });
 
-  @override
-  State<_CustomClerkAuthForm> createState() => _CustomClerkAuthFormState();
+  Future<void> verifySignInCode({
+    required clerk.Strategy strategy,
+    required String code,
+  });
+
+  Future<void> requestOwnerSignUpCode({
+    required clerk.Strategy strategy,
+    required String identifier,
+  });
+
+  Future<void> verifyOwnerSignUpCode({
+    required clerk.Strategy strategy,
+    required String code,
+  });
+
+  Future<void> signInWithGoogle({required String idToken});
+
+  Future<void> signUpWithGoogle({required String idToken});
 }
 
-class _CustomClerkAuthFormState extends State<_CustomClerkAuthForm> {
+class ClerkOwnerAuthClient implements OwnerAuthClient {
+  const ClerkOwnerAuthClient(this._authState);
+
+  final ClerkAuthState _authState;
+
+  @override
+  bool get isSignedIn => _authState.isSignedIn;
+
+  @override
+  Future<void> requestSignInCode({
+    required clerk.Strategy strategy,
+    required String identifier,
+  }) {
+    return _authState.attemptSignIn(strategy: strategy, identifier: identifier);
+  }
+
+  @override
+  Future<void> verifySignInCode({
+    required clerk.Strategy strategy,
+    required String code,
+  }) {
+    return _authState.attemptSignIn(strategy: strategy, code: code);
+  }
+
+  @override
+  Future<void> requestOwnerSignUpCode({
+    required clerk.Strategy strategy,
+    required String identifier,
+  }) {
+    return _authState.attemptSignUp(
+      strategy: strategy,
+      emailAddress: strategy == clerk.Strategy.emailCode ? identifier : null,
+      phoneNumber: strategy == clerk.Strategy.phoneCode ? identifier : null,
+      legalAccepted: true,
+    );
+  }
+
+  @override
+  Future<void> verifyOwnerSignUpCode({
+    required clerk.Strategy strategy,
+    required String code,
+  }) {
+    return _authState.attemptSignUp(strategy: strategy, code: code);
+  }
+
+  @override
+  Future<void> signInWithGoogle({required String idToken}) {
+    return _authState.idTokenSignIn(
+      provider: clerk.IdTokenProvider.google,
+      idToken: idToken,
+    );
+  }
+
+  @override
+  Future<void> signUpWithGoogle({required String idToken}) {
+    return _authState.idTokenSignUp(
+      provider: clerk.IdTokenProvider.google,
+      idToken: idToken,
+    );
+  }
+}
+
+enum _AuthFlow { signIn, ownerSignUp }
+
+enum _AuthStep { identifier, code }
+
+class OwnerAuthForm extends StatefulWidget {
+  const OwnerAuthForm({
+    required this.config,
+    required this.authClient,
+    super.key,
+  });
+
+  final AppConfig config;
+  final OwnerAuthClient authClient;
+
+  @override
+  State<OwnerAuthForm> createState() => _OwnerAuthFormState();
+}
+
+class _OwnerAuthFormState extends State<OwnerAuthForm> {
   static Future<void>? _googleInitializeFuture;
   static String? _googleInitializeKey;
 
   final _identifierController = TextEditingController();
   final _codeController = TextEditingController();
+  _AuthFlow _flow = _AuthFlow.signIn;
   _AuthStep _step = _AuthStep.identifier;
   clerk.Strategy? _otpStrategy;
   bool _isBusy = false;
   bool _isGoogleBusy = false;
-  String? _localMessage;
+  _AuthNotice? _localMessage;
 
   @override
   void dispose() {
@@ -289,25 +390,33 @@ class _CustomClerkAuthFormState extends State<_CustomClerkAuthForm> {
         crossAxisAlignment: CrossAxisAlignment.start,
         children: [
           Text(
-            'Sign in to Waflo',
+            _flow == _AuthFlow.signIn
+                ? 'Sign in to Waflo'
+                : 'Create business account',
             style: Theme.of(context).textTheme.titleLarge,
           ),
           const SizedBox(height: AppSpacing.xs),
           Text(
-            'Use the phone or email attached to your operator account.',
+            _flow == _AuthFlow.signIn
+                ? 'Use the phone or email attached to your business account.'
+                : 'New business? Create your workspace.',
             style: Theme.of(context).textTheme.bodyMedium,
           ),
+          const SizedBox(height: AppSpacing.lg),
+          _AuthFlowSwitch(flow: _flow, onChanged: _setFlow),
           const SizedBox(height: AppSpacing.lg),
           if (_step == _AuthStep.identifier)
             _IdentifierStep(
               controller: _identifierController,
               isBusy: _isBusy,
+              flow: _flow,
               onSubmit: _sendCode,
             )
           else
             _CodeStep(
               controller: _codeController,
               isBusy: _isBusy,
+              flow: _flow,
               onSubmit: _verifyCode,
               onChangeIdentifier: _resetIdentifier,
               onResend: _sendCode,
@@ -316,6 +425,7 @@ class _CustomClerkAuthFormState extends State<_CustomClerkAuthForm> {
           _DividerLabel(label: 'or'),
           const SizedBox(height: AppSpacing.lg),
           _GoogleAuthButton(
+            flow: _flow,
             enabled: widget.config.hasGoogleNativeClientConfig,
             isLoading: _isGoogleBusy,
             onPressed: _signInWithGoogle,
@@ -329,7 +439,7 @@ class _CustomClerkAuthFormState extends State<_CustomClerkAuthForm> {
           ],
           if (_localMessage != null) ...[
             const SizedBox(height: AppSpacing.md),
-            ErrorView(message: _localMessage!),
+            _AuthNoticeCard(notice: _localMessage!),
           ],
           const SizedBox(height: AppSpacing.lg),
           const _TrustLinks(),
@@ -341,7 +451,7 @@ class _CustomClerkAuthFormState extends State<_CustomClerkAuthForm> {
   Future<void> _sendCode() async {
     final identifier = _identifierController.text.trim();
     if (identifier.isEmpty) {
-      setState(() => _localMessage = 'Enter your work email or phone number.');
+      setState(() => _localMessage = _AuthNotice.missingIdentifier);
       return;
     }
 
@@ -355,10 +465,17 @@ class _CustomClerkAuthFormState extends State<_CustomClerkAuthForm> {
     });
 
     try {
-      await widget.authState.attemptSignIn(
-        strategy: strategy,
-        identifier: identifier,
-      );
+      if (_flow == _AuthFlow.ownerSignUp) {
+        await widget.authClient.requestOwnerSignUpCode(
+          strategy: strategy,
+          identifier: identifier,
+        );
+      } else {
+        await widget.authClient.requestSignInCode(
+          strategy: strategy,
+          identifier: identifier,
+        );
+      }
       if (!mounted) {
         return;
       }
@@ -367,10 +484,14 @@ class _CustomClerkAuthFormState extends State<_CustomClerkAuthForm> {
         _isBusy = false;
       });
     } on clerk.ClerkError catch (error) {
-      _setAuthError(error.toString());
+      _setAuthError(
+        _authErrorNotice(error, flow: _flow, stage: _AuthStage.start),
+      );
     } on Object {
       _setAuthError(
-        'We could not send a code. Check your account and try again.',
+        _flow == _AuthFlow.ownerSignUp
+            ? _AuthNotice.signUpStartFailed
+            : _AuthNotice.signInStartFailed,
       );
     }
   }
@@ -379,11 +500,11 @@ class _CustomClerkAuthFormState extends State<_CustomClerkAuthForm> {
     final strategy = _otpStrategy;
     final code = _codeController.text.trim();
     if (strategy == null) {
-      setState(() => _localMessage = 'Start again to request a fresh code.');
+      setState(() => _localMessage = _AuthNotice.startAgain);
       return;
     }
     if (code.length < 4) {
-      setState(() => _localMessage = 'Enter the verification code.');
+      setState(() => _localMessage = _AuthNotice.missingCode);
       return;
     }
 
@@ -393,28 +514,37 @@ class _CustomClerkAuthFormState extends State<_CustomClerkAuthForm> {
     });
 
     try {
-      await widget.authState.attemptSignIn(strategy: strategy, code: code);
+      if (_flow == _AuthFlow.ownerSignUp) {
+        await widget.authClient.verifyOwnerSignUpCode(
+          strategy: strategy,
+          code: code,
+        );
+      } else {
+        await widget.authClient.verifySignInCode(
+          strategy: strategy,
+          code: code,
+        );
+      }
       if (!mounted) {
         return;
       }
-      if (widget.authState.isSignedIn) {
+      if (widget.authClient.isSignedIn) {
         context.read<AuthCubit>().signInWithClerk();
       } else {
-        _setAuthError('We need one more verification step for this account.');
+        _setAuthError(_AuthNotice.needsMoreVerification);
       }
     } on clerk.ClerkError catch (error) {
-      _setAuthError(error.toString());
+      _setAuthError(
+        _authErrorNotice(error, flow: _flow, stage: _AuthStage.verify),
+      );
     } on Object {
-      _setAuthError('The code could not be verified. Try again.');
+      _setAuthError(_AuthNotice.verifyFailed);
     }
   }
 
   Future<void> _signInWithGoogle() async {
     if (!widget.config.hasGoogleNativeClientConfig) {
-      setState(
-        () => _localMessage =
-            'Google sign-in is not available in this app build yet.',
-      );
+      setState(() => _localMessage = _AuthNotice.googleNotReady);
       return;
     }
 
@@ -426,41 +556,42 @@ class _CustomClerkAuthFormState extends State<_CustomClerkAuthForm> {
     try {
       await _initializeGoogleSignIn(widget.config);
       if (!GoogleSignIn.instance.supportsAuthenticate()) {
-        _setAuthError(
-          'Native Google account picker is not available on this platform.',
-        );
+        _setAuthError(_AuthNotice.googlePickerUnavailable);
         return;
       }
 
       final account = await GoogleSignIn.instance.authenticate();
       final idToken = account.authentication.idToken;
       if (idToken == null || idToken.isEmpty) {
-        _setAuthError(
-          'Google sign-in could not be verified. Try phone or email instead.',
-        );
+        _setAuthError(_AuthNotice.googleTokenMissing);
         return;
       }
 
-      await widget.authState.idTokenSignIn(
-        provider: clerk.IdTokenProvider.google,
-        idToken: idToken,
-      );
+      if (_flow == _AuthFlow.ownerSignUp) {
+        await widget.authClient.signUpWithGoogle(idToken: idToken);
+      } else {
+        await widget.authClient.signInWithGoogle(idToken: idToken);
+      }
       if (!mounted) {
         return;
       }
-      if (widget.authState.isSignedIn) {
+      if (widget.authClient.isSignedIn) {
         context.read<AuthCubit>().signInWithClerk();
       } else {
         _setAuthError(
-          'This Google account is not connected to a Waflo operator account.',
+          _flow == _AuthFlow.ownerSignUp
+              ? _AuthNotice.signUpStartFailed
+              : _AuthNotice.googleAccountNotFound,
         );
       }
     } on GoogleSignInException catch (error) {
       _setAuthError(_googleMessage(error));
     } on clerk.ClerkError catch (error) {
-      _setAuthError(error.toString());
+      _setAuthError(
+        _authErrorNotice(error, flow: _flow, stage: _AuthStage.start),
+      );
     } on Object {
-      _setAuthError('Google sign-in could not be completed.');
+      _setAuthError(_AuthNotice.googleFailed);
     }
   }
 
@@ -480,13 +611,28 @@ class _CustomClerkAuthFormState extends State<_CustomClerkAuthForm> {
     return _googleInitializeFuture;
   }
 
-  String _googleMessage(GoogleSignInException error) {
+  _AuthNotice _googleMessage(GoogleSignInException error) {
     return switch (error.code) {
-      GoogleSignInExceptionCode.canceled => 'Google sign-in was cancelled.',
+      GoogleSignInExceptionCode.canceled => _AuthNotice.googleCancelled,
       GoogleSignInExceptionCode.uiUnavailable =>
-        'Google account picker is unavailable on this device.',
-      _ => 'Google sign-in is not ready for this build.',
+        _AuthNotice.googlePickerUnavailable,
+      _ => _AuthNotice.googleNotReady,
     };
+  }
+
+  void _setFlow(_AuthFlow flow) {
+    if (_flow == flow) {
+      return;
+    }
+    setState(() {
+      _flow = flow;
+      _step = _AuthStep.identifier;
+      _otpStrategy = null;
+      _codeController.clear();
+      _localMessage = null;
+      _isBusy = false;
+      _isGoogleBusy = false;
+    });
   }
 
   void _resetIdentifier() {
@@ -499,7 +645,7 @@ class _CustomClerkAuthFormState extends State<_CustomClerkAuthForm> {
     });
   }
 
-  void _setAuthError(String message) {
+  void _setAuthError(_AuthNotice message) {
     if (!mounted) {
       return;
     }
@@ -511,15 +657,193 @@ class _CustomClerkAuthFormState extends State<_CustomClerkAuthForm> {
   }
 }
 
+enum _AuthStage { start, verify }
+
+class _AuthNotice {
+  const _AuthNotice({required this.title, required this.body});
+
+  final String title;
+  final String body;
+
+  static const missingIdentifier = _AuthNotice(
+    title: 'Enter account contact',
+    body: 'Enter your work email or phone number.',
+  );
+
+  static const missingCode = _AuthNotice(
+    title: 'Enter verification code',
+    body: 'Enter the verification code from your email or phone.',
+  );
+
+  static const startAgain = _AuthNotice(
+    title: 'Start again',
+    body: 'Request a fresh code before continuing.',
+  );
+
+  static const accountNotFound = _AuthNotice(
+    title: 'Account not found',
+    body:
+        "We couldn't find an existing Waflo business account for this email or phone. If you're starting a new business workspace, use Create business account.",
+  );
+
+  static const signInStartFailed = _AuthNotice(
+    title: 'Sign-in code not sent',
+    body:
+        'We could not send a sign-in code. Check your account details and try again.',
+  );
+
+  static const signUpStartFailed = _AuthNotice(
+    title: 'Business account not created',
+    body:
+        'We could not start your Waflo business account. Try again or contact Waflo support.',
+  );
+
+  static const verifyFailed = _AuthNotice(
+    title: 'Verification failed',
+    body: 'The code could not be verified. Request a new code and try again.',
+  );
+
+  static const needsMoreVerification = _AuthNotice(
+    title: 'More verification needed',
+    body: 'We need one more verification step before opening your workspace.',
+  );
+
+  static const tooManyAttempts = _AuthNotice(
+    title: 'Try again soon',
+    body:
+        'Too many attempts were made. Wait a moment, then request a new code.',
+  );
+
+  static const googleAccountNotFound = _AuthNotice(
+    title: 'Account not found',
+    body:
+        "We couldn't find an existing Waflo business account for this Google account. If you're starting a new business workspace, use Create business account.",
+  );
+
+  static const googleCancelled = _AuthNotice(
+    title: 'Google sign-in cancelled',
+    body: 'Choose Google again or use email or phone instead.',
+  );
+
+  static const googlePickerUnavailable = _AuthNotice(
+    title: 'Google is unavailable',
+    body: 'Native Google account picker is not available on this device.',
+  );
+
+  static const googleTokenMissing = _AuthNotice(
+    title: 'Google verification failed',
+    body: 'Google sign-in could not be verified. Try phone or email instead.',
+  );
+
+  static const googleNotReady = _AuthNotice(
+    title: 'Google is not ready',
+    body: 'Google sign-in is not available in this app build yet.',
+  );
+
+  static const googleFailed = _AuthNotice(
+    title: 'Google sign-in failed',
+    body: 'Google sign-in could not be completed.',
+  );
+}
+
+_AuthNotice _authErrorNotice(
+  clerk.ClerkError error, {
+  required _AuthFlow flow,
+  required _AuthStage stage,
+}) {
+  if (error.code == clerk.ClerkErrorCode.tooManyRetries) {
+    return _AuthNotice.tooManyAttempts;
+  }
+
+  final searchable = [
+    error.message,
+    error.argument ?? '',
+    error.code.name,
+  ].join(' ').toLowerCase();
+
+  if (flow == _AuthFlow.signIn &&
+      stage == _AuthStage.start &&
+      _looksLikeUnknownAccount(searchable)) {
+    return _AuthNotice.accountNotFound;
+  }
+
+  if (flow == _AuthFlow.ownerSignUp && stage == _AuthStage.start) {
+    return _AuthNotice.signUpStartFailed;
+  }
+
+  return stage == _AuthStage.verify
+      ? _AuthNotice.verifyFailed
+      : _AuthNotice.signInStartFailed;
+}
+
+bool _looksLikeUnknownAccount(String message) {
+  return message.contains('find your account') ||
+      message.contains('account not found') ||
+      message.contains('not found') ||
+      message.contains('no account');
+}
+
+class _AuthNoticeCard extends StatelessWidget {
+  const _AuthNoticeCard({required this.notice});
+
+  final _AuthNotice notice;
+
+  @override
+  Widget build(BuildContext context) {
+    return AppCard(
+      child: Column(
+        crossAxisAlignment: CrossAxisAlignment.start,
+        children: [
+          const Icon(Icons.error_outline, color: AppColors.dangerRed),
+          const SizedBox(height: AppSpacing.sm),
+          Text(notice.title, style: Theme.of(context).textTheme.titleMedium),
+          const SizedBox(height: AppSpacing.xs),
+          Text(notice.body),
+        ],
+      ),
+    );
+  }
+}
+
+class _AuthFlowSwitch extends StatelessWidget {
+  const _AuthFlowSwitch({required this.flow, required this.onChanged});
+
+  final _AuthFlow flow;
+  final ValueChanged<_AuthFlow> onChanged;
+
+  @override
+  Widget build(BuildContext context) {
+    return SegmentedButton<_AuthFlow>(
+      showSelectedIcon: false,
+      segments: const [
+        ButtonSegment<_AuthFlow>(
+          value: _AuthFlow.signIn,
+          icon: Icon(Icons.login),
+          label: Text('Sign in'),
+        ),
+        ButtonSegment<_AuthFlow>(
+          value: _AuthFlow.ownerSignUp,
+          icon: Icon(Icons.storefront_outlined),
+          label: Text('Create business account'),
+        ),
+      ],
+      selected: {flow},
+      onSelectionChanged: (selected) => onChanged(selected.first),
+    );
+  }
+}
+
 class _IdentifierStep extends StatelessWidget {
   const _IdentifierStep({
     required this.controller,
     required this.isBusy,
+    required this.flow,
     required this.onSubmit,
   });
 
   final TextEditingController controller;
   final bool isBusy;
+  final _AuthFlow flow;
   final VoidCallback onSubmit;
 
   @override
@@ -543,7 +867,11 @@ class _IdentifierStep extends StatelessWidget {
         ),
         const SizedBox(height: AppSpacing.md),
         WafloButton(
-          label: isBusy ? 'Sending code' : 'Continue',
+          label: isBusy
+              ? 'Sending code'
+              : flow == _AuthFlow.ownerSignUp
+              ? 'Create business account'
+              : 'Sign in',
           icon: Icons.arrow_forward,
           isLoading: isBusy,
           onPressed: isBusy ? null : onSubmit,
@@ -557,6 +885,7 @@ class _CodeStep extends StatelessWidget {
   const _CodeStep({
     required this.controller,
     required this.isBusy,
+    required this.flow,
     required this.onSubmit,
     required this.onChangeIdentifier,
     required this.onResend,
@@ -564,6 +893,7 @@ class _CodeStep extends StatelessWidget {
 
   final TextEditingController controller;
   final bool isBusy;
+  final _AuthFlow flow;
   final VoidCallback onSubmit;
   final VoidCallback onChangeIdentifier;
   final VoidCallback onResend;
@@ -589,7 +919,11 @@ class _CodeStep extends StatelessWidget {
         ),
         const SizedBox(height: AppSpacing.md),
         WafloButton(
-          label: isBusy ? 'Verifying' : 'Verify and enter',
+          label: isBusy
+              ? 'Verifying'
+              : flow == _AuthFlow.ownerSignUp
+              ? 'Verify and create account'
+              : 'Verify and enter',
           icon: Icons.verified_outlined,
           isLoading: isBusy,
           onPressed: isBusy ? null : onSubmit,
@@ -623,11 +957,13 @@ class _CodeStep extends StatelessWidget {
 
 class _GoogleAuthButton extends StatelessWidget {
   const _GoogleAuthButton({
+    required this.flow,
     required this.enabled,
     required this.isLoading,
     required this.onPressed,
   });
 
+  final _AuthFlow flow;
   final bool enabled;
   final bool isLoading;
   final VoidCallback onPressed;
@@ -635,7 +971,11 @@ class _GoogleAuthButton extends StatelessWidget {
   @override
   Widget build(BuildContext context) {
     return WafloButton(
-      label: isLoading ? 'Opening Google' : 'Continue with Google',
+      label: isLoading
+          ? 'Opening Google'
+          : flow == _AuthFlow.ownerSignUp
+          ? 'Create business account with Google'
+          : 'Continue with Google',
       icon: Icons.account_circle_outlined,
       isLoading: isLoading,
       onPressed: enabled && !isLoading ? onPressed : null,
