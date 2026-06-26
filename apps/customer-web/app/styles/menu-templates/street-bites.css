@@ -1,32 +1,47 @@
 .waflo-menu[data-template="street-bites"] {
-  --waflo-template-bg: #fff3ec;
+  --waflo-template-bg: #fff2e9;
   --waflo-template-surface: #ffffff;
-  --waflo-template-primary: #ff6b4a;
-  --waflo-template-primary-dark: #d94b2b;
-  --waflo-template-success: #43a047;
-  --waflo-template-border: #ffd5c8;
-  --waflo-template-text: #1f2933;
-  --waflo-template-muted: #6b7280;
-  --waflo-template-reward: #ffb020;
-  --waflo-template-danger: #dc2626;
-  --waflo-menu-radius: 12px;
-  --waflo-menu-radius-sm: 9px;
-  --waflo-menu-shadow: 0 10px 0 #ffd5c8;
+  --waflo-template-surface-raised: #ffffff;
+  --waflo-template-primary: #ff4f2e;
+  --waflo-template-primary-dark: #be2d16;
+  --waflo-template-success: #1f8a45;
+  --waflo-template-border: #ffc7b6;
+  --waflo-template-text: #16181d;
+  --waflo-template-muted: #5f6673;
+  --waflo-template-subtle: #7a8190;
+  --waflo-template-reward: #f7a600;
+  --waflo-template-danger: #b42318;
+  --waflo-menu-radius: 18px;
+  --waflo-menu-radius-sm: 12px;
+  --waflo-menu-shadow: 0 12px 0 #ffd2c4;
+  --waflo-menu-shadow-soft: 0 8px 0 #ffd2c4;
+}
+
+.waflo-menu[data-template="street-bites"] {
+  background:
+    linear-gradient(135deg, rgb(255 79 46 / 10%) 25%, transparent 25%) 0 0 / 2.5rem 2.5rem,
+    var(--waflo-template-bg);
 }
 
 .waflo-menu[data-template="street-bites"] .waflo-menu__hero {
   padding: 0;
   overflow: hidden;
-  border: 2px solid var(--waflo-template-primary);
-  border-radius: 14px;
+  border: 2px solid var(--waflo-template-text);
+  border-radius: var(--waflo-menu-radius);
   background: var(--waflo-template-surface);
   box-shadow: var(--waflo-menu-shadow);
 }
 
 .waflo-menu[data-template="street-bites"] .waflo-menu__hero::before {
   display: block;
-  height: 0.75rem;
-  background: var(--waflo-template-primary);
+  height: 0.85rem;
+  background:
+    repeating-linear-gradient(
+      90deg,
+      var(--waflo-template-primary) 0 2.5rem,
+      var(--waflo-template-reward) 2.5rem 5rem,
+      var(--waflo-template-text) 5rem 7.5rem
+    );
   content: "";
 }
 
@@ -35,71 +50,86 @@
 }
 
 .waflo-menu[data-template="street-bites"] .waflo-menu__identity {
-  grid-template-columns: minmax(0, 1fr) 7.5rem;
+  grid-template-columns: minmax(0, 1fr) 7.75rem;
   gap: 1rem;
   align-items: center;
   margin: 0;
-  padding: clamp(1rem, 3vw, 1.5rem);
+  padding: clamp(1.1rem, 3vw, 1.65rem);
 }
 
 .waflo-menu[data-template="street-bites"] .waflo-menu__logo {
   order: 2;
-  width: 7.5rem;
-  height: 7.5rem;
-  border: 0;
-  border-radius: 10px;
-  box-shadow: none;
+  width: 7.75rem;
+  height: 7.75rem;
+  border: 2px solid var(--waflo-template-text);
+  border-radius: 12px;
+  box-shadow: 6px 6px 0 #ffd2c4;
 }
 
 .waflo-menu[data-template="street-bites"] .waflo-menu__identity-copy {
   order: 1;
+  padding: 0;
+  border: 0;
+  background: transparent;
+  box-shadow: none;
+  backdrop-filter: none;
 }
 
 .waflo-menu[data-template="street-bites"] .waflo-menu__merchant-type,
 .waflo-menu[data-template="street-bites"] .waflo-menu__eyebrow {
   color: var(--waflo-template-primary-dark);
-  font-weight: 900;
+  font-weight: 950;
 }
 
 .waflo-menu[data-template="street-bites"] .waflo-menu__merchant-name,
 .waflo-menu[data-template="street-bites"] .waflo-menu__category-title,
 .waflo-menu[data-template="street-bites"] .waflo-menu__item-name {
-  font-weight: 900;
+  font-weight: 950;
   text-transform: uppercase;
 }
 
-.waflo-menu[data-template="street-bites"] .waflo-menu__status {
-  background: color-mix(in srgb, var(--waflo-template-primary) 12%, white);
-  color: var(--waflo-template-primary-dark);
+.waflo-menu[data-template="street-bites"] .waflo-menu__merchant-name {
+  max-width: 11ch;
+}
+
+.waflo-menu[data-template="street-bites"] .waflo-menu__status,
+.waflo-menu[data-template="street-bites"] .waflo-menu__item-status {
+  border: 1px solid currentColor;
+  background: transparent;
+}
+
+.waflo-menu[data-template="street-bites"] .waflo-menu__primary-action,
+.waflo-menu[data-template="street-bites"] .waflo-menu__loyalty-action {
+  border: 2px solid var(--waflo-template-text);
+  background: var(--waflo-template-primary);
+  box-shadow: 4px 4px 0 var(--waflo-template-text);
+}
+
+.waflo-menu[data-template="street-bites"] .waflo-menu__wallet-action,
+.waflo-menu[data-template="street-bites"] .waflo-menu__category-link {
+  border: 2px solid var(--waflo-template-text);
+  border-radius: 10px;
+  background: var(--waflo-template-text);
+  color: white;
+  box-shadow: 4px 4px 0 var(--waflo-template-primary);
+  text-transform: uppercase;
 }
 
 .waflo-menu[data-template="street-bites"] .waflo-menu__loyalty {
-  border: 2px solid var(--waflo-template-primary);
-  box-shadow: 0 8px 0 #ffd5c8;
-}
-
-.waflo-menu[data-template="street-bites"] .waflo-menu__category-link {
-  border: 0;
-  border-radius: 8px;
-  background: var(--waflo-template-text);
-  color: white;
-  box-shadow: 0 4px 0 var(--waflo-template-primary);
-  text-transform: uppercase;
-}
-
-.waflo-menu[data-template="street-bites"] .waflo-menu__items {
-  gap: 0.75rem;
+  border: 2px solid var(--waflo-template-text);
+  background: white;
+  box-shadow: var(--waflo-menu-shadow-soft);
 }
 
 .waflo-menu[data-template="street-bites"] .waflo-menu__item-link {
-  grid-template-columns: 7rem minmax(0, 1fr) 8rem;
-  border: 2px solid var(--waflo-template-border);
-  box-shadow: none;
+  grid-template-columns: 7rem minmax(0, 1fr) minmax(6.5rem, 8rem);
+  border: 2px solid var(--waflo-template-text);
+  box-shadow: 0 0 0 transparent;
 }
 
 .waflo-menu[data-template="street-bites"] .waflo-menu__item-link:hover {
-  border-color: var(--waflo-template-primary);
-  box-shadow: 0 6px 0 #ffd5c8;
+  box-shadow: 6px 6px 0 #ffd2c4;
+  transform: translate(-2px, -2px);
 }
 
 .waflo-menu[data-template="street-bites"] .waflo-menu__item-price {
@@ -109,23 +139,14 @@
   width: 100%;
   max-width: none;
   min-height: 3.25rem;
-  border-radius: 10px;
-  background: var(--waflo-template-primary);
-  color: white;
+  border: 2px solid var(--waflo-template-text);
+  border-radius: 12px;
+  background: var(--waflo-template-reward);
+  color: var(--waflo-template-text);
   font-size: 1rem;
 }
 
-.waflo-menu[data-template="street-bites"] .waflo-menu__item-status {
-  background: transparent;
-  color: var(--waflo-template-danger);
-  padding-inline: 0;
-}
-
-.waflo-menu[data-template="street-bites"] .waflo-menu__item-status[data-state="available"] {
-  color: var(--waflo-template-success);
-}
-
-@media (max-width: 640px) {
+@media (max-width: 720px) {
   .waflo-menu[data-template="street-bites"] .waflo-menu__identity {
     grid-template-columns: minmax(0, 1fr);
   }
@@ -135,13 +156,14 @@
   }
 
   .waflo-menu[data-template="street-bites"] .waflo-menu__merchant-name {
-    font-size: clamp(1.5rem, 8vw, 2rem);
+    max-width: none;
+    font-size: clamp(1.65rem, 8vw, 2.25rem);
   }
 
   .waflo-menu[data-template="street-bites"] .waflo-menu__item-link {
     grid-template-areas:
-      "copy copy"
-      "price price";
+      "copy"
+      "price";
     grid-template-columns: 1fr;
   }
 

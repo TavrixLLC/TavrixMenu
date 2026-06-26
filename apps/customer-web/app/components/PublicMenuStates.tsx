@@ -53,14 +53,26 @@ export function DetailState({
   message: string;
 }) {
   return (
-    <main className="mx-auto flex min-h-screen w-full max-w-3xl flex-col justify-center bg-cream px-4 py-12">
-      <Link href={`/m/${slug}`} className="text-sm font-semibold text-muted">
-        Back to menu
-      </Link>
-      <section className="mt-5 rounded-xl border border-borderSoft bg-white p-6 shadow-sm">
-        <p className="text-sm font-semibold uppercase text-coral">Menu item</p>
-        <h1 className="mt-2 text-3xl font-bold text-ink">{title}</h1>
-        <p className="mt-3 text-base leading-7 text-muted">{message}</p>
+    <main
+      className="waflo-menu waflo-template-waflo-warm"
+      data-template="waflo-warm"
+      data-business-slug={slug}
+      data-component="public-menu"
+      data-state="detail-error"
+      data-dir="ltr"
+      data-loyalty-enabled="false"
+      lang="en"
+      dir="ltr"
+    >
+      <section className="waflo-menu__shell" data-slot="merchant-shell" data-component="menu-shell">
+        <Link href={`/m/${slug}`} className="waflo-item-detail__back">
+          Back to menu
+        </Link>
+        <div className="waflo-menu__state" data-slot="error-state" data-component="menu-state" data-state="detail-error">
+          <p className="waflo-menu__eyebrow">Menu item</p>
+          <h1>{title}</h1>
+          <p>{message}</p>
+        </div>
       </section>
     </main>
   );

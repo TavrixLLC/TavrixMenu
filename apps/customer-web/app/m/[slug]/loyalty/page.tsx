@@ -21,14 +21,19 @@ function LoyaltyState({
   message: string;
 }) {
   return (
-    <main className="mx-auto flex min-h-screen w-full max-w-3xl flex-col justify-center bg-[#fafaf7] px-4 py-12">
-      <Link href={`/m/${slug}`} className="text-sm font-semibold text-neutral-600">
+    <main className="flex min-h-screen bg-[#fff8f2] px-4 py-12">
+      <section className="mx-auto flex w-full max-w-3xl flex-col justify-center">
+      <Link
+        href={`/m/${slug}`}
+        className="inline-flex min-h-11 w-fit items-center text-sm font-bold text-[#667085] transition hover:text-[#151b24]"
+      >
         Back to menu
       </Link>
-      <section className="mt-5 rounded-lg border border-neutral-200 bg-white p-6 shadow-sm">
-        <p className="text-sm font-semibold uppercase text-mint">Loyalty card</p>
-        <h1 className="mt-2 text-3xl font-bold text-ink">{title}</h1>
-        <p className="mt-3 text-base leading-7 text-neutral-600">{message}</p>
+      <section className="mt-5 rounded-[24px] border border-[#f0dfd2] bg-white/90 p-6 shadow-[0_24px_70px_rgb(21_27_36_/_10%)] backdrop-blur">
+        <p className="text-sm font-black uppercase text-[#c84326]">Loyalty card</p>
+        <h1 className="mt-2 text-3xl font-black tracking-[-0.02em] text-[#151b24]">{title}</h1>
+        <p className="mt-3 text-base leading-7 text-[#667085]">{message}</p>
+      </section>
       </section>
     </main>
   );
@@ -38,31 +43,31 @@ function LoyaltyHeader({ context }: { context: PublicLoyaltyContext }) {
   const { business, loyaltyProgram } = context;
 
   return (
-    <section className="mx-auto w-full max-w-4xl px-4 pt-4">
+    <section className="mx-auto w-full max-w-5xl px-4 pt-4">
       {business.coverUrl ? (
         <img
           src={business.coverUrl}
           alt={`${business.name} cover`}
-          className="h-40 w-full rounded-lg object-cover sm:h-56"
+          className="h-48 w-full rounded-[28px] object-cover shadow-[0_24px_70px_rgb(21_27_36_/_10%)] sm:h-64"
         />
       ) : (
-        <PlaceholderImage label="Cover" className="h-40 w-full rounded-lg sm:h-56" />
+        <PlaceholderImage label="Cover" className="h-48 w-full rounded-[28px] shadow-[0_24px_70px_rgb(21_27_36_/_10%)] sm:h-64" />
       )}
 
-      <div className="-mt-8 flex items-end gap-4 px-3">
+      <div className="-mt-10 flex items-end gap-4 px-4">
         {business.logoUrl || loyaltyProgram.logoUrl ? (
           <img
             src={business.logoUrl || loyaltyProgram.logoUrl || ''}
             alt={`${business.name} logo`}
-            className="h-20 w-20 shrink-0 rounded-lg bg-white object-cover shadow-sm"
+            className="h-24 w-24 shrink-0 rounded-2xl border-4 border-white bg-white object-cover shadow-[0_16px_40px_rgb(21_27_36_/_10%)]"
           />
         ) : (
-          <PlaceholderImage label="Logo" className="h-20 w-20 shrink-0 rounded-lg bg-white shadow-sm" />
+          <PlaceholderImage label="Logo" className="h-24 w-24 shrink-0 rounded-2xl border-4 border-white bg-white shadow-[0_16px_40px_rgb(21_27_36_/_10%)]" />
         )}
-        <div className="pb-1">
-          <p className="text-sm font-semibold text-mint">Web loyalty card</p>
-          <h1 className="text-3xl font-bold text-ink">{business.name}</h1>
-          <p className="mt-1 text-sm text-neutral-500">/m/{business.slug}/loyalty</p>
+        <div className="rounded-3xl border border-[#f0dfd2] bg-white/90 px-4 py-3 shadow-[0_16px_40px_rgb(21_27_36_/_8%)] backdrop-blur">
+          <p className="text-sm font-black uppercase text-[#c84326]">Web loyalty card</p>
+          <h1 className="text-3xl font-black tracking-[-0.02em] text-[#151b24]">{business.name}</h1>
+          <p className="mt-1 text-sm font-semibold text-[#667085]">/m/{business.slug}/loyalty</p>
         </div>
       </div>
     </section>
@@ -97,49 +102,49 @@ export default async function LoyaltyPage({ params }: LoyaltyPageProps) {
   const { loyaltyProgram } = context;
 
   return (
-    <main className="min-h-screen bg-[#fafaf7] pb-10">
+    <main className="min-h-screen bg-[radial-gradient(circle_at_top_left,rgb(255_107_74_/_10%),transparent_32rem),#fff8f2] pb-10">
       <LoyaltyHeader context={context} />
 
-      <section className="mx-auto mt-8 grid w-full max-w-4xl gap-5 px-4 lg:grid-cols-[1fr_380px]">
-        <div className="rounded-lg border border-neutral-200 bg-white p-5 shadow-sm">
-          <p className="text-sm font-semibold uppercase text-mint">Loyalty card</p>
-          <h2 className="mt-2 text-2xl font-bold text-ink">{loyaltyProgram.name}</h2>
+      <section className="mx-auto mt-10 grid w-full max-w-5xl gap-5 px-4 lg:grid-cols-[1fr_400px]">
+        <div className="rounded-[24px] border border-[#f0dfd2] bg-white/90 p-6 shadow-[0_20px_60px_rgb(21_27_36_/_8%)] backdrop-blur">
+          <p className="text-sm font-black uppercase text-[#c84326]">Loyalty card</p>
+          <h2 className="mt-2 text-3xl font-black tracking-[-0.02em] text-[#151b24]">{loyaltyProgram.name}</h2>
           {loyaltyProgram.description ? (
-            <p className="mt-3 text-base leading-7 text-neutral-700">{loyaltyProgram.description}</p>
+            <p className="mt-3 text-base leading-7 text-[#667085]">{loyaltyProgram.description}</p>
           ) : null}
 
           <div className="mt-5 grid gap-3 sm:grid-cols-2">
-            <div className="rounded-lg border border-neutral-200 bg-neutral-50 p-4">
-              <p className="text-sm font-semibold text-neutral-500">Stamp goal</p>
-              <p className="mt-1 text-2xl font-bold text-ink">{loyaltyProgram.stampGoal}</p>
+            <div className="rounded-2xl border border-[#f0dfd2] bg-[#fff8f2] p-4">
+              <p className="text-sm font-bold text-[#667085]">Stamp goal</p>
+              <p className="mt-1 text-3xl font-black text-[#151b24]">{loyaltyProgram.stampGoal}</p>
             </div>
-            <div className="rounded-lg border border-neutral-200 bg-neutral-50 p-4">
-              <p className="text-sm font-semibold text-neutral-500">Reward</p>
-              <p className="mt-1 text-lg font-bold text-ink">{loyaltyProgram.rewardName}</p>
+            <div className="rounded-2xl border border-[#f0dfd2] bg-[#fff8f2] p-4">
+              <p className="text-sm font-bold text-[#667085]">Reward</p>
+              <p className="mt-1 text-lg font-black text-[#151b24]">{loyaltyProgram.rewardName}</p>
             </div>
           </div>
 
           {loyaltyProgram.rewardDescription ? (
-            <p className="mt-5 rounded-md bg-emerald-50 p-4 text-sm leading-6 text-emerald-800">
+            <p className="mt-5 rounded-2xl bg-emerald-50 p-4 text-sm font-medium leading-6 text-emerald-800">
               {loyaltyProgram.rewardDescription}
             </p>
           ) : null}
 
           {loyaltyProgram.terms ? (
-            <p className="mt-3 rounded-md bg-neutral-50 p-4 text-sm leading-6 text-neutral-600">
+            <p className="mt-3 rounded-2xl bg-white p-4 text-sm leading-6 text-[#667085] ring-1 ring-[#f0dfd2]">
               {loyaltyProgram.terms}
             </p>
           ) : null}
 
-          <p className="mt-5 text-sm leading-6 text-neutral-600">
+          <p className="mt-5 text-sm leading-6 text-[#667085]">
             Join once and keep this web loyalty card in your browser. Staff will add stamps and redeem rewards in the
             shop.
           </p>
         </div>
 
-        <section className="rounded-lg border border-neutral-200 bg-white p-5 shadow-sm">
-          <h2 className="text-xl font-bold text-ink">Join loyalty</h2>
-          <p className="mt-2 text-sm leading-6 text-neutral-600">
+        <section className="rounded-[24px] border border-[#f0dfd2] bg-white/90 p-6 shadow-[0_20px_60px_rgb(21_27_36_/_8%)] backdrop-blur">
+          <h2 className="text-2xl font-black tracking-[-0.02em] text-[#151b24]">Join loyalty</h2>
+          <p className="mt-2 text-sm leading-6 text-[#667085]">
             Join in one step. We will show the best wallet option for this device as soon as your card is ready.
           </p>
           <div className="mt-5">

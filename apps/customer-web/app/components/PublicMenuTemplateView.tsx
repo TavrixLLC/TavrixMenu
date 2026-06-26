@@ -15,6 +15,17 @@ function getCategoryAnchor(category: PublicMenuCategory) {
   return `category-${category.id}`;
 }
 
+function getItemCount(menu: PublicMenuResponse) {
+  return menu.categories.reduce((total, category) => total + category.items.length, 0);
+}
+
+function getAvailableItemCount(menu: PublicMenuResponse) {
+  return menu.categories.reduce(
+    (total, category) => total + category.items.filter((item) => item.isAvailable).length,
+    0
+  );
+}
+
 function MerchantImage({
   src,
   alt,
@@ -63,6 +74,8 @@ function MerchantHeader({ menu }: { menu: PublicMenuResponse }) {
   const { business } = menu;
   const direction = isRtlLanguage(business.language) ? 'rtl' : 'ltr';
   const locationText = business.city || `/m/${business.slug}`;
+  const itemCount = getItemCount(menu);
+  const availableItemCount = getAvailableItemCount(menu);
 
   return (
     <header className="waflo-menu__hero" data-slot="merchant-hero" data-component="merchant-header">
@@ -102,6 +115,14 @@ function MerchantHeader({ menu }: { menu: PublicMenuResponse }) {
           <p className="waflo-menu__status" data-slot="merchant-status" data-component="merchant-status" data-state="available">
             Menu available
           </p>
+          <div className="waflo-menu__hero-actions" data-slot="hero-actions" data-component="hero-actions">
+            <a className="waflo-menu__primary-action" href="#menu" data-slot="menu-primary-action">
+              View menu
+            </a>
+            <span className="waflo-menu__hero-note" data-slot="menu-hero-note">
+              {availableItemCount} of {itemCount} items available today
+            </span>
+          </div>
         </div>
       </section>
     </header>
@@ -139,10 +160,20 @@ function LoyaltyBlock({
         <p className="waflo-menu__loyalty-description" data-slot="loyalty-description" dir={direction}>
           Earn stamps toward {loyaltyProgram.rewardName}.
         </p>
+        <div className="waflo-menu__loyalty-metrics" data-slot="loyalty-metrics" data-component="loyalty-metrics">
+          <span>{loyaltyProgram.stampGoal} stamps</span>
+          <span>{loyaltyProgram.rewardName}</span>
+          <span>Add to wallet after joining</span>
+        </div>
       </div>
-      <Link className="waflo-menu__loyalty-action" data-slot="loyalty-action" href={`/m/${menu.business.slug}/loyalty`}>
-        Join loyalty
-      </Link>
+      <div className="waflo-menu__loyalty-actions" data-slot="loyalty-actions" data-component="loyalty-actions">
+        <Link className="waflo-menu__loyalty-action" data-slot="loyalty-action" href={`/m/${menu.business.slug}/loyalty`}>
+          Join loyalty
+        </Link>
+        <Link className="waflo-menu__wallet-action" data-slot="wallet-action" href={`/m/${menu.business.slug}/loyalty`}>
+          Wallet card
+        </Link>
+      </div>
     </section>
   );
 }
@@ -249,6 +280,7 @@ function CategorySection({
 }) {
   const direction = isRtlLanguage(menu.business.language) ? 'rtl' : 'ltr';
   const hasItems = category.items.length > 0;
+  const availableItems = category.items.filter((item) => item.isAvailable).length;
 
   return (
     <section
@@ -263,6 +295,9 @@ function CategorySection({
         <h2 className="waflo-menu__category-title" data-slot="category-title" dir={direction}>
           {getCategoryName(category, menu.business.language)}
         </h2>
+        <p className="waflo-menu__category-count" data-slot="category-count">
+          {hasItems ? `${availableItems} available` : 'Coming soon'}
+        </p>
       </header>
 
       {hasItems ? (
@@ -279,6 +314,7 @@ function CategorySection({
         </ol>
       ) : (
         <div className="waflo-menu__category-empty" data-slot="empty-state" data-component="menu-state" data-state="empty-category">
+          <h3>Nothing here yet</h3>
           <p>No available items in this category.</p>
         </div>
       )}
@@ -338,6 +374,7 @@ export function PublicMenuTemplateView({ menu, template, loyaltyContext = null }
         <AiRecommendationSlot />
 
         <section className="waflo-menu__body" data-slot="menu-body" data-component="menu-body">
+          <span id="menu" className="waflo-menu__anchor" aria-hidden="true" />
           {hasMenuItems ? (
             menu.categories.map((category) => <CategorySection key={category.id} category={category} menu={menu} />)
           ) : (

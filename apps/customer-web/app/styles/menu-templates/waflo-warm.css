@@ -1,61 +1,58 @@
 .waflo-menu[data-template="waflo-warm"] {
   --waflo-template-bg: #fff8f2;
   --waflo-template-surface: #ffffff;
+  --waflo-template-surface-raised: rgb(255 255 255 / 88%);
   --waflo-template-primary: #ff6b4a;
-  --waflo-template-primary-dark: #d94b2b;
-  --waflo-template-success: #43a047;
-  --waflo-template-border: #f1e2d6;
-  --waflo-template-text: #1f2933;
-  --waflo-template-muted: #6b7280;
-  --waflo-template-reward: #f59e0b;
-  --waflo-template-danger: #dc2626;
-  --waflo-menu-radius: 18px;
-  --waflo-menu-radius-sm: 12px;
-  --waflo-menu-shadow: 0 18px 45px rgb(217 75 43 / 10%);
+  --waflo-template-primary-dark: #c84326;
+  --waflo-template-success: #2f8f57;
+  --waflo-template-border: #efdcca;
+  --waflo-template-text: #1b2430;
+  --waflo-template-muted: #667085;
+  --waflo-template-subtle: #8a94a6;
+  --waflo-template-reward: #b87503;
+  --waflo-template-danger: #b42318;
+  --waflo-menu-radius: 26px;
+  --waflo-menu-radius-sm: 16px;
+  --waflo-menu-shadow: 0 26px 70px rgb(200 67 38 / 12%);
+  --waflo-menu-shadow-soft: 0 16px 40px rgb(31 36 48 / 8%);
 }
 
 .waflo-menu[data-template="waflo-warm"] .waflo-menu__cover {
-  border: 1px solid var(--waflo-template-border);
-  box-shadow: var(--waflo-menu-shadow);
+  background:
+    linear-gradient(135deg, rgb(255 107 74 / 20%), transparent 58%),
+    linear-gradient(45deg, rgb(47 143 87 / 10%), transparent 42%),
+    #fff2e8;
 }
 
 .waflo-menu[data-template="waflo-warm"] .waflo-menu__identity-copy {
-  padding: 0.85rem 1rem;
-  border: 1px solid color-mix(in srgb, var(--waflo-template-border) 80%, transparent);
-  border-radius: 16px;
-  background: color-mix(in srgb, var(--waflo-template-surface) 92%, transparent);
-  box-shadow: 0 14px 32px rgb(31 41 51 / 6%);
-  backdrop-filter: blur(10px);
-}
-
-.waflo-menu[data-template="waflo-warm"] .waflo-menu__category-link {
-  box-shadow: 0 8px 22px rgb(31 41 51 / 5%);
+  background:
+    linear-gradient(135deg, rgb(255 255 255 / 96%), rgb(255 248 242 / 90%));
 }
 
 .waflo-menu[data-template="waflo-warm"] .waflo-menu__loyalty {
   background:
-    linear-gradient(135deg, rgb(255 107 74 / 10%), transparent 42%),
-    var(--waflo-template-surface);
+    radial-gradient(circle at top right, rgb(255 107 74 / 15%), transparent 16rem),
+    linear-gradient(135deg, rgb(255 255 255 / 94%), rgb(255 248 242 / 88%));
 }
 
 .waflo-menu[data-template="waflo-warm"] .waflo-menu__item-link {
-  grid-template-columns: 8rem minmax(0, 1fr) auto;
+  grid-template-columns: clamp(7rem, 15vw, 8.5rem) minmax(0, 1fr) auto;
 }
 
 .waflo-menu[data-template="waflo-warm"] .waflo-menu__item-image {
-  width: 8rem;
+  width: clamp(7rem, 15vw, 8.5rem);
 }
 
-@media (max-width: 640px) {
-  .waflo-menu[data-template="waflo-warm"] .waflo-menu__identity-copy {
-    padding: 0.7rem;
-  }
+.waflo-menu[data-template="waflo-warm"] .waflo-menu__item-price {
+  box-shadow: inset 0 0 0 1px rgb(255 107 74 / 14%);
+}
 
+@media (max-width: 720px) {
   .waflo-menu[data-template="waflo-warm"] .waflo-menu__item-link {
-    grid-template-columns: 5.75rem minmax(0, 1fr);
+    grid-template-columns: 5.9rem minmax(0, 1fr);
   }
 
   .waflo-menu[data-template="waflo-warm"] .waflo-menu__item-image {
-    width: 5.75rem;
+    width: 5.9rem;
   }
 }
