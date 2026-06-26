@@ -116,7 +116,10 @@ void main() {
       await cubit.signInWithClerk();
 
       expect(cubit.state.status, AuthStatus.failure);
-      expect(cubit.state.errorMessage, contains('Contact Waflo support'));
+      expect(
+        cubit.state.errorMessage,
+        "We couldn't complete this action right now. Please try again.",
+      );
       expect(cubit.state.errorMessage, isNot(contains('ERROR_RECEIVED')));
       expect(cubit.state.shouldOpenDashboard, isFalse);
 

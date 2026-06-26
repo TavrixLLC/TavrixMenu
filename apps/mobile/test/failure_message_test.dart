@@ -18,4 +18,11 @@ void main() {
       'Business name is required.',
     );
   });
+
+  test('generic server errors use sanitized retry copy', () {
+    expect(
+      failureMessage(const ServerFailure()),
+      "We couldn't complete this action right now. Please try again.",
+    );
+  });
 }

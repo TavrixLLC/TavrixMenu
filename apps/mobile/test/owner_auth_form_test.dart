@@ -16,6 +16,58 @@ import 'package:tavrix_menu_mobile/features/auth/presentation/bloc/auth_cubit.da
 import 'package:tavrix_menu_mobile/features/auth/presentation/pages/login_screen.dart';
 
 void main() {
+  testWidgets(
+    'initial auth screen shows separate actions without mixed forms',
+    (tester) async {
+      final authClient = _FakeOwnerAuthClient();
+      final authCubit = _authCubit(_FakeMeRepository(_noBusinessOwner));
+
+      await tester.pumpWidget(
+        _ownerAuthWidget(authClient: authClient, authCubit: authCubit),
+      );
+
+      expect(find.text('Sign in to existing workspace'), findsOneWidget);
+      expect(find.text('Create business workspace'), findsOneWidget);
+      expect(find.text('Work email or phone'), findsNothing);
+      expect(find.text('Verification code'), findsNothing);
+      expect(find.text('Sign in to your workspace'), findsNothing);
+      expect(find.text('Create your Waflo business workspace'), findsNothing);
+
+      await authCubit.close();
+    },
+  );
+
+  testWidgets('sign-in form is separate from create workspace form', (
+    tester,
+  ) async {
+    final authClient = _FakeOwnerAuthClient();
+    final authCubit = _authCubit(_FakeMeRepository(_noBusinessOwner));
+
+    await tester.pumpWidget(
+      _ownerAuthWidget(authClient: authClient, authCubit: authCubit),
+    );
+
+    await tester.tap(find.text('Sign in to existing workspace'));
+    await tester.pumpAndSettle();
+
+    expect(find.text('Sign in to your workspace'), findsOneWidget);
+    expect(find.text('Create your Waflo business workspace'), findsNothing);
+    expect(find.text('Work email or phone'), findsOneWidget);
+    expect(find.text('Continue'), findsOneWidget);
+
+    await tester.tap(find.byTooltip('Back'));
+    await tester.pumpAndSettle();
+    await tester.tap(find.text('Create business workspace'));
+    await tester.pumpAndSettle();
+
+    expect(find.text('Create your Waflo business workspace'), findsOneWidget);
+    expect(find.text('Sign in to your workspace'), findsNothing);
+    expect(find.text('Work email or phone'), findsOneWidget);
+    expect(find.text('Continue'), findsOneWidget);
+
+    await authCubit.close();
+  });
+
   testWidgets('unknown sign-in account shows friendly copy only', (
     tester,
   ) async {
@@ -32,6 +84,8 @@ void main() {
       _ownerAuthWidget(authClient: authClient, authCubit: authCubit),
     );
 
+    await tester.tap(find.text('Sign in to existing workspace'));
+    await tester.pumpAndSettle();
     await tester.enterText(find.byType(TextField).first, 'owner@example.test');
     await tester.tap(find.byIcon(Icons.arrow_forward));
     await tester.pumpAndSettle();
@@ -39,7 +93,7 @@ void main() {
     expect(find.text('Account not found'), findsOneWidget);
     expect(
       find.text(
-        "We couldn't find an existing Waflo business account for this email or phone. If you're starting a new business workspace, use Create business account.",
+        "We couldn't find an existing Waflo business account for this email or phone. To start a new business, choose Create business workspace.",
       ),
       findsOneWidget,
     );
@@ -60,7 +114,7 @@ void main() {
       _ownerAuthWidget(authClient: authClient, authCubit: authCubit),
     );
 
-    await tester.tap(find.text('Create business account').first);
+    await tester.tap(find.text('Create business workspace'));
     await tester.pumpAndSettle();
     await tester.enterText(find.byType(TextField).first, 'owner@example.test');
     await tester.ensureVisible(find.byIcon(Icons.arrow_forward));
@@ -96,7 +150,7 @@ void main() {
       _loginWidget(authClient: authClient, authCubit: authCubit),
     );
 
-    await tester.tap(find.text('Create business account').first);
+    await tester.tap(find.text('Create business workspace'));
     await tester.pumpAndSettle();
     await tester.enterText(find.byType(TextField).first, 'owner@example.test');
     await tester.ensureVisible(find.byIcon(Icons.arrow_forward));
@@ -104,9 +158,9 @@ void main() {
     await tester.tap(find.byIcon(Icons.arrow_forward));
     await tester.pumpAndSettle();
     await tester.enterText(find.byType(TextField).first, '123456');
-    await tester.ensureVisible(find.text('Verify and create account'));
+    await tester.ensureVisible(find.text('Verify and create workspace'));
     await tester.pumpAndSettle();
-    await tester.tap(find.text('Verify and create account'));
+    await tester.tap(find.text('Verify and create workspace'));
     await tester.pumpAndSettle();
 
     expect(authClient.ownerSignUpVerifyCalls, 1);
@@ -116,6 +170,45 @@ void main() {
 
     await authCubit.close();
   });
+
+  testWidgets(
+    'incomplete signup verification shows actionable sanitized step',
+    (tester) async {
+      final authClient = _FakeOwnerAuthClient(
+        signUpCompletesSession: false,
+        signUpRequiredStep: 'Verify work phone',
+      );
+      final meRepository = _FakeMeRepository(_noBusinessOwner);
+      final authCubit = _authCubit(meRepository);
+
+      await tester.pumpWidget(
+        _loginWidget(authClient: authClient, authCubit: authCubit),
+      );
+
+      await tester.tap(find.text('Create business workspace'));
+      await tester.pumpAndSettle();
+      await tester.enterText(
+        find.byType(TextField).first,
+        'owner@example.test',
+      );
+      await tester.tap(find.byIcon(Icons.arrow_forward));
+      await tester.pumpAndSettle();
+      await tester.enterText(find.byType(TextField).first, '123456');
+      await tester.tap(find.text('Verify and create workspace'));
+      await tester.pumpAndSettle();
+
+      expect(find.text('More verification needed'), findsOneWidget);
+      expect(
+        find.text('Complete the required verification step to continue.'),
+        findsOneWidget,
+      );
+      expect(find.text('Required step: Verify work phone.'), findsOneWidget);
+      expect(meRepository.getMeCalls, 0);
+      expect(find.textContaining('missing_requirements'), findsNothing);
+
+      await authCubit.close();
+    },
+  );
 }
 
 Widget _ownerAuthWidget({
@@ -207,10 +300,12 @@ class _FakeOwnerAuthClient implements OwnerAuthClient {
   _FakeOwnerAuthClient({
     this.signInStartError,
     this.signUpCompletesSession = false,
+    this.signUpRequiredStep = 'Complete the required verification step',
   });
 
   final Object? signInStartError;
   final bool signUpCompletesSession;
+  final String signUpRequiredStep;
   bool _isSignedIn = false;
   int signInStartCalls = 0;
   int ownerSignUpStartCalls = 0;
@@ -232,11 +327,12 @@ class _FakeOwnerAuthClient implements OwnerAuthClient {
   }
 
   @override
-  Future<void> verifySignInCode({
+  Future<OwnerAuthCompletion> verifySignInCode({
     required clerk.Strategy strategy,
     required String code,
   }) async {
     _isSignedIn = true;
+    return const OwnerAuthCompletion.complete();
   }
 
   @override
@@ -248,21 +344,14 @@ class _FakeOwnerAuthClient implements OwnerAuthClient {
   }
 
   @override
-  Future<void> verifyOwnerSignUpCode({
+  Future<OwnerAuthCompletion> verifyOwnerSignUpCode({
     required clerk.Strategy strategy,
     required String code,
   }) async {
     ownerSignUpVerifyCalls += 1;
     _isSignedIn = signUpCompletesSession;
-  }
-
-  @override
-  Future<void> signInWithGoogle({required String idToken}) async {
-    _isSignedIn = true;
-  }
-
-  @override
-  Future<void> signUpWithGoogle({required String idToken}) async {
-    _isSignedIn = true;
+    return _isSignedIn
+        ? const OwnerAuthCompletion.complete()
+        : OwnerAuthCompletion.incomplete(signUpRequiredStep);
   }
 }

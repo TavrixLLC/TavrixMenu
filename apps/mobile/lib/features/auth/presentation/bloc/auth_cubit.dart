@@ -88,7 +88,6 @@ String _workspaceAccessFailureMessage(Failure failure) {
     OfflineFailure() ||
     TimeoutFailure() ||
     UnauthorizedFailure() => failureMessage(failure),
-    _ =>
-      'We could not confirm your Waflo business workspace. Contact Waflo support if this continues.',
+    _ => "We couldn't complete this action right now. Please try again.",
   };
 }

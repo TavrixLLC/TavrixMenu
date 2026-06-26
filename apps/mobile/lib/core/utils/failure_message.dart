@@ -4,7 +4,8 @@ String failureMessage(Failure failure) {
   return switch (failure) {
     OfflineFailure() =>
       'We could not reach Waflo. Check your connection and try again.',
-    ServerFailure() => 'The server could not complete this request.',
+    ServerFailure() =>
+      "We couldn't complete this action right now. Please try again.",
     TimeoutFailure() => 'The request timed out. Please try again.',
     CacheFailure() => 'Cached data is not available.',
     ValidationFailure(:final message) =>
@@ -16,8 +17,10 @@ String failureMessage(Failure failure) {
     ConflictFailure(:final message) =>
       _friendlyDetail(message) ??
           'This stamp could not be added. The reward may already be at its limit.',
-    UnknownFailure() => 'Something unexpected happened.',
-    Failure() => 'Something unexpected happened.',
+    UnknownFailure() =>
+      "We couldn't complete this action right now. Please try again.",
+    Failure() =>
+      "We couldn't complete this action right now. Please try again.",
   };
 }
 

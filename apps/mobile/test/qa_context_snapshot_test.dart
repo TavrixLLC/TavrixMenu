@@ -1,3 +1,4 @@
+import 'package:flutter/material.dart';
 import 'package:flutter_test/flutter_test.dart';
 import 'package:tavrix_menu_mobile/app/config/app_config.dart';
 import 'package:tavrix_menu_mobile/core/debug/qa_context_snapshot.dart';
@@ -8,6 +9,16 @@ import 'package:tavrix_menu_mobile/features/dashboard/domain/entities/dashboard_
 import 'package:tavrix_menu_mobile/features/dashboard/presentation/bloc/dashboard_state.dart';
 
 void main() {
+  testWidgets('debug QA context panel is hidden by default', (tester) async {
+    await tester.pumpWidget(
+      const MaterialApp(
+        home: Scaffold(body: DebugQaContextPanel(snapshot: {'meStatus': 200})),
+      ),
+    );
+
+    expect(find.text('Debug QA context'), findsNothing);
+  });
+
   test('debug QA context contains only sanitized route and count fields', () {
     final snapshot = buildDebugQaContextSnapshot(
       authState: const AuthState(

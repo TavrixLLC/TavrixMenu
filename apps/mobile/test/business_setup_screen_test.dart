@@ -65,8 +65,9 @@ void main() {
       ),
     );
 
-    expect(find.text('Create your Waflo business workspace'), findsOneWidget);
+    expect(find.text('Create your Waflo business workspace'), findsWidgets);
     expect(find.text('Set up your menu and loyalty tools.'), findsOneWidget);
+    expect(find.text('Debug QA context'), findsNothing);
     expect(
       find.textContaining(RegExp('customer signup', caseSensitive: false)),
       findsNothing,

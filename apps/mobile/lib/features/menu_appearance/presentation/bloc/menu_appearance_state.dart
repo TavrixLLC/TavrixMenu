@@ -38,7 +38,11 @@ class MenuAppearanceState extends Equatable {
       draftTemplateId != currentTemplateId &&
       templates.any((template) => template.id == draftTemplateId);
 
-  bool get canSave => hasDraftChange && !isSaving && !saveForbidden;
+  bool get canManageAppearance =>
+      business?.permissions?.canManageAppearance ?? true;
+
+  bool get canSave =>
+      canManageAppearance && hasDraftChange && !isSaving && !saveForbidden;
 
   MenuTemplate? get currentTemplate => _templateById(currentTemplateId);
 

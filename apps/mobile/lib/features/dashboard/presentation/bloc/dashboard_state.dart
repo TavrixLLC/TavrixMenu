@@ -51,9 +51,7 @@ class DashboardState extends Equatable {
 
   String get roleDisplayLabel => BusinessRole.displayLabel(effectiveRole);
 
-  String get workspaceRoleDisplayLabel => effectiveRole == BusinessRole.staff
-      ? BusinessRole.displayLabel(BusinessRole.operator)
-      : roleDisplayLabel;
+  String get workspaceRoleDisplayLabel => roleDisplayLabel;
 
   bool get hasKnownRole => backendRole != null;
 

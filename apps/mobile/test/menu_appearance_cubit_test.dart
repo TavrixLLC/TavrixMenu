@@ -56,6 +56,54 @@ void main() {
     await cubit.close();
   });
 
+  test('appearance permission false disables save', () async {
+    final appearanceRepository = _FakeMenuAppearanceRepository();
+    final cubit = _cubit(
+      appearanceRepository,
+      business: const Business(
+        id: 'bus_123',
+        name: 'Tavrix Cafe',
+        slug: 'tavrix-cafe',
+        publicMenuUrl: 'https://menu.example.test/m/tavrix-cafe',
+        permissions: BusinessPermissions(
+          canManageAppearance: false,
+          canManageMenu: false,
+        ),
+      ),
+    );
+
+    await cubit.load();
+    cubit.selectTemplate('minimal-modern');
+
+    expect(cubit.state.canManageAppearance, isFalse);
+    expect(cubit.state.canSave, isFalse);
+
+    await cubit.close();
+  });
+
+  test(
+    'template integration stays on production endpoints and preview shape',
+    () {
+      final preview = buildMenuTemplatePreviewUri(
+        business: const Business(
+          id: 'bus_123',
+          name: 'Tavrix Cafe',
+          slug: 'tavrix-cafe',
+          publicMenuUrl: 'https://menu.example.test/m/tavrix-cafe',
+        ),
+        templateId: 'minimal-modern',
+        customerWebBaseUrl: 'https://menu.example.test',
+      );
+
+      expect(
+        preview.toString(),
+        'https://menu.example.test/m/tavrix-cafe?previewTemplateId=minimal-modern',
+      );
+      expect(preview.toString(), isNot(contains('mobilePreviewUrl')));
+      expect(preview.toString(), isNot(contains('/dev/menu-templates')));
+    },
+  );
+
   testWidgets('preview copy hides implementation query parameters', (
     tester,
   ) async {

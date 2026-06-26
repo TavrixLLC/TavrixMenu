@@ -7,7 +7,6 @@ import '../../../../app/router/route_names.dart';
 import '../../../../core/constants/app_colors.dart';
 import '../../../../core/constants/app_radius.dart';
 import '../../../../core/constants/app_spacing.dart';
-import '../../../../core/debug/qa_context_snapshot.dart';
 import '../../../../shared/widgets/app_card.dart';
 import '../../../../shared/widgets/app_scaffold.dart';
 import '../../../../shared/widgets/business_header_card.dart';
@@ -37,8 +36,6 @@ class _DashboardScreenState extends State<DashboardScreen> {
 
   @override
   Widget build(BuildContext context) {
-    final authState = context.watch<AuthCubit>().state;
-
     return AppScaffold(
       title: 'Waflo Workspace',
       actions: [
@@ -77,13 +74,6 @@ class _DashboardScreenState extends State<DashboardScreen> {
                 business: state.business,
                 role: state.workspaceRoleDisplayLabel,
               ),
-              DebugQaContextPanel(
-                snapshot: buildDebugQaContextSnapshot(
-                  authState: authState,
-                  dashboardState: state,
-                  selectedRoute: 'dashboard',
-                ),
-              ),
               if (state.summaryErrorMessage != null) ...[
                 const SizedBox(height: AppSpacing.md),
                 _InlineNotice(
@@ -96,9 +86,11 @@ class _DashboardScreenState extends State<DashboardScreen> {
               _AccessCard(state: state),
               const SizedBox(height: AppSpacing.lg),
               _DashboardActionCard(
+                enabled: _canScanCustomerWallet(state),
                 title: 'Scan customer wallet',
-                subtitle:
-                    'Find the customer card, confirm progress, and add a stamp.',
+                subtitle: _canScanCustomerWallet(state)
+                    ? 'Find the customer card, confirm progress, and add a stamp.'
+                    : 'Your workspace permissions do not allow wallet scanning.',
                 icon: Icons.qr_code_scanner,
                 routeName: AppRouteNames.walletScan,
                 accentColor: AppColors.primaryCoral,
@@ -115,11 +107,11 @@ class _DashboardScreenState extends State<DashboardScreen> {
               ),
               const SizedBox(height: AppSpacing.md),
               _DashboardActionCard(
-                enabled: _canManageMenu(state),
+                enabled: _canManageAppearance(state),
                 title: 'Menu Appearance',
-                subtitle: _canManageMenu(state)
+                subtitle: _canManageAppearance(state)
                     ? 'Choose the public menu template customers see.'
-                    : 'Only an owner or manager can save menu design changes.',
+                    : 'Your workspace permissions do not allow menu design changes.',
                 icon: Icons.palette_outlined,
                 routeName: AppRouteNames.menuAppearance,
                 accentColor: AppColors.primaryCoral,
@@ -127,10 +119,10 @@ class _DashboardScreenState extends State<DashboardScreen> {
               const SizedBox(height: AppSpacing.sm),
               _DashboardActionCard(
                 enabled: _canManageMenu(state),
-                title: 'Menu tools',
+                title: 'Menu Tools',
                 subtitle: _canManageMenu(state)
                     ? 'Edit categories and menu items.'
-                    : 'Only an owner or manager can edit the menu.',
+                    : 'Your workspace permissions do not allow menu edits.',
                 icon: Icons.restaurant_menu,
                 routeName: AppRouteNames.menu,
                 accentColor: AppColors.freshGreen,
@@ -160,7 +152,7 @@ class _DashboardScreenState extends State<DashboardScreen> {
                 title: 'Business Workspace',
                 subtitle: _canManageBusiness(state)
                     ? 'Update name, type, city, language, and media URLs.'
-                    : 'Only an owner or manager can edit this profile.',
+                    : 'Your workspace permissions do not allow profile edits.',
                 icon: Icons.storefront,
                 routeName: AppRouteNames.businessProfile,
                 accentColor: AppColors.rewardGold,
@@ -179,6 +171,19 @@ class _DashboardScreenState extends State<DashboardScreen> {
       ),
     );
   }
+}
+
+bool _canManageAppearance(DashboardState state) {
+  final permissions = state.permissions;
+  if (permissions != null) {
+    return permissions.canManageAppearance;
+  }
+  if (!state.hasKnownRole) {
+    return true;
+  }
+  return state.effectiveRole == 'OWNER' ||
+      state.effectiveRole == 'ADMIN' ||
+      state.effectiveRole == 'MANAGER';
 }
 
 bool _canManageBusiness(DashboardState state) {
@@ -209,6 +214,10 @@ bool _canManageMenu(DashboardState state) {
 
 bool _canViewPublicLink(DashboardState state) {
   return state.permissions?.canViewPublicLink ?? true;
+}
+
+bool _canScanCustomerWallet(DashboardState state) {
+  return state.permissions?.canScanCustomerWallet ?? true;
 }
 
 class _AccessCard extends StatelessWidget {

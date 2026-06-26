@@ -51,34 +51,42 @@ class Business extends Equatable {
 
 class BusinessPermissions extends Equatable {
   const BusinessPermissions({
+    this.canManageAppearance = false,
     this.canManageBusiness = false,
     this.canManageMenu = false,
     this.canManageMembers = false,
     this.canViewMembers = false,
     this.canViewPublicLink = false,
+    this.canScanCustomerWallet = true,
   });
 
   const BusinessPermissions.owner()
     : this(
+        canManageAppearance: true,
         canManageBusiness: true,
         canManageMenu: true,
         canManageMembers: true,
         canViewMembers: true,
         canViewPublicLink: true,
+        canScanCustomerWallet: true,
       );
 
+  final bool canManageAppearance;
   final bool canManageBusiness;
   final bool canManageMenu;
   final bool canManageMembers;
   final bool canViewMembers;
   final bool canViewPublicLink;
+  final bool canScanCustomerWallet;
 
   @override
   List<Object?> get props => [
+    canManageAppearance,
     canManageBusiness,
     canManageMenu,
     canManageMembers,
     canViewMembers,
     canViewPublicLink,
+    canScanCustomerWallet,
   ];
 }

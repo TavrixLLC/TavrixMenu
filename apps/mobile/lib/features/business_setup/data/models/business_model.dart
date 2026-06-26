@@ -123,6 +123,12 @@ BusinessPermissions? _permissionsFromJson(Map<String, dynamic>? json) {
   }
 
   return BusinessPermissions(
+    canManageAppearance:
+        _bool(json['canManageAppearance']) ??
+        _bool(json['can_manage_appearance']) ??
+        _bool(json['canManageMenu']) ??
+        _bool(json['can_manage_menu']) ??
+        false,
     canManageBusiness:
         _bool(json['canManageBusiness']) ??
         _bool(json['can_manage_business']) ??
@@ -141,6 +147,12 @@ BusinessPermissions? _permissionsFromJson(Map<String, dynamic>? json) {
         _bool(json['canViewPublicLink']) ??
         _bool(json['can_view_public_link']) ??
         false,
+    canScanCustomerWallet:
+        _bool(json['canScanCustomerWallet']) ??
+        _bool(json['can_scan_customer_wallet']) ??
+        _bool(json['canScanWallet']) ??
+        _bool(json['can_scan_wallet']) ??
+        true,
   );
 }
 

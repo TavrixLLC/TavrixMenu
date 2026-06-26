@@ -37,6 +37,7 @@ void main() {
     final templates = await dataSource.getTemplates();
 
     expect(apiClient.lastGetPath, '/menu-templates');
+    expect(apiClient.lastGetPath, isNot('/dev/menu-templates'));
     expect(templates.map((template) => template.id), [
       'waflo-warm',
       'launch-special',
@@ -69,6 +70,7 @@ void main() {
 
     expect(apiClient.lastPatchPath, '/businesses/bus_123/appearance');
     expect(apiClient.lastPatchBody, {'menuTemplateId': 'minimal-modern'});
+    expect(apiClient.lastPatchBody!.containsKey('mobilePreviewUrl'), isFalse);
     expect(updated.menuTemplateId, 'minimal-modern');
   });
 }

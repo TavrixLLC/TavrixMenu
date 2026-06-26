@@ -580,7 +580,9 @@ void main() {
     await tester.pumpAndSettle();
 
     expect(
-      find.text('The server could not complete this request.'),
+      find.text(
+        "We couldn't complete this action right now. Please try again.",
+      ),
       findsOneWidget,
     );
     expect(

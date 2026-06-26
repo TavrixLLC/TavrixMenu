@@ -28,6 +28,7 @@ void main() {
 
     expect(find.text('Continue in dev mode'), findsNothing);
     expect(find.byKey(const ValueKey('qaSignInForm')), findsOneWidget);
+    expect(find.text('Debug QA context'), findsNothing);
     expect(
       find.textContaining('Operator sign-in is not available'),
       findsNothing,

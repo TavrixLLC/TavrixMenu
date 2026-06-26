@@ -133,10 +133,10 @@ class _MenuAppearanceScreenState extends State<MenuAppearanceScreen> {
                     ? () => context.read<MenuAppearanceCubit>().save()
                     : null,
               ),
-              if (state.saveForbidden) ...[
+              if (state.saveForbidden || !state.canManageAppearance) ...[
                 const SizedBox(height: AppSpacing.sm),
                 Text(
-                  'Ask an owner or manager with menu appearance permission to save this change.',
+                  'Your workspace permissions do not allow menu design changes.',
                   style: Theme.of(
                     context,
                   ).textTheme.bodyMedium?.copyWith(color: AppColors.mutedText),

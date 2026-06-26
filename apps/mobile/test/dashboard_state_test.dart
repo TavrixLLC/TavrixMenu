@@ -89,7 +89,59 @@ void main() {
     expect(state.roleDisplayLabel, isNot('Staff'));
   });
 
-  test('workspace label remains business operator for explicit staff role', () {
+  test('manager and staff labels follow server roles exactly', () {
+    const managerState = DashboardState(
+      status: DashboardStatus.success,
+      business: Business(
+        id: 'bus_123',
+        name: 'Tavrix Cafe',
+        slug: 'tavrix-cafe',
+        publicMenuUrl: 'https://menu.example.test/m/tavrix-cafe',
+        role: 'MANAGER',
+      ),
+    );
+    const staffState = DashboardState(
+      status: DashboardStatus.success,
+      business: Business(
+        id: 'bus_123',
+        name: 'Tavrix Cafe',
+        slug: 'tavrix-cafe',
+        publicMenuUrl: 'https://menu.example.test/m/tavrix-cafe',
+        role: 'STAFF',
+      ),
+    );
+
+    expect(managerState.roleDisplayLabel, 'Manager');
+    expect(managerState.workspaceRoleDisplayLabel, 'Manager');
+    expect(staffState.roleDisplayLabel, 'Staff');
+    expect(staffState.workspaceRoleDisplayLabel, 'Staff');
+  });
+
+  test('staff permissions keep owner tools disabled', () {
+    const state = DashboardState(
+      status: DashboardStatus.success,
+      business: Business(
+        id: 'bus_123',
+        name: 'Tavrix Cafe',
+        slug: 'tavrix-cafe',
+        publicMenuUrl: 'https://menu.example.test/m/tavrix-cafe',
+        role: 'STAFF',
+        permissions: BusinessPermissions(
+          canManageAppearance: false,
+          canManageBusiness: false,
+          canManageMenu: false,
+          canViewPublicLink: true,
+        ),
+      ),
+    );
+
+    expect(state.roleDisplayLabel, 'Staff');
+    expect(state.permissions?.canManageAppearance, isFalse);
+    expect(state.permissions?.canManageMenu, isFalse);
+    expect(state.permissions?.canManageBusiness, isFalse);
+  });
+
+  test('workspace label follows explicit staff role', () {
     const state = DashboardState(
       status: DashboardStatus.success,
       business: Business(
@@ -102,7 +154,7 @@ void main() {
     );
 
     expect(state.roleDisplayLabel, 'Staff');
-    expect(state.workspaceRoleDisplayLabel, 'Business Operator');
+    expect(state.workspaceRoleDisplayLabel, 'Staff');
   });
 
   test('business app-context role beats stale user role', () {

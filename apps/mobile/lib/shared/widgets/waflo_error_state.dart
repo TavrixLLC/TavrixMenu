@@ -21,7 +21,7 @@ class WafloErrorState extends StatelessWidget {
           const Icon(Icons.error_outline, color: AppColors.dangerRed),
           const SizedBox(height: AppSpacing.sm),
           Text(
-            'Something needs attention',
+            'Something went wrong',
             style: Theme.of(context).textTheme.titleMedium,
           ),
           const SizedBox(height: AppSpacing.xs),

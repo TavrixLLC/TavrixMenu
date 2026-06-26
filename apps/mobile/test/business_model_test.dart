@@ -72,4 +72,24 @@ void main() {
     expect(model.role, 'MANAGER');
     expect(model.role, isNot('STAFF'));
   });
+
+  test('parses appearance and scanner permissions', () {
+    final model = BusinessModel.fromJson({
+      'business': {
+        'id': 'bus_123',
+        'name': 'Tavrix Cafe',
+        'slug': 'tavrix-cafe',
+      },
+      'permissions': {
+        'canManageMenu': true,
+        'canManageBusiness': false,
+        'canScanCustomerWallet': false,
+      },
+    });
+
+    expect(model.permissions?.canManageAppearance, isTrue);
+    expect(model.permissions?.canManageMenu, isTrue);
+    expect(model.permissions?.canManageBusiness, isFalse);
+    expect(model.permissions?.canScanCustomerWallet, isFalse);
+  });
 }

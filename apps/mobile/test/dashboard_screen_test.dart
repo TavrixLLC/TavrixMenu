@@ -54,6 +54,7 @@ void main() {
     expect(find.text('Waflo Workspace'), findsOneWidget);
     expect(find.text('Scan customer wallet'), findsOneWidget);
     expect(find.text('Business Workspace'), findsWidgets);
+    expect(find.text('Debug QA context'), findsNothing);
     expect(find.text('Staff Dashboard'), findsNothing);
     expect(find.text('Staff loyalty scan'), findsNothing);
     expect(
@@ -65,6 +66,58 @@ void main() {
       findsNothing,
     );
   });
+
+  testWidgets(
+    'dashboard shows staff role and disables owner tools by permission',
+    (tester) async {
+      final authCubit = AuthCubit(
+        getCurrentUser: GetCurrentUser(const _StaffMeRepository()),
+        authSessionController: AuthSessionController(
+          config: _config,
+          clerkTokenProvider: ClerkTokenProvider(),
+          devTokenProvider: const DevTokenProvider(''),
+        ),
+      );
+      final dashboardCubit = DashboardCubit(
+        getCurrentUser: GetCurrentUser(const _StaffMeRepository()),
+        getMyBusiness: GetMyBusiness(const _StaffBusinessRepository()),
+        getDashboardSummary: GetDashboardSummary(
+          const _StaffDashboardRepository(),
+        ),
+      );
+      addTearDown(authCubit.close);
+      addTearDown(dashboardCubit.close);
+
+      await tester.pumpWidget(
+        MultiBlocProvider(
+          providers: [
+            BlocProvider<AuthCubit>.value(value: authCubit),
+            BlocProvider<DashboardCubit>.value(value: dashboardCubit),
+          ],
+          child: const MaterialApp(home: DashboardScreen()),
+        ),
+      );
+      await tester.pumpAndSettle();
+
+      expect(find.text('Staff'), findsWidgets);
+      expect(find.text('Business Operator'), findsNothing);
+      expect(
+        find.text(
+          'Your workspace permissions do not allow menu design changes.',
+        ),
+        findsOneWidget,
+      );
+      expect(
+        find.text('Your workspace permissions do not allow menu edits.'),
+        findsOneWidget,
+      );
+      expect(
+        find.text('Your workspace permissions do not allow profile edits.'),
+        findsOneWidget,
+      );
+      expect(find.text('Debug QA context'), findsNothing);
+    },
+  );
 }
 
 const _config = AppConfig(
@@ -82,6 +135,21 @@ const _business = Business(
   slug: 'tavrix-cafe',
   publicMenuUrl: 'https://menu.example.test/m/tavrix-cafe',
   permissions: BusinessPermissions.owner(),
+);
+
+const _staffBusiness = Business(
+  id: 'bus_123',
+  name: 'Tavrix Cafe',
+  slug: 'tavrix-cafe',
+  publicMenuUrl: 'https://menu.example.test/m/tavrix-cafe',
+  role: 'STAFF',
+  permissions: BusinessPermissions(
+    canManageAppearance: false,
+    canManageBusiness: false,
+    canManageMenu: false,
+    canViewPublicLink: true,
+    canScanCustomerWallet: true,
+  ),
 );
 
 class _MeRepository implements MeRepository {
@@ -105,12 +173,66 @@ class _MeRepository implements MeRepository {
   }
 }
 
+class _StaffMeRepository implements MeRepository {
+  const _StaffMeRepository();
+
+  @override
+  Future<Either<Failure, CurrentUser>> getMe() async {
+    return const Right(
+      CurrentUser(
+        id: 'usr_staff',
+        email: '',
+        fullName: 'Staff',
+        role: 'STAFF',
+        onboarding: CurrentUserOnboarding(
+          hasBusiness: true,
+          activeBusinessCount: 1,
+        ),
+      ),
+    );
+  }
+}
+
 class _BusinessRepository implements BusinessRepository {
   const _BusinessRepository();
 
   @override
   Future<Either<Failure, Business>> getMyBusiness() async {
     return const Right(_business);
+  }
+
+  @override
+  Future<Either<Failure, Business>> createBusiness({
+    required String name,
+    required String type,
+    String? city,
+    required String currency,
+    required String language,
+  }) {
+    throw UnimplementedError();
+  }
+
+  @override
+  Future<Either<Failure, Business>> updateBusiness({
+    required String id,
+    required String name,
+    required String type,
+    String? city,
+    required String currency,
+    required String language,
+    String? logoUrl,
+    String? coverUrl,
+  }) {
+    throw UnimplementedError();
+  }
+}
+
+class _StaffBusinessRepository implements BusinessRepository {
+  const _StaffBusinessRepository();
+
+  @override
+  Future<Either<Failure, Business>> getMyBusiness() async {
+    return const Right(_staffBusiness);
   }
 
   @override
@@ -152,6 +274,41 @@ class _DashboardRepository implements DashboardRepository {
         currentUser: DashboardCurrentUser(
           role: 'OWNER',
           permissions: BusinessPermissions.owner(),
+          permissionsAvailable: true,
+        ),
+        counts: DashboardCounts(activeCategories: 1, availableItems: 1),
+        publicMenu: DashboardPublicMenu(
+          path: '/m/tavrix-cafe',
+          url: 'https://menu.example.test/m/tavrix-cafe',
+          qrPayload: 'https://menu.example.test/m/tavrix-cafe',
+        ),
+        onboardingHints: DashboardOnboardingHints(
+          recommendedNextStep: 'OPEN_DASHBOARD',
+        ),
+      ),
+    );
+  }
+}
+
+class _StaffDashboardRepository implements DashboardRepository {
+  const _StaffDashboardRepository();
+
+  @override
+  Future<Either<Failure, DashboardSummary>> getDashboardSummary(
+    String businessId,
+  ) async {
+    return const Right(
+      DashboardSummary(
+        business: _staffBusiness,
+        currentUser: DashboardCurrentUser(
+          role: 'STAFF',
+          permissions: BusinessPermissions(
+            canManageAppearance: false,
+            canManageBusiness: false,
+            canManageMenu: false,
+            canViewPublicLink: true,
+            canScanCustomerWallet: true,
+          ),
           permissionsAvailable: true,
         ),
         counts: DashboardCounts(activeCategories: 1, availableItems: 1),

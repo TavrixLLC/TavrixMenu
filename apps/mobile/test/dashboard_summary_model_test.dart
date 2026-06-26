@@ -50,6 +50,7 @@ void main() {
     expect(model.business.id, 'bus_123');
     expect(model.business.publicMenuUrl, 'http://localhost:3001/m/tavrix-cafe');
     expect(model.currentUser.role, 'OWNER');
+    expect(model.permissions.canManageAppearance, isTrue);
     expect(model.permissions.canManageMenu, isTrue);
     expect(model.counts.activeCategories, 2);
     expect(model.counts.unavailableItems, 1);

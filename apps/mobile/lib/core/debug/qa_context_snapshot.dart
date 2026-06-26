@@ -7,6 +7,11 @@ import '../../features/auth/domain/entities/current_user.dart';
 import '../../features/auth/presentation/bloc/auth_state.dart';
 import '../../features/dashboard/presentation/bloc/dashboard_state.dart';
 
+const _showDebugQaContextPanel = bool.fromEnvironment(
+  'WAFLO_SHOW_DEBUG_QA_CONTEXT',
+  defaultValue: false,
+);
+
 Map<String, Object?>? buildDebugQaContextSnapshot({
   required AuthState authState,
   required DashboardState dashboardState,
@@ -31,11 +36,13 @@ Map<String, Object?>? buildDebugQaContextSnapshot({
     'recommendedNextStep': user?.onboarding.recommendedNextStep,
     'selectedBusinessAppContextRole': dashboardState.backendRole,
     'permissions': {
+      'canManageAppearance': permissions?.canManageAppearance ?? false,
       'canManageBusiness': permissions?.canManageBusiness ?? false,
       'canManageMenu': permissions?.canManageMenu ?? false,
       'canManageMembers': permissions?.canManageMembers ?? false,
       'canViewMembers': permissions?.canViewMembers ?? false,
       'canViewPublicLink': permissions?.canViewPublicLink ?? false,
+      'canScanCustomerWallet': permissions?.canScanCustomerWallet ?? false,
     },
     'selectedRoute': _safeRoute(selectedRoute),
     if (config != null) 'authConfig': config.sanitizedAuthConfigStatus,
@@ -49,7 +56,7 @@ class DebugQaContextPanel extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
-    if (!kDebugMode || snapshot == null) {
+    if (!kDebugMode || !_showDebugQaContextPanel || snapshot == null) {
       return const SizedBox.shrink();
     }
 
