@@ -1,7 +1,7 @@
 export const stats = [
-  { label: 'Auth foundation', value: 'Clerk' },
+  { label: 'Sign-in', value: 'Enabled' },
   { label: 'Owner context', value: '/me' },
-  { label: 'Admin APIs', value: 'Pending' },
+  { label: 'Owner tools', value: 'In progress' },
   { label: 'Customer menus', value: 'Public' }
 ];
 
@@ -12,9 +12,9 @@ export const businesses = [
 ];
 
 export const subscriptions = [
-  { business: 'Tavrix Cafe', plan: 'Plan display pending', status: 'Sprint 6 backend pending', periodEnd: 'Not connected' },
-  { business: 'North Bakery', plan: 'Plan display pending', status: 'Sprint 6 backend pending', periodEnd: 'Not connected' },
-  { business: 'River Tea', plan: 'Plan display pending', status: 'Sprint 6 backend pending', periodEnd: 'Not connected' }
+  { business: 'Tavrix Cafe', plan: 'Coming soon', status: 'Billing not active', periodEnd: 'Not connected' },
+  { business: 'North Bakery', plan: 'Coming soon', status: 'Billing not active', periodEnd: 'Not connected' },
+  { business: 'River Tea', plan: 'Coming soon', status: 'Billing not active', periodEnd: 'Not connected' }
 ];
 
 export const logs = [

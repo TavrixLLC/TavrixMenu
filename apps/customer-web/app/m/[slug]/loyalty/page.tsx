@@ -88,7 +88,7 @@ export default async function LoyaltyPage({ params }: LoyaltyPageProps) {
       <LoyaltyState
         slug={slug}
         title="Loyalty card unavailable"
-        message="The loyalty card could not be loaded right now because the public API is unreachable or returned an error."
+        message="We could not load the loyalty card right now. Please refresh the page or ask staff for help."
       />
     );
   }

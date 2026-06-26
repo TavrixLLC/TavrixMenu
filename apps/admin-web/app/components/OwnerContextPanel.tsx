@@ -23,6 +23,17 @@ function StatusPill({ children }: Readonly<{ children: React.ReactNode }>) {
   );
 }
 
+function formatNextStep(value: string | null | undefined) {
+  switch (value) {
+    case 'CREATE_BUSINESS':
+      return 'Create business';
+    case 'OPEN_DASHBOARD':
+      return 'Open dashboard';
+    default:
+      return value || 'Ready';
+  }
+}
+
 function ContextStatus({ state }: { state: LoadState }) {
   switch (state.status) {
     case 'idle':
@@ -30,9 +41,9 @@ function ContextStatus({ state }: { state: LoadState }) {
       return (
         <section className="rounded-lg border border-neutral-200 bg-white p-5">
           <p className="text-sm font-semibold uppercase text-accent">Owner context</p>
-          <h2 className="mt-2 text-xl font-bold text-ink">Loading authenticated context</h2>
+          <h2 className="mt-2 text-xl font-bold text-ink">Loading your workspace</h2>
           <p className="mt-2 text-sm leading-6 text-neutral-600">
-            Fetching the Sprint 3 /me response with a Clerk JWT.
+            Checking your account and active business access.
           </p>
         </section>
       );
@@ -41,9 +52,10 @@ function ContextStatus({ state }: { state: LoadState }) {
       return (
         <section className="rounded-lg border border-rose-200 bg-rose-50 p-5">
           <p className="text-sm font-semibold uppercase text-rose-700">Owner context unavailable</p>
-          <h2 className="mt-2 text-xl font-bold text-ink">Could not load GET /me</h2>
-          <p className="mt-2 text-sm leading-6 text-rose-900">{state.message}</p>
-          <p className="mt-3 rounded-md bg-white/70 p-3 text-xs font-semibold text-rose-800">{state.apiUrl}</p>
+          <h2 className="mt-2 text-xl font-bold text-ink">Could not load your workspace</h2>
+          <p className="mt-2 text-sm leading-6 text-rose-900">
+            Please sign in again or ask an owner to confirm your business access.
+          </p>
         </section>
       );
     case 'ok':
@@ -59,9 +71,11 @@ function SummaryView({ me }: { me: AdminMeResponse }) {
       <article className="rounded-lg border border-neutral-200 bg-white p-5">
         <div className="flex flex-col gap-3 sm:flex-row sm:items-start sm:justify-between">
           <div>
-            <p className="text-sm font-semibold uppercase text-accent">GET /me</p>
-            <h2 className="mt-2 text-xl font-bold text-ink">{me.user.name || me.user.email || me.user.clerkUserId}</h2>
-            <p className="mt-1 text-sm text-neutral-600">{me.user.email || 'No email returned'}</p>
+            <p className="text-sm font-semibold uppercase text-accent">Account</p>
+            <h2 className="mt-2 text-xl font-bold text-ink">{me.user.name || 'Signed-in user'}</h2>
+            <p className="mt-1 text-sm text-neutral-600">
+              {me.onboarding.hasBusiness ? 'Business access found' : 'No business access yet'}
+            </p>
           </div>
           <StatusPill>{me.user.status}</StatusPill>
         </div>
@@ -77,7 +91,7 @@ function SummaryView({ me }: { me: AdminMeResponse }) {
           </div>
           <div className="rounded-lg bg-neutral-50 p-3">
             <p className="text-xs font-semibold uppercase text-neutral-500">Next step</p>
-            <p className="mt-2 text-sm font-bold text-ink">{me.onboarding.recommendedNextStep || 'Not returned'}</p>
+            <p className="mt-2 text-sm font-bold text-ink">{formatNextStep(me.onboarding.recommendedNextStep)}</p>
           </div>
         </div>
 
@@ -100,11 +114,11 @@ function SummaryView({ me }: { me: AdminMeResponse }) {
         </h2>
         <p className="mt-2 text-sm leading-6 text-neutral-600">
           {me.onboarding.hasBusiness
-            ? 'The signed-in owner has at least one active business returned by the Sprint 3 backend.'
-            : 'Create the first business from the mobile app / owner onboarding flow before opening the dashboard.'}
+            ? 'Your account has at least one active business ready to manage.'
+            : 'Create your first business before opening the dashboard.'}
         </p>
         <div className="mt-4">
-          <StatusPill>{me.onboarding.recommendedNextStep || 'WAITING_FOR_ONBOARDING'}</StatusPill>
+          <StatusPill>{formatNextStep(me.onboarding.recommendedNextStep)}</StatusPill>
         </div>
       </article>
     </section>
@@ -118,8 +132,7 @@ function BusinessesView({ me }: { me: AdminMeResponse }) {
         <p className="text-sm font-semibold uppercase text-accent">Businesses</p>
         <h2 className="mt-2 text-xl font-bold text-ink">No business created yet</h2>
         <p className="mt-2 text-sm leading-6 text-neutral-600">
-          Create your first business from the mobile app / owner onboarding flow. Admin-web is only displaying Sprint 3
-          owner context right now.
+          Create your first business before using the dashboard. Once a business exists, it will appear here.
         </p>
       </section>
     );
@@ -128,8 +141,8 @@ function BusinessesView({ me }: { me: AdminMeResponse }) {
   return (
     <section className="rounded-lg border border-neutral-200 bg-white">
       <div className="border-b border-neutral-200 p-4">
-        <p className="text-sm font-semibold uppercase text-accent">GET /me businesses</p>
-        <h2 className="mt-2 text-xl font-bold text-ink">Signed-in owner businesses</h2>
+        <p className="text-sm font-semibold uppercase text-accent">Businesses</p>
+        <h2 className="mt-2 text-xl font-bold text-ink">Your businesses</h2>
       </div>
       <div className="overflow-x-auto">
         <table className="w-full min-w-[640px] text-left text-sm">
@@ -188,7 +201,7 @@ export function OwnerContextPanel({ apiBaseUrl, variant = 'summary' }: OwnerCont
           setState({
             status: 'auth-error',
             apiUrl,
-            message: error instanceof Error ? error.message : 'Unable to read the Clerk JWT.'
+            message: error instanceof Error ? error.message : 'Unable to confirm the signed-in session.'
           });
         }
       }

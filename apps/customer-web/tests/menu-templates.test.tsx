@@ -2,9 +2,17 @@ import { strict as assert } from 'assert';
 import { describe, it } from 'node:test';
 import { renderToStaticMarkup } from 'react-dom/server';
 import { PublicMenuTemplateView } from '../app/components/PublicMenuTemplateView';
+import {
+  DetailState,
+  ITEM_NOT_AVAILABLE_MESSAGE,
+  ITEM_UNAVAILABLE_MESSAGE,
+  MENU_UNAVAILABLE_MESSAGE,
+  MenuState
+} from '../app/components/PublicMenuStates';
 import { demoLoyalty, demoMenu } from '../app/dev/menu-templates/preview-data';
 import MenuTemplatePreviewPage from '../app/dev/menu-templates/page';
 import { getPublicMenuTemplate, publicMenuTemplates } from '../app/lib/menu-templates';
+import { fetchPublicItem, fetchPublicMenu } from '../app/lib/public-menu';
 
 describe('customer-web public menu templates', () => {
   it('/dev/menu-templates page renders every template preview frame', () => {
@@ -66,6 +74,103 @@ describe('customer-web public menu templates', () => {
     assert.match(html, /data-template="coffeehouse-premium"/);
     assert.equal(menu.appearance.effectiveTemplateId, 'waflo-warm');
     assert.equal(savedAppearance.effectiveTemplateId, 'waflo-warm');
+  });
+
+  it('renders sold-out items as unavailable instead of hiding them', () => {
+    const html = renderToStaticMarkup(
+      <PublicMenuTemplateView menu={demoMenu} template={getPublicMenuTemplate('waflo-warm')} loyaltyContext={demoLoyalty} />
+    );
+
+    assert.match(html, /Mint Lemonade/);
+    assert.match(html, /data-state="sold-out"/);
+    assert.match(html, /Sold out/);
+  });
+
+  it('keeps sold-out items from the public menu response for customer clarity', async () => {
+    const originalFetch = globalThis.fetch;
+
+    globalThis.fetch = (async () =>
+      new Response(JSON.stringify(demoMenu), {
+        status: 200,
+        headers: {
+          'Content-Type': 'application/json'
+        }
+      })) as typeof fetch;
+
+    try {
+      const result = await fetchPublicMenu('happy-birthday-2');
+
+      assert.equal(result.status, 'ok');
+
+      if (result.status === 'ok') {
+        const soldOutItem = result.data.categories
+          .flatMap((category) => category.items)
+          .find((item) => item.id === 'mint-lemonade');
+
+        assert.equal(soldOutItem?.isAvailable, false);
+      }
+    } finally {
+      globalThis.fetch = originalFetch;
+    }
+  });
+
+  it('keeps sold-out item details available for the unavailable state', async () => {
+    const originalFetch = globalThis.fetch;
+    const drinks = demoMenu.categories.find((category) => category.id === 'drinks');
+    const soldOutItem = drinks?.items.find((item) => item.id === 'mint-lemonade');
+
+    assert.ok(drinks);
+    assert.ok(soldOutItem);
+
+    globalThis.fetch = (async () =>
+      new Response(
+        JSON.stringify({
+          business: demoMenu.business,
+          category: {
+            id: drinks.id,
+            nameAr: drinks.nameAr,
+            nameEn: drinks.nameEn,
+            sortOrder: drinks.sortOrder
+          },
+          item: soldOutItem
+        }),
+        {
+          status: 200,
+          headers: {
+            'Content-Type': 'application/json'
+          }
+        }
+      )) as typeof fetch;
+
+    try {
+      const result = await fetchPublicItem('happy-birthday-2', 'mint-lemonade');
+
+      assert.equal(result.status, 'ok');
+
+      if (result.status === 'ok') {
+        assert.equal(result.data.item.id, 'mint-lemonade');
+        assert.equal(result.data.item.isAvailable, false);
+      }
+    } finally {
+      globalThis.fetch = originalFetch;
+    }
+  });
+
+  it('uses customer-friendly public menu and item error copy', () => {
+    const menuHtml = renderToStaticMarkup(
+      <MenuState slug="sample-cafe" title="Menu unavailable" message={MENU_UNAVAILABLE_MESSAGE} state="error" />
+    );
+    const itemMissingHtml = renderToStaticMarkup(
+      <DetailState slug="sample-cafe" title="Item not found" message={ITEM_NOT_AVAILABLE_MESSAGE} />
+    );
+    const itemErrorHtml = renderToStaticMarkup(
+      <DetailState slug="sample-cafe" title="Menu unavailable" message={ITEM_UNAVAILABLE_MESSAGE} />
+    );
+    const html = `${menuHtml}${itemMissingHtml}${itemErrorHtml}`;
+
+    assert.match(html, /We could not load this menu right now/);
+    assert.match(html, /This item is not available on the menu right now/);
+    assert.equal(/public API|API returned|apiUrl|Unable to reach/i.test(html), false);
   });
 
   it('keeps the same semantic DOM contract across templates', () => {

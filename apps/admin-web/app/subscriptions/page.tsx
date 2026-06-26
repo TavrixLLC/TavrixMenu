@@ -11,10 +11,10 @@ export default function SubscriptionsPage() {
       <AdminAuthBoundary clerkConfigured={clerkConfigured}>
         <section className="rounded-lg border border-neutral-200 bg-white">
           <div className="border-b border-neutral-200 p-4">
-            <p className="text-sm font-semibold uppercase text-accent">Mock/dev shell</p>
-            <h2 className="mt-2 text-xl font-bold text-ink">Subscriptions pending Sprint 6 backend</h2>
+            <p className="text-sm font-semibold uppercase text-accent">Subscriptions</p>
+            <h2 className="mt-2 text-xl font-bold text-ink">Billing tools are coming soon</h2>
             <p className="mt-2 text-sm text-neutral-600">
-              This route is an internal placeholder only. No billing actions are wired.
+              Billing actions are not available in this dashboard yet. Menu and loyalty management are the launch focus.
             </p>
           </div>
           <div className="overflow-x-auto">

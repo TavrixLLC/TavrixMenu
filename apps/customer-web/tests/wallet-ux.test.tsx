@@ -471,7 +471,7 @@ describe('Apple Wallet refresh delay mitigation copy', () => {
   it('points customers to the live web card without suggesting settings toggles', () => {
     const html = renderToStaticMarkup(<AppleWalletRefreshNotice />);
 
-    assert.match(html, /Your live card is up to date online/);
+    assert.match(html, /Your live web card is the source of truth/);
     assert.match(html, /Apple Wallet may refresh shortly/);
     assert.equal(/Automatic Updates/i.test(html), false);
   });

@@ -270,16 +270,21 @@ function ActionBanner({ actionState }: { actionState: ActionState }) {
       ? 'border-emerald-200 bg-emerald-50 text-emerald-800'
       : actionState.status === 'error'
         ? 'border-rose-200 bg-rose-50 text-rose-800'
-        : 'border-blue-200 bg-blue-50 text-blue-800';
+        : 'border-amber-200 bg-amber-50 text-amber-900';
 
-  return <p className={`rounded-lg border p-3 text-sm font-semibold ${toneClass}`}>{actionState.message}</p>;
+  const message =
+    actionState.status === 'error'
+      ? 'That loyalty change could not be saved. Please try again or check your permission for this business.'
+      : actionState.message;
+
+  return <p className={`rounded-lg border p-3 text-sm font-semibold ${toneClass}`}>{message}</p>;
 }
 
 function BlockingState({ state }: { state: Exclude<LoyaltyState, { status: 'ok' }> }) {
   const titleByStatus = {
-    'auth-error': 'Authentication required',
+    'auth-error': 'Sign-in required',
     forbidden: 'Permission denied',
-    'validation-error': 'Validation error',
+    'validation-error': 'Loyalty information needs attention',
     error: 'Loyalty unavailable'
   };
 
@@ -291,7 +296,7 @@ function BlockingState({ state }: { state: Exclude<LoyaltyState, { status: 'ok' 
           <p className="text-sm font-semibold uppercase text-accent">Loyalty</p>
           <h2 className="mt-2 text-xl font-bold text-ink">Loading loyalty workspace</h2>
           <p className="mt-2 text-sm leading-6 text-neutral-600">
-            Fetching owner context, business role, program, and memberships.
+            Checking your business, loyalty program, and customer memberships.
           </p>
         </section>
       );
@@ -300,7 +305,9 @@ function BlockingState({ state }: { state: Exclude<LoyaltyState, { status: 'ok' 
         <section className="rounded-lg border border-amber-200 bg-amber-50 p-5">
           <p className="text-sm font-semibold uppercase text-amber-700">Missing business context</p>
           <h2 className="mt-2 text-xl font-bold text-ink">No business is available for this account</h2>
-          <p className="mt-2 text-sm leading-6 text-amber-900">{state.message}</p>
+          <p className="mt-2 text-sm leading-6 text-amber-900">
+            Create or choose a business before managing loyalty.
+          </p>
         </section>
       );
     default:
@@ -308,10 +315,9 @@ function BlockingState({ state }: { state: Exclude<LoyaltyState, { status: 'ok' 
         <section className="rounded-lg border border-rose-200 bg-rose-50 p-5">
           <p className="text-sm font-semibold uppercase text-rose-700">{titleByStatus[state.status]}</p>
           <h2 className="mt-2 text-xl font-bold text-ink">Could not load loyalty</h2>
-          <p className="mt-2 text-sm leading-6 text-rose-900">{state.message}</p>
-          {process.env.NODE_ENV !== 'production' && state.apiUrl ? (
-            <p className="mt-3 rounded-md bg-white/70 p-3 text-xs font-semibold text-rose-800">{state.apiUrl}</p>
-          ) : null}
+          <p className="mt-2 text-sm leading-6 text-rose-900">
+            Please refresh the page, sign in again, or ask an owner to confirm your access.
+          </p>
         </section>
       );
   }
@@ -951,7 +957,7 @@ export function LoyaltyPanel({ apiBaseUrl }: LoyaltyPanelProps) {
         if (!businessId) {
           setState({
             status: 'missing-business',
-            message: 'GET /me did not return an active membership or business summary to use as the selected business.'
+            message: 'No active business is available for this account.'
           });
           return;
         }
@@ -1162,7 +1168,7 @@ export function LoyaltyPanel({ apiBaseUrl }: LoyaltyPanelProps) {
     if (!token) {
       setActionState({
         status: 'error',
-        message: 'Clerk did not return a JWT for the signed-in session.'
+        message: 'Please sign in again before saving changes.'
       });
       return;
     }
@@ -1447,7 +1453,7 @@ export function LoyaltyPanel({ apiBaseUrl }: LoyaltyPanelProps) {
       <section className="rounded-lg border border-neutral-200 bg-white p-5">
         <div className="flex flex-col gap-3 lg:flex-row lg:items-start lg:justify-between">
           <div>
-            <p className="text-sm font-semibold uppercase text-accent">Sprint 6 loyalty</p>
+            <p className="text-sm font-semibold uppercase text-accent">Loyalty workspace</p>
             <h1 className="mt-2 text-2xl font-bold text-ink">{state.summary.business.name}</h1>
             <p className="mt-2 max-w-3xl text-sm leading-6 text-neutral-600">
               Manage the stamp-card program, wallet appearance, and staff cashier operations.

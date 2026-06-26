@@ -131,12 +131,28 @@ function StatusPill({
   return <span className={`inline-flex rounded-full px-2 py-1 text-xs font-semibold ring-1 ${toneClass}`}>{children}</span>;
 }
 
+function getOwnerFacingErrorMessage(status: Exclude<WorkflowState, { status: 'ok' }>['status']) {
+  switch (status) {
+    case 'auth-error':
+      return 'Please sign in again to continue managing this business.';
+    case 'forbidden':
+      return 'Your account can view this area, but it does not have permission to make this change.';
+    case 'validation-error':
+      return 'Some menu information needs attention before it can be saved.';
+    case 'missing-business':
+      return 'Create or choose a business before opening the owner dashboard.';
+    case 'error':
+    default:
+      return 'We could not load this workspace right now. Please refresh the page or try again in a moment.';
+  }
+}
+
 function BlockingState({ state }: { state: Exclude<WorkflowState, { status: 'ok' }> }) {
   const titleByStatus = {
-    'auth-error': 'Authentication required',
+    'auth-error': 'Sign-in required',
     forbidden: 'Permission denied',
-    'validation-error': 'Validation error',
-    error: 'Owner workflow unavailable'
+    'validation-error': 'Menu information needs attention',
+    error: 'Owner dashboard unavailable'
   };
 
   switch (state.status) {
@@ -144,10 +160,10 @@ function BlockingState({ state }: { state: Exclude<WorkflowState, { status: 'ok'
     case 'loading':
       return (
         <section className="rounded-lg border border-neutral-200 bg-white p-5">
-          <p className="text-sm font-semibold uppercase text-accent">Owner workflow</p>
-          <h2 className="mt-2 text-xl font-bold text-ink">Loading dashboard summary</h2>
+          <p className="text-sm font-semibold uppercase text-accent">Owner dashboard</p>
+          <h2 className="mt-2 text-xl font-bold text-ink">Loading your menu workspace</h2>
           <p className="mt-2 text-sm leading-6 text-neutral-600">
-            Fetching the selected business context, dashboard counts, and menu records.
+            Checking your business, menu, and appearance settings.
           </p>
         </section>
       );
@@ -156,7 +172,7 @@ function BlockingState({ state }: { state: Exclude<WorkflowState, { status: 'ok'
         <section className="rounded-lg border border-amber-200 bg-amber-50 p-5">
           <p className="text-sm font-semibold uppercase text-amber-700">Missing selected business</p>
           <h2 className="mt-2 text-xl font-bold text-ink">No business is available for this account</h2>
-          <p className="mt-2 text-sm leading-6 text-amber-900">{state.message}</p>
+          <p className="mt-2 text-sm leading-6 text-amber-900">{getOwnerFacingErrorMessage(state.status)}</p>
         </section>
       );
   }
@@ -164,9 +180,8 @@ function BlockingState({ state }: { state: Exclude<WorkflowState, { status: 'ok'
   return (
     <section className="rounded-lg border border-rose-200 bg-rose-50 p-5">
       <p className="text-sm font-semibold uppercase text-rose-700">{titleByStatus[state.status]}</p>
-      <h2 className="mt-2 text-xl font-bold text-ink">Could not load Sprint 4 owner workflow</h2>
-      <p className="mt-2 text-sm leading-6 text-rose-900">{state.message}</p>
-      {state.apiUrl ? <p className="mt-3 rounded-md bg-white/70 p-3 text-xs font-semibold text-rose-800">{state.apiUrl}</p> : null}
+      <h2 className="mt-2 text-xl font-bold text-ink">Could not load the owner dashboard</h2>
+      <p className="mt-2 text-sm leading-6 text-rose-900">{getOwnerFacingErrorMessage(state.status)}</p>
     </section>
   );
 }
@@ -281,15 +296,15 @@ function DashboardSummarySection({ summary }: { summary: AdminDashboardSummary }
         </div>
         <div className="mt-4 flex flex-wrap gap-2">
           <StatusPill tone={summary.onboardingHints.hasCategories ? 'success' : 'warning'}>
-            hasCategories: {summary.onboardingHints.hasCategories ? 'true' : 'false'}
+            {summary.onboardingHints.hasCategories ? 'Categories ready' : 'Add a category'}
           </StatusPill>
           <StatusPill tone={summary.onboardingHints.hasItems ? 'success' : 'warning'}>
-            hasItems: {summary.onboardingHints.hasItems ? 'true' : 'false'}
+            {summary.onboardingHints.hasItems ? 'Items ready' : 'Add an item'}
           </StatusPill>
           <StatusPill tone={summary.onboardingHints.hasPublicMenuReady ? 'success' : 'warning'}>
-            hasPublicMenuReady: {summary.onboardingHints.hasPublicMenuReady ? 'true' : 'false'}
+            {summary.onboardingHints.hasPublicMenuReady ? 'Public menu ready' : 'Menu not ready'}
           </StatusPill>
-          <StatusPill>{summary.onboardingHints.recommendedNextStep || 'READY'}</StatusPill>
+          <StatusPill>{nextStepCopy.title}</StatusPill>
         </div>
       </article>
     </section>
@@ -310,9 +325,9 @@ function PublicMenuShareSection({
       <div className="flex flex-col gap-4 lg:flex-row lg:items-start lg:justify-between">
         <div>
           <p className="text-sm font-semibold uppercase text-accent">Public menu share</p>
-          <h2 className="mt-2 text-xl font-bold text-ink">Owner share link</h2>
+          <h2 className="mt-2 text-xl font-bold text-ink">Share your live menu</h2>
           <p className="mt-2 max-w-2xl text-sm leading-6 text-neutral-600">
-            This uses dashboard-summary.publicMenu from the Sprint 4 backend.
+            Copy this link for table QR codes, social pages, or staff testing. Customers will see the live public menu.
           </p>
         </div>
         <button
@@ -320,21 +335,21 @@ function PublicMenuShareSection({
           className="inline-flex rounded-md bg-accent px-4 py-2 text-sm font-semibold text-white"
           onClick={() => onCopy(summary.publicMenu.url, 'public menu URL')}
         >
-          Copy URL
+          Copy menu link
         </button>
       </div>
 
       <div className="mt-5 grid gap-4 lg:grid-cols-2">
         <div>
-          <p className="text-xs font-semibold uppercase text-neutral-500">Public menu URL</p>
+          <p className="text-xs font-semibold uppercase text-neutral-500">Live menu link</p>
           <p className="mt-2 break-all rounded-md border border-neutral-200 bg-neutral-50 p-3 text-sm font-semibold text-ink">
             {summary.publicMenu.url}
           </p>
         </div>
         <div>
-          <p className="text-xs font-semibold uppercase text-neutral-500">QR payload</p>
+          <p className="text-xs font-semibold uppercase text-neutral-500">QR handoff</p>
           <p className="mt-2 rounded-md border border-neutral-200 bg-neutral-50 p-3 text-sm font-semibold text-neutral-700">
-            QR payload is available to QR generation flows and is not displayed here.
+            QR content stays hidden here. Use the copied menu link when creating printed table QR codes.
           </p>
         </div>
       </div>
@@ -501,9 +516,14 @@ function ActionBanner({ actionState }: { actionState: ActionState }) {
       ? 'border-emerald-200 bg-emerald-50 text-emerald-800'
       : actionState.status === 'error'
         ? 'border-rose-200 bg-rose-50 text-rose-800'
-        : 'border-blue-200 bg-blue-50 text-blue-800';
+        : 'border-amber-200 bg-amber-50 text-amber-900';
 
-  return <p className={`rounded-lg border p-3 text-sm font-semibold ${toneClass}`}>{actionState.message}</p>;
+  const message =
+    actionState.status === 'error'
+      ? 'That change could not be saved. Please try again or check your permission for this business.'
+      : actionState.message;
+
+  return <p className={`rounded-lg border p-3 text-sm font-semibold ${toneClass}`}>{message}</p>;
 }
 
 function CategoryManager({
@@ -738,7 +758,7 @@ export function OwnerWorkflowPanel({ apiBaseUrl }: OwnerWorkflowPanelProps) {
         if (!businessId) {
           setState({
             status: 'missing-business',
-            message: 'GET /me did not return an active membership or business summary to use as the selected business.'
+            message: 'No active business is available for this account.'
           });
           return;
         }
@@ -990,7 +1010,7 @@ export function OwnerWorkflowPanel({ apiBaseUrl }: OwnerWorkflowPanelProps) {
       if (!token) {
         setActionState({
           status: 'error',
-          message: 'Clerk did not return a JWT for the signed-in session.'
+          message: 'Please sign in again before saving changes.'
         });
         return;
       }
@@ -1074,9 +1094,9 @@ export function OwnerWorkflowPanel({ apiBaseUrl }: OwnerWorkflowPanelProps) {
         <div className="flex flex-col gap-3 lg:flex-row lg:items-end lg:justify-between">
           <div>
             <p className="text-sm font-semibold uppercase text-accent">Menu management</p>
-            <h2 className="mt-2 text-xl font-bold text-ink">Reorder and restore records</h2>
+            <h2 className="mt-2 text-xl font-bold text-ink">Reorder and restore menu content</h2>
             <p className="mt-2 max-w-3xl text-sm leading-6 text-neutral-600">
-              Loaded with includeInactive=true so archived categories and unavailable items stay visible to owners.
+              Archived categories and sold-out items stay visible here so owners can restore or reorder them safely.
             </p>
           </div>
           <button

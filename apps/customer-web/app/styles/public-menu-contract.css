@@ -516,6 +516,23 @@
   font-weight: 800;
 }
 
+.waflo-item-detail__price-block span[data-state="sold-out"] {
+  background: color-mix(in srgb, var(--waflo-template-danger) 10%, white);
+  color: var(--waflo-template-danger);
+}
+
+.waflo-item-detail__notice {
+  margin: 1.25rem 0 0;
+  padding: 0.9rem 1rem;
+  border: 1px solid color-mix(in srgb, var(--waflo-template-danger) 18%, white);
+  border-radius: calc(var(--waflo-menu-radius) * 0.7);
+  background: color-mix(in srgb, var(--waflo-template-danger) 7%, white);
+  color: var(--waflo-template-danger);
+  font-size: 0.95rem;
+  font-weight: 750;
+  line-height: 1.55;
+}
+
 .waflo-item-detail__description {
   margin: 1.25rem 0 0;
   font-size: 1rem;

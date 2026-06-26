@@ -124,9 +124,27 @@ function CardMetrics({ card }: { card: PublicLoyaltyCard }) {
 export function AppleWalletRefreshNotice() {
   return (
     <p className="mt-5 rounded-md bg-sky-50 p-3 text-sm leading-6 text-sky-800">
-      Your live card is up to date online. Apple Wallet may refresh shortly after stamps are added.
+      Your live web card is the source of truth and updates online first. Apple Wallet may refresh shortly after stamps are added.
     </p>
   );
+}
+
+function getCardUnavailableCopy(state: CardStatus['state'], message?: string) {
+  if (state === 'missing-token') {
+    return 'We could not open a saved loyalty card on this browser. Join loyalty, transfer from a trusted old device, or ask staff for help.';
+  }
+
+  if (state === 'storage-unavailable') {
+    return 'This browser could not read the saved loyalty card. Open the card from your original link or ask staff for help.';
+  }
+
+  if (state === 'error') {
+    return message && /invalid|expired|already used/i.test(message)
+      ? 'This card link is no longer available. Ask staff for help or transfer the card from a trusted old device.'
+      : 'We could not load this card right now. Please try again in a moment.';
+  }
+
+  return 'We could not open this card right now. Please try again in a moment.';
 }
 
 function CardView({
@@ -251,7 +269,7 @@ export function LoyaltyCardClient({
       if (!stored.storageAvailable && !queryToken) {
         setStatus({
           state: 'storage-unavailable',
-          message: 'This browser could not read the saved loyalty card. Open the card from your enrollment link.'
+          message: 'This browser could not read the saved loyalty card.'
         });
         return;
       }
@@ -259,7 +277,7 @@ export function LoyaltyCardClient({
       if (!token) {
         setStatus({
           state: 'missing-token',
-          message: 'No loyalty card token was found for this business. Join loyalty to create a card.'
+          message: 'No saved loyalty card was found for this business.'
         });
         return;
       }
@@ -311,7 +329,9 @@ export function LoyaltyCardClient({
     case 'error':
       return (
         <LoyaltyCardShell slug={slug} title="Card unavailable">
-          <p className="mt-3 text-base leading-7 text-neutral-600">{status.message}</p>
+          <p className="mt-3 text-base leading-7 text-neutral-600">
+            {getCardUnavailableCopy(status.state, status.message)}
+          </p>
           <Link
             href={`/m/${slug}/loyalty`}
             className="mt-5 inline-flex rounded-md bg-ink px-5 py-3 text-sm font-semibold text-white"

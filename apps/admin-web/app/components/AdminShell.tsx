@@ -20,9 +20,9 @@ export function AdminShell({ children }: Readonly<{ children: React.ReactNode }>
         <div className="mx-auto flex w-full max-w-6xl flex-col gap-4 px-4 py-4 sm:flex-row sm:items-center sm:justify-between">
           <div>
             <p className="text-sm font-semibold text-accent">Waflo</p>
-            <h1 className="text-2xl font-bold text-ink">Service Admin</h1>
+            <h1 className="text-2xl font-bold text-ink">Owner dashboard</h1>
             <p className="mt-1 text-xs font-semibold uppercase text-neutral-500">
-              {appEnv} - internal owner/admin shell
+              {appEnv} workspace for menu and loyalty management
             </p>
           </div>
           <div className="flex flex-col gap-3 sm:items-end">

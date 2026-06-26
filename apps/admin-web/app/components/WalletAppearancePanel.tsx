@@ -123,9 +123,9 @@ export function WalletAppearancePanel({
         <div className="flex flex-col gap-3 lg:flex-row lg:items-start lg:justify-between">
           <div>
             <p className="text-sm font-semibold uppercase text-accent">Wallet &amp; Stamp Appearance</p>
-            <h2 className="mt-2 text-xl font-bold text-ink">Customize Google Wallet visuals</h2>
+            <h2 className="mt-2 text-xl font-bold text-ink">Customize wallet card visuals</h2>
             <p className="mt-2 max-w-3xl text-sm leading-6 text-neutral-600">
-              Wallet appearance changes apply to newly generated or refreshed wallet cards.
+              These settings shape the loyalty card artwork used for supported wallet platforms and web previews.
             </p>
           </div>
           <div className="flex flex-wrap gap-2">
@@ -152,7 +152,7 @@ export function WalletAppearancePanel({
                     type="button"
                     className={`rounded-lg border p-3 text-left transition ${
                       draft.themePreset === preset.key
-                        ? 'border-accent bg-blue-50 ring-2 ring-blue-100'
+                        ? 'border-accent bg-[#fff8f2] ring-2 ring-[#ffd9c7]'
                         : 'border-neutral-200 bg-white hover:border-neutral-300'
                     } disabled:cursor-not-allowed disabled:opacity-60`}
                     disabled={!canConfigure || actionPending}
@@ -183,7 +183,7 @@ export function WalletAppearancePanel({
                       key={mode}
                       type="button"
                       className={`rounded-md border px-3 py-2 text-sm font-semibold ${
-                        draft.colorMode === mode ? 'border-accent bg-blue-50 text-accent' : 'border-neutral-200 text-neutral-700'
+                        draft.colorMode === mode ? 'border-accent bg-[#fff8f2] text-accent' : 'border-neutral-200 text-neutral-700'
                       } disabled:cursor-not-allowed disabled:opacity-60`}
                       disabled={!canConfigure || actionPending}
                       onClick={() => setColorMode(mode)}
@@ -201,7 +201,7 @@ export function WalletAppearancePanel({
                       key={variant}
                       type="button"
                       className={`rounded-md border px-3 py-2 text-sm font-semibold ${
-                        draft.layoutVariant === variant ? 'border-accent bg-blue-50 text-accent' : 'border-neutral-200 text-neutral-700'
+                        draft.layoutVariant === variant ? 'border-accent bg-[#fff8f2] text-accent' : 'border-neutral-200 text-neutral-700'
                       } disabled:cursor-not-allowed disabled:opacity-60`}
                       disabled={!canConfigure || actionPending}
                       onClick={() => onDraftChange({ ...draft, layoutVariant: variant })}
@@ -355,7 +355,7 @@ function StampPresetButton({
     <button
       type="button"
       className={`grid gap-2 rounded-lg border p-3 text-center transition ${
-        selected ? 'border-accent bg-blue-50 ring-2 ring-blue-100' : 'border-neutral-200 bg-white hover:border-neutral-300'
+        selected ? 'border-accent bg-[#fff8f2] ring-2 ring-[#ffd9c7]' : 'border-neutral-200 bg-white hover:border-neutral-300'
       } disabled:cursor-not-allowed disabled:opacity-60`}
       disabled={disabled}
       onClick={onSelect}
@@ -379,13 +379,13 @@ function WalletAppearancePreview({ draft }: { draft: AdminLoyaltyStampStyleInput
           <div className="p-4 text-white" style={{ backgroundColor: safeHex(draft.walletBackgroundColor, '#2563eb') }}>
             <div className="flex items-start justify-between gap-3">
               <div className="min-w-0">
-                <p className="text-xs font-semibold uppercase opacity-80">Google Wallet</p>
-                <h3 className="mt-1 truncate text-lg font-bold">Waflo</h3>
-                <p className="mt-1 text-xs font-semibold opacity-85">Waflo Member</p>
+                <p className="text-xs font-semibold uppercase opacity-80">Wallet card</p>
+                <h3 className="mt-1 truncate text-lg font-bold">Waflo Rewards</h3>
+                <p className="mt-1 text-xs font-semibold opacity-85">Member card</p>
               </div>
               <QrPlaceholder />
             </div>
-            <p className="mt-4 text-xs font-semibold opacity-80">WFLO-SMOKE-01</p>
+            <p className="mt-4 text-xs font-semibold opacity-80">Scan in store to earn stamps</p>
           </div>
 
           <div
@@ -409,7 +409,7 @@ function WalletAppearancePreview({ draft }: { draft: AdminLoyaltyStampStyleInput
 
             <div className="relative pr-24">
               <p className="text-sm font-bold" style={{ color: hexToRgba(draft.imageTextColor, 0.78) }}>
-                Waflo Demo Cafe
+                Sample Cafe
               </p>
               <h3 className={`${compact ? 'text-2xl' : 'text-3xl'} mt-1 font-extrabold`} style={{ color: safeHex(draft.imageTextColor, '#ffffff') }}>
                 Stamp Card

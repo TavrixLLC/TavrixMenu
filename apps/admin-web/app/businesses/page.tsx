@@ -16,11 +16,10 @@ export default function BusinessesPage() {
 
           <section className="rounded-lg border border-neutral-200 bg-white">
             <div className="border-b border-neutral-200 p-4">
-              <p className="text-sm font-semibold uppercase text-accent">Mock/dev shell</p>
-              <h2 className="mt-2 text-xl font-bold text-ink">Business management pending backend APIs</h2>
+              <p className="text-sm font-semibold uppercase text-accent">Business management</p>
+              <h2 className="mt-2 text-xl font-bold text-ink">Business tools are coming soon</h2>
               <p className="mt-2 text-sm text-neutral-600">
-                Sprint 3 admin-web only displays authenticated owner context. Create/update management flows remain
-                pending.
+                You can view business access here today. Creating and editing businesses will be added to this owner dashboard later.
               </p>
             </div>
             <div className="overflow-x-auto">

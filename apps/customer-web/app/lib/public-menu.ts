@@ -115,14 +115,11 @@ function parsePublicMenuAppearance(menu: PublicMenuResponse): PublicMenuAppearan
   };
 }
 
-function getAvailableMenu(menu: PublicMenuResponse): PublicMenuResponse {
+function normalizePublicMenu(menu: PublicMenuResponse): PublicMenuResponse {
   return {
     ...menu,
     appearance: parsePublicMenuAppearance(menu),
-    categories: menu.categories.map((category) => ({
-      ...category,
-      items: category.items.filter((item) => item.isAvailable)
-    }))
+    categories: menu.categories
   };
 }
 
@@ -232,19 +229,17 @@ function parsePublicItemDetail(value: unknown): PublicMenuItemDetail | null {
   const directItem = parsePublicMenuItem(value);
 
   if (directItem) {
-    return directItem.isAvailable
-      ? {
-          business: null,
-          category: null,
-          item: directItem
-        }
-      : null;
+    return {
+      business: null,
+      category: null,
+      item: directItem
+    };
   }
 
   const record = asRecord(value);
   const item = parsePublicMenuItem(record?.item);
 
-  if (!item?.isAvailable) {
+  if (!item) {
     return null;
   }
 
@@ -282,7 +277,7 @@ export async function fetchPublicMenu(slug: string): Promise<PublicMenuResult> {
       };
     }
 
-    const data = getAvailableMenu((await response.json()) as PublicMenuResponse);
+    const data = normalizePublicMenu((await response.json()) as PublicMenuResponse);
 
     return {
       status: 'ok',

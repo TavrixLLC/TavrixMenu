@@ -1,4 +1,5 @@
 import { PublicMenuTemplateView } from '../../../components/PublicMenuTemplateView';
+import { MENU_UNAVAILABLE_MESSAGE, MenuState } from '../../../components/PublicMenuStates';
 import { getPublicMenuTemplate, isPublicMenuTemplateId } from '../../../lib/menu-templates';
 import { fetchPublicMenu } from '../../../lib/public-menu';
 import { fetchPublicLoyaltyContext } from '../../../lib/public-loyalty';
@@ -11,40 +12,6 @@ type MenuPageProps = {
     previewTemplateId?: string | string[];
   }>;
 };
-
-function MenuState({
-  slug,
-  title,
-  message,
-  state
-}: {
-  slug: string;
-  title: string;
-  message: string;
-  state: 'not-found' | 'error';
-}) {
-  return (
-    <main
-      className="waflo-menu waflo-template-waflo-warm"
-      data-template="waflo-warm"
-      data-business-slug={slug}
-      data-component="public-menu"
-      data-state={state}
-      data-dir="ltr"
-      data-loyalty-enabled="false"
-      lang="en"
-      dir="ltr"
-    >
-      <section className="waflo-menu__shell" data-slot="merchant-shell" data-component="menu-shell">
-        <div className="waflo-menu__state" data-slot="error-state" data-component="menu-state" data-state={state}>
-          <p className="waflo-menu__eyebrow">Public menu</p>
-          <h1>{title}</h1>
-          <p>{message}</p>
-        </div>
-      </section>
-    </main>
-  );
-}
 
 function readPreviewTemplateId(searchParams: { previewTemplateId?: string | string[] } | undefined) {
   const value = searchParams?.previewTemplateId;
@@ -73,7 +40,7 @@ export default async function MenuPage({ params, searchParams }: MenuPageProps) 
       <MenuState
         slug={slug}
         title="Menu unavailable"
-        message="The customer menu could not be loaded right now because the public API is unreachable or returned an error."
+        message={MENU_UNAVAILABLE_MESSAGE}
         state="error"
       />
     );
