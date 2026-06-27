@@ -51,6 +51,7 @@ The current API already supports the required pilot operations:
 | Menu categories/items | `POST/GET/PATCH/DELETE` category and item routes | Supports setup, archive/restore, and reorder. |
 | Public menu | `GET /public/m/{slug}`, `GET /public/m/{slug}/items/{itemId}` | Public source for QR menu smoke checks. |
 | Menu templates | `GET /menu-templates`, `GET/PATCH /businesses/{businessId}/appearance` | Mobile/admin preview URL remains web-owned: `/m/:slug?previewTemplateId=<template-id>`. |
+| Media upload | `POST /businesses/{businessId}/media/uploads` | Upload logo, cover, and menu item images, then save the returned URL through existing update endpoints. |
 | Loyalty program | `GET/POST/PATCH /businesses/{businessId}/loyalty/program` | One active stamp-card program per business. |
 | Loyalty appearance | `GET/PATCH /businesses/{businessId}/loyalty/stamp-style`, `GET /loyalty/stamp-presets` | Use existing preset/style controls only. |
 | Public loyalty enrollment | `GET /public/m/{slug}/loyalty`, `POST /public/m/{slug}/loyalty/enroll` | Phone-only recovery remains blocked. Same-business duplicates must not issue card access. |
@@ -98,14 +99,14 @@ Before customer-facing testing:
   - City.
   - Currency.
   - Default language.
-  - Logo and cover assets if available.
+  - Logo and cover assets through the media upload flow if available.
 - Enter menu data:
   - Categories.
   - Items.
   - Prices.
   - Descriptions.
   - Availability/sold-out states.
-  - Images if available.
+  - Menu item images through the media upload flow if available.
 - Select the public menu template from the existing catalog.
 - Preview the public menu before saving/publishing expectations to the owner.
 - Configure loyalty program:
@@ -136,6 +137,7 @@ tokens, card references, QR payloads, customer phone/email, or other PII:
 - `GET /businesses/{businessId}/categories` returns expected menu categories.
 - `GET /businesses/{businessId}/items` returns expected pilot items.
 - `GET /businesses/{businessId}/appearance` returns selected template state.
+- `POST /businesses/{businessId}/media/uploads` accepts valid owner/manager image uploads and rejects staff, invalid, or oversized files.
 - `GET /businesses/{businessId}/loyalty/program` returns the active loyalty program.
 - `GET /businesses/{businessId}/loyalty/stamp-style` returns the current style or a safe default.
 - `GET /public/m/{slug}/loyalty` returns public enrollment context.
@@ -151,6 +153,7 @@ tokens, card references, QR payloads, customer phone/email, or other PII:
 - `POST /businesses/{businessId}/loyalty/memberships/{membershipId}/stamps` updates progress.
 - `POST /businesses/{businessId}/loyalty/memberships/{membershipId}/redeem` works only when reward is ready.
 - API logs do not contain secrets, QR payloads, scan tokens, card references, transfer tokens, phone/email, or customer PII.
+- API logs do not contain local upload filesystem paths.
 
 ## Backup And Rollback
 

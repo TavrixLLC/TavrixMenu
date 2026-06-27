@@ -16,6 +16,8 @@ Do not commit real secrets. Use local `.env` files copied from each app's `.env.
 - `API_PORT`
 - `NODE_ENV`
 - `CUSTOMER_WEB_BASE_URL`
+- `MEDIA_UPLOAD_ROOT` optional; defaults to `/opt/waflo/uploads` in production
+  and `public/uploads` in local development/test.
 
 ## apps/customer-web
 

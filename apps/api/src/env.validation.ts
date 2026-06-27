@@ -198,6 +198,9 @@ export function validateEnvironment(config: Environment) {
     ...config,
     NODE_ENV: nodeEnv,
     API_PORT: apiPort,
+    MEDIA_UPLOAD_ROOT:
+      config.MEDIA_UPLOAD_ROOT?.trim() ||
+      (nodeEnv === 'production' ? '/opt/waflo/uploads' : 'public/uploads'),
     CUSTOMER_WEB_BASE_URL:
       config.CUSTOMER_WEB_BASE_URL ?? 'http://localhost:3001',
     GOOGLE_WALLET_ENABLED: googleWalletEnabled,

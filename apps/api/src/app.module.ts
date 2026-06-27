@@ -8,6 +8,7 @@ import { BusinessesModule } from './modules/businesses/businesses.module';
 import { HealthModule } from './modules/health/health.module';
 import { GoogleWalletModule } from './modules/google-wallet/google-wallet.module';
 import { LoyaltyModule } from './modules/loyalty/loyalty.module';
+import { MediaModule } from './modules/media/media.module';
 import { MenuModule } from './modules/menu/menu.module';
 import { MenuTemplatesModule } from './modules/menu-templates/menu-templates.module';
 import { UsersModule } from './modules/users/users.module';
@@ -27,6 +28,7 @@ import { validateEnvironment } from './env.validation';
     BusinessesModule,
     MenuTemplatesModule,
     MenuModule,
+    MediaModule,
     LoyaltyModule,
     GoogleWalletModule,
     AppleWalletModule,

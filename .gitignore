@@ -31,6 +31,7 @@ out/
 *.local
 apps/api/public/generated/
 apps/api/public/generated/apple-wallet/
+apps/api/public/uploads/
 
 # Local credentials and Wallet artifacts
 *.p12
