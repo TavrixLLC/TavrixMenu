@@ -104,7 +104,8 @@ describe('loyalty identity states', () => {
     const html = renderIdentityForm('join');
 
     assert.match(html, /Join this loyalty program/);
-    assert.match(html, /Phone is required for the membership record/);
+    assert.match(html, /right Wallet button for this device/);
+    assert.match(html, /A phone number alone cannot open an existing card/);
     assert.match(html, /<input[^>]*required=""[^>]*name="phone"/);
     assert.match(html, /Email <span[^>]*>\(optional\)/);
     assert.match(html, /I already joined/);
@@ -418,6 +419,9 @@ describe('device-aware wallet actions', () => {
   it('shows Apple first on iPhone and keeps the web card secondary', () => {
     const html = renderActions('ios');
 
+    assert.match(html, /Best for this iPhone/);
+    assert.match(html, /Add this card to Apple Wallet/);
+    assert.match(html, /Wallet updates may sync shortly/);
     assert.match(html, /add-to-apple-wallet\.svg/);
     assert.equal(/add-to-google-wallet\.svg/.test(html), false);
     assert.ok(html.indexOf('add-to-apple-wallet.svg') < html.indexOf('Open live card'));
@@ -426,6 +430,9 @@ describe('device-aware wallet actions', () => {
   it('shows Google first on Android and keeps the web card secondary', () => {
     const html = renderActions('android');
 
+    assert.match(html, /Best for this Android phone/);
+    assert.match(html, /Add this card to Google Wallet/);
+    assert.match(html, /Wallet updates may sync shortly/);
     assert.match(html, /add-to-google-wallet\.svg/);
     assert.equal(/add-to-apple-wallet\.svg/.test(html), false);
     assert.ok(html.indexOf('add-to-google-wallet.svg') < html.indexOf('Open live card'));
@@ -465,6 +472,23 @@ describe('device-aware wallet actions', () => {
 
     assert.equal(calls.length, 0);
   });
+
+  it('keeps customer-visible wallet copy free of internal terms', () => {
+    const visibleCopy = [
+      visibleText(renderActions('ios')),
+      visibleText(renderActions('android')),
+      visibleText(renderActions('desktop')),
+      visibleText(renderEnrollmentSuccess('ios')),
+      visibleText(renderReturningCard('ios'))
+    ].join(' ');
+
+    assert.equal(/\btoken\b/i.test(visibleCopy), false);
+    assert.equal(/\bJWT\b/i.test(visibleCopy), false);
+    assert.equal(/\bAPI\b/i.test(visibleCopy), false);
+    assert.equal(/card ref/i.test(visibleCopy), false);
+    assert.equal(/recovery token/i.test(visibleCopy), false);
+    assert.equal(/transfer token/i.test(visibleCopy), false);
+  });
 });
 
 describe('Apple Wallet refresh delay mitigation copy', () => {
@@ -472,7 +496,7 @@ describe('Apple Wallet refresh delay mitigation copy', () => {
     const html = renderToStaticMarkup(<AppleWalletRefreshNotice />);
 
     assert.match(html, /Your live web card is the source of truth/);
-    assert.match(html, /Apple Wallet may refresh shortly/);
+    assert.match(html, /Apple Wallet and Google Wallet may sync shortly/);
     assert.equal(/Automatic Updates/i.test(html), false);
   });
 });
@@ -481,7 +505,8 @@ describe('enrollment success wallet handoff', () => {
   it('shows the iPhone customer the Apple action immediately', () => {
     const html = renderEnrollmentSuccess('ios');
 
-    assert.match(html, /your card is ready/i);
+    assert.match(html, /Your loyalty card is ready/);
+    assert.match(html, /easy to find on your next visit/);
     assert.match(html, /add-to-apple-wallet\.svg/);
     assert.equal(/add-to-google-wallet\.svg/.test(html), false);
   });
@@ -489,7 +514,8 @@ describe('enrollment success wallet handoff', () => {
   it('keeps the Google Wallet handoff working on Android', () => {
     const html = renderEnrollmentSuccess('android');
 
-    assert.match(html, /your card is ready/i);
+    assert.match(html, /Your loyalty card is ready/);
+    assert.match(html, /easy to find on your next visit/);
     assert.match(html, /add-to-google-wallet\.svg/);
     assert.equal(/add-to-apple-wallet\.svg/.test(html), false);
   });
@@ -500,6 +526,7 @@ describe('returning customer wallet handoff', () => {
     const html = renderReturningCard('ios');
 
     assert.match(html, /Welcome back/);
+    assert.match(html, /Add it to Wallet on this phone/);
     assert.match(html, /add-to-apple-wallet\.svg/);
     assert.equal(/add-to-google-wallet\.svg/.test(html), false);
   });
@@ -582,4 +609,8 @@ function renderReturningCard(platform: WalletPlatform) {
       onUseAnotherCard={() => undefined}
     />
   );
+}
+
+function visibleText(html: string) {
+  return html.replace(/<[^>]*>/g, ' ').replace(/\s+/g, ' ').trim();
 }
