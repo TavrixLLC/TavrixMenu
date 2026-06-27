@@ -24,15 +24,20 @@ device identifiers in public reports.
 ## 2. Backup Before Pilot Data Entry
 
 - Take a database backup using the approved staging-only process.
+- Back up the pilot upload volume at `/opt/waflo/uploads` before bulk image entry.
 - Store the backup outside the repository.
 - Do not paste database connection values into notes or chat.
 - Record only:
   - Environment name.
   - Backup timestamp.
+  - Upload-volume backup timestamp.
   - Operator name or initials.
   - Deployed commit.
   - Whether backup completed.
 - Verify restore access exists before entering real pilot configuration.
+- Confirm the upload-volume restore path before adding real pilot images.
+- Treat local VPS upload storage as temporary pilot storage, not the final
+  production storage architecture.
 
 ## 3. Pilot Personas
 
@@ -107,6 +112,14 @@ Safety rules:
    - Business logo/cover: `PATCH /businesses/{businessId}`.
    - Menu item image: `PATCH /items/{itemId}`.
 8. Include `/opt/waflo/uploads` in pilot backup coverage.
+9. Before bulk image entry, take a count-only backup record for the upload
+   volume; do not paste local paths beyond the approved runbook path above.
+10. After completing pilot menu images, take a second upload-volume backup and
+    record its timestamp privately.
+11. If restore is needed, restore the database backup and upload-volume backup
+    from the same pilot setup window so saved image URLs still resolve.
+12. Do not treat local VPS storage as final production storage. Object storage
+    migration belongs to a later ops-hardening task.
 
 ## 6. Menu Appearance
 
