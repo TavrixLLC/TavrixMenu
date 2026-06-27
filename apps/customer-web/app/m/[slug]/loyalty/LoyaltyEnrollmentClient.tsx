@@ -151,10 +151,10 @@ export function LoyaltyEnrollmentSuccess({
         <p className="text-sm font-semibold text-emerald-800">
           {variant === 'transferred'
             ? 'Card added securely'
-            : `You joined ${enrollment.program.name}`}
+            : 'Your loyalty card is ready'}
         </p>
         <p className="mt-2 text-sm leading-6 text-emerald-900">
-          {enrollment.customer.name ? `${enrollment.customer.name}, your` : 'Your'} card is ready.
+          {enrollment.customer.name ? `${enrollment.customer.name}, add` : 'Add'} it to Wallet now so it is easy to find on your next visit.
         </p>
       </div>
 
@@ -208,7 +208,8 @@ export function ReturningLoyaltyCardView({
           {card.customer.name ? `Welcome back, ${card.customer.name}` : 'Welcome back'}
         </p>
         <p className="mt-1 text-sm leading-6 text-emerald-900">
-          Your loyalty card and current progress are ready.
+          Your card is ready. Add it to Wallet on this phone or open the live
+          card for the latest progress.
         </p>
       </div>
 
@@ -395,11 +396,12 @@ export function LoyaltyIdentityForm({
 
   return (
     <form onSubmit={onSubmit} noValidate className="grid gap-4">
-      <div className="rounded-md bg-neutral-50 p-3">
+      <div className="rounded-lg border border-neutral-200 bg-neutral-50 p-4">
         <p className="text-sm font-semibold text-ink">Join this loyalty program</p>
         <p className="mt-1 text-sm leading-6 text-neutral-600">
-          Phone is required for the membership record, but it cannot open an existing card by
-          itself. Email and name are optional.
+          Enter your phone once. We will create your card and then show the
+          right Wallet button for this device. A phone number alone cannot open
+          an existing card.
         </p>
       </div>
 
@@ -422,7 +424,8 @@ export function LoyaltyIdentityForm({
           maxLength={24}
         />
         <p className="text-xs leading-5 text-neutral-500">
-          Use 07xxxxxxxxx or +9647xxxxxxxxx.
+          Use 07xxxxxxxxx or +9647xxxxxxxxx. Staff may use this to help in
+          person later.
         </p>
         {phoneError ? (
           <p id="loyalty-phone-error" role="alert" className="text-sm leading-5 text-red-600">

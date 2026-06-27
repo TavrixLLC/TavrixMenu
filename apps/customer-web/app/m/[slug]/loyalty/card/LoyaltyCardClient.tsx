@@ -124,7 +124,7 @@ function CardMetrics({ card }: { card: PublicLoyaltyCard }) {
 export function AppleWalletRefreshNotice() {
   return (
     <p className="mt-5 rounded-md bg-sky-50 p-3 text-sm leading-6 text-sky-800">
-      Your live web card is the source of truth and updates online first. Apple Wallet may refresh shortly after stamps are added.
+      Your live web card is the source of truth and updates online first. Apple Wallet and Google Wallet may sync shortly after stamps are added.
     </p>
   );
 }
@@ -214,7 +214,11 @@ function CardView({
             <AppleWalletRefreshNotice />
 
             <div className="mt-5 border-t border-neutral-200 pt-5">
-              <h2 className="text-lg font-bold text-ink">Wallet options</h2>
+              <h2 className="text-lg font-bold text-ink">Add to Wallet</h2>
+              <p className="mt-1 text-sm leading-6 text-neutral-600">
+                Use the recommended Wallet button for this device, or keep the
+                live web card open for the latest progress.
+              </p>
               <div className="mt-3">
                 <WalletActions
                   platform={platform}

@@ -35,10 +35,22 @@ export function WalletActions({
 
   if (platform === 'ios') {
     return (
-      <section className="grid gap-3" data-wallet-platform="ios">
-        <p className="text-sm leading-6 text-neutral-600">
-          Save this card to Apple Wallet, or open the live card for current progress.
-        </p>
+      <section
+        className="grid gap-4 rounded-lg border border-neutral-200 bg-white p-4"
+        data-wallet-platform="ios"
+      >
+        <div>
+          <p className="text-xs font-semibold uppercase tracking-wide text-mint">
+            Best for this iPhone
+          </p>
+          <h3 className="mt-1 text-lg font-bold text-ink">
+            Add this card to Apple Wallet
+          </h3>
+          <p className="mt-2 text-sm leading-6 text-neutral-600">
+            Keep it ready for your next visit. The live web card below stays
+            current, and Wallet updates may sync shortly after staff add stamps.
+          </p>
+        </div>
         {appleWalletEnabled ? (
           <AppleWalletButton enabled cardToken={cardToken} />
         ) : (
@@ -62,10 +74,22 @@ export function WalletActions({
 
   if (platform === 'android') {
     return (
-      <section className="grid gap-3" data-wallet-platform="android">
-        <p className="text-sm leading-6 text-neutral-600">
-          Save this card to Google Wallet, or open the live card for current progress.
-        </p>
+      <section
+        className="grid gap-4 rounded-lg border border-neutral-200 bg-white p-4"
+        data-wallet-platform="android"
+      >
+        <div>
+          <p className="text-xs font-semibold uppercase tracking-wide text-mint">
+            Best for this Android phone
+          </p>
+          <h3 className="mt-1 text-lg font-bold text-ink">
+            Add this card to Google Wallet
+          </h3>
+          <p className="mt-2 text-sm leading-6 text-neutral-600">
+            Keep it ready for your next visit. The live web card below stays
+            current, and Wallet updates may sync shortly after staff add stamps.
+          </p>
+        </div>
         <GoogleWalletButton apiBaseUrl={apiBaseUrl} cardToken={cardToken} />
         <Link
           href={cardHref}

@@ -60,9 +60,11 @@ function LoyaltyHeader({ context }: { context: PublicLoyaltyContext }) {
           <PlaceholderImage label="Logo" className="h-20 w-20 shrink-0 rounded-lg bg-white shadow-sm" />
         )}
         <div className="pb-1">
-          <p className="text-sm font-semibold text-mint">Web loyalty card</p>
+          <p className="text-sm font-semibold text-mint">Loyalty rewards</p>
           <h1 className="text-3xl font-bold text-ink">{business.name}</h1>
-          <p className="mt-1 text-sm text-neutral-500">/m/{business.slug}/loyalty</p>
+          <p className="mt-1 text-sm text-neutral-500">
+            Join, collect stamps, and keep your card ready on this phone.
+          </p>
         </div>
       </div>
     </section>
@@ -132,15 +134,16 @@ export default async function LoyaltyPage({ params }: LoyaltyPageProps) {
           ) : null}
 
           <p className="mt-5 text-sm leading-6 text-neutral-600">
-            Join once and keep this web loyalty card in your browser. Staff will add stamps and redeem rewards in the
-            shop.
+            Join once from this phone. Staff add stamps in the shop, and your
+            live web card shows the newest progress first.
           </p>
         </div>
 
         <section className="rounded-lg border border-neutral-200 bg-white p-5 shadow-sm">
-          <h2 className="text-xl font-bold text-ink">Join loyalty</h2>
+          <h2 className="text-xl font-bold text-ink">Get your card</h2>
           <p className="mt-2 text-sm leading-6 text-neutral-600">
-            Join in one step. We will show the best wallet option for this device as soon as your card is ready.
+            One quick step, then we will show the right Wallet button for this
+            device.
           </p>
           <div className="mt-5">
             <LoyaltyEnrollmentClient
