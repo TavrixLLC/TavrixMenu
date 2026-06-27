@@ -5,6 +5,9 @@ import './styles/menu-templates/waflo-warm.css';
 import './styles/menu-templates/coffeehouse-premium.css';
 import './styles/menu-templates/street-bites.css';
 import './styles/menu-templates/minimal-modern.css';
+import './styles/menu-templates/luxury-dining.css';
+import './styles/menu-templates/artisan-cafe.css';
+import './styles/menu-templates/quick-serve-bold.css';
 
 export const metadata: Metadata = {
   title: 'Tavrix Menu Customer Web',

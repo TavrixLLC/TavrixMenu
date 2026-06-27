@@ -18,6 +18,8 @@ describe('customer-web public menu templates', () => {
   it('/dev/menu-templates page renders every template preview frame', () => {
     const html = renderToStaticMarkup(<MenuTemplatePreviewPage />);
 
+    assert.equal(publicMenuTemplates.length, 7);
+
     for (const template of publicMenuTemplates) {
       assert.match(html, new RegExp(template.id));
       assert.match(html, new RegExp(`/dev/menu-templates/${template.id}`));
@@ -48,9 +50,9 @@ describe('customer-web public menu templates', () => {
 
   it('falls back safely when a template id is invalid', () => {
     assert.equal(getPublicMenuTemplate('unknown-template').id, 'waflo-warm');
-    assert.equal(getPublicMenuTemplate('luxury-dining').id, 'waflo-warm');
-    assert.equal(getPublicMenuTemplate('artisan-cafe').id, 'waflo-warm');
-    assert.equal(getPublicMenuTemplate('quick-serve-bold').id, 'waflo-warm');
+    assert.equal(getPublicMenuTemplate('luxury-dining').id, 'luxury-dining');
+    assert.equal(getPublicMenuTemplate('artisan-cafe').id, 'artisan-cafe');
+    assert.equal(getPublicMenuTemplate('quick-serve-bold').id, 'quick-serve-bold');
   });
 
   it('renders a web preview template without mutating the saved appearance', () => {

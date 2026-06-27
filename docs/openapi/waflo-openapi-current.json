@@ -3272,7 +3272,10 @@
               "waflo-warm",
               "coffeehouse-premium",
               "street-bites",
-              "minimal-modern"
+              "minimal-modern",
+              "luxury-dining",
+              "artisan-cafe",
+              "quick-serve-bold"
             ],
             "example": "waflo-warm",
             "description": "Public menu template ID selected for this business."

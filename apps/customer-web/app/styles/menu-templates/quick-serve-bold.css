@@ -1,0 +1,339 @@
+/* ============================================================
+   Waflo Public Menu Template — quick-serve-bold
+   Purpose: Fast food, street food, burger, shawarma, dessert shops.
+   Scope: [data-template="quick-serve-bold"] only.
+   Contract: docs/public-menu-html-contract.md
+   ============================================================ */
+
+.waflo-menu[data-template="quick-serve-bold"] {
+  --waflo-template-bg: #f5f4f2;
+  --waflo-template-surface: #ffffff;
+  --waflo-template-primary: #e8340a;
+  --waflo-template-primary-dark: #b82507;
+  --waflo-template-accent: #ffb800;
+  --waflo-template-success: #2d8a3e;
+  --waflo-template-border: #e2ddd8;
+  --waflo-template-text: #131211;
+  --waflo-template-muted: #6b6560;
+  --waflo-template-reward: #ffb800;
+  --waflo-template-danger: #c0281a;
+  --waflo-menu-radius: 10px;
+  --waflo-menu-radius-sm: 7px;
+  --waflo-menu-shadow: 0 4px 16px rgb(19 18 17 / 10%);
+  --waflo-menu-shell-max: 68rem;
+  font-family: Arial, Helvetica, sans-serif;
+}
+
+/* ── Shell ── */
+.waflo-menu[data-template="quick-serve-bold"] .waflo-menu__shell {
+  width: min(100%, var(--waflo-menu-shell-max));
+}
+
+/* ── Hero: full-bleed cover with identity overlay ── */
+.waflo-menu[data-template="quick-serve-bold"] .waflo-menu__hero {
+  position: relative;
+  display: grid;
+  grid-template-areas:
+    "cover"
+    "identity";
+  gap: 0;
+  border-radius: var(--waflo-menu-radius);
+  overflow: hidden;
+  background: #131211;
+}
+
+.waflo-menu[data-template="quick-serve-bold"] .waflo-menu__cover {
+  min-height: clamp(10rem, 28vw, 18rem);
+  border-radius: 0;
+  background: #2a2825;
+}
+
+/* Dark gradient over cover bottom for identity legibility */
+.waflo-menu[data-template="quick-serve-bold"] [data-slot="merchant-cover"]::after {
+  content: "";
+  position: absolute;
+  inset: 0;
+  background: linear-gradient(to bottom, transparent 40%, rgb(19 18 17 / 80%) 100%);
+  pointer-events: none;
+}
+
+.waflo-menu[data-template="quick-serve-bold"] .waflo-menu__identity {
+  display: grid;
+  grid-template-columns: auto minmax(0, 1fr);
+  gap: 0.85rem;
+  align-items: end;
+  margin: -2.5rem 0 0;
+  padding: 0 1rem 1rem;
+  background: #131211;
+}
+
+.waflo-menu[data-template="quick-serve-bold"] .waflo-menu__logo {
+  width: 5rem;
+  height: 5rem;
+  border: 3px solid var(--waflo-template-primary);
+  border-radius: var(--waflo-menu-radius-sm);
+  background: #1e1c1a;
+  box-shadow: none;
+}
+
+.waflo-menu[data-template="quick-serve-bold"] .waflo-menu__merchant-type {
+  color: var(--waflo-template-accent);
+  font-size: 0.7rem;
+  font-weight: 900;
+  letter-spacing: 0.16em;
+  text-transform: uppercase;
+}
+
+.waflo-menu[data-template="quick-serve-bold"] .waflo-menu__merchant-name {
+  color: #ffffff;
+  font-size: clamp(1.85rem, 6vw, 3.2rem);
+  font-weight: 900;
+  line-height: 1;
+  letter-spacing: -0.02em;
+}
+
+.waflo-menu[data-template="quick-serve-bold"] .waflo-menu__metadata {
+  color: #9a9186;
+  font-size: 0.82rem;
+}
+
+.waflo-menu[data-template="quick-serve-bold"] .waflo-menu__metadata div + div::before {
+  color: #3a3630;
+}
+
+.waflo-menu[data-template="quick-serve-bold"] .waflo-menu__status {
+  background: rgb(232 52 10 / 18%);
+  color: #ff5733;
+  font-size: 0.68rem;
+  font-weight: 900;
+  letter-spacing: 0.1em;
+  text-transform: uppercase;
+}
+
+/* ── Loyalty block ── */
+.waflo-menu[data-template="quick-serve-bold"] .waflo-menu__loyalty {
+  border-color: rgb(232 52 10 / 24%);
+  background: #131211;
+  color: white;
+  border-radius: var(--waflo-menu-radius);
+}
+
+.waflo-menu[data-template="quick-serve-bold"] .waflo-menu__eyebrow {
+  color: var(--waflo-template-accent);
+  font-size: 0.68rem;
+  font-weight: 900;
+  letter-spacing: 0.16em;
+  text-transform: uppercase;
+}
+
+.waflo-menu[data-template="quick-serve-bold"] .waflo-menu__loyalty-title {
+  color: #ffffff;
+  font-size: clamp(1.15rem, 3.5vw, 1.6rem);
+  font-weight: 900;
+}
+
+.waflo-menu[data-template="quick-serve-bold"] .waflo-menu__loyalty-description {
+  color: #9a9186;
+  font-size: 0.88rem;
+}
+
+.waflo-menu[data-template="quick-serve-bold"] .waflo-menu__loyalty-action {
+  border-radius: var(--waflo-menu-radius);
+  background: var(--waflo-template-primary);
+  color: white;
+  font-size: 0.85rem;
+  font-weight: 900;
+  letter-spacing: 0.04em;
+  text-transform: uppercase;
+  transition: background 130ms ease;
+}
+
+.waflo-menu[data-template="quick-serve-bold"] .waflo-menu__loyalty-action:hover {
+  background: var(--waflo-template-primary-dark);
+}
+
+/* ── Category nav: sticky, chunky pills ── */
+.waflo-menu[data-template="quick-serve-bold"] .waflo-menu__category-nav {
+  background: color-mix(in srgb, var(--waflo-template-bg) 92%, transparent);
+  backdrop-filter: blur(10px);
+  border-bottom: 2px solid var(--waflo-template-border);
+  padding-block: 0.65rem;
+}
+
+.waflo-menu[data-template="quick-serve-bold"] .waflo-menu__category-link {
+  border: 2px solid var(--waflo-template-border);
+  border-radius: var(--waflo-menu-radius-sm);
+  background: var(--waflo-template-surface);
+  color: var(--waflo-template-text);
+  font-size: 0.82rem;
+  font-weight: 900;
+  letter-spacing: 0.04em;
+  min-height: 2.6rem;
+  padding: 0.55rem 1rem;
+  text-transform: uppercase;
+  transition: background 120ms ease, border-color 120ms ease, color 120ms ease;
+}
+
+.waflo-menu[data-template="quick-serve-bold"] .waflo-menu__category-link:hover,
+.waflo-menu[data-template="quick-serve-bold"] .waflo-menu__category-link:focus-visible {
+  background: var(--waflo-template-primary);
+  border-color: var(--waflo-template-primary);
+  color: white;
+}
+
+/* ── Category heading ── */
+.waflo-menu[data-template="quick-serve-bold"] .waflo-menu__category-title {
+  color: var(--waflo-template-text);
+  font-size: clamp(1.25rem, 4vw, 1.75rem);
+  font-weight: 900;
+  letter-spacing: -0.01em;
+  text-transform: uppercase;
+}
+
+/* ── Item list: compact 2-col grid ── */
+.waflo-menu[data-template="quick-serve-bold"] .waflo-menu__items {
+  grid-template-columns: repeat(auto-fill, minmax(min(100%, 20rem), 1fr));
+  gap: 0.7rem;
+  margin-top: 0.8rem;
+}
+
+/* ── Item card: row layout with bold price badge ── */
+.waflo-menu[data-template="quick-serve-bold"] .waflo-menu__item-link {
+  grid-template-areas:
+    "image copy"
+    "image price";
+  grid-template-columns: 6rem minmax(0, 1fr);
+  gap: 0.75rem;
+  align-items: start;
+  padding: 0.6rem;
+  border-color: var(--waflo-template-border);
+  border-radius: var(--waflo-menu-radius);
+  background: var(--waflo-template-surface);
+  box-shadow: var(--waflo-menu-shadow);
+  transition: border-color 120ms ease, box-shadow 120ms ease;
+}
+
+.waflo-menu[data-template="quick-serve-bold"] .waflo-menu__item-link:hover {
+  border-color: color-mix(in srgb, var(--waflo-template-primary) 50%, var(--waflo-template-border));
+  box-shadow: 0 6px 20px rgb(232 52 10 / 12%);
+  transform: none;
+}
+
+.waflo-menu[data-template="quick-serve-bold"] .waflo-menu__item-image {
+  grid-area: image;
+  width: 6rem;
+  aspect-ratio: 1;
+  border-radius: var(--waflo-menu-radius-sm);
+  background: var(--waflo-template-bg);
+}
+
+.waflo-menu[data-template="quick-serve-bold"] .waflo-menu__item-copy {
+  padding: 0.2rem 0 0;
+}
+
+.waflo-menu[data-template="quick-serve-bold"] .waflo-menu__item-name {
+  color: var(--waflo-template-text);
+  font-size: 0.97rem;
+  font-weight: 800;
+  line-height: 1.2;
+}
+
+.waflo-menu[data-template="quick-serve-bold"] .waflo-menu__item-description {
+  color: var(--waflo-template-muted);
+  font-size: 0.8rem;
+  line-height: 1.5;
+  -webkit-line-clamp: 2;
+}
+
+.waflo-menu[data-template="quick-serve-bold"] .waflo-menu__item-badges {
+  margin-top: 0.45rem;
+}
+
+.waflo-menu[data-template="quick-serve-bold"] .waflo-menu__item-status {
+  background: color-mix(in srgb, var(--waflo-template-success) 10%, var(--waflo-template-surface));
+  color: var(--waflo-template-success);
+  font-size: 0.66rem;
+  font-weight: 900;
+  letter-spacing: 0.08em;
+  text-transform: uppercase;
+}
+
+.waflo-menu[data-template="quick-serve-bold"] .waflo-menu__item-status[data-state="sold-out"] {
+  background: color-mix(in srgb, var(--waflo-template-danger) 10%, var(--waflo-template-surface));
+  color: var(--waflo-template-danger);
+}
+
+/* Bold price badge — prominent, high-contrast */
+.waflo-menu[data-template="quick-serve-bold"] .waflo-menu__item-price {
+  grid-area: price;
+  justify-self: start;
+  margin: 0;
+  padding: 0.4rem 0.85rem;
+  border-radius: var(--waflo-menu-radius-sm);
+  background: var(--waflo-template-primary);
+  color: white;
+  font-size: 0.95rem;
+  font-weight: 900;
+  max-width: none;
+  width: fit-content;
+}
+
+/* Sold-out item: dim the whole card */
+.waflo-menu[data-template="quick-serve-bold"] .waflo-menu__item[data-state="sold-out"] .waflo-menu__item-link {
+  opacity: 0.55;
+}
+
+.waflo-menu[data-template="quick-serve-bold"] .waflo-menu__item[data-state="sold-out"] .waflo-menu__item-price {
+  background: var(--waflo-template-muted);
+}
+
+/* ── Empty / state ── */
+.waflo-menu[data-template="quick-serve-bold"] .waflo-menu__category-empty,
+.waflo-menu[data-template="quick-serve-bold"] .waflo-menu__empty {
+  border-color: var(--waflo-template-border);
+  background: var(--waflo-template-surface);
+  color: var(--waflo-template-muted);
+}
+
+/* ── Footer ── */
+.waflo-menu[data-template="quick-serve-bold"] .waflo-menu__footer {
+  color: var(--waflo-template-muted);
+  font-size: 0.8rem;
+}
+
+/* ── Focus visible ── */
+.waflo-menu[data-template="quick-serve-bold"] :focus-visible {
+  outline: 3px solid var(--waflo-template-primary);
+  outline-offset: 3px;
+}
+
+/* ── RTL adjustments ── */
+[data-dir="rtl"].waflo-menu[data-template="quick-serve-bold"] .waflo-menu__item-price {
+  justify-self: end;
+}
+
+/* ── Mobile ── */
+@media (max-width: 640px) {
+  .waflo-menu[data-template="quick-serve-bold"] .waflo-menu__identity {
+    grid-template-columns: minmax(0, 1fr);
+    margin-top: -2rem;
+    padding-inline: 0.75rem;
+  }
+
+  .waflo-menu[data-template="quick-serve-bold"] .waflo-menu__logo {
+    display: none;
+  }
+
+  /* Force single column on very small screens */
+  .waflo-menu[data-template="quick-serve-bold"] .waflo-menu__items {
+    grid-template-columns: 1fr;
+  }
+
+  .waflo-menu[data-template="quick-serve-bold"] .waflo-menu__item-link {
+    grid-template-columns: 5rem minmax(0, 1fr);
+  }
+
+  .waflo-menu[data-template="quick-serve-bold"] .waflo-menu__item-image {
+    width: 5rem;
+  }
+}
