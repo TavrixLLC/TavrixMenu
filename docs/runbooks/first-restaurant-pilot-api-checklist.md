@@ -62,8 +62,8 @@ Safety rules:
    - City.
    - Currency.
    - Default language.
-   - Logo URL or asset path if already supported.
-   - Cover URL or asset path if already supported.
+   - Logo uploaded through `POST /businesses/{businessId}/media/uploads`.
+   - Cover uploaded through `POST /businesses/{businessId}/media/uploads`.
 4. Confirm active `OWNER` membership.
 5. Add active `STAFF` membership for the cashier/operator.
 6. Add optional `MANAGER` only if required.
@@ -76,16 +76,37 @@ Safety rules:
 1. Create categories.
 2. Create items.
 3. Confirm prices use the selected currency.
-4. Confirm availability/sold-out state for at least one test item if needed.
-5. Confirm categories/items order.
-6. Confirm public menu:
+4. Upload menu item images where owner-provided assets are available.
+5. Save uploaded menu item image URLs with `PATCH /items/{itemId}`.
+6. Confirm availability/sold-out state for at least one test item if needed.
+7. Confirm categories/items order.
+8. Confirm public menu:
    - `GET /public/m/{slug}` returns 200.
    - Response includes categories and items.
    - Response includes `appearance.effectiveTemplateId`.
-7. Confirm customer-web route loads:
+9. Confirm customer-web route loads:
    - `/m/{slug}`
    - `/m/{slug}?previewTemplateId=waflo-warm`
-8. Confirm preview does not persist appearance.
+10. Confirm preview does not persist appearance.
+
+## 5A. Media Upload
+
+1. Confirm `POST /businesses/{businessId}/media/uploads` requires auth.
+2. Confirm `OWNER` can upload:
+   - `BUSINESS_LOGO`
+   - `BUSINESS_COVER`
+   - `MENU_ITEM_IMAGE`
+3. Confirm `MANAGER` can upload under the current pilot policy.
+4. Confirm `STAFF` receives forbidden.
+5. Confirm SVG, PDF, corrupt, and oversized files are rejected.
+6. Confirm returned URLs:
+   - Start with the public API `/uploads/` prefix.
+   - Do not expose local filesystem paths.
+   - Load publicly.
+7. Save returned URLs through existing update endpoints:
+   - Business logo/cover: `PATCH /businesses/{businessId}`.
+   - Menu item image: `PATCH /items/{itemId}`.
+8. Include `/opt/waflo/uploads` in pilot backup coverage.
 
 ## 6. Menu Appearance
 
@@ -174,6 +195,7 @@ Search staging/API logs since the pilot setup window for these categories:
 - Push tokens or full device identifiers.
 - Customer phone/email/name.
 - Database connection values.
+- Local upload filesystem paths.
 - Private keys or certificate material.
 - Service account material.
 

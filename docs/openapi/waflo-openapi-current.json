@@ -1408,6 +1408,87 @@
         ]
       }
     },
+    "/businesses/{id}/media/uploads": {
+      "post": {
+        "operationId": "MediaController_upload",
+        "parameters": [
+          {
+            "name": "id",
+            "required": true,
+            "in": "path",
+            "schema": {
+              "type": "string"
+            }
+          }
+        ],
+        "requestBody": {
+          "required": true,
+          "content": {
+            "multipart/form-data": {
+              "schema": {
+                "type": "object",
+                "required": [
+                  "purpose",
+                  "file"
+                ],
+                "properties": {
+                  "purpose": {
+                    "type": "string",
+                    "enum": [
+                      "BUSINESS_LOGO",
+                      "BUSINESS_COVER",
+                      "MENU_ITEM_IMAGE"
+                    ],
+                    "example": "MENU_ITEM_IMAGE"
+                  },
+                  "file": {
+                    "type": "string",
+                    "format": "binary"
+                  }
+                }
+              }
+            }
+          }
+        },
+        "responses": {
+          "201": {
+            "description": "Image uploaded and normalized. Use the returned public URL with existing business or menu item update endpoints.",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "example": {
+                    "url": "https://api.waflo.app/uploads/business-media/menu-item-image/2026/06/image.webp",
+                    "contentType": "image/webp",
+                    "sizeBytes": 123456,
+                    "purpose": "MENU_ITEM_IMAGE"
+                  }
+                }
+              }
+            }
+          },
+          "400": {
+            "description": "Missing, invalid, or unsupported image."
+          },
+          "401": {
+            "description": "Missing or invalid bearer token."
+          },
+          "403": {
+            "description": "OWNER or MANAGER business membership required."
+          },
+          "413": {
+            "description": "Uploaded image exceeds size limit."
+          }
+        },
+        "security": [
+          {
+            "bearer": []
+          }
+        ],
+        "tags": [
+          "media"
+        ]
+      }
+    },
     "/businesses/{id}/loyalty/program": {
       "get": {
         "operationId": "LoyaltyController_getActiveProgram",

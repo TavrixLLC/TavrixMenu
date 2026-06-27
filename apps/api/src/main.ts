@@ -3,7 +3,8 @@ import { ConfigService } from '@nestjs/config';
 import { NestFactory } from '@nestjs/core';
 import { NestExpressApplication } from '@nestjs/platform-express';
 import { DocumentBuilder, SwaggerModule } from '@nestjs/swagger';
-import { join } from 'path';
+import { mkdirSync } from 'fs';
+import { join, resolve } from 'path';
 import { AppModule } from './app.module';
 import { createAppleWalletRequestLogger } from './modules/apple-wallet/apple-wallet-request-logger';
 
@@ -12,6 +13,10 @@ async function bootstrap() {
   const configService = app.get(ConfigService);
   const port = configService.get<number>('API_PORT', 3000);
   const generatedAssetsPath = join(process.cwd(), 'public', 'generated');
+  const uploadAssetsPath = resolve(
+    configService.get<string>('MEDIA_UPLOAD_ROOT')?.trim() ||
+      join(process.cwd(), 'public', 'uploads')
+  );
 
   app.enableCors({
     origin: true,
@@ -22,6 +27,14 @@ async function bootstrap() {
 
   app.useStaticAssets(generatedAssetsPath, {
     prefix: '/generated/',
+    dotfiles: 'deny',
+    fallthrough: false,
+    index: false
+  });
+
+  mkdirSync(uploadAssetsPath, { recursive: true });
+  app.useStaticAssets(uploadAssetsPath, {
+    prefix: '/uploads/',
     dotfiles: 'deny',
     fallthrough: false,
     index: false

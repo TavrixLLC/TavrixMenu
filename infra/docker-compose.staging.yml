@@ -37,6 +37,7 @@ services:
       - /opt/waflo/env/api.env
     volumes:
       - /opt/waflo/secrets:/opt/waflo/secrets
+      - /opt/waflo/uploads:/opt/waflo/uploads
     depends_on:
       - postgres_staging
       - redis_staging
