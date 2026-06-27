@@ -1,4 +1,6 @@
 import { strict as assert } from 'assert';
+import { readFileSync } from 'fs';
+import { join } from 'path';
 import { describe, it } from 'node:test';
 import { renderToStaticMarkup } from 'react-dom/server';
 import { PublicMenuTemplateView } from '../app/components/PublicMenuTemplateView';
@@ -15,6 +17,25 @@ import { getPublicMenuTemplate, publicMenuTemplates } from '../app/lib/menu-temp
 import { fetchPublicItem, fetchPublicMenu } from '../app/lib/public-menu';
 
 describe('customer-web public menu templates', () => {
+  it('keeps the mobile logo visible in the public menu CSS', () => {
+    const cssFiles = [
+      'app/styles/public-menu-contract.css',
+      'app/styles/menu-templates/waflo-warm.css',
+      'app/styles/menu-templates/coffeehouse-premium.css',
+      'app/styles/menu-templates/street-bites.css',
+      'app/styles/menu-templates/minimal-modern.css',
+      'app/styles/menu-templates/luxury-dining.css',
+      'app/styles/menu-templates/artisan-cafe.css',
+      'app/styles/menu-templates/quick-serve-bold.css'
+    ];
+
+    for (const cssFile of cssFiles) {
+      const css = readFileSync(join(process.cwd(), cssFile), 'utf8');
+
+      assert.equal(/waflo-menu__logo\s*\{[^}]*display:\s*none/i.test(css), false, cssFile);
+    }
+  });
+
   it('/dev/menu-templates page renders every template preview frame', () => {
     const html = renderToStaticMarkup(<MenuTemplatePreviewPage />);
 
@@ -48,6 +69,17 @@ describe('customer-web public menu templates', () => {
     assert.match(html, /waflo-template-coffeehouse-premium/);
   });
 
+  it('renders an intentional no-cover fallback when the business has no cover image', () => {
+    const html = renderToStaticMarkup(
+      <PublicMenuTemplateView menu={demoMenu} template={getPublicMenuTemplate('waflo-warm')} loyaltyContext={demoLoyalty} />
+    );
+
+    assert.match(html, /data-slot="merchant-cover-fallback"/);
+    assert.match(html, /Fresh menu/);
+    assert.match(html, /Happy Birthday 2/);
+    assert.match(html, /data-has-image="false"/);
+  });
+
   it('falls back safely when a template id is invalid', () => {
     assert.equal(getPublicMenuTemplate('unknown-template').id, 'waflo-warm');
     assert.equal(getPublicMenuTemplate('luxury-dining').id, 'luxury-dining');
@@ -76,6 +108,37 @@ describe('customer-web public menu templates', () => {
     assert.match(html, /data-template="coffeehouse-premium"/);
     assert.equal(menu.appearance.effectiveTemplateId, 'waflo-warm');
     assert.equal(savedAppearance.effectiveTemplateId, 'waflo-warm');
+  });
+
+  it('renders item photo, name, and price in the public menu card contract', () => {
+    const menuWithImage = {
+      ...demoMenu,
+      categories: demoMenu.categories.map((category, categoryIndex) => ({
+        ...category,
+        items: category.items.map((item, itemIndex) => ({
+          ...item,
+          imageUrl: categoryIndex === 0 && itemIndex === 0 ? '/sample-food.jpg' : item.imageUrl
+        }))
+      }))
+    };
+    const html = renderToStaticMarkup(
+      <PublicMenuTemplateView menu={menuWithImage} template={getPublicMenuTemplate('waflo-warm')} loyaltyContext={demoLoyalty} />
+    );
+
+    assert.match(html, /data-slot="item-image"/);
+    assert.match(html, /src="\/sample-food\.jpg"/);
+    assert.match(html, /Strawberry Cake/);
+    assert.match(html, /5,500\s*IQD/);
+  });
+
+  it('marks the first category as current for mobile orientation', () => {
+    const html = renderToStaticMarkup(
+      <PublicMenuTemplateView menu={demoMenu} template={getPublicMenuTemplate('waflo-warm')} loyaltyContext={demoLoyalty} />
+    );
+
+    assert.match(html, /data-component="category-navigation"/);
+    assert.match(html, /data-state="current"/);
+    assert.match(html, /aria-current="location"/);
   });
 
   it('renders sold-out items as unavailable instead of hiding them', () => {

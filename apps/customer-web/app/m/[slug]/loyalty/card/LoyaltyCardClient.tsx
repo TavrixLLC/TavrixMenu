@@ -83,40 +83,58 @@ function LoyaltyCardShell({
   );
 }
 
-function CardMetrics({ card }: { card: PublicLoyaltyCard }) {
+export function CardMetrics({ card }: { card: PublicLoyaltyCard }) {
   const state = card.cardState;
   const stampsRemaining = Math.max(state.stampGoal - state.stampCount, 0);
 
   return (
-    <div className="mt-5 grid gap-3 sm:grid-cols-2">
-      <div className="rounded-lg border border-neutral-200 bg-neutral-50 p-4">
-        <p className="text-sm font-semibold text-neutral-500">Stamps</p>
-        <p className="mt-1 text-2xl font-bold text-ink">
-          {state.stampCount} / {state.stampGoal}
-        </p>
-      </div>
-      <div className="rounded-lg border border-neutral-200 bg-neutral-50 p-4">
-        <p className="text-sm font-semibold text-neutral-500">Progress</p>
-        <p className="mt-1 text-2xl font-bold text-ink">{state.progressPercent}%</p>
-      </div>
-      <div className="rounded-lg border border-neutral-200 bg-neutral-50 p-4">
-        <p className="text-sm font-semibold text-neutral-500">Total stamps earned</p>
-        <p className="mt-1 text-2xl font-bold text-ink">{state.totalStampsEarned}</p>
-      </div>
-      <div className="rounded-lg border border-neutral-200 bg-neutral-50 p-4">
-        <p className="text-sm font-semibold text-neutral-500">Rewards redeemed</p>
-        <p className="mt-1 text-2xl font-bold text-ink">{state.totalRewardsRedeemed}</p>
-      </div>
-      <div className="sm:col-span-2">
-        <div className="h-3 overflow-hidden rounded-full bg-neutral-100">
-          <div className="h-full rounded-full bg-mint" style={{ width: `${state.progressPercent}%` }} />
-        </div>
-        <p className="mt-3 rounded-md bg-emerald-50 p-3 text-sm font-semibold text-emerald-800">
+    <section className="mt-5 overflow-hidden rounded-2xl border border-emerald-100 bg-white shadow-sm">
+      <div className="bg-gradient-to-br from-emerald-50 via-white to-amber-50 p-5">
+        <p className="text-sm font-semibold uppercase tracking-wide text-mint">Your reward progress</p>
+        <h2 className="mt-2 text-4xl font-black leading-tight text-ink">
+          {state.stampCount} / {state.stampGoal} stamps
+        </h2>
+        <p className="mt-2 text-base font-semibold text-neutral-700">
           {state.rewardReady
-            ? 'Reward ready. Ask staff to redeem it.'
-            : `You need ${stampsRemaining} more ${stampsRemaining === 1 ? 'stamp' : 'stamps'}.`}
+            ? `${state.rewardName} is ready`
+            : `${stampsRemaining} more ${stampsRemaining === 1 ? 'stamp' : 'stamps'} to unlock ${state.rewardName}`}
         </p>
       </div>
+      <div className="grid gap-4 p-5">
+        <div>
+          <div className="flex items-center justify-between gap-3 text-sm font-semibold text-neutral-600">
+            <span>Progress</span>
+            <span>{state.progressPercent}%</span>
+          </div>
+          <div className="mt-2 h-3 overflow-hidden rounded-full bg-neutral-100">
+            <div className="h-full rounded-full bg-mint" style={{ width: `${state.progressPercent}%` }} />
+          </div>
+        </div>
+        <p className="rounded-xl bg-emerald-50 p-3 text-sm font-semibold text-emerald-800">
+          {state.rewardReady
+            ? 'Ask staff to redeem this reward when you are ready.'
+            : 'Keep scanning this card at each visit to collect stamps.'}
+        </p>
+        <div className="grid gap-3 sm:grid-cols-2">
+          <div className="rounded-xl border border-neutral-200 bg-neutral-50 p-3">
+            <p className="text-xs font-semibold uppercase tracking-wide text-neutral-500">Total earned</p>
+            <p className="mt-1 text-xl font-bold text-ink">{state.totalStampsEarned}</p>
+          </div>
+          <div className="rounded-xl border border-neutral-200 bg-neutral-50 p-3">
+            <p className="text-xs font-semibold uppercase tracking-wide text-neutral-500">Rewards used</p>
+            <p className="mt-1 text-xl font-bold text-ink">{state.totalRewardsRedeemed}</p>
+          </div>
+        </div>
+      </div>
+    </section>
+  );
+}
+
+function LoyaltyCoverFallback({ businessName }: { businessName: string }) {
+  return (
+    <div className="flex h-28 w-full flex-col justify-end bg-gradient-to-br from-emerald-50 via-white to-amber-50 p-5 sm:h-36">
+      <p className="text-sm font-semibold uppercase tracking-wide text-mint">Live loyalty card</p>
+      <p className="mt-1 text-2xl font-black text-ink">{businessName}</p>
     </div>
   );
 }
@@ -179,7 +197,7 @@ function CardView({
               className="h-36 w-full object-cover sm:h-48"
             />
           ) : (
-            <div className="h-24 bg-neutral-100 sm:h-32" />
+            <LoyaltyCoverFallback businessName={card.business.name} />
           )}
           <div className="p-5">
             <div className="flex items-start gap-4">

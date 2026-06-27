@@ -190,6 +190,14 @@
   color: var(--waflo-template-primary);
 }
 
+.waflo-menu[data-template="luxury-dining"] .waflo-menu__category-link[data-state="current"],
+.waflo-menu[data-template="luxury-dining"] .waflo-menu__category-link[aria-current="location"] {
+  border-bottom: 1px solid var(--waflo-template-primary);
+  background: transparent;
+  color: var(--waflo-template-primary);
+  box-shadow: none;
+}
+
 /* ── Category headings ── */
 .waflo-menu[data-template="luxury-dining"] .waflo-menu__category-title {
   color: var(--waflo-template-text);
@@ -322,13 +330,15 @@
 /* ── Mobile ── */
 @media (max-width: 640px) {
   .waflo-menu[data-template="luxury-dining"] .waflo-menu__identity {
-    grid-template-columns: minmax(0, 1fr);
+    grid-template-columns: auto minmax(0, 1fr);
     margin-top: -2.5rem;
     padding-inline: 0.75rem;
   }
 
   .waflo-menu[data-template="luxury-dining"] .waflo-menu__logo {
-    display: none;
+    display: block;
+    width: 4.25rem;
+    height: 4.25rem;
   }
 
   .waflo-menu[data-template="luxury-dining"] .waflo-menu__items {
@@ -340,12 +350,13 @@
     grid-template-areas:
       "image copy"
       "image price";
-    grid-template-columns: 5.5rem minmax(0, 1fr);
+    grid-template-columns: minmax(6rem, 34%) minmax(0, 1fr);
   }
 
   .waflo-menu[data-template="luxury-dining"] .waflo-menu__item-image {
     aspect-ratio: 1;
-    width: 5.5rem;
+    width: 100%;
+    min-width: 6rem;
   }
 
   .waflo-menu[data-template="luxury-dining"] .waflo-menu__item-copy {

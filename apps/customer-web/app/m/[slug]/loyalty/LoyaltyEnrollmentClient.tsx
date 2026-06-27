@@ -147,13 +147,13 @@ export function LoyaltyEnrollmentSuccess({
 
   return (
     <section className="grid gap-5">
-      <div className="rounded-lg border border-emerald-100 bg-emerald-50 p-4">
+      <div className="rounded-2xl border border-emerald-100 bg-emerald-50 p-5 shadow-sm">
         <p className="text-sm font-semibold text-emerald-800">
           {variant === 'transferred'
             ? 'Card added securely'
             : 'Your loyalty card is ready'}
         </p>
-        <p className="mt-2 text-sm leading-6 text-emerald-900">
+        <p className="mt-2 text-base leading-7 text-emerald-950">
           {enrollment.customer.name ? `${enrollment.customer.name}, add` : 'Add'} it to Wallet now so it is easy to find on your next visit.
         </p>
       </div>
@@ -203,11 +203,11 @@ export function ReturningLoyaltyCardView({
 
   return (
     <section className="grid gap-5">
-      <div className="rounded-lg border border-emerald-100 bg-emerald-50 p-4">
+      <div className="rounded-2xl border border-emerald-100 bg-emerald-50 p-5 shadow-sm">
         <p className="text-sm font-semibold text-emerald-800">
           {card.customer.name ? `Welcome back, ${card.customer.name}` : 'Welcome back'}
         </p>
-        <p className="mt-1 text-sm leading-6 text-emerald-900">
+        <p className="mt-2 text-base leading-7 text-emerald-950">
           Your card is ready. Add it to Wallet on this phone or open the live
           card for the latest progress.
         </p>
@@ -294,8 +294,8 @@ export function LoyaltyIdentityForm({
   if (isRecovery) {
     return (
       <section className="grid gap-4" data-loyalty-recovery="verification-required">
-        <div className="rounded-lg border border-amber-100 bg-amber-50 p-4">
-          <p className="text-sm font-semibold text-amber-900">Recovery needs verification</p>
+        <div className="rounded-2xl border border-amber-100 bg-amber-50 p-5 shadow-sm">
+          <p className="text-base font-bold text-amber-950">Choose how to get back in</p>
           <p className="mt-2 text-sm leading-6 text-amber-800">
             {recoveryMessage}
           </p>
@@ -303,17 +303,16 @@ export function LoyaltyIdentityForm({
 
         <form
           onSubmit={onTransferSubmit}
-          className="grid gap-3 rounded-lg border border-neutral-200 bg-white p-4"
+          className="grid gap-3 rounded-2xl border border-neutral-200 bg-white p-5 shadow-sm"
           data-recovery-path="trusted-device"
         >
           <div>
-            <h3 className="text-base font-bold text-ink">
+            <h3 className="text-lg font-bold text-ink">
               1. I have the card on another device
             </h3>
             <p className="mt-1 text-sm leading-6 text-neutral-600">
-              Transfer works only while a trusted old device can still open
-              the card. On that device, choose "Add card to another device,"
-              then scan its QR or enter the one-time code below.
+              Open the card on that phone, choose "Add card to another device,"
+              then scan its QR or enter the code here.
             </p>
           </div>
           <label
@@ -339,48 +338,45 @@ export function LoyaltyIdentityForm({
           <button
             type="submit"
             disabled={isTransferSubmitting}
-            className="h-12 rounded-md bg-ink px-5 text-sm font-semibold text-white disabled:bg-neutral-400"
+            className="h-12 rounded-md bg-ink px-5 text-sm font-semibold text-white shadow-sm transition hover:bg-neutral-800 disabled:bg-neutral-400"
           >
             {isTransferSubmitting ? 'Adding card...' : 'Add card to this device'}
           </button>
         </form>
 
         <div
-          className="rounded-lg border border-neutral-200 bg-neutral-50 p-4"
+          className="rounded-2xl border border-neutral-200 bg-neutral-50 p-5"
           data-recovery-path="lost-all-devices"
         >
-          <h3 className="text-base font-bold text-ink">
+          <h3 className="text-lg font-bold text-ink">
             2. I lost access to all devices
           </h3>
           <p className="mt-1 text-sm leading-6 text-neutral-600">
-            A transfer QR is not possible when no trusted device still has the
-            card. Ask staff for help. A phone number or email alone cannot
-            unlock an existing card.
+            Ask staff for help at the counter. A phone number or email alone
+            cannot unlock an existing card.
           </p>
-          <div className="mt-3 rounded-md border border-dashed border-neutral-300 bg-white p-3">
+          <div className="mt-3 rounded-xl border border-dashed border-neutral-300 bg-white p-3">
             <p className="text-sm font-semibold text-ink">
-              Staff-assisted recovery is planned
+              Staff help is the safe path
             </p>
             <p className="mt-1 text-sm leading-6 text-neutral-600">
-              Staff will verify the customer in person. A future authorized
-              staff flow will generate a short-lived, single-use recovery QR or
-              code and log the staff action. It will never use phone-only
-              recovery.
+              Staff can verify the customer in person. A future staff flow can
+              create a short-lived, single-use QR or code and record the staff
+              action.
             </p>
           </div>
         </div>
 
         <div
-          className="rounded-lg border border-neutral-200 bg-white p-4"
+          className="rounded-2xl border border-neutral-200 bg-white p-5"
           data-recovery-path="different-phone"
         >
-          <h3 className="text-base font-bold text-ink">
+          <h3 className="text-lg font-bold text-ink">
             3. Join with a different phone
           </h3>
           <p className="mt-1 text-sm leading-6 text-neutral-600">
-            Start a new enrollment only with a phone that is not already
-            attached to a card for this business. An existing card here remains
-            blocked until recovery is verified.
+            You can start a new card only with a phone that is not already used
+            for this business.
           </p>
           <button
             type="button"
@@ -396,12 +392,15 @@ export function LoyaltyIdentityForm({
 
   return (
     <form onSubmit={onSubmit} noValidate className="grid gap-4">
-      <div className="rounded-lg border border-neutral-200 bg-neutral-50 p-4">
-        <p className="text-sm font-semibold text-ink">Join this loyalty program</p>
-        <p className="mt-1 text-sm leading-6 text-neutral-600">
-          Enter your phone once. We will create your card and then show the
-          right Wallet button for this device. A phone number alone cannot open
-          an existing card.
+      <div className="rounded-2xl border border-neutral-200 bg-white p-5 shadow-sm">
+        <p className="text-lg font-bold text-ink">Get your rewards card</p>
+        <p className="mt-2 text-sm leading-6 text-neutral-600">
+          Join once, collect stamps each visit, and add the card to Wallet on
+          this phone.
+        </p>
+        <p className="mt-2 text-sm leading-6 text-neutral-500">
+          For safety, an existing card can only be opened from this browser,
+          another trusted device, or with staff help.
         </p>
       </div>
 
@@ -482,11 +481,11 @@ export function LoyaltyIdentityForm({
       ) : null}
 
       <button
-        type="submit"
-        disabled={isSubmitting}
-        className="h-12 rounded-md bg-ink px-5 text-sm font-semibold text-white transition hover:bg-neutral-800 disabled:cursor-not-allowed disabled:bg-neutral-400"
+          type="submit"
+          disabled={isSubmitting}
+        className="h-12 rounded-md bg-ink px-5 text-sm font-semibold text-white shadow-sm transition hover:bg-neutral-800 disabled:cursor-not-allowed disabled:bg-neutral-400"
       >
-        {isSubmitting ? 'Creating your card...' : 'Join and get your card'}
+        {isSubmitting ? 'Creating your card...' : 'Join and add to Wallet'}
       </button>
 
       <button
@@ -494,7 +493,7 @@ export function LoyaltyIdentityForm({
         onClick={() => onModeChange('recover')}
         className="text-sm font-medium text-neutral-600 underline hover:text-ink"
       >
-        I already joined
+        I already have a card
       </button>
     </form>
   );
@@ -514,19 +513,24 @@ function CardProgress({
   rewardReady: boolean;
 }) {
   return (
-    <div className="grid gap-3 rounded-lg border border-neutral-200 bg-neutral-50 p-4">
-      <div>
-        <p className="text-sm font-semibold text-neutral-500">Progress</p>
-        <p className="mt-1 text-lg font-bold text-ink">
-          {stampCount} / {stampGoal} stamps
+    <div className="overflow-hidden rounded-2xl border border-neutral-200 bg-white shadow-sm">
+      <div className="bg-gradient-to-br from-emerald-50 to-white p-5">
+        <p className="text-sm font-semibold uppercase tracking-wide text-mint">Reward progress</p>
+        <p className="mt-2 text-3xl font-black text-ink">
+          {stampCount} of {stampGoal}
+        </p>
+        <p className="mt-1 text-sm leading-6 text-neutral-600">
+          {rewardReady ? `${rewardName} is ready.` : `Collect stamps toward ${rewardName}.`}
         </p>
       </div>
-      <div className="h-3 overflow-hidden rounded-full bg-white">
-        <div className="h-full rounded-full bg-mint" style={{ width: `${progressPercent}%` }} />
+      <div className="grid gap-3 p-5 pt-0">
+        <div className="h-3 overflow-hidden rounded-full bg-neutral-100">
+          <div className="h-full rounded-full bg-mint" style={{ width: `${progressPercent}%` }} />
+        </div>
+        <p className="rounded-xl bg-neutral-50 p-3 text-sm font-semibold text-neutral-700">
+          {rewardReady ? 'Show staff when you are ready to redeem.' : `${Math.max(stampGoal - stampCount, 0)} more ${Math.max(stampGoal - stampCount, 0) === 1 ? 'stamp' : 'stamps'} to go.`}
+        </p>
       </div>
-      <p className="text-sm font-semibold text-neutral-700">
-        {rewardReady ? `${rewardName} is ready to redeem` : rewardName}
-      </p>
     </div>
   );
 }
@@ -551,7 +555,7 @@ export function LoyaltyEnrollmentClient({
   const [returningCard, setReturningCard] = useState<PublicLoyaltyCard | null>(null);
   const [returningToken, setReturningToken] = useState<string | null>(null);
   const [recoveryMessage, setRecoveryMessage] = useState(
-    'Choose the path that matches your situation. Transfer is available only when at least one trusted old device still has the card. Phone or email alone cannot unlock it.'
+    'Choose the path that matches your situation. A phone number or email alone cannot open an existing card.'
   );
   const [transferCode, setTransferCode] = useState('');
   const [transferError, setTransferError] = useState<string | null>(null);
@@ -651,8 +655,8 @@ export function LoyaltyEnrollmentClient({
 
     if (result.status !== 'ok') {
       if (result.status === 'verification-required') {
-        setRecoveryMessage(
-          'This phone is already attached to a card for this business. If a trusted old device still has access, add this device from there. Otherwise, ask staff for help.'
+          setRecoveryMessage(
+          'This phone already has a card for this business. Add this device from a trusted old phone, or ask staff for help.'
         );
         changeMode('recover');
         return;
@@ -777,7 +781,7 @@ export function LoyaltyEnrollmentClient({
       onModeChange={(nextMode) => {
         if (nextMode === 'recover') {
           setRecoveryMessage(
-            'Transfer is only for customers who still have the card on a trusted old device. If all device access is lost, ask staff for help. Phone recovery is unavailable without verification.'
+            'Use a trusted old device if you still have one. If not, ask staff for help.'
           );
         }
         changeMode(nextMode);

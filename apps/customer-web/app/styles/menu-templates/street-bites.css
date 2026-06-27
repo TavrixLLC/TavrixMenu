@@ -31,7 +31,8 @@
 }
 
 .waflo-menu[data-template="street-bites"] .waflo-menu__cover {
-  display: none;
+  min-height: clamp(8rem, 24vw, 14rem);
+  border-radius: 0;
 }
 
 .waflo-menu[data-template="street-bites"] .waflo-menu__identity {
@@ -87,6 +88,13 @@
   text-transform: uppercase;
 }
 
+.waflo-menu[data-template="street-bites"] .waflo-menu__category-link[data-state="current"],
+.waflo-menu[data-template="street-bites"] .waflo-menu__category-link[aria-current="location"] {
+  background: var(--waflo-template-primary);
+  color: white;
+  box-shadow: 0 4px 0 var(--waflo-template-reward);
+}
+
 .waflo-menu[data-template="street-bites"] .waflo-menu__items {
   gap: 0.75rem;
 }
@@ -127,11 +135,18 @@
 
 @media (max-width: 640px) {
   .waflo-menu[data-template="street-bites"] .waflo-menu__identity {
-    grid-template-columns: minmax(0, 1fr);
+    grid-template-columns: auto minmax(0, 1fr);
   }
 
   .waflo-menu[data-template="street-bites"] .waflo-menu__logo {
-    display: none;
+    display: block;
+    order: 1;
+    width: 4.25rem;
+    height: 4.25rem;
+  }
+
+  .waflo-menu[data-template="street-bites"] .waflo-menu__identity-copy {
+    order: 2;
   }
 
   .waflo-menu[data-template="street-bites"] .waflo-menu__merchant-name {
@@ -140,12 +155,14 @@
 
   .waflo-menu[data-template="street-bites"] .waflo-menu__item-link {
     grid-template-areas:
-      "copy copy"
-      "price price";
-    grid-template-columns: 1fr;
+      "image copy"
+      "image price";
+    grid-template-columns: minmax(6rem, 34%) minmax(0, 1fr);
   }
 
   .waflo-menu[data-template="street-bites"] .waflo-menu__item-image {
-    display: none;
+    display: block;
+    width: 100%;
+    min-width: 6rem;
   }
 }

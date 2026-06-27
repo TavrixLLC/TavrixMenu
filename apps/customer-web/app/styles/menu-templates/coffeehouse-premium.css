@@ -74,6 +74,13 @@
   color: var(--waflo-template-primary);
 }
 
+.waflo-menu[data-template="coffeehouse-premium"] .waflo-menu__category-link[data-state="current"],
+.waflo-menu[data-template="coffeehouse-premium"] .waflo-menu__category-link[aria-current="location"] {
+  border-color: var(--waflo-template-reward);
+  background: var(--waflo-template-primary);
+  color: white;
+}
+
 .waflo-menu[data-template="coffeehouse-premium"] .waflo-menu__loyalty {
   border-color: rgb(245 158 11 / 28%);
   background: var(--waflo-template-primary);
@@ -140,10 +147,12 @@
   }
 
   .waflo-menu[data-template="coffeehouse-premium"] .waflo-menu__identity {
-    grid-template-columns: minmax(0, 1fr);
+    grid-template-columns: auto minmax(0, 1fr);
   }
 
   .waflo-menu[data-template="coffeehouse-premium"] .waflo-menu__logo {
-    display: none;
+    display: block;
+    width: 4.25rem;
+    height: 4.25rem;
   }
 }

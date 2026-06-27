@@ -24,7 +24,9 @@
 }
 
 .waflo-menu[data-template="minimal-modern"] .waflo-menu__cover {
-  display: none;
+  min-height: clamp(7rem, 20vw, 12rem);
+  border: 1px solid var(--waflo-template-border);
+  border-radius: var(--waflo-menu-radius);
 }
 
 .waflo-menu[data-template="minimal-modern"] .waflo-menu__identity {
@@ -93,6 +95,14 @@
   color: var(--waflo-template-text);
 }
 
+.waflo-menu[data-template="minimal-modern"] .waflo-menu__category-link[data-state="current"],
+.waflo-menu[data-template="minimal-modern"] .waflo-menu__category-link[aria-current="location"] {
+  border-color: var(--waflo-template-primary);
+  background: transparent;
+  color: var(--waflo-template-primary-dark);
+  box-shadow: none;
+}
+
 .waflo-menu[data-template="minimal-modern"] .waflo-menu__category-title {
   font-size: 1.45rem;
   font-weight: 750;
@@ -103,8 +113,8 @@
 }
 
 .waflo-menu[data-template="minimal-modern"] .waflo-menu__item-link {
-  grid-template-columns: minmax(0, 1fr) 8rem;
-  grid-template-areas: "copy price";
+  grid-template-columns: 5.25rem minmax(0, 1fr) 8rem;
+  grid-template-areas: "image copy price";
   padding: 1.15rem 0;
   border-width: 0 0 1px;
   border-radius: 0;
@@ -118,7 +128,9 @@
 }
 
 .waflo-menu[data-template="minimal-modern"] .waflo-menu__item-image {
-  display: none;
+  display: block;
+  width: 5.25rem;
+  border-radius: var(--waflo-menu-radius-sm);
 }
 
 .waflo-menu[data-template="minimal-modern"] .waflo-menu__item-name {
@@ -138,19 +150,25 @@
 
 @media (max-width: 640px) {
   .waflo-menu[data-template="minimal-modern"] .waflo-menu__identity {
-    grid-template-columns: minmax(0, 1fr);
+    grid-template-columns: auto minmax(0, 1fr);
   }
 
   .waflo-menu[data-template="minimal-modern"] .waflo-menu__logo {
-    display: none;
+    display: block;
+    width: 3.75rem;
+    height: 3.75rem;
   }
 
   .waflo-menu[data-template="minimal-modern"] .waflo-menu__item-link {
     grid-template-areas:
-      "copy"
-      "price";
-    grid-template-columns: 1fr;
+      "image copy"
+      "image price";
+    grid-template-columns: 5.5rem minmax(0, 1fr);
     gap: 0.5rem;
+  }
+
+  .waflo-menu[data-template="minimal-modern"] .waflo-menu__item-image {
+    width: 5.5rem;
   }
 
   .waflo-menu[data-template="minimal-modern"] .waflo-menu__item-price {

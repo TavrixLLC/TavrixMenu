@@ -162,6 +162,13 @@
   color: #fdf8f2;
 }
 
+.waflo-menu[data-template="artisan-cafe"] .waflo-menu__category-link[data-state="current"],
+.waflo-menu[data-template="artisan-cafe"] .waflo-menu__category-link[aria-current="location"] {
+  background: var(--waflo-template-primary);
+  border-color: var(--waflo-template-primary);
+  color: #fdf8f2;
+}
+
 /* ── Category headings ── */
 .waflo-menu[data-template="artisan-cafe"] .waflo-menu__category-title {
   color: var(--waflo-template-text);
@@ -303,13 +310,15 @@
 /* ── Mobile ── */
 @media (max-width: 640px) {
   .waflo-menu[data-template="artisan-cafe"] .waflo-menu__identity {
-    grid-template-columns: minmax(0, 1fr);
+    grid-template-columns: auto minmax(0, 1fr);
     margin-top: -2rem;
     padding-inline: 0.75rem;
   }
 
   .waflo-menu[data-template="artisan-cafe"] .waflo-menu__logo {
-    display: none;
+    display: block;
+    width: 4.25rem;
+    height: 4.25rem;
   }
 
   /* Single-column card list on mobile */
@@ -322,11 +331,12 @@
     grid-template-areas:
       "image copy"
       "image price";
-    grid-template-columns: 5.5rem minmax(0, 1fr);
+    grid-template-columns: minmax(6rem, 34%) minmax(0, 1fr);
   }
 
   .waflo-menu[data-template="artisan-cafe"] .waflo-menu__item-image {
-    width: 5.5rem;
+    width: 100%;
+    min-width: 6rem;
     aspect-ratio: 1;
   }
 

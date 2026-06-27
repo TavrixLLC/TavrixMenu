@@ -1,5 +1,6 @@
 import Link from 'next/link';
 import { PlaceholderImage } from './PlaceholderImage';
+import { PublicMenuCategoryNavigation } from './PublicMenuCategoryNavigation';
 import { formatPrice, getCategoryName, getItemDescription, getItemName, isRtlLanguage } from '../lib/menu-format';
 import type { PublicMenuCategory, PublicMenuItem, PublicMenuResponse } from '../lib/public-menu';
 import type { PublicLoyaltyContext } from '../lib/public-loyalty';
@@ -43,6 +44,45 @@ function MerchantImage({
   );
 }
 
+function MerchantCoverFallback({ business }: { business: PublicMenuResponse['business'] }) {
+  const detail = [business.type || 'Menu', business.city].filter(Boolean).join(' in ');
+
+  return (
+    <div
+      className="waflo-menu__cover-fallback"
+      data-slot="merchant-cover-fallback"
+      data-component="merchant-cover-fallback"
+      role="img"
+      aria-label={`${business.name} menu cover`}
+    >
+      <span className="waflo-menu__cover-orb" aria-hidden="true" />
+      <span className="waflo-menu__cover-kicker">Fresh menu</span>
+      <strong className="waflo-menu__cover-title">{business.name}</strong>
+      {detail ? <span className="waflo-menu__cover-detail">{detail}</span> : null}
+    </div>
+  );
+}
+
+function MerchantCover({ business }: { business: PublicMenuResponse['business'] }) {
+  const state = business.coverUrl ? 'image' : 'placeholder';
+
+  return (
+    <div
+      className="waflo-menu__cover"
+      data-slot="merchant-cover"
+      data-component="merchant-media"
+      data-state={state}
+      data-has-image={business.coverUrl ? 'true' : 'false'}
+    >
+      {business.coverUrl ? (
+        <img src={business.coverUrl} alt={`${business.name} cover`} />
+      ) : (
+        <MerchantCoverFallback business={business} />
+      )}
+    </div>
+  );
+}
+
 function ItemImage({ item, name }: { item: PublicMenuItem; name: string }) {
   const state = item.imageUrl ? 'image' : 'placeholder';
 
@@ -66,13 +106,7 @@ function MerchantHeader({ menu }: { menu: PublicMenuResponse }) {
 
   return (
     <header className="waflo-menu__hero" data-slot="merchant-hero" data-component="merchant-header">
-      <MerchantImage
-        src={business.coverUrl}
-        alt={`${business.name} cover`}
-        label="Business cover"
-        slot="merchant-cover"
-        className="waflo-menu__cover"
-      />
+      <MerchantCover business={business} />
 
       <section className="waflo-menu__identity" data-slot="merchant-identity" data-component="merchant-identity">
         <MerchantImage
@@ -144,40 +178,6 @@ function LoyaltyBlock({
         Join loyalty
       </Link>
     </section>
-  );
-}
-
-function CategoryNavigation({ menu }: { menu: PublicMenuResponse }) {
-  if (menu.categories.length === 0) {
-    return null;
-  }
-
-  const direction = isRtlLanguage(menu.business.language) ? 'rtl' : 'ltr';
-
-  return (
-    <nav
-      className="waflo-menu__category-nav"
-      data-slot="category-navigation"
-      data-component="category-navigation"
-      aria-label="Menu categories"
-    >
-      <ol className="waflo-menu__category-list" data-slot="category-navigation-list">
-        {menu.categories.map((category) => (
-          <li key={category.id} data-component="category-navigation-item" data-category-id={category.id}>
-            <a
-              className="waflo-menu__category-link"
-              data-slot="category-link"
-              data-component="category-link"
-              data-category-id={category.id}
-              href={`#${getCategoryAnchor(category)}`}
-              dir={direction}
-            >
-              {getCategoryName(category, menu.business.language)}
-            </a>
-          </li>
-        ))}
-      </ol>
-    </nav>
   );
 }
 
@@ -334,7 +334,7 @@ export function PublicMenuTemplateView({ menu, template, loyaltyContext = null }
       <div className="waflo-menu__shell" data-slot="merchant-shell" data-component="menu-shell">
         <MerchantHeader menu={menu} />
         <LoyaltyBlock menu={menu} loyaltyContext={loyaltyContext} />
-        <CategoryNavigation menu={menu} />
+        <PublicMenuCategoryNavigation categories={menu.categories} language={menu.business.language} />
         <AiRecommendationSlot />
 
         <section className="waflo-menu__body" data-slot="menu-body" data-component="menu-body">

@@ -13,7 +13,7 @@ import {
   ReturningLoyaltyCardView,
   storeCardToken
 } from '../app/m/[slug]/loyalty/LoyaltyEnrollmentClient';
-import { AppleWalletRefreshNotice } from '../app/m/[slug]/loyalty/card/LoyaltyCardClient';
+import { AppleWalletRefreshNotice, CardMetrics } from '../app/m/[slug]/loyalty/card/LoyaltyCardClient';
 import {
   normalizeIraqiPhone,
   validateIraqiPhone,
@@ -103,12 +103,12 @@ describe('loyalty identity states', () => {
   it('shows first-time enrollment with required phone and optional email', () => {
     const html = renderIdentityForm('join');
 
-    assert.match(html, /Join this loyalty program/);
-    assert.match(html, /right Wallet button for this device/);
-    assert.match(html, /A phone number alone cannot open an existing card/);
+    assert.match(html, /Get your rewards card/);
+    assert.match(html, /Join once, collect stamps each visit/);
+    assert.match(html, /another trusted device, or with staff help/);
     assert.match(html, /<input[^>]*required=""[^>]*name="phone"/);
     assert.match(html, /Email <span[^>]*>\(optional\)/);
-    assert.match(html, /I already joined/);
+    assert.match(html, /I already have a card/);
   });
 
   it('explains that cross-device recovery requires verification', () => {
@@ -132,8 +132,8 @@ describe('loyalty identity states', () => {
     );
     const differentPhoneSection = html.slice(differentPhoneStart);
 
-    assert.match(html, /Recovery needs verification/);
-    assert.match(html, /phone or email alone cannot unlock/i);
+    assert.match(html, /Choose how to get back in/);
+    assert.match(html, /phone (number )?or email alone cannot (open|unlock)/i);
     assert.match(html, /ask staff for help/i);
     assert.equal(/name="phone"/.test(html), false);
     assert.equal(/name="email"/.test(html), false);
@@ -155,10 +155,10 @@ describe('loyalty identity states', () => {
     assert.match(lostAllDevicesSection, /Ask staff for help/);
     assert.match(lostAllDevicesSection, /verify the customer in person/);
     assert.match(lostAllDevicesSection, /short-lived, single-use/);
-    assert.match(lostAllDevicesSection, /log the staff action/);
+    assert.match(lostAllDevicesSection, /record the staff action/);
     assert.equal(/name="transferCode"/.test(lostAllDevicesSection), false);
     assert.match(differentPhoneSection, /Join with a different phone/);
-    assert.match(differentPhoneSection, /not already attached to a card for this business/);
+    assert.match(differentPhoneSection, /not already used for this business/);
   });
 
   it('loads a valid same-device opaque card reference and clears it on request', async () => {
@@ -475,6 +475,8 @@ describe('device-aware wallet actions', () => {
 
   it('keeps customer-visible wallet copy free of internal terms', () => {
     const visibleCopy = [
+      visibleText(renderIdentityForm('join')),
+      visibleText(renderIdentityForm('recover')),
       visibleText(renderActions('ios')),
       visibleText(renderActions('android')),
       visibleText(renderActions('desktop')),
@@ -488,6 +490,20 @@ describe('device-aware wallet actions', () => {
     assert.equal(/card ref/i.test(visibleCopy), false);
     assert.equal(/recovery token/i.test(visibleCopy), false);
     assert.equal(/transfer token/i.test(visibleCopy), false);
+  });
+});
+
+describe('loyalty card reward hierarchy', () => {
+  it('puts reward progress before secondary lifetime stats', () => {
+    const html = renderToStaticMarkup(<CardMetrics card={returningCardFixture} />);
+    const progressIndex = html.indexOf('Your reward progress');
+    const totalIndex = html.indexOf('Total earned');
+
+    assert.ok(progressIndex >= 0);
+    assert.ok(totalIndex > progressIndex);
+    assert.match(html, /2 \/ 8 stamps/);
+    assert.match(html, /6 more stamps to unlock Sample reward/);
+    assert.equal(/token|card ref|JWT|API/i.test(visibleText(html)), false);
   });
 });
 
@@ -587,7 +603,7 @@ function renderIdentityForm(mode: 'join' | 'recover') {
       onEmailChange={() => undefined}
       onNameChange={() => undefined}
       onModeChange={() => undefined}
-      recoveryMessage="Choose the path that matches your situation. Transfer is available only when at least one trusted old device still has the card. Phone or email alone cannot unlock it."
+      recoveryMessage="Choose the path that matches your situation. A phone number or email alone cannot open an existing card."
       transferCode=""
       transferError={null}
       isTransferSubmitting={false}
