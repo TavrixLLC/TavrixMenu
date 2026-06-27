@@ -85,6 +85,66 @@ const menuTemplates = Object.freeze([
       desktopPreviewUrl: null
     }),
     supportedFeatures: sharedFeatures
+  }),
+  Object.freeze({
+    id: 'luxury-dining',
+    displayName: 'Luxury Dining',
+    description:
+      'Dark editorial layout with warm ivory text and muted gold accents for premium dining.',
+    bestFor: 'Fine dining, hotel restaurants, and upscale lounges',
+    cssClass: 'waflo-template-luxury-dining',
+    cssFile: 'luxury-dining.css',
+    version: '1.0.0',
+    status: 'enabled',
+    isDefault: false,
+    preview: Object.freeze({
+      previewColors: Object.freeze(['#1a1917', '#c9a96e', '#ede8df', '#3a3630']),
+      previewLayout: 'card-grid',
+      thumbnailUrl: null,
+      mobilePreviewUrl: null,
+      desktopPreviewUrl: null
+    }),
+    supportedFeatures: sharedFeatures
+  }),
+  Object.freeze({
+    id: 'artisan-cafe',
+    displayName: 'Artisan Cafe',
+    description:
+      'Warm cream and espresso layout with image-led cards for specialty cafes and bakeries.',
+    bestFor: 'Specialty coffee, bakeries, and brunch cafes',
+    cssClass: 'waflo-template-artisan-cafe',
+    cssFile: 'artisan-cafe.css',
+    version: '1.0.0',
+    status: 'enabled',
+    isDefault: false,
+    preview: Object.freeze({
+      previewColors: Object.freeze(['#f5ede2', '#b05c3a', '#2c1f14', '#cf8b3e']),
+      previewLayout: 'card-grid',
+      thumbnailUrl: null,
+      mobilePreviewUrl: null,
+      desktopPreviewUrl: null
+    }),
+    supportedFeatures: sharedFeatures
+  }),
+  Object.freeze({
+    id: 'quick-serve-bold',
+    displayName: 'Quick Serve Bold',
+    description:
+      'High-energy layout with bold price treatment and compact rows for fast-service menus.',
+    bestFor: 'Fast food, street food, shawarma, burgers, and dessert shops',
+    cssClass: 'waflo-template-quick-serve-bold',
+    cssFile: 'quick-serve-bold.css',
+    version: '1.0.0',
+    status: 'enabled',
+    isDefault: false,
+    preview: Object.freeze({
+      previewColors: Object.freeze(['#f5f4f2', '#e8340a', '#131211', '#ffb800']),
+      previewLayout: 'compact-rows',
+      thumbnailUrl: null,
+      mobilePreviewUrl: null,
+      desktopPreviewUrl: null
+    }),
+    supportedFeatures: sharedFeatures
   })
 ]);
 

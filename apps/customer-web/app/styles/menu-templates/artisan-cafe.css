@@ -1,0 +1,344 @@
+/* ============================================================
+   Waflo Public Menu Template — artisan-cafe
+   Purpose: Specialty coffee, bakeries, brunch cafes.
+   Scope: [data-template="artisan-cafe"] only.
+   Contract: docs/public-menu-html-contract.md
+   ============================================================ */
+
+.waflo-menu[data-template="artisan-cafe"] {
+  --waflo-template-bg: #f5ede2;
+  --waflo-template-surface: #fdf8f2;
+  --waflo-template-surface-raised: #fff9f4;
+  --waflo-template-primary: #b05c3a;
+  --waflo-template-primary-dark: #8c3f22;
+  --waflo-template-success: #5a8a50;
+  --waflo-template-border: #e2cebc;
+  --waflo-template-text: #2c1f14;
+  --waflo-template-muted: #7a6050;
+  --waflo-template-reward: #cf8b3e;
+  --waflo-template-danger: #b84040;
+  --waflo-menu-radius: 12px;
+  --waflo-menu-radius-sm: 8px;
+  --waflo-menu-shadow: 0 8px 28px rgb(44 31 20 / 10%);
+  --waflo-menu-shell-max: 72rem;
+  font-family: Georgia, "Times New Roman", serif;
+}
+
+/* ── Shell ── */
+.waflo-menu[data-template="artisan-cafe"] .waflo-menu__shell {
+  width: min(100%, var(--waflo-menu-shell-max));
+}
+
+/* ── Hero ── */
+.waflo-menu[data-template="artisan-cafe"] .waflo-menu__hero {
+  grid-template-areas:
+    "cover"
+    "identity";
+  gap: 0;
+  border-radius: var(--waflo-menu-radius);
+  overflow: hidden;
+  box-shadow: var(--waflo-menu-shadow);
+  background: var(--waflo-template-surface);
+}
+
+.waflo-menu[data-template="artisan-cafe"] .waflo-menu__cover {
+  min-height: clamp(11rem, 30vw, 20rem);
+  border-radius: 0;
+  background: color-mix(in srgb, var(--waflo-template-primary) 10%, var(--waflo-template-surface));
+}
+
+.waflo-menu[data-template="artisan-cafe"] .waflo-menu__identity {
+  grid-template-columns: auto minmax(0, 1fr);
+  margin: -2.5rem 0 0;
+  padding: 0 1.25rem 1.25rem;
+  background: var(--waflo-template-surface);
+}
+
+.waflo-menu[data-template="artisan-cafe"] .waflo-menu__logo {
+  width: 5.5rem;
+  height: 5.5rem;
+  border: 3px solid var(--waflo-template-surface);
+  border-radius: 50%;
+  background: var(--waflo-template-bg);
+  box-shadow: 0 4px 14px rgb(44 31 20 / 16%);
+}
+
+.waflo-menu[data-template="artisan-cafe"] .waflo-menu__merchant-type {
+  color: var(--waflo-template-reward);
+  font-family: Arial, Helvetica, sans-serif;
+  font-size: 0.72rem;
+  letter-spacing: 0.14em;
+  text-transform: uppercase;
+}
+
+.waflo-menu[data-template="artisan-cafe"] .waflo-menu__merchant-name {
+  color: var(--waflo-template-text);
+  font-size: clamp(1.8rem, 5.5vw, 3.2rem);
+  font-weight: 400;
+  line-height: 1.1;
+}
+
+.waflo-menu[data-template="artisan-cafe"] .waflo-menu__metadata {
+  color: var(--waflo-template-muted);
+  font-family: Arial, Helvetica, sans-serif;
+  font-size: 0.83rem;
+}
+
+.waflo-menu[data-template="artisan-cafe"] .waflo-menu__metadata div + div::before {
+  color: var(--waflo-template-border);
+}
+
+.waflo-menu[data-template="artisan-cafe"] .waflo-menu__status {
+  background: color-mix(in srgb, var(--waflo-template-success) 10%, var(--waflo-template-surface));
+  color: var(--waflo-template-success);
+  font-family: Arial, Helvetica, sans-serif;
+  font-size: 0.72rem;
+}
+
+/* ── Loyalty block ── */
+.waflo-menu[data-template="artisan-cafe"] .waflo-menu__loyalty {
+  border: 1px solid var(--waflo-template-border);
+  border-radius: var(--waflo-menu-radius);
+  background: var(--waflo-template-surface);
+  box-shadow: var(--waflo-menu-shadow);
+}
+
+.waflo-menu[data-template="artisan-cafe"] .waflo-menu__eyebrow {
+  color: var(--waflo-template-reward);
+  font-family: Arial, Helvetica, sans-serif;
+  font-size: 0.7rem;
+  letter-spacing: 0.14em;
+  text-transform: uppercase;
+}
+
+.waflo-menu[data-template="artisan-cafe"] .waflo-menu__loyalty-title {
+  color: var(--waflo-template-text);
+  font-size: clamp(1.2rem, 3.5vw, 1.6rem);
+  font-weight: 400;
+}
+
+.waflo-menu[data-template="artisan-cafe"] .waflo-menu__loyalty-description {
+  color: var(--waflo-template-muted);
+  font-family: Arial, Helvetica, sans-serif;
+  font-size: 0.9rem;
+}
+
+.waflo-menu[data-template="artisan-cafe"] .waflo-menu__loyalty-action {
+  border-radius: var(--waflo-menu-radius);
+  background: var(--waflo-template-primary);
+  color: #fdf8f2;
+  font-family: Arial, Helvetica, sans-serif;
+  font-size: 0.85rem;
+  font-weight: 700;
+  transition: background 140ms ease;
+}
+
+.waflo-menu[data-template="artisan-cafe"] .waflo-menu__loyalty-action:hover {
+  background: var(--waflo-template-primary-dark);
+}
+
+/* ── Category nav ── */
+.waflo-menu[data-template="artisan-cafe"] .waflo-menu__category-nav {
+  background: color-mix(in srgb, var(--waflo-template-bg) 88%, transparent);
+  backdrop-filter: blur(12px);
+}
+
+.waflo-menu[data-template="artisan-cafe"] .waflo-menu__category-link {
+  border-color: var(--waflo-template-border);
+  border-radius: 999px;
+  background: var(--waflo-template-surface);
+  color: var(--waflo-template-text);
+  font-family: Arial, Helvetica, sans-serif;
+  font-size: 0.85rem;
+  font-weight: 600;
+  box-shadow: 0 2px 6px rgb(44 31 20 / 7%);
+  transition: background 140ms ease, border-color 140ms ease, color 140ms ease;
+}
+
+.waflo-menu[data-template="artisan-cafe"] .waflo-menu__category-link:hover,
+.waflo-menu[data-template="artisan-cafe"] .waflo-menu__category-link:focus-visible {
+  background: var(--waflo-template-primary);
+  border-color: var(--waflo-template-primary);
+  color: #fdf8f2;
+}
+
+/* ── Category headings ── */
+.waflo-menu[data-template="artisan-cafe"] .waflo-menu__category-title {
+  color: var(--waflo-template-text);
+  font-size: clamp(1.3rem, 3.5vw, 1.85rem);
+  font-weight: 400;
+}
+
+/* ── Item list: image-led card grid ── */
+.waflo-menu[data-template="artisan-cafe"] .waflo-menu__items {
+  grid-template-columns: repeat(auto-fill, minmax(min(100%, 17rem), 1fr));
+  gap: 1.1rem;
+  margin-top: 1rem;
+}
+
+/* ── Item card: stacked image-top ── */
+.waflo-menu[data-template="artisan-cafe"] .waflo-menu__item-link {
+  grid-template-areas:
+    "image image"
+    "copy  price";
+  grid-template-columns: minmax(0, 1fr) auto;
+  align-items: start;
+  padding: 0;
+  overflow: hidden;
+  border-color: var(--waflo-template-border);
+  border-radius: var(--waflo-menu-radius);
+  background: var(--waflo-template-surface);
+  box-shadow: var(--waflo-menu-shadow);
+  transition: box-shadow 160ms ease, transform 160ms ease;
+}
+
+.waflo-menu[data-template="artisan-cafe"] .waflo-menu__item-link:hover {
+  box-shadow: 0 14px 40px rgb(44 31 20 / 16%);
+  transform: translateY(-2px);
+  border-color: var(--waflo-template-border);
+}
+
+.waflo-menu[data-template="artisan-cafe"] .waflo-menu__item-image {
+  grid-area: image;
+  width: 100%;
+  aspect-ratio: 4 / 3;
+  border-radius: 0;
+  background: color-mix(in srgb, var(--waflo-template-primary) 8%, var(--waflo-template-bg));
+}
+
+.waflo-menu[data-template="artisan-cafe"] .waflo-menu__item-copy {
+  padding: 0.9rem 1rem 0.75rem;
+}
+
+.waflo-menu[data-template="artisan-cafe"] .waflo-menu__item-name {
+  color: var(--waflo-template-text);
+  font-size: 1rem;
+  font-weight: 400;
+  line-height: 1.3;
+}
+
+.waflo-menu[data-template="artisan-cafe"] .waflo-menu__item-description {
+  color: var(--waflo-template-muted);
+  font-family: Arial, Helvetica, sans-serif;
+  font-size: 0.83rem;
+  line-height: 1.6;
+}
+
+.waflo-menu[data-template="artisan-cafe"] .waflo-menu__item-status {
+  background: color-mix(in srgb, var(--waflo-template-success) 10%, var(--waflo-template-surface));
+  color: var(--waflo-template-success);
+  font-family: Arial, Helvetica, sans-serif;
+  font-size: 0.68rem;
+  letter-spacing: 0.06em;
+  text-transform: uppercase;
+}
+
+.waflo-menu[data-template="artisan-cafe"] .waflo-menu__item-status[data-state="sold-out"] {
+  background: color-mix(in srgb, var(--waflo-template-danger) 10%, var(--waflo-template-surface));
+  color: var(--waflo-template-danger);
+}
+
+.waflo-menu[data-template="artisan-cafe"] .waflo-menu__item-price {
+  align-self: start;
+  margin: 0.9rem 0.9rem 0 0;
+  padding: 0.45rem 0.75rem;
+  border-radius: 999px;
+  background: color-mix(in srgb, var(--waflo-template-reward) 14%, var(--waflo-template-surface));
+  color: var(--waflo-template-primary-dark);
+  font-family: Arial, Helvetica, sans-serif;
+  font-size: 0.92rem;
+  font-weight: 700;
+}
+
+/* ── Empty / state ── */
+.waflo-menu[data-template="artisan-cafe"] .waflo-menu__category-empty,
+.waflo-menu[data-template="artisan-cafe"] .waflo-menu__empty {
+  border-color: var(--waflo-template-border);
+  background: var(--waflo-template-surface);
+  color: var(--waflo-template-muted);
+}
+
+/* ── Footer ── */
+.waflo-menu[data-template="artisan-cafe"] .waflo-menu__footer {
+  color: var(--waflo-template-muted);
+  font-family: Arial, Helvetica, sans-serif;
+  font-size: 0.82rem;
+}
+
+/* ── Focus visible ── */
+.waflo-menu[data-template="artisan-cafe"] :focus-visible {
+  outline: 2px solid var(--waflo-template-primary);
+  outline-offset: 3px;
+}
+
+/* ── RTL ── */
+[data-dir="rtl"].waflo-menu[data-template="artisan-cafe"] .waflo-menu__item-price {
+  margin: 0.9rem 0 0 0.9rem;
+}
+
+/* ── Desktop: side-by-side hero ── */
+@media (min-width: 900px) {
+  .waflo-menu[data-template="artisan-cafe"] .waflo-menu__hero {
+    grid-template-areas: "identity cover";
+    grid-template-columns: minmax(0, 1fr) 22rem;
+    background: var(--waflo-template-surface);
+    overflow: hidden;
+  }
+
+  .waflo-menu[data-template="artisan-cafe"] .waflo-menu__cover {
+    min-height: 18rem;
+    border-radius: 0;
+  }
+
+  .waflo-menu[data-template="artisan-cafe"] .waflo-menu__identity {
+    margin: 0;
+    padding: 2rem 1.5rem;
+    align-content: end;
+    align-items: end;
+    background: transparent;
+    grid-template-columns: 5.5rem minmax(0, 1fr);
+  }
+}
+
+/* ── Mobile ── */
+@media (max-width: 640px) {
+  .waflo-menu[data-template="artisan-cafe"] .waflo-menu__identity {
+    grid-template-columns: minmax(0, 1fr);
+    margin-top: -2rem;
+    padding-inline: 0.75rem;
+  }
+
+  .waflo-menu[data-template="artisan-cafe"] .waflo-menu__logo {
+    display: none;
+  }
+
+  /* Single-column card list on mobile */
+  .waflo-menu[data-template="artisan-cafe"] .waflo-menu__items {
+    grid-template-columns: 1fr;
+  }
+
+  /* Row layout per item on narrow screens */
+  .waflo-menu[data-template="artisan-cafe"] .waflo-menu__item-link {
+    grid-template-areas:
+      "image copy"
+      "image price";
+    grid-template-columns: 5.5rem minmax(0, 1fr);
+  }
+
+  .waflo-menu[data-template="artisan-cafe"] .waflo-menu__item-image {
+    width: 5.5rem;
+    aspect-ratio: 1;
+  }
+
+  .waflo-menu[data-template="artisan-cafe"] .waflo-menu__item-copy {
+    padding: 0.7rem 0.75rem 0.5rem;
+  }
+
+  .waflo-menu[data-template="artisan-cafe"] .waflo-menu__item-price {
+    margin: 0 0.75rem 0.75rem;
+  }
+
+  [data-dir="rtl"].waflo-menu[data-template="artisan-cafe"] .waflo-menu__item-price {
+    margin: 0 0 0.75rem 0.75rem;
+  }
+}

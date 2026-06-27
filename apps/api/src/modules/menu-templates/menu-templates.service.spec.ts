@@ -9,7 +9,15 @@ describe('MenuTemplatesService', () => {
 
     assert.deepEqual(
       catalog.templates.map((template) => template.id),
-      ['waflo-warm', 'coffeehouse-premium', 'street-bites', 'minimal-modern']
+      [
+        'waflo-warm',
+        'coffeehouse-premium',
+        'street-bites',
+        'minimal-modern',
+        'luxury-dining',
+        'artisan-cafe',
+        'quick-serve-bold'
+      ]
     );
     assert.ok(catalog.templates.every((template) => template.enabled));
     assert.ok(catalog.templates.every((template) => template.status === 'enabled'));

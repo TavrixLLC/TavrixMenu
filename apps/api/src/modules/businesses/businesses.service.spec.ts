@@ -122,7 +122,10 @@ describe('BusinessesService menu appearance contract', () => {
       'waflo-warm',
       'coffeehouse-premium',
       'street-bites',
-      'minimal-modern'
+      'minimal-modern',
+      'luxury-dining',
+      'artisan-cafe',
+      'quick-serve-bold'
     ]);
 
     for (const menuTemplateId of MENU_TEMPLATE_IDS) {
@@ -133,7 +136,7 @@ describe('BusinessesService menu appearance contract', () => {
     }
 
     const invalid = new UpdateMenuAppearanceDto();
-    invalid.menuTemplateId = 'luxury-dining' as never;
+    invalid.menuTemplateId = 'merchant-uploaded-css' as never;
 
     const errors = await validate(invalid);
 
