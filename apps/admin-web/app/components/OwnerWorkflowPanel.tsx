@@ -1,6 +1,6 @@
 'use client';
 
-import { useCallback, useEffect, useMemo, useState } from 'react';
+import { useCallback, useEffect, useId, useMemo, useState } from 'react';
 import { useAuth } from '@clerk/nextjs';
 import {
   fetchAdminMe,
@@ -13,9 +13,13 @@ import {
   reorderItems,
   restoreCategory,
   restoreItem,
+  updateBusinessImages,
+  updateMenuItemImage,
   updateMenuAppearance,
+  uploadMedia,
   type AdminCategory,
   type AdminDashboardSummary,
+  type AdminMediaUploadPurpose,
   type AdminMeResponse,
   type AdminMenuAppearance,
   type AdminMenuItem,
@@ -79,6 +83,88 @@ function sortCategories(categories: AdminCategory[]) {
 
 function sortItems(items: AdminMenuItem[]) {
   return [...items].sort((left, right) => left.sortOrder - right.sortOrder || left.nameAr.localeCompare(right.nameAr));
+}
+
+type ImageUploadOutcome = {
+  status: 'success' | 'error';
+  message: string;
+};
+
+const imageUploadConfig: Record<
+  AdminMediaUploadPurpose,
+  {
+    label: string;
+    helper: string;
+    recommendation: string;
+    maxSizeBytes: number;
+    previewClassName: string;
+  }
+> = {
+  BUSINESS_LOGO: {
+    label: 'Business logo',
+    helper: 'This appears on the public menu and loyalty surfaces where supported.',
+    recommendation: 'Recommended: square image, JPG, PNG, or WebP, up to 2 MB.',
+    maxSizeBytes: 2 * 1024 * 1024,
+    previewClassName: 'aspect-square'
+  },
+  BUSINESS_COVER: {
+    label: 'Business cover',
+    helper: 'Use a wide image that gives the menu a strong first impression.',
+    recommendation: 'Recommended: wide image, JPG, PNG, or WebP, up to 5 MB.',
+    maxSizeBytes: 5 * 1024 * 1024,
+    previewClassName: 'aspect-[16/9]'
+  },
+  MENU_ITEM_IMAGE: {
+    label: 'Menu item photo',
+    helper: 'Use a clear food photo that helps customers choose quickly.',
+    recommendation: 'Recommended: food photo, JPG, PNG, or WebP, up to 5 MB.',
+    maxSizeBytes: 5 * 1024 * 1024,
+    previewClassName: 'aspect-[4/3]'
+  }
+};
+
+const acceptedImageTypes = new Set(['image/jpeg', 'image/png', 'image/webp']);
+
+function getImageValidationError(file: File, purpose: AdminMediaUploadPurpose) {
+  if (!acceptedImageTypes.has(file.type)) {
+    return 'Please choose a JPG, PNG, or WebP image.';
+  }
+
+  const config = imageUploadConfig[purpose];
+
+  if (file.size > config.maxSizeBytes) {
+    return purpose === 'BUSINESS_LOGO'
+      ? 'Logo images can be up to 2 MB.'
+      : 'This image can be up to 5 MB.';
+  }
+
+  return null;
+}
+
+function getUploadErrorMessage(status: string) {
+  switch (status) {
+    case 'auth-error':
+      return 'Please sign in again before uploading an image.';
+    case 'forbidden':
+      return 'Your account does not have permission to upload images for this business.';
+    case 'validation-error':
+      return 'Please choose a valid image that matches the size limit.';
+    default:
+      return 'The image could not be uploaded. Please try again.';
+  }
+}
+
+function getImageSaveErrorMessage(status: string) {
+  switch (status) {
+    case 'auth-error':
+      return 'Please sign in again before saving the image.';
+    case 'forbidden':
+      return 'The image uploaded, but your account cannot save it here.';
+    case 'validation-error':
+      return 'The image uploaded, but the saved image link was not accepted.';
+    default:
+      return 'The image uploaded, but could not be saved. Please try again.';
+  }
 }
 
 function moveListItem<T>(items: T[], index: number, direction: -1 | 1) {
@@ -359,6 +445,164 @@ function PublicMenuShareSection({
   );
 }
 
+function ImageUploadControl({
+  purpose,
+  currentUrl,
+  canManage,
+  disabled,
+  unavailableMessage,
+  onUploadAndSave
+}: {
+  purpose: AdminMediaUploadPurpose;
+  currentUrl: string | null;
+  canManage: boolean;
+  disabled: boolean;
+  unavailableMessage: string;
+  onUploadAndSave: (file: File) => Promise<ImageUploadOutcome>;
+}) {
+  const inputId = useId();
+  const config = imageUploadConfig[purpose];
+  const [status, setStatus] = useState<ImageUploadOutcome | { status: 'idle' | 'pending'; message: string }>({
+    status: 'idle',
+    message: ''
+  });
+
+  async function handleFileChange(event: React.ChangeEvent<HTMLInputElement>) {
+    const file = event.target.files?.[0] || null;
+    event.target.value = '';
+
+    if (!file) {
+      return;
+    }
+
+    const validationError = getImageValidationError(file, purpose);
+
+    if (validationError) {
+      setStatus({
+        status: 'error',
+        message: validationError
+      });
+      return;
+    }
+
+    setStatus({
+      status: 'pending',
+      message: 'Uploading and saving image...'
+    });
+
+    const result = await onUploadAndSave(file);
+    setStatus(result);
+  }
+
+  const isBusy = status.status === 'pending';
+  const isDisabled = disabled || isBusy;
+  const statusTone =
+    status.status === 'success'
+      ? 'border-emerald-200 bg-emerald-50 text-emerald-800'
+      : status.status === 'error'
+        ? 'border-rose-200 bg-rose-50 text-rose-800'
+        : 'border-amber-200 bg-amber-50 text-amber-900';
+
+  return (
+    <article className="rounded-lg border border-neutral-200 bg-white p-4">
+      <div className="grid gap-4 sm:grid-cols-[8rem_1fr]">
+        <div
+          className={`overflow-hidden rounded-lg border border-neutral-200 bg-neutral-50 ${config.previewClassName}`}
+        >
+          {currentUrl ? (
+            // eslint-disable-next-line @next/next/no-img-element
+            <img src={currentUrl} alt={`${config.label} preview`} className="h-full w-full object-cover" />
+          ) : (
+            <div className="flex h-full w-full items-center justify-center p-3 text-center text-xs font-semibold uppercase text-neutral-400">
+              No image yet
+            </div>
+          )}
+        </div>
+        <div>
+          <p className="text-sm font-bold text-ink">{config.label}</p>
+          <p className="mt-1 text-sm leading-6 text-neutral-600">{config.helper}</p>
+          <p className="mt-2 text-xs font-semibold uppercase text-neutral-500">{config.recommendation}</p>
+
+          {canManage ? (
+            <div className="mt-4 flex flex-wrap items-center gap-3">
+              <input
+                id={inputId}
+                className="sr-only"
+                type="file"
+                accept="image/jpeg,image/png,image/webp"
+                disabled={isDisabled}
+                onChange={handleFileChange}
+              />
+              <label
+                htmlFor={inputId}
+                aria-disabled={isDisabled}
+                className={`inline-flex rounded-md px-4 py-2 text-sm font-semibold ${
+                  isDisabled
+                    ? 'cursor-not-allowed bg-neutral-200 text-neutral-500'
+                    : 'cursor-pointer bg-accent text-white'
+                }`}
+              >
+                {isBusy ? 'Saving image...' : currentUrl ? 'Replace image' : 'Choose image'}
+              </label>
+              {currentUrl ? <span className="text-sm font-semibold text-neutral-500">Preview updated after save.</span> : null}
+            </div>
+          ) : (
+            <p className="mt-4 rounded-md border border-amber-200 bg-amber-50 p-3 text-sm font-semibold text-amber-900">
+              {unavailableMessage}
+            </p>
+          )}
+
+          {status.status !== 'idle' ? <p className={`mt-3 rounded-md border p-3 text-sm font-semibold ${statusTone}`}>{status.message}</p> : null}
+        </div>
+      </div>
+    </article>
+  );
+}
+
+function BusinessImagesSection({
+  summary,
+  canManage,
+  actionPending,
+  onUploadLogo,
+  onUploadCover
+}: {
+  summary: AdminDashboardSummary;
+  canManage: boolean;
+  actionPending: boolean;
+  onUploadLogo: (file: File) => Promise<ImageUploadOutcome>;
+  onUploadCover: (file: File) => Promise<ImageUploadOutcome>;
+}) {
+  return (
+    <section className="rounded-lg border border-neutral-200 bg-white p-5">
+      <div>
+        <p className="text-sm font-semibold uppercase text-accent">Business images</p>
+        <h2 className="mt-2 text-xl font-bold text-ink">Logo and cover</h2>
+        <p className="mt-2 max-w-2xl text-sm leading-6 text-neutral-600">
+          Upload polished images for the public menu. The image is saved after upload, and customers see the updated version after refresh.
+        </p>
+      </div>
+      <div className="mt-5 grid gap-4 xl:grid-cols-2">
+        <ImageUploadControl
+          purpose="BUSINESS_LOGO"
+          currentUrl={summary.business.logoUrl}
+          canManage={canManage}
+          disabled={actionPending}
+          unavailableMessage="Business logo changes require owner profile permission. Managers can update menu item photos below."
+          onUploadAndSave={onUploadLogo}
+        />
+        <ImageUploadControl
+          purpose="BUSINESS_COVER"
+          currentUrl={summary.business.coverUrl}
+          canManage={canManage}
+          disabled={actionPending}
+          unavailableMessage="Business cover changes require owner profile permission. Managers can update menu item photos below."
+          onUploadAndSave={onUploadCover}
+        />
+      </div>
+    </section>
+  );
+}
+
 function MenuAppearanceSection({
   summary,
   appearance,
@@ -626,7 +870,8 @@ function ItemManager({
   actionPending,
   onMove,
   onSave,
-  onRestore
+  onRestore,
+  onUploadImage
 }: {
   items: AdminMenuItem[];
   categoryNameById: Map<string, string>;
@@ -635,6 +880,7 @@ function ItemManager({
   onMove: (index: number, direction: -1 | 1) => void;
   onSave: () => void;
   onRestore: (item: AdminMenuItem) => void;
+  onUploadImage: (item: AdminMenuItem, file: File) => Promise<ImageUploadOutcome>;
 }) {
   return (
     <article className="rounded-lg border border-neutral-200 bg-white">
@@ -667,7 +913,7 @@ function ItemManager({
       ) : (
         <div className="divide-y divide-neutral-100">
           {items.map((item, index) => (
-            <div key={item.id} className="grid gap-3 p-4 lg:grid-cols-[1fr_auto] lg:items-center">
+            <div key={item.id} className="grid gap-4 p-4 xl:grid-cols-[minmax(0,1fr)_minmax(19rem,24rem)_auto] xl:items-center">
               <div>
                 <div className="flex flex-wrap items-center gap-2">
                   <p className="font-semibold text-ink">{item.nameAr}</p>
@@ -680,6 +926,14 @@ function ItemManager({
                   {categoryNameById.get(item.categoryId) || item.categoryId} - {item.price} - sortOrder {item.sortOrder}
                 </p>
               </div>
+              <ImageUploadControl
+                purpose="MENU_ITEM_IMAGE"
+                currentUrl={item.imageUrl}
+                canManage={canManage}
+                disabled={actionPending}
+                unavailableMessage="Menu item photos require owner or manager menu permission."
+                onUploadAndSave={(file) => onUploadImage(item, file)}
+              />
               <div className="flex flex-wrap gap-2">
                 <button
                   type="button"
@@ -1047,12 +1301,87 @@ export function OwnerWorkflowPanel({ apiBaseUrl }: OwnerWorkflowPanelProps) {
     }
   }
 
+  async function uploadAndSaveImage({
+    file,
+    purpose,
+    successMessage,
+    saveUrl
+  }: {
+    file: File;
+    purpose: AdminMediaUploadPurpose;
+    successMessage: string;
+    saveUrl: (token: string, url: string) => Promise<{ status: string; message?: string }>;
+  }): Promise<ImageUploadOutcome> {
+    if (state.status !== 'ok') {
+      return {
+        status: 'error',
+        message: 'Open a business workspace before uploading images.'
+      };
+    }
+
+    setActionState({ status: 'pending', message: 'Saving image...' });
+
+    try {
+      const token = await getToken();
+
+      if (!token) {
+        const message = 'Please sign in again before uploading an image.';
+        setActionState({ status: 'error', message });
+        return { status: 'error', message };
+      }
+
+      const uploadResult = await uploadMedia({
+        apiBaseUrl,
+        token,
+        businessId: state.businessId,
+        purpose,
+        file
+      });
+
+      if (uploadResult.status !== 'ok') {
+        const message = getUploadErrorMessage(uploadResult.status);
+        setActionState({ status: 'error', message });
+        return { status: 'error', message };
+      }
+
+      const saveResult = await saveUrl(token, uploadResult.data.url);
+
+      if (saveResult.status !== 'ok') {
+        const message = getImageSaveErrorMessage(saveResult.status);
+        setActionState({ status: 'error', message });
+        return { status: 'error', message };
+      }
+
+      const refreshError = await refreshWorkflowData(state.businessId, token);
+
+      if (refreshError) {
+        const message = 'The image was saved, but this page could not refresh. Refresh the dashboard to see it.';
+        setActionState({ status: 'error', message });
+        return { status: 'error', message };
+      }
+
+      setActionState({
+        status: 'success',
+        message: successMessage
+      });
+      return {
+        status: 'success',
+        message: successMessage
+      };
+    } catch {
+      const message = 'The image could not be saved. Please try again.';
+      setActionState({ status: 'error', message });
+      return { status: 'error', message };
+    }
+  }
+
   if (state.status !== 'ok') {
     return <BlockingState state={state} />;
   }
 
   const canManage = isMenuManager(state.summary);
   const canManageAppearance = isAppearanceManager(state.summary);
+  const canManageBusinessImages = state.summary.currentUser.permissions.canManageBusiness;
   const actionPending = actionState.status === 'pending';
 
   return (
@@ -1062,6 +1391,50 @@ export function OwnerWorkflowPanel({ apiBaseUrl }: OwnerWorkflowPanelProps) {
       <PublicMenuShareSection summary={state.summary} copyStatus={copyStatus} onCopy={copyToClipboard} />
 
       <ActionBanner actionState={actionState} />
+
+      <BusinessImagesSection
+        summary={state.summary}
+        canManage={canManageBusinessImages}
+        actionPending={actionPending}
+        onUploadLogo={(file) =>
+          uploadAndSaveImage({
+            file,
+            purpose: 'BUSINESS_LOGO',
+            successMessage: 'Business logo saved.',
+            saveUrl: async (token, url) => {
+              const result = await updateBusinessImages({
+                apiBaseUrl,
+                token,
+                businessId: state.businessId,
+                logoUrl: url
+              });
+
+              return result.status === 'ok'
+                ? { status: 'ok' }
+                : { status: result.status, message: result.message };
+            }
+          })
+        }
+        onUploadCover={(file) =>
+          uploadAndSaveImage({
+            file,
+            purpose: 'BUSINESS_COVER',
+            successMessage: 'Business cover saved.',
+            saveUrl: async (token, url) => {
+              const result = await updateBusinessImages({
+                apiBaseUrl,
+                token,
+                businessId: state.businessId,
+                coverUrl: url
+              });
+
+              return result.status === 'ok'
+                ? { status: 'ok' }
+                : { status: result.status, message: result.message };
+            }
+          })
+        }
+      />
 
       <MenuAppearanceSection
         summary={state.summary}
@@ -1181,6 +1554,25 @@ export function OwnerWorkflowPanel({ apiBaseUrl }: OwnerWorkflowPanelProps) {
                 return result.status === 'ok'
                   ? { status: 'ok' }
                   : { status: result.status, message: `Item restore failed: ${result.message}` };
+              })
+            }
+            onUploadImage={(item, file) =>
+              uploadAndSaveImage({
+                file,
+                purpose: 'MENU_ITEM_IMAGE',
+                successMessage: 'Menu item photo saved.',
+                saveUrl: async (token, url) => {
+                  const result = await updateMenuItemImage({
+                    apiBaseUrl,
+                    token,
+                    itemId: item.id,
+                    imageUrl: url
+                  });
+
+                  return result.status === 'ok'
+                    ? { status: 'ok' }
+                    : { status: result.status, message: result.message };
+                }
               })
             }
           />

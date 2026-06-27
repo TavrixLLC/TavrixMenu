@@ -145,6 +145,15 @@ export type AdminMenuItem = {
   sortOrder: number;
 };
 
+export type AdminMediaUploadPurpose = 'BUSINESS_LOGO' | 'BUSINESS_COVER' | 'MENU_ITEM_IMAGE';
+
+export type AdminMediaUploadResult = {
+  url: string;
+  contentType: string;
+  sizeBytes: number;
+  purpose: AdminMediaUploadPurpose;
+};
+
 export type AdminReorderOrder = {
   id: string;
   sortOrder: number;
@@ -771,6 +780,32 @@ function parseMenuItems(value: unknown): AdminMenuItem[] | null {
   return compact(value.map(parseMenuItem));
 }
 
+const mediaUploadPurposes = new Set<AdminMediaUploadPurpose>(['BUSINESS_LOGO', 'BUSINESS_COVER', 'MENU_ITEM_IMAGE']);
+
+function parseMediaUploadResult(value: unknown): AdminMediaUploadResult | null {
+  const record = asRecord(value);
+
+  if (!record) {
+    return null;
+  }
+
+  const url = readString(record.url);
+  const contentType = readString(record.contentType);
+  const sizeBytes = readNumber(record.sizeBytes);
+  const purpose = readString(record.purpose);
+
+  if (!url || !contentType || !purpose || !mediaUploadPurposes.has(purpose as AdminMediaUploadPurpose)) {
+    return null;
+  }
+
+  return {
+    url,
+    contentType,
+    sizeBytes,
+    purpose: purpose as AdminMediaUploadPurpose
+  };
+}
+
 function parsePublicLink(value: unknown): AdminBusinessPublicLink | null {
   const record = asRecord(value);
 
@@ -1357,6 +1392,120 @@ async function requestAdminJson<T>({
   }
 }
 
+async function requestAdminFormData<T>({
+  apiBaseUrl,
+  token,
+  path,
+  body,
+  signal,
+  parse,
+  contractName
+}: {
+  apiBaseUrl: string;
+  token: string | null;
+  path: string;
+  body: FormData;
+  signal?: AbortSignal;
+  parse: (value: unknown) => T | null;
+  contractName: string;
+}): Promise<AdminApiResult<T>> {
+  const apiUrl = buildApiUrl(apiBaseUrl, path);
+
+  if (!token) {
+    return {
+      status: 'auth-error',
+      apiUrl,
+      message: 'Please sign in again before continuing.'
+    };
+  }
+
+  try {
+    const response = await fetch(apiUrl, {
+      cache: 'no-store',
+      method: 'POST',
+      headers: {
+        Accept: 'application/json',
+        Authorization: `Bearer ${token}`
+      },
+      body,
+      signal
+    });
+
+    const responseText = await response.text();
+    let payload: unknown = null;
+
+    if (responseText) {
+      try {
+        payload = JSON.parse(responseText);
+      } catch {
+        payload = responseText;
+      }
+    }
+
+    if (response.status === 401) {
+      return {
+        status: 'auth-error',
+        apiUrl,
+        message: formatApiErrorMessage(response.status, payload)
+      };
+    }
+
+    if (response.status === 403) {
+      return {
+        status: 'forbidden',
+        apiUrl,
+        message: formatApiErrorMessage(response.status, payload)
+      };
+    }
+
+    if (response.status === 400 || response.status === 413 || response.status === 422) {
+      return {
+        status: 'validation-error',
+        apiUrl,
+        message: formatApiErrorMessage(response.status, payload)
+      };
+    }
+
+    if (!response.ok) {
+      return {
+        status: 'error',
+        apiUrl,
+        message: formatApiErrorMessage(response.status, payload)
+      };
+    }
+
+    const data = parse(payload);
+
+    if (!data) {
+      return {
+        status: 'error',
+        apiUrl,
+        message: `The response did not match the ${contractName} contract.`
+      };
+    }
+
+    return {
+      status: 'ok',
+      data,
+      apiUrl
+    };
+  } catch (error) {
+    if (error instanceof DOMException && error.name === 'AbortError') {
+      return {
+        status: 'error',
+        apiUrl,
+        message: 'The request was cancelled.'
+      };
+    }
+
+    return {
+      status: 'error',
+      apiUrl,
+      message: error instanceof Error ? error.message : `Unable to reach ${apiUrl}.`
+    };
+  }
+}
+
 export async function fetchAdminMe({
   apiBaseUrl,
   token,
@@ -1595,6 +1744,98 @@ export function restoreItem({
     path: `/items/${encodeURIComponent(itemId)}`,
     method: 'PATCH',
     body: { isAvailable: true },
+    signal,
+    parse: parseMenuItem,
+    contractName: 'PATCH /items/{id}'
+  });
+}
+
+export function uploadMedia({
+  apiBaseUrl,
+  token,
+  businessId,
+  purpose,
+  file,
+  signal
+}: {
+  apiBaseUrl: string;
+  token: string | null;
+  businessId: string;
+  purpose: AdminMediaUploadPurpose;
+  file: File;
+  signal?: AbortSignal;
+}) {
+  const formData = new FormData();
+  formData.append('purpose', purpose);
+  formData.append('file', file);
+
+  return requestAdminFormData({
+    apiBaseUrl,
+    token,
+    path: `/businesses/${encodeURIComponent(businessId)}/media/uploads`,
+    body: formData,
+    signal,
+    parse: parseMediaUploadResult,
+    contractName: 'POST /businesses/{id}/media/uploads'
+  });
+}
+
+export function updateBusinessImages({
+  apiBaseUrl,
+  token,
+  businessId,
+  logoUrl,
+  coverUrl,
+  signal
+}: {
+  apiBaseUrl: string;
+  token: string | null;
+  businessId: string;
+  logoUrl?: string | null;
+  coverUrl?: string | null;
+  signal?: AbortSignal;
+}) {
+  const body: { logoUrl?: string | null; coverUrl?: string | null } = {};
+
+  if (logoUrl !== undefined) {
+    body.logoUrl = logoUrl;
+  }
+
+  if (coverUrl !== undefined) {
+    body.coverUrl = coverUrl;
+  }
+
+  return requestAdminJson({
+    apiBaseUrl,
+    token,
+    path: `/businesses/${encodeURIComponent(businessId)}`,
+    method: 'PATCH',
+    body,
+    signal,
+    parse: parseAdminBusiness,
+    contractName: 'PATCH /businesses/{id}'
+  });
+}
+
+export function updateMenuItemImage({
+  apiBaseUrl,
+  token,
+  itemId,
+  imageUrl,
+  signal
+}: {
+  apiBaseUrl: string;
+  token: string | null;
+  itemId: string;
+  imageUrl: string | null;
+  signal?: AbortSignal;
+}) {
+  return requestAdminJson({
+    apiBaseUrl,
+    token,
+    path: `/items/${encodeURIComponent(itemId)}`,
+    method: 'PATCH',
+    body: { imageUrl },
     signal,
     parse: parseMenuItem,
     contractName: 'PATCH /items/{id}'
