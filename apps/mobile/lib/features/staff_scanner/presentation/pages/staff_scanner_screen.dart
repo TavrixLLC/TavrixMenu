@@ -3,6 +3,7 @@ import 'package:flutter_bloc/flutter_bloc.dart';
 
 import '../../../../core/constants/app_colors.dart';
 import '../../../../core/constants/app_spacing.dart';
+import '../../../../core/copy/pilot_arabic_copy.dart';
 import '../../../../shared/widgets/app_button.dart';
 import '../../../../shared/widgets/app_card.dart';
 import '../../../../shared/widgets/app_scaffold.dart';
@@ -54,125 +55,130 @@ class _StaffScannerScreenState extends State<StaffScannerScreen> {
 
   @override
   Widget build(BuildContext context) {
-    return AppScaffold(
-      title: 'Scan customer wallet',
-      scrollable: true,
-      child: BlocBuilder<WalletScanCubit, WalletScanState>(
-        builder: (context, state) {
-          if ((state.status == WalletScanStatus.initial ||
-                  state.status == WalletScanStatus.loading) &&
-              state.business == null) {
-            return const LoadingView(message: 'Loading business access');
-          }
+    return Directionality(
+      textDirection: TextDirection.rtl,
+      child: AppScaffold(
+        title: PilotArabicCopy.staffScannerTitle,
+        scrollable: true,
+        child: BlocBuilder<WalletScanCubit, WalletScanState>(
+          builder: (context, state) {
+            if ((state.status == WalletScanStatus.initial ||
+                    state.status == WalletScanStatus.loading) &&
+                state.business == null) {
+              return const LoadingView(
+                message: PilotArabicCopy.staffScannerLoading,
+              );
+            }
 
-          if (state.business == null) {
-            return ErrorView(
-              message:
-                  state.errorMessage ??
-                  'We could not load the business workspace for scanning.',
-              onRetry: () => context.read<WalletScanCubit>().load(),
+            if (state.business == null) {
+              return ErrorView(
+                message:
+                    state.errorMessage ??
+                    PilotArabicCopy.staffScannerLoadFailed,
+                onRetry: () => context.read<WalletScanCubit>().load(),
+              );
+            }
+
+            final isScanning = state.status == WalletScanStatus.scanning;
+            final safeErrorMessage = _safeErrorMessage(
+              state.errorMessage,
+              _pendingCameraToken ?? _tokenController.text,
             );
-          }
-
-          final isScanning = state.status == WalletScanStatus.scanning;
-          final safeErrorMessage = _safeErrorMessage(
-            state.errorMessage,
-            _pendingCameraToken ?? _tokenController.text,
-          );
-          return Column(
-            crossAxisAlignment: CrossAxisAlignment.start,
-            children: [
-              const SectionHeader(
-                title: 'Scan customer wallet',
-                subtitle:
-                    'Scan the customer wallet to confirm the card before changing progress.',
-              ),
-              const SizedBox(height: AppSpacing.md),
-              if (_cameraOpen)
-                _buildCameraScanner()
-              else if (_pendingCameraToken == null && state.result == null)
-                ScannerActionPanel(
-                  businessName: state.business?.name,
-                  isBusy: isScanning,
-                  onScan: _openCamera,
+            return Column(
+              crossAxisAlignment: CrossAxisAlignment.start,
+              children: [
+                const SectionHeader(
+                  title: PilotArabicCopy.staffScannerSectionTitle,
+                  subtitle: PilotArabicCopy.staffScannerSectionSubtitle,
                 ),
-              if (_pendingCameraToken != null &&
-                  state.status == WalletScanStatus.failure) ...[
                 const SizedBox(height: AppSpacing.md),
-                _CameraRetryCard(
-                  onRetry: _cameraSubmissionLocked ? null : _retryCameraToken,
-                  onRescan: _cameraSubmissionLocked ? null : _rescan,
-                ),
-              ],
-              const SizedBox(height: AppSpacing.lg),
-              const SectionHeader(
-                title: 'Enter code manually',
-                subtitle:
-                    'Use this only when the camera cannot scan. Do not write down or share the code.',
-              ),
-              const SizedBox(height: AppSpacing.md),
-              AppCard(
-                child: Column(
-                  crossAxisAlignment: CrossAxisAlignment.start,
-                  children: [
-                    TextField(
-                      key: const ValueKey('walletScanTokenField'),
-                      controller: _tokenController,
-                      autocorrect: false,
-                      enableSuggestions: false,
-                      autofillHints: const <String>[],
-                      textInputAction: TextInputAction.done,
-                      onSubmitted: isScanning ? null : (_) => _scanManual(),
-                      decoration: const InputDecoration(
-                        labelText: 'Loyalty QR code',
-                        hintText: 'Paste the code from the customer QR',
-                        prefixIcon: Icon(Icons.qr_code_2_outlined),
-                      ),
-                    ),
-                    const SizedBox(height: AppSpacing.md),
-                    AppButton(
-                      key: const ValueKey('walletScanButton'),
-                      label: isScanning ? 'Checking card' : 'Check card',
-                      icon: Icons.document_scanner_outlined,
-                      onPressed: isScanning ? null : _scanManual,
-                    ),
-                    if (isScanning) ...[
-                      const SizedBox(height: AppSpacing.md),
-                      const LinearProgressIndicator(
-                        key: ValueKey('walletScanLoading'),
-                      ),
-                    ],
-                  ],
-                ),
-              ),
-              if (safeErrorMessage != null) ...[
-                const SizedBox(height: AppSpacing.md),
-                ErrorView(message: safeErrorMessage),
-              ],
-              if (state.result != null) ...[
+                if (_cameraOpen)
+                  _buildCameraScanner()
+                else if (_pendingCameraToken == null && state.result == null)
+                  ScannerActionPanel(
+                    businessName: state.business?.name,
+                    isBusy: isScanning,
+                    onScan: _openCamera,
+                  ),
+                if (_pendingCameraToken != null &&
+                    state.status == WalletScanStatus.failure) ...[
+                  const SizedBox(height: AppSpacing.md),
+                  _CameraRetryCard(
+                    onRetry: _cameraSubmissionLocked ? null : _retryCameraToken,
+                    onRescan: _cameraSubmissionLocked ? null : _rescan,
+                  ),
+                ],
                 const SizedBox(height: AppSpacing.lg),
-                _WalletScanResultCard(
-                  result: state.result!,
-                  updatedStamps: state.updatedStamps,
-                  updatedGoal: state.updatedGoal,
-                  stampStatus: state.stampStatus,
-                  stampErrorMessage: state.stampErrorMessage,
-                  onAddStamp: isScanning
-                      ? null
-                      : () => _addStamp(state.stampStatus),
+                const SectionHeader(
+                  title: PilotArabicCopy.manualCodeTitle,
+                  subtitle: PilotArabicCopy.manualCodeSubtitle,
                 ),
                 const SizedBox(height: AppSpacing.md),
-                AppButton(
-                  key: const ValueKey('walletScanAnotherButton'),
-                  label: 'Scan another card',
-                  icon: Icons.qr_code_scanner,
-                  onPressed: isScanning ? null : _rescan,
-                  variant: AppButtonVariant.secondary,
+                AppCard(
+                  child: Column(
+                    crossAxisAlignment: CrossAxisAlignment.start,
+                    children: [
+                      TextField(
+                        key: const ValueKey('walletScanTokenField'),
+                        controller: _tokenController,
+                        autocorrect: false,
+                        enableSuggestions: false,
+                        autofillHints: const <String>[],
+                        textInputAction: TextInputAction.done,
+                        onSubmitted: isScanning ? null : (_) => _scanManual(),
+                        decoration: const InputDecoration(
+                          labelText: PilotArabicCopy.loyaltyQrCode,
+                          hintText: PilotArabicCopy.loyaltyQrHint,
+                          prefixIcon: Icon(Icons.qr_code_2_outlined),
+                        ),
+                      ),
+                      const SizedBox(height: AppSpacing.md),
+                      AppButton(
+                        key: const ValueKey('walletScanButton'),
+                        label: isScanning
+                            ? PilotArabicCopy.checkingCard
+                            : PilotArabicCopy.checkCard,
+                        icon: Icons.document_scanner_outlined,
+                        onPressed: isScanning ? null : _scanManual,
+                      ),
+                      if (isScanning) ...[
+                        const SizedBox(height: AppSpacing.md),
+                        const LinearProgressIndicator(
+                          key: ValueKey('walletScanLoading'),
+                        ),
+                      ],
+                    ],
+                  ),
                 ),
+                if (safeErrorMessage != null) ...[
+                  const SizedBox(height: AppSpacing.md),
+                  ErrorView(message: safeErrorMessage),
+                ],
+                if (state.result != null) ...[
+                  const SizedBox(height: AppSpacing.lg),
+                  _WalletScanResultCard(
+                    result: state.result!,
+                    updatedStamps: state.updatedStamps,
+                    updatedGoal: state.updatedGoal,
+                    stampStatus: state.stampStatus,
+                    stampErrorMessage: state.stampErrorMessage,
+                    onAddStamp: isScanning
+                        ? null
+                        : () => _addStamp(state.stampStatus),
+                  ),
+                  const SizedBox(height: AppSpacing.md),
+                  AppButton(
+                    key: const ValueKey('walletScanAnotherButton'),
+                    label: PilotArabicCopy.scanAnotherCard,
+                    icon: Icons.qr_code_scanner,
+                    onPressed: isScanning ? null : _rescan,
+                    variant: AppButtonVariant.secondary,
+                  ),
+                ],
               ],
-            ],
-          );
-        },
+            );
+          },
+        ),
       ),
     );
   }
@@ -298,13 +304,11 @@ class _CameraRetryCard extends StatelessWidget {
         crossAxisAlignment: CrossAxisAlignment.start,
         children: [
           Text(
-            'Customer card was not accepted',
+            PilotArabicCopy.cardNotAccepted,
             style: Theme.of(context).textTheme.titleMedium,
           ),
           const SizedBox(height: AppSpacing.xs),
-          const Text(
-            'Retry the captured code or scan the customer wallet again.',
-          ),
+          const Text(PilotArabicCopy.retryCapturedCard),
           const SizedBox(height: AppSpacing.md),
           Wrap(
             spacing: AppSpacing.sm,
@@ -312,14 +316,14 @@ class _CameraRetryCard extends StatelessWidget {
             children: [
               AppButton(
                 key: const ValueKey('walletCameraRetryButton'),
-                label: 'Retry',
+                label: PilotArabicCopy.retry,
                 icon: Icons.refresh,
                 onPressed: onRetry,
                 expand: false,
               ),
               AppButton(
                 key: const ValueKey('walletCameraRescanButton'),
-                label: 'Scan again',
+                label: PilotArabicCopy.scanAgain,
                 icon: Icons.qr_code_scanner,
                 onPressed: onRescan,
                 expand: false,
@@ -351,13 +355,13 @@ String _staffScanErrorMessage(String message) {
       normalized.contains('invalid') ||
       normalized.contains('inactive') ||
       normalized.contains('expired')) {
-    return 'That loyalty QR is invalid or expired. Ask the customer to open their latest card and scan again.';
+    return PilotArabicCopy.invalidQr;
   }
   if (normalized.contains('business') ||
       normalized.contains('forbidden') ||
       normalized.contains('not allow') ||
       normalized.contains('denied')) {
-    return 'This loyalty card does not belong to the selected business, or your role cannot scan it.';
+    return PilotArabicCopy.wrongBusiness;
   }
   return message;
 }
@@ -393,17 +397,17 @@ class _WalletScanResultCard extends StatelessWidget {
       crossAxisAlignment: CrossAxisAlignment.start,
       children: [
         const SectionHeader(
-          title: 'Card found',
-          subtitle: 'Confirm the customer and progress before adding a stamp.',
+          title: PilotArabicCopy.cardFound,
+          subtitle: PilotArabicCopy.cardFoundSubtitle,
         ),
         const SizedBox(height: AppSpacing.md),
         LoyaltyProgressCard(
           customerName: result.customerDisplayName,
-          customerHint: phoneHint ?? 'Customer details minimized for privacy.',
+          customerHint: phoneHint ?? PilotArabicCopy.privateCustomerDetails,
           programName: result.programName,
           rewardText: result.canRedeem
-              ? '${result.rewardName} is ready to redeem.'
-              : '${result.rewardName} is not ready yet.',
+              ? '${result.rewardName} ${PilotArabicCopy.rewardReadySuffix}'
+              : '${result.rewardName} ${PilotArabicCopy.rewardNotReadySuffix}',
           stamps: stamps,
           goal: goal,
           canRedeem: result.canRedeem,
@@ -415,8 +419,8 @@ class _WalletScanResultCard extends StatelessWidget {
             children: [
               StatusBadge(
                 label: result.canRedeem
-                    ? 'Reward available'
-                    : 'Ready to add stamp',
+                    ? PilotArabicCopy.rewardAvailable
+                    : PilotArabicCopy.readyToAddStamp,
                 color: result.canRedeem
                     ? AppColors.greenLight
                     : AppColors.ceramic,
@@ -424,16 +428,18 @@ class _WalletScanResultCard extends StatelessWidget {
               const SizedBox(height: AppSpacing.md),
               Text(
                 stampSucceeded
-                    ? 'Stamp has been recorded for this scan.'
+                    ? PilotArabicCopy.stampRecorded
                     : result.canRedeem
-                    ? 'A reward is available. Follow your store process before adding another stamp.'
-                    : 'Add one stamp after confirming the customer visit.',
+                    ? PilotArabicCopy.rewardAvailableGuidance
+                    : PilotArabicCopy.addOneStamp,
                 style: Theme.of(context).textTheme.bodyMedium,
               ),
               const SizedBox(height: AppSpacing.lg),
               AppButton(
                 key: const ValueKey('walletAddStampButton'),
-                label: isStamping ? 'Adding stamp...' : 'Add stamp',
+                label: isStamping
+                    ? PilotArabicCopy.addingStamp
+                    : PilotArabicCopy.addStamp,
                 icon: Icons.add_circle_outline,
                 onPressed: (isStamping || stampSucceeded) ? null : onAddStamp,
               ),
@@ -471,7 +477,7 @@ String? _maskedCustomerHint(String? phone) {
   final visible = trimmed.length <= 3
       ? trimmed
       : trimmed.substring(trimmed.length - 3);
-  return 'Phone ending $visible';
+  return '${PilotArabicCopy.phoneEnding} $visible';
 }
 
 class _StampSuccessBanner extends StatelessWidget {
@@ -497,11 +503,7 @@ class _StampSuccessBanner extends StatelessWidget {
             color: AppColors.freshGreenDark,
           ),
           const SizedBox(width: AppSpacing.sm),
-          const Expanded(
-            child: Text(
-              'Stamp added successfully. The live card is updated; Apple Wallet may refresh after sync.',
-            ),
-          ),
+          const Expanded(child: Text(PilotArabicCopy.stampSuccess)),
         ],
       ),
     );

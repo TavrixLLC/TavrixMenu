@@ -7,6 +7,7 @@ import 'package:url_launcher/url_launcher.dart';
 import '../../../../core/constants/app_colors.dart';
 import '../../../../core/constants/app_radius.dart';
 import '../../../../core/constants/app_spacing.dart';
+import '../../../../core/copy/pilot_arabic_copy.dart';
 import '../../../../shared/widgets/app_button.dart';
 import '../../../../shared/widgets/app_card.dart';
 import '../../../../shared/widgets/waflo_status_badge.dart';
@@ -45,11 +46,12 @@ class _WalletQrCameraScannerState extends State<WalletQrCameraScanner> {
       child: Column(
         crossAxisAlignment: CrossAxisAlignment.start,
         children: [
-          Text('Camera scanner', style: Theme.of(context).textTheme.titleLarge),
-          const SizedBox(height: AppSpacing.xs),
-          const Text(
-            'Point the frame at the customer loyalty QR. Waflo checks the card without showing the code.',
+          Text(
+            PilotArabicCopy.cameraScannerTitle,
+            style: Theme.of(context).textTheme.titleLarge,
           ),
+          const SizedBox(height: AppSpacing.xs),
+          const Text(PilotArabicCopy.cameraScannerSubtitle),
           const SizedBox(height: AppSpacing.md),
           AspectRatio(
             aspectRatio: 1,
@@ -80,7 +82,7 @@ class _WalletQrCameraScannerState extends State<WalletQrCameraScanner> {
           const SizedBox(height: AppSpacing.md),
           AppButton(
             key: const ValueKey('walletCameraCancelButton'),
-            label: 'Enter code manually',
+            label: PilotArabicCopy.enterCodeManually,
             icon: Icons.keyboard_outlined,
             onPressed: widget.onCancel,
             variant: AppButtonVariant.secondary,
@@ -148,10 +150,10 @@ class WalletCameraErrorView extends StatelessWidget {
         errorCode == MobileScannerErrorCode.permissionDenied;
     final unsupported = errorCode == MobileScannerErrorCode.unsupported;
     final message = permissionDenied
-        ? 'Camera permission was denied. Allow camera access in system settings, then try again.'
+        ? PilotArabicCopy.cameraPermissionDeniedBody
         : unsupported
-        ? 'Camera scanning is not supported on this device. Enter the code manually instead.'
-        : 'The camera could not start. Try again or enter the code manually.';
+        ? PilotArabicCopy.cameraUnsupportedBody
+        : PilotArabicCopy.cameraStartFailedBody;
 
     return DecoratedBox(
       key: const ValueKey('walletCameraErrorState'),
@@ -190,8 +192,8 @@ class WalletCameraErrorView extends StatelessWidget {
                 const SizedBox(height: AppSpacing.sm),
                 Text(
                   permissionDenied
-                      ? 'Camera access needed'
-                      : 'Camera unavailable',
+                      ? PilotArabicCopy.cameraPermissionDeniedTitle
+                      : PilotArabicCopy.cameraUnavailableTitle,
                   textAlign: TextAlign.center,
                   style: Theme.of(context).textTheme.titleMedium,
                 ),
@@ -213,7 +215,7 @@ class WalletCameraErrorView extends StatelessWidget {
                     children: [
                       if (permissionDenied)
                         AppButton(
-                          label: 'Open settings',
+                          label: PilotArabicCopy.openSettings,
                           icon: Icons.settings_outlined,
                           onPressed: onOpenSettings,
                           expand: false,
@@ -221,7 +223,7 @@ class WalletCameraErrorView extends StatelessWidget {
                         ),
                       if (!unsupported && !permissionDenied)
                         AppButton(
-                          label: 'Try camera again',
+                          label: PilotArabicCopy.tryCameraAgain,
                           icon: Icons.refresh,
                           onPressed: onRetry,
                           expand: false,
@@ -254,7 +256,7 @@ class WalletCameraActiveOverlay extends StatelessWidget {
           bottom: AppSpacing.md,
           child: WafloStatusBadge(
             key: ValueKey('walletCameraSecureScanBadge'),
-            label: 'Ready for secure scan',
+            label: PilotArabicCopy.scannerReady,
             icon: Icons.lock_outline,
             color: AppColors.charcoalSoft,
             foregroundColor: AppColors.surfaceWhite,

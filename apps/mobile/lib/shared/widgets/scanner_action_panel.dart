@@ -3,6 +3,7 @@ import 'package:flutter/material.dart';
 import '../../core/constants/app_colors.dart';
 import '../../core/constants/app_radius.dart';
 import '../../core/constants/app_spacing.dart';
+import '../../core/copy/pilot_arabic_copy.dart';
 import 'waflo_button.dart';
 import 'waflo_card.dart';
 import 'waflo_status_badge.dart';
@@ -53,21 +54,21 @@ class ScannerActionPanel extends StatelessWidget {
                     WafloStatusBadge(
                       label: businessName?.trim().isNotEmpty == true
                           ? businessName!.trim()
-                          : 'Scanner ready',
+                          : PilotArabicCopy.scannerReady,
                       icon: Icons.shield_outlined,
                       color: AppColors.charcoalSoft,
                       foregroundColor: AppColors.surfaceWhite,
                     ),
                     const SizedBox(height: AppSpacing.sm),
                     Text(
-                      'Scan customer wallet',
+                      PilotArabicCopy.scanCustomerCard,
                       style: Theme.of(context).textTheme.titleLarge?.copyWith(
                         color: AppColors.surfaceWhite,
                       ),
                     ),
                     const SizedBox(height: AppSpacing.xs),
                     Text(
-                      'Tokens stay hidden from operator screens.',
+                      PilotArabicCopy.scannerPrivacy,
                       style: Theme.of(context).textTheme.bodyMedium?.copyWith(
                         color: AppColors.surfaceWhite.withValues(alpha: 0.78),
                       ),
@@ -80,7 +81,9 @@ class ScannerActionPanel extends StatelessWidget {
           const SizedBox(height: AppSpacing.md),
           WafloButton(
             key: const ValueKey('walletOpenCameraButton'),
-            label: isBusy ? 'Scanner busy' : 'Open wallet scanner',
+            label: isBusy
+                ? PilotArabicCopy.scannerBusy
+                : PilotArabicCopy.openWalletScanner,
             icon: Icons.qr_code_scanner,
             onPressed: isBusy ? null : onScan,
           ),

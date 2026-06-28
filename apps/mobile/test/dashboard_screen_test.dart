@@ -6,6 +6,7 @@ import 'package:tavrix_menu_mobile/app/config/app_config.dart';
 import 'package:tavrix_menu_mobile/core/auth/auth_session_controller.dart';
 import 'package:tavrix_menu_mobile/core/auth/clerk_token_provider.dart';
 import 'package:tavrix_menu_mobile/core/auth/dev_token_provider.dart';
+import 'package:tavrix_menu_mobile/core/copy/pilot_arabic_copy.dart';
 import 'package:tavrix_menu_mobile/core/errors/failures.dart';
 import 'package:tavrix_menu_mobile/features/auth/domain/entities/current_user.dart';
 import 'package:tavrix_menu_mobile/features/auth/domain/repositories/me_repository.dart';
@@ -51,9 +52,10 @@ void main() {
     );
     await tester.pumpAndSettle();
 
-    expect(find.text('Waflo Workspace'), findsOneWidget);
-    expect(find.text('Scan customer wallet'), findsOneWidget);
-    expect(find.text('Business Workspace'), findsWidgets);
+    expect(find.text(PilotArabicCopy.dashboardTitle), findsOneWidget);
+    expect(find.text(PilotArabicCopy.staffCashier), findsOneWidget);
+    expect(find.text(PilotArabicCopy.guidedSetupTitle), findsWidgets);
+    expect(find.text(PilotArabicCopy.managedSetupBody), findsOneWidget);
     expect(find.text('Subscription'), findsNothing);
     expect(
       find.textContaining(RegExp('premium|plan', caseSensitive: false)),
@@ -68,6 +70,15 @@ void main() {
     );
     expect(
       find.textContaining(RegExp('staff invite', caseSensitive: false)),
+      findsNothing,
+    );
+    expect(
+      find.textContaining(
+        RegExp(
+          'token|jwt|debug|dev auth|future flow|subscription',
+          caseSensitive: false,
+        ),
+      ),
       findsNothing,
     );
   });
@@ -106,20 +117,13 @@ void main() {
 
       expect(find.text('Staff'), findsWidgets);
       expect(find.text('Business Operator'), findsNothing);
+      expect(find.text(PilotArabicCopy.menuAppearanceDenied), findsOneWidget);
+      expect(find.text(PilotArabicCopy.menuToolsDenied), findsOneWidget);
       expect(
-        find.text(
-          'Your workspace permissions do not allow menu design changes.',
-        ),
+        find.text(PilotArabicCopy.businessWorkspaceDenied),
         findsOneWidget,
       );
-      expect(
-        find.text('Your workspace permissions do not allow menu edits.'),
-        findsOneWidget,
-      );
-      expect(
-        find.text('Your workspace permissions do not allow profile edits.'),
-        findsOneWidget,
-      );
+      expect(find.text(PilotArabicCopy.managedSetupBody), findsNothing);
       expect(find.text('Debug QA context'), findsNothing);
       expect(find.text('Subscription'), findsNothing);
     },
@@ -157,11 +161,13 @@ void main() {
     );
     await tester.pumpAndSettle();
 
-    expect(find.text('Set up the customer menu'), findsOneWidget);
-    expect(find.text('Add categories'), findsOneWidget);
-    expect(find.text('Add menu items'), findsOneWidget);
-    expect(find.text('Share QR'), findsOneWidget);
-    expect(find.text('Enable loyalty'), findsOneWidget);
+    expect(find.text(PilotArabicCopy.guidedSetupTitle), findsWidgets);
+    expect(find.text(PilotArabicCopy.businessInfo), findsWidgets);
+    expect(find.text(PilotArabicCopy.addCategories), findsOneWidget);
+    expect(find.text(PilotArabicCopy.addItems), findsOneWidget);
+    expect(find.text(PilotArabicCopy.shareQr), findsOneWidget);
+    expect(find.text(PilotArabicCopy.enableLoyalty), findsOneWidget);
+    expect(find.text(PilotArabicCopy.prepareCashier), findsOneWidget);
   });
 }
 
