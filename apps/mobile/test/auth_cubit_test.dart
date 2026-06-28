@@ -88,6 +88,86 @@ void main() {
     },
   );
 
+  test('restoreSession waits for a persisted owner session', () async {
+    final clerkTokenProvider = _DelayedClerkTokenProvider(
+      sessionAfterChecks: 2,
+    );
+    final cubit = _authCubit(
+      const CurrentUser(
+        id: 'usr_owner',
+        email: '',
+        fullName: 'Owner',
+        role: 'OWNER',
+        onboarding: CurrentUserOnboarding(
+          hasBusiness: true,
+          activeBusinessCount: 1,
+        ),
+      ),
+      clerkTokenProvider: clerkTokenProvider,
+    );
+
+    final restore = cubit.restoreSession();
+
+    expect(cubit.state.status, AuthStatus.restoring);
+
+    await restore;
+
+    expect(cubit.state.status, AuthStatus.authenticated);
+    expect(cubit.state.shouldOpenDashboard, isTrue);
+    expect(clerkTokenProvider.sessionChecks, greaterThanOrEqualTo(2));
+
+    await cubit.close();
+  });
+
+  test('restoreSession restores a persisted staff session', () async {
+    final cubit = _authCubit(
+      const CurrentUser(
+        id: 'usr_staff',
+        email: '',
+        fullName: 'Staff',
+        role: 'STAFF',
+        onboarding: CurrentUserOnboarding(
+          hasBusiness: true,
+          activeBusinessCount: 1,
+        ),
+      ),
+      clerkTokenProvider: _DelayedClerkTokenProvider(sessionAfterChecks: 1),
+    );
+
+    await cubit.restoreSession();
+
+    expect(cubit.state.status, AuthStatus.authenticated);
+    expect(cubit.state.user?.role, 'STAFF');
+    expect(cubit.state.shouldOpenDashboard, isTrue);
+
+    await cubit.close();
+  });
+
+  test(
+    'restoreSession shows login state when no persisted session exists',
+    () async {
+      final cubit = _authCubit(
+        const CurrentUser(
+          id: 'usr_owner',
+          email: '',
+          fullName: 'Owner',
+          role: 'OWNER',
+        ),
+        clerkTokenProvider: _DelayedClerkTokenProvider(
+          sessionAfterChecks: null,
+        ),
+        clerkRestoreTimeout: const Duration(milliseconds: 1),
+        clerkRestorePollInterval: const Duration(milliseconds: 1),
+      );
+
+      await cubit.restoreSession();
+
+      expect(cubit.state.status, AuthStatus.unauthenticated);
+
+      await cubit.close();
+    },
+  );
+
   test(
     'backend reject shows support copy without raw technical enums',
     () async {
@@ -128,7 +208,12 @@ void main() {
   );
 }
 
-AuthCubit _authCubit(CurrentUser user) {
+AuthCubit _authCubit(
+  CurrentUser user, {
+  ClerkTokenProvider? clerkTokenProvider,
+  Duration clerkRestoreTimeout = const Duration(milliseconds: 20),
+  Duration clerkRestorePollInterval = const Duration(milliseconds: 1),
+}) {
   final config = const AppConfig(
     apiBaseUrl: 'https://api.example.test',
     customerWebBaseUrl: 'https://menu.example.test',
@@ -139,8 +224,10 @@ AuthCubit _authCubit(CurrentUser user) {
   );
   final sessionController = AuthSessionController(
     config: config,
-    clerkTokenProvider: ClerkTokenProvider(),
+    clerkTokenProvider: clerkTokenProvider ?? ClerkTokenProvider(),
     devTokenProvider: const DevTokenProvider(''),
+    clerkRestoreTimeout: clerkRestoreTimeout,
+    clerkRestorePollInterval: clerkRestorePollInterval,
   );
 
   return AuthCubit(
@@ -165,4 +252,26 @@ class _FailingMeRepository implements MeRepository {
 
   @override
   Future<Either<Failure, CurrentUser>> getMe() async => Left(failure);
+}
+
+class _DelayedClerkTokenProvider extends ClerkTokenProvider {
+  _DelayedClerkTokenProvider({required this.sessionAfterChecks});
+
+  final int? sessionAfterChecks;
+  int sessionChecks = 0;
+
+  @override
+  bool get hasSession {
+    sessionChecks += 1;
+    final threshold = sessionAfterChecks;
+    return threshold != null && sessionChecks >= threshold;
+  }
+
+  @override
+  Future<String?> getToken() async {
+    return hasSession ? 'session-ok' : null;
+  }
+
+  @override
+  Future<void> signOut() async {}
 }

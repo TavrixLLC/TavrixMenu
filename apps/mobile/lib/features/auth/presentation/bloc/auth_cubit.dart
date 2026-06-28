@@ -18,8 +18,15 @@ class AuthCubit extends Cubit<AuthState> {
   final AuthSessionController _authSessionController;
 
   Future<void> restoreSession() async {
-    if (!_authSessionController.canUseClerkAuth ||
-        !_authSessionController.hasClerkSession) {
+    if (!_authSessionController.canUseClerkAuth) {
+      emit(const AuthState(status: AuthStatus.unauthenticated));
+      return;
+    }
+
+    emit(state.copyWith(status: AuthStatus.restoring, clearError: true));
+
+    final hasSession = await _authSessionController.waitForClerkSession();
+    if (!hasSession) {
       emit(const AuthState(status: AuthStatus.unauthenticated));
       return;
     }

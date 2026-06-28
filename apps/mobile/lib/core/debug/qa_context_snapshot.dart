@@ -124,6 +124,7 @@ Object _meStatus(AuthStatus status) {
     AuthStatus.authenticated => 200,
     AuthStatus.failure => 'error',
     AuthStatus.loading => 'loading',
+    AuthStatus.restoring => 'loading',
     AuthStatus.unauthenticated => 'not checked',
     AuthStatus.initial => 'not checked',
   };

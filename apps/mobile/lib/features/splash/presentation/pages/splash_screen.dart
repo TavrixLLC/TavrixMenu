@@ -58,7 +58,7 @@ class _SplashScreenState extends State<SplashScreen> {
                 ),
               ),
               const SizedBox(height: AppSpacing.xs),
-              const Text('Preparing your operator workspace'),
+              const Text('Restoring your workspace session'),
             ],
           ),
         ),

@@ -65,6 +65,29 @@ void main() {
 
     await cubit.close();
   });
+
+  testWidgets('Google sign-in stays hidden until native config is verified', (
+    tester,
+  ) async {
+    final config = _googleConfigBlocked();
+    final cubit = _authCubit(config);
+    await tester.pumpWidget(
+      _loginWidget(
+        cubit: cubit,
+        config: config,
+        clerkPanelBuilder: (_, _) =>
+            const Text('Sign in to Waflo', key: ValueKey('qaSignInForm')),
+      ),
+    );
+
+    expect(config.hasGoogleNativeClientConfig, isTrue);
+    expect(
+      find.textContaining(RegExp('google', caseSensitive: false)),
+      findsNothing,
+    );
+
+    await cubit.close();
+  });
 }
 
 Widget _loginWidget({
@@ -123,6 +146,19 @@ AppConfig _developmentConfig() {
     appEnv: 'development',
     enableDevAuth: true,
     clerkPublishableKey: '',
+  );
+}
+
+AppConfig _googleConfigBlocked() {
+  return const AppConfig(
+    apiBaseUrl: 'https://api.example.test',
+    customerWebBaseUrl: 'https://menu.example.test',
+    devAuthToken: '',
+    appEnv: 'production',
+    enableDevAuth: false,
+    clerkPublishableKey: 'pk_test_configured',
+    googleClientId: 'google-client-placeholder',
+    googleServerClientId: 'google-server-placeholder',
   );
 }
 

@@ -11,7 +11,6 @@ import '../../features/menu_appearance/presentation/pages/menu_appearance_screen
 import '../../features/qr/presentation/pages/qr_screen.dart';
 import '../../features/splash/presentation/pages/splash_screen.dart';
 import '../../features/staff_scanner/presentation/pages/staff_scanner_screen.dart';
-import '../../features/subscription/presentation/pages/subscription_screen.dart';
 import 'route_names.dart';
 
 class AppRouter {
@@ -32,7 +31,6 @@ class AppRouter {
         customerWebBaseUrl: config.normalizedCustomerWebBaseUrl,
       ),
       AppRouteNames.qr: (_) => const QRScreen(),
-      AppRouteNames.subscription: (_) => const SubscriptionScreen(),
       AppRouteNames.walletScan: (_) => const StaffScannerScreen(),
     };
   }

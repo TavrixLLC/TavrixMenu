@@ -42,6 +42,12 @@ class LoginScreen extends StatelessWidget {
         }
       },
       builder: (context, state) {
+        if (state.status == AuthStatus.restoring) {
+          return const AppScaffold(
+            child: LoadingView(message: 'Restoring your workspace session'),
+          );
+        }
+
         return AppScaffold(
           scrollable: true,
           child: Column(

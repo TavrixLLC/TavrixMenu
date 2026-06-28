@@ -54,6 +54,11 @@ void main() {
     expect(find.text('Waflo Workspace'), findsOneWidget);
     expect(find.text('Scan customer wallet'), findsOneWidget);
     expect(find.text('Business Workspace'), findsWidgets);
+    expect(find.text('Subscription'), findsNothing);
+    expect(
+      find.textContaining(RegExp('premium|plan', caseSensitive: false)),
+      findsNothing,
+    );
     expect(find.text('Debug QA context'), findsNothing);
     expect(find.text('Staff Dashboard'), findsNothing);
     expect(find.text('Staff loyalty scan'), findsNothing);
@@ -116,8 +121,48 @@ void main() {
         findsOneWidget,
       );
       expect(find.text('Debug QA context'), findsNothing);
+      expect(find.text('Subscription'), findsNothing);
     },
   );
+
+  testWidgets('empty menu summary gives setup guidance before sharing QR', (
+    tester,
+  ) async {
+    final authCubit = AuthCubit(
+      getCurrentUser: GetCurrentUser(const _MeRepository()),
+      authSessionController: AuthSessionController(
+        config: _config,
+        clerkTokenProvider: ClerkTokenProvider(),
+        devTokenProvider: const DevTokenProvider(''),
+      ),
+    );
+    final dashboardCubit = DashboardCubit(
+      getCurrentUser: GetCurrentUser(const _MeRepository()),
+      getMyBusiness: GetMyBusiness(const _BusinessRepository()),
+      getDashboardSummary: GetDashboardSummary(
+        const _EmptyDashboardRepository(),
+      ),
+    );
+    addTearDown(authCubit.close);
+    addTearDown(dashboardCubit.close);
+
+    await tester.pumpWidget(
+      MultiBlocProvider(
+        providers: [
+          BlocProvider<AuthCubit>.value(value: authCubit),
+          BlocProvider<DashboardCubit>.value(value: dashboardCubit),
+        ],
+        child: const MaterialApp(home: DashboardScreen()),
+      ),
+    );
+    await tester.pumpAndSettle();
+
+    expect(find.text('Set up the customer menu'), findsOneWidget);
+    expect(find.text('Add categories'), findsOneWidget);
+    expect(find.text('Add menu items'), findsOneWidget);
+    expect(find.text('Share QR'), findsOneWidget);
+    expect(find.text('Enable loyalty'), findsOneWidget);
+  });
 }
 
 const _config = AppConfig(
@@ -284,6 +329,35 @@ class _DashboardRepository implements DashboardRepository {
         ),
         onboardingHints: DashboardOnboardingHints(
           recommendedNextStep: 'OPEN_DASHBOARD',
+        ),
+      ),
+    );
+  }
+}
+
+class _EmptyDashboardRepository implements DashboardRepository {
+  const _EmptyDashboardRepository();
+
+  @override
+  Future<Either<Failure, DashboardSummary>> getDashboardSummary(
+    String businessId,
+  ) async {
+    return const Right(
+      DashboardSummary(
+        business: _business,
+        currentUser: DashboardCurrentUser(
+          role: 'OWNER',
+          permissions: BusinessPermissions.owner(),
+          permissionsAvailable: true,
+        ),
+        counts: DashboardCounts(),
+        publicMenu: DashboardPublicMenu(
+          path: '/m/tavrix-cafe',
+          url: 'https://menu.example.test/m/tavrix-cafe',
+          qrPayload: 'https://menu.example.test/m/tavrix-cafe',
+        ),
+        onboardingHints: DashboardOnboardingHints(
+          recommendedNextStep: 'CREATE_CATEGORY',
         ),
       ),
     );

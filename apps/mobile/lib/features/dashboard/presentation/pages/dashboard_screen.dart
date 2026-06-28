@@ -157,14 +157,6 @@ class _DashboardScreenState extends State<DashboardScreen> {
                 routeName: AppRouteNames.businessProfile,
                 accentColor: AppColors.rewardGold,
               ),
-              const SizedBox(height: AppSpacing.sm),
-              _DashboardActionCard(
-                title: 'Subscription',
-                subtitle: 'Review plan status and premium workspace access.',
-                icon: Icons.workspace_premium,
-                routeName: AppRouteNames.subscription,
-                accentColor: AppColors.rewardGold,
-              ),
             ],
           );
         },
@@ -282,6 +274,9 @@ class _DashboardSummarySection extends StatelessWidget {
   Widget build(BuildContext context) {
     final summary = state.summary!;
     final hint = _hintText(summary.onboardingHints.recommendedNextStep);
+    final needsMenuSetup =
+        summary.counts.activeCategories == 0 ||
+        summary.counts.availableItems == 0;
 
     return Column(
       crossAxisAlignment: CrossAxisAlignment.start,
@@ -313,6 +308,10 @@ class _DashboardSummarySection extends StatelessWidget {
                 ],
               ),
               const SizedBox(height: AppSpacing.md),
+              if (needsMenuSetup) ...[
+                const _MenuSetupPrompt(),
+                const SizedBox(height: AppSpacing.md),
+              ],
               LayoutBuilder(
                 builder: (context, constraints) {
                   const gap = AppSpacing.sm;
@@ -373,6 +372,89 @@ class _DashboardSummarySection extends StatelessWidget {
       'OPEN_DASHBOARD' => 'Review your dashboard and keep building the menu.',
       _ => 'Keep your menu profile, categories, and public link up to date.',
     };
+  }
+}
+
+class _MenuSetupPrompt extends StatelessWidget {
+  const _MenuSetupPrompt();
+
+  @override
+  Widget build(BuildContext context) {
+    return DecoratedBox(
+      decoration: BoxDecoration(
+        color: AppColors.goldTint,
+        borderRadius: BorderRadius.circular(AppRadius.md),
+        border: Border.all(color: AppColors.softBorder),
+      ),
+      child: Padding(
+        padding: const EdgeInsets.all(AppSpacing.md),
+        child: Column(
+          crossAxisAlignment: CrossAxisAlignment.start,
+          children: [
+            Row(
+              children: [
+                const Icon(
+                  Icons.auto_awesome_outlined,
+                  color: AppColors.rewardGold,
+                ),
+                const SizedBox(width: AppSpacing.sm),
+                Expanded(
+                  child: Text(
+                    'Set up the customer menu',
+                    style: Theme.of(context).textTheme.titleMedium,
+                  ),
+                ),
+              ],
+            ),
+            const SizedBox(height: AppSpacing.xs),
+            const Text(
+              'Add the first menu basics before sharing the QR with customers.',
+            ),
+            const SizedBox(height: AppSpacing.md),
+            const Wrap(
+              spacing: AppSpacing.sm,
+              runSpacing: AppSpacing.sm,
+              children: [
+                _SetupStep(label: 'Add categories'),
+                _SetupStep(label: 'Add menu items'),
+                _SetupStep(label: 'Share QR'),
+                _SetupStep(label: 'Enable loyalty'),
+              ],
+            ),
+          ],
+        ),
+      ),
+    );
+  }
+}
+
+class _SetupStep extends StatelessWidget {
+  const _SetupStep({required this.label});
+
+  final String label;
+
+  @override
+  Widget build(BuildContext context) {
+    return DecoratedBox(
+      decoration: BoxDecoration(
+        color: AppColors.surfaceWhite,
+        borderRadius: BorderRadius.circular(AppRadius.pill),
+        border: Border.all(color: AppColors.softBorder),
+      ),
+      child: Padding(
+        padding: const EdgeInsets.symmetric(
+          horizontal: AppSpacing.sm,
+          vertical: AppSpacing.xs,
+        ),
+        child: Text(
+          label,
+          style: Theme.of(context).textTheme.labelLarge?.copyWith(
+            color: AppColors.textDark,
+            fontWeight: FontWeight.w800,
+          ),
+        ),
+      ),
+    );
   }
 }
 

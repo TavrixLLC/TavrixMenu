@@ -12,6 +12,8 @@ class AuthSessionController implements TokenProvider {
     required AppConfig config,
     required ClerkTokenProvider clerkTokenProvider,
     required DevTokenProvider devTokenProvider,
+    this.clerkRestoreTimeout = const Duration(seconds: 2),
+    this.clerkRestorePollInterval = const Duration(milliseconds: 80),
   }) : _config = config,
        _clerkTokenProvider = clerkTokenProvider,
        _devTokenProvider = devTokenProvider;
@@ -19,6 +21,8 @@ class AuthSessionController implements TokenProvider {
   final AppConfig _config;
   final ClerkTokenProvider _clerkTokenProvider;
   final DevTokenProvider _devTokenProvider;
+  final Duration clerkRestoreTimeout;
+  final Duration clerkRestorePollInterval;
 
   AuthTokenSource _source = AuthTokenSource.none;
 
@@ -40,6 +44,25 @@ class AuthSessionController implements TokenProvider {
 
   void useDevelopment() {
     _source = AuthTokenSource.development;
+  }
+
+  Future<bool> waitForClerkSession() async {
+    if (!canUseClerkAuth) {
+      return false;
+    }
+    if (hasClerkSession) {
+      return true;
+    }
+
+    final deadline = DateTime.now().add(clerkRestoreTimeout);
+    while (DateTime.now().isBefore(deadline)) {
+      await Future<void>.delayed(clerkRestorePollInterval);
+      if (hasClerkSession) {
+        return true;
+      }
+    }
+
+    return hasClerkSession;
   }
 
   @override
