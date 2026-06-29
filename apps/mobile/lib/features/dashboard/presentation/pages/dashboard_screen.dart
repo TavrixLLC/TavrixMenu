@@ -7,6 +7,7 @@ import '../../../../app/router/route_names.dart';
 import '../../../../core/constants/app_colors.dart';
 import '../../../../core/constants/app_radius.dart';
 import '../../../../core/constants/app_spacing.dart';
+import '../../../../core/copy/pilot_arabic_copy.dart';
 import '../../../../shared/widgets/app_card.dart';
 import '../../../../shared/widgets/app_scaffold.dart';
 import '../../../../shared/widgets/business_header_card.dart';
@@ -17,6 +18,7 @@ import '../../../../shared/widgets/section_header.dart';
 import '../../../../shared/widgets/waflo_action_tile.dart';
 import '../../../../shared/widgets/waflo_metric_card.dart';
 import '../../../auth/presentation/bloc/auth_cubit.dart';
+import '../../domain/entities/dashboard_summary.dart';
 import '../bloc/dashboard_cubit.dart';
 import '../bloc/dashboard_state.dart';
 
@@ -36,130 +38,146 @@ class _DashboardScreenState extends State<DashboardScreen> {
 
   @override
   Widget build(BuildContext context) {
-    return AppScaffold(
-      title: 'Waflo Workspace',
-      actions: [
-        IconButton(
-          tooltip: 'Sign out',
-          icon: const Icon(Icons.logout),
-          onPressed: () async {
-            await context.read<AuthCubit>().signOut();
-            if (context.mounted) {
-              Navigator.of(
-                context,
-              ).pushNamedAndRemoveUntil(AppRouteNames.login, (_) => false);
+    return Directionality(
+      textDirection: TextDirection.rtl,
+      child: AppScaffold(
+        title: PilotArabicCopy.dashboardTitle,
+        actions: [
+          IconButton(
+            tooltip: PilotArabicCopy.signOut,
+            icon: const Icon(Icons.logout),
+            onPressed: () async {
+              await context.read<AuthCubit>().signOut();
+              if (context.mounted) {
+                Navigator.of(
+                  context,
+                ).pushNamedAndRemoveUntil(AppRouteNames.login, (_) => false);
+              }
+            },
+          ),
+        ],
+        scrollable: true,
+        child: BlocBuilder<DashboardCubit, DashboardState>(
+          builder: (context, state) {
+            if (state.status == DashboardStatus.loading ||
+                state.status == DashboardStatus.initial) {
+              return const LoadingView(
+                message: PilotArabicCopy.dashboardLoading,
+              );
             }
-          },
-        ),
-      ],
-      scrollable: true,
-      child: BlocBuilder<DashboardCubit, DashboardState>(
-        builder: (context, state) {
-          if (state.status == DashboardStatus.loading ||
-              state.status == DashboardStatus.initial) {
-            return const LoadingView(message: 'Loading Waflo Workspace');
-          }
 
-          if (state.status == DashboardStatus.failure) {
-            return ErrorView(
-              message: state.errorMessage ?? 'Dashboard could not load.',
-              onRetry: () => context.read<DashboardCubit>().load(),
-            );
-          }
+            if (state.status == DashboardStatus.failure) {
+              return ErrorView(
+                message:
+                    state.errorMessage ?? PilotArabicCopy.dashboardLoadFailed,
+                onRetry: () => context.read<DashboardCubit>().load(),
+              );
+            }
 
-          return Column(
-            crossAxisAlignment: CrossAxisAlignment.start,
-            children: [
-              BusinessHeaderCard(
-                business: state.business,
-                role: state.workspaceRoleDisplayLabel,
-              ),
-              if (state.summaryErrorMessage != null) ...[
+            final isStaff = state.effectiveRole == 'STAFF';
+
+            return Column(
+              crossAxisAlignment: CrossAxisAlignment.start,
+              children: [
+                BusinessHeaderCard(
+                  business: state.business,
+                  role: state.workspaceRoleDisplayLabel,
+                ),
+                if (state.summaryErrorMessage != null) ...[
+                  const SizedBox(height: AppSpacing.md),
+                  _InlineNotice(
+                    title: PilotArabicCopy.latestCountsFailed,
+                    message: PilotArabicCopy.latestCountsRetry,
+                  ),
+                ],
+                const SizedBox(height: AppSpacing.lg),
+                _AccessCard(state: state),
+                if (!isStaff) ...[
+                  const SizedBox(height: AppSpacing.lg),
+                  const _ManagedSetupCard(),
+                ],
+                const SizedBox(height: AppSpacing.lg),
+                _DashboardActionCard(
+                  key: const ValueKey('dashboardWalletScanAction'),
+                  enabled: _canScanCustomerWallet(state),
+                  title: PilotArabicCopy.staffCashier,
+                  subtitle: _canScanCustomerWallet(state)
+                      ? PilotArabicCopy.scannerSubtitle
+                      : PilotArabicCopy.scanDisabled,
+                  icon: Icons.qr_code_scanner,
+                  routeName: AppRouteNames.walletScan,
+                  accentColor: AppColors.primaryCoral,
+                  badge: PilotArabicCopy.readyBadge,
+                ),
+                if (state.summary != null) ...[
+                  const SizedBox(height: AppSpacing.lg),
+                  _DashboardSummarySection(state: state),
+                ],
+                const SizedBox(height: AppSpacing.lg),
+                SectionHeader(
+                  title: isStaff
+                      ? PilotArabicCopy.staffCashier
+                      : PilotArabicCopy.guidedSetupTitle,
+                  subtitle: isStaff
+                      ? PilotArabicCopy.scannerSubtitle
+                      : PilotArabicCopy.guidedSetupSubtitle,
+                ),
                 const SizedBox(height: AppSpacing.md),
-                _InlineNotice(
-                  title: 'Latest counts did not load',
-                  message:
-                      'You can keep using this business workspace. Pull to refresh later or try again from the dashboard.',
+                _DashboardActionCard(
+                  enabled: _canManageAppearance(state),
+                  title: PilotArabicCopy.menuAppearance,
+                  subtitle: _canManageAppearance(state)
+                      ? PilotArabicCopy.menuAppearanceSubtitle
+                      : PilotArabicCopy.menuAppearanceDenied,
+                  icon: Icons.palette_outlined,
+                  routeName: AppRouteNames.menuAppearance,
+                  accentColor: AppColors.primaryCoral,
+                ),
+                const SizedBox(height: AppSpacing.sm),
+                _DashboardActionCard(
+                  enabled: _canManageMenu(state),
+                  title: PilotArabicCopy.menuProducts,
+                  subtitle: _canManageMenu(state)
+                      ? PilotArabicCopy.menuToolsSubtitle
+                      : PilotArabicCopy.menuToolsDenied,
+                  icon: Icons.restaurant_menu,
+                  routeName: AppRouteNames.menu,
+                  accentColor: AppColors.freshGreen,
+                ),
+                const SizedBox(height: AppSpacing.sm),
+                _DashboardActionCard(
+                  title: PilotArabicCopy.loyaltyCard,
+                  subtitle: PilotArabicCopy.loyaltyToolsSubtitle,
+                  icon: Icons.loyalty_outlined,
+                  routeName: AppRouteNames.loyalty,
+                  accentColor: AppColors.freshGreen,
+                ),
+                const SizedBox(height: AppSpacing.sm),
+                _DashboardActionCard(
+                  enabled: _canViewPublicLink(state),
+                  title: PilotArabicCopy.publicQrMenu,
+                  subtitle: _canViewPublicLink(state)
+                      ? PilotArabicCopy.publicLinkSubtitle
+                      : PilotArabicCopy.publicLinkDenied,
+                  icon: Icons.qr_code_2,
+                  routeName: AppRouteNames.qr,
+                  accentColor: AppColors.primaryCoral,
+                ),
+                const SizedBox(height: AppSpacing.sm),
+                _DashboardActionCard(
+                  enabled: _canManageBusiness(state),
+                  title: PilotArabicCopy.businessInfo,
+                  subtitle: _canManageBusiness(state)
+                      ? PilotArabicCopy.businessWorkspaceSubtitle
+                      : PilotArabicCopy.businessWorkspaceDenied,
+                  icon: Icons.storefront,
+                  routeName: AppRouteNames.businessProfile,
+                  accentColor: AppColors.rewardGold,
                 ),
               ],
-              const SizedBox(height: AppSpacing.lg),
-              _AccessCard(state: state),
-              const SizedBox(height: AppSpacing.lg),
-              _DashboardActionCard(
-                enabled: _canScanCustomerWallet(state),
-                title: 'Scan customer wallet',
-                subtitle: _canScanCustomerWallet(state)
-                    ? 'Find the customer card, confirm progress, and add a stamp.'
-                    : 'Your workspace permissions do not allow wallet scanning.',
-                icon: Icons.qr_code_scanner,
-                routeName: AppRouteNames.walletScan,
-                accentColor: AppColors.primaryCoral,
-                badge: 'Ready',
-              ),
-              if (state.summary != null) ...[
-                const SizedBox(height: AppSpacing.lg),
-                _DashboardSummarySection(state: state),
-              ],
-              const SizedBox(height: AppSpacing.lg),
-              const SectionHeader(
-                title: 'Quick actions',
-                subtitle: 'Choose the next job for this business.',
-              ),
-              const SizedBox(height: AppSpacing.md),
-              _DashboardActionCard(
-                enabled: _canManageAppearance(state),
-                title: 'Menu Appearance',
-                subtitle: _canManageAppearance(state)
-                    ? 'Choose the public menu template customers see.'
-                    : 'Your workspace permissions do not allow menu design changes.',
-                icon: Icons.palette_outlined,
-                routeName: AppRouteNames.menuAppearance,
-                accentColor: AppColors.primaryCoral,
-              ),
-              const SizedBox(height: AppSpacing.sm),
-              _DashboardActionCard(
-                enabled: _canManageMenu(state),
-                title: 'Menu Tools',
-                subtitle: _canManageMenu(state)
-                    ? 'Edit categories and menu items.'
-                    : 'Your workspace permissions do not allow menu edits.',
-                icon: Icons.restaurant_menu,
-                routeName: AppRouteNames.menu,
-                accentColor: AppColors.freshGreen,
-              ),
-              const SizedBox(height: AppSpacing.sm),
-              _DashboardActionCard(
-                title: 'Loyalty tools',
-                subtitle: 'Enroll customers, add stamps, and redeem rewards.',
-                icon: Icons.loyalty_outlined,
-                routeName: AppRouteNames.loyalty,
-                accentColor: AppColors.freshGreen,
-              ),
-              const SizedBox(height: AppSpacing.sm),
-              _DashboardActionCard(
-                enabled: _canViewPublicLink(state),
-                title: 'Public menu link',
-                subtitle: _canViewPublicLink(state)
-                    ? 'Copy the public menu URL for table displays.'
-                    : 'Ask an owner for access to the public menu link.',
-                icon: Icons.qr_code_2,
-                routeName: AppRouteNames.qr,
-                accentColor: AppColors.primaryCoral,
-              ),
-              const SizedBox(height: AppSpacing.sm),
-              _DashboardActionCard(
-                enabled: _canManageBusiness(state),
-                title: 'Business Workspace',
-                subtitle: _canManageBusiness(state)
-                    ? 'Update name, type, city, language, and media URLs.'
-                    : 'Your workspace permissions do not allow profile edits.',
-                icon: Icons.storefront,
-                routeName: AppRouteNames.businessProfile,
-                accentColor: AppColors.rewardGold,
-              ),
-            ],
-          );
-        },
+            );
+          },
+        ),
       ),
     );
   }
@@ -212,6 +230,29 @@ bool _canScanCustomerWallet(DashboardState state) {
   return state.permissions?.canScanCustomerWallet ?? true;
 }
 
+class _ManagedSetupCard extends StatelessWidget {
+  const _ManagedSetupCard();
+
+  @override
+  Widget build(BuildContext context) {
+    return AppCard(
+      child: Column(
+        crossAxisAlignment: CrossAxisAlignment.start,
+        children: [
+          const Icon(Icons.handshake_outlined, color: AppColors.primaryCoral),
+          const SizedBox(height: AppSpacing.sm),
+          Text(
+            PilotArabicCopy.guidedSetupTitle,
+            style: Theme.of(context).textTheme.titleLarge,
+          ),
+          const SizedBox(height: AppSpacing.xs),
+          const Text(PilotArabicCopy.managedSetupBody),
+        ],
+      ),
+    );
+  }
+}
+
 class _AccessCard extends StatelessWidget {
   const _AccessCard({required this.state});
 
@@ -251,16 +292,11 @@ class _AccessCard extends StatelessWidget {
 
   String _roleGuidance(DashboardState state, String businessName) {
     return switch (state.effectiveRole) {
-      'OWNER' =>
-        'Owner access for $businessName. You can manage setup, menu, loyalty, and business tools.',
-      'ADMIN' =>
-        'Admin access for $businessName. You can manage setup, menu, loyalty, and business tools.',
-      'MANAGER' =>
-        'Manager access for $businessName. You can help run menu and loyalty operations.',
-      'STAFF' =>
-        'Business tools access for $businessName. Your main job is scanning customer wallets.',
-      _ =>
-        'Workspace access for $businessName. Ask the owner if an action is unavailable.',
+      'OWNER' => '${PilotArabicCopy.ownerAccess} ($businessName)',
+      'ADMIN' => '${PilotArabicCopy.ownerAccess} ($businessName)',
+      'MANAGER' => '${PilotArabicCopy.managerAccess} ($businessName)',
+      'STAFF' => '${PilotArabicCopy.staffAccess} ($businessName)',
+      _ => '${PilotArabicCopy.unknownAccess} ($businessName)',
     };
   }
 }
@@ -294,12 +330,12 @@ class _DashboardSummarySection extends StatelessWidget {
                       crossAxisAlignment: CrossAxisAlignment.start,
                       children: [
                         Text(
-                          'Business Workspace',
+                          PilotArabicCopy.guidedSetupTitle,
                           style: Theme.of(context).textTheme.titleLarge,
                         ),
                         const SizedBox(height: AppSpacing.xxs),
                         Text(
-                          'Live menu readiness at a glance.',
+                          PilotArabicCopy.guidedSetupSubtitle,
                           style: Theme.of(context).textTheme.bodyMedium,
                         ),
                       ],
@@ -309,7 +345,7 @@ class _DashboardSummarySection extends StatelessWidget {
               ),
               const SizedBox(height: AppSpacing.md),
               if (needsMenuSetup) ...[
-                const _MenuSetupPrompt(),
+                _MenuSetupPrompt(summary: summary),
                 const SizedBox(height: AppSpacing.md),
               ],
               LayoutBuilder(
@@ -322,25 +358,25 @@ class _DashboardSummarySection extends StatelessWidget {
                     children: [
                       _WorkflowMetricTile(
                         width: tileWidth,
-                        label: 'Active categories',
+                        label: PilotArabicCopy.activeCategories,
                         value: summary.counts.activeCategories,
                         icon: Icons.category_outlined,
                       ),
                       _WorkflowMetricTile(
                         width: tileWidth,
-                        label: 'Available items',
+                        label: PilotArabicCopy.availableItems,
                         value: summary.counts.availableItems,
                         icon: Icons.restaurant_menu,
                       ),
                       _WorkflowMetricTile(
                         width: tileWidth,
-                        label: 'Archived categories',
+                        label: PilotArabicCopy.inactiveCategories,
                         value: summary.counts.inactiveCategories,
                         icon: Icons.archive_outlined,
                       ),
                       _WorkflowMetricTile(
                         width: tileWidth,
-                        label: 'Unavailable items',
+                        label: PilotArabicCopy.unavailableItems,
                         value: summary.counts.unavailableItems,
                         icon: Icons.visibility_off_outlined,
                       ),
@@ -364,19 +400,20 @@ class _DashboardSummarySection extends StatelessWidget {
 
   String _hintText(String? step) {
     return switch (step) {
-      'CREATE_CATEGORY' =>
-        'Add your first category so the public menu has structure.',
-      'CREATE_ITEM' => 'Add an item to make the menu useful for customers.',
+      'CREATE_CATEGORY' => 'ابدأ بإضافة أول قسم حتى يصير المنيو مرتباً.',
+      'CREATE_ITEM' => 'أضف أول منتج حتى يصير المنيو مفيداً للزبائن.',
       'SHARE_PUBLIC_MENU' =>
-        'Your menu is ready. Copy the public link from QR Menu.',
-      'OPEN_DASHBOARD' => 'Review your dashboard and keep building the menu.',
-      _ => 'Keep your menu profile, categories, and public link up to date.',
+        'المنيو جاهز. افتح رابط QR والمنيو العام وشاركه عند الحاجة.',
+      'OPEN_DASHBOARD' => 'راجع الخطوات وكمل تجهيز المطعم.',
+      _ => 'حافظ على معلومات المطعم والمنيو ورابط QR محدثة.',
     };
   }
 }
 
 class _MenuSetupPrompt extends StatelessWidget {
-  const _MenuSetupPrompt();
+  const _MenuSetupPrompt({required this.summary});
+
+  final DashboardSummary summary;
 
   @override
   Widget build(BuildContext context) {
@@ -400,25 +437,37 @@ class _MenuSetupPrompt extends StatelessWidget {
                 const SizedBox(width: AppSpacing.sm),
                 Expanded(
                   child: Text(
-                    'Set up the customer menu',
+                    PilotArabicCopy.guidedSetupTitle,
                     style: Theme.of(context).textTheme.titleMedium,
                   ),
                 ),
               ],
             ),
             const SizedBox(height: AppSpacing.xs),
-            const Text(
-              'Add the first menu basics before sharing the QR with customers.',
-            ),
+            const Text(PilotArabicCopy.guidedSetupSubtitle),
             const SizedBox(height: AppSpacing.md),
-            const Wrap(
+            Wrap(
               spacing: AppSpacing.sm,
               runSpacing: AppSpacing.sm,
               children: [
-                _SetupStep(label: 'Add categories'),
-                _SetupStep(label: 'Add menu items'),
-                _SetupStep(label: 'Share QR'),
-                _SetupStep(label: 'Enable loyalty'),
+                const _SetupStep(
+                  label: PilotArabicCopy.businessInfo,
+                  completed: true,
+                ),
+                _SetupStep(
+                  label: PilotArabicCopy.addCategories,
+                  completed: summary.counts.activeCategories > 0,
+                ),
+                _SetupStep(
+                  label: PilotArabicCopy.addItems,
+                  completed: summary.counts.availableItems > 0,
+                ),
+                _SetupStep(
+                  label: PilotArabicCopy.shareQr,
+                  completed: summary.publicMenu.url.trim().isNotEmpty,
+                ),
+                const _SetupStep(label: PilotArabicCopy.enableLoyalty),
+                const _SetupStep(label: PilotArabicCopy.prepareCashier),
               ],
             ),
           ],
@@ -429,9 +478,10 @@ class _MenuSetupPrompt extends StatelessWidget {
 }
 
 class _SetupStep extends StatelessWidget {
-  const _SetupStep({required this.label});
+  const _SetupStep({required this.label, this.completed = false});
 
   final String label;
+  final bool completed;
 
   @override
   Widget build(BuildContext context) {
@@ -446,12 +496,25 @@ class _SetupStep extends StatelessWidget {
           horizontal: AppSpacing.sm,
           vertical: AppSpacing.xs,
         ),
-        child: Text(
-          label,
-          style: Theme.of(context).textTheme.labelLarge?.copyWith(
-            color: AppColors.textDark,
-            fontWeight: FontWeight.w800,
-          ),
+        child: Row(
+          mainAxisSize: MainAxisSize.min,
+          children: [
+            Icon(
+              completed ? Icons.check_circle_outline : Icons.radio_button_off,
+              size: 16,
+              color: completed
+                  ? AppColors.freshGreenDark
+                  : AppColors.primaryCoral,
+            ),
+            const SizedBox(width: AppSpacing.xs),
+            Text(
+              label,
+              style: Theme.of(context).textTheme.labelLarge?.copyWith(
+                color: AppColors.textDark,
+                fontWeight: FontWeight.w800,
+              ),
+            ),
+          ],
         ),
       ),
     );
@@ -505,7 +568,7 @@ class _WorkflowMemberRow extends StatelessWidget {
             const SizedBox(width: AppSpacing.md),
             Expanded(
               child: Text(
-                'Active members',
+                PilotArabicCopy.activeMembers,
                 style: Theme.of(context).textTheme.titleMedium,
               ),
             ),
@@ -547,7 +610,7 @@ class _WorkflowNextStep extends StatelessWidget {
                 crossAxisAlignment: CrossAxisAlignment.start,
                 children: [
                   Text(
-                    'Recommended next step',
+                    PilotArabicCopy.nextStepTitle,
                     style: Theme.of(context).textTheme.titleMedium,
                   ),
                   const SizedBox(height: AppSpacing.xs),
@@ -598,6 +661,7 @@ class _DashboardActionCard extends StatelessWidget {
     required this.subtitle,
     required this.icon,
     required this.routeName,
+    super.key,
     this.enabled = true,
     this.accentColor = AppColors.primaryCoral,
     this.badge,

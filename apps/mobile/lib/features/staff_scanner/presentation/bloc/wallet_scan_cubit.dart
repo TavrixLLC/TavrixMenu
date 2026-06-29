@@ -1,5 +1,6 @@
 import 'package:flutter_bloc/flutter_bloc.dart';
 
+import '../../../../core/copy/pilot_arabic_copy.dart';
 import '../../../../core/utils/failure_message.dart';
 import '../../../business_setup/domain/usecases/get_my_business.dart';
 import '../../../loyalty/domain/entities/loyalty_requests.dart';
@@ -65,7 +66,7 @@ class WalletScanCubit extends Cubit<WalletScanState> {
       emit(
         state.copyWith(
           status: WalletScanStatus.failure,
-          errorMessage: 'Enter the customer loyalty QR code.',
+          errorMessage: PilotArabicCopy.loyaltyQrRequired,
           clearResult: true,
         ),
       );
@@ -77,8 +78,7 @@ class WalletScanCubit extends Cubit<WalletScanState> {
       emit(
         state.copyWith(
           status: WalletScanStatus.failure,
-          errorMessage:
-              'This business workspace is not ready yet. Try again from the dashboard.',
+          errorMessage: PilotArabicCopy.businessWorkspaceNotReady,
           clearResult: true,
         ),
       );

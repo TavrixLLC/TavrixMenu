@@ -4,6 +4,7 @@ import 'package:flutter_bloc/flutter_bloc.dart';
 import '../../../../app/router/route_names.dart';
 import '../../../../core/constants/app_colors.dart';
 import '../../../../core/constants/app_spacing.dart';
+import '../../../../core/copy/pilot_arabic_copy.dart';
 import '../../../../shared/widgets/app_scaffold.dart';
 import '../../../../shared/widgets/status_badge.dart';
 import '../../../auth/presentation/bloc/auth_cubit.dart';
@@ -43,23 +44,26 @@ class _SplashScreenState extends State<SplashScreen> {
           Navigator.of(context).pushReplacementNamed(AppRouteNames.login);
         }
       },
-      child: AppScaffold(
-        child: Center(
-          child: Column(
-            mainAxisSize: MainAxisSize.min,
-            children: [
-              const StatusBadge(label: 'Business app'),
-              const SizedBox(height: AppSpacing.lg),
-              Text(
-                'Waflo Operator',
-                style: Theme.of(context).textTheme.headlineMedium?.copyWith(
-                  color: AppColors.ink,
-                  fontWeight: FontWeight.w900,
+      child: Directionality(
+        textDirection: TextDirection.rtl,
+        child: AppScaffold(
+          child: Center(
+            child: Column(
+              mainAxisSize: MainAxisSize.min,
+              children: [
+                const StatusBadge(label: PilotArabicCopy.authBadge),
+                const SizedBox(height: AppSpacing.lg),
+                Text(
+                  'Waflo للتجار',
+                  style: Theme.of(context).textTheme.headlineMedium?.copyWith(
+                    color: AppColors.ink,
+                    fontWeight: FontWeight.w900,
+                  ),
                 ),
-              ),
-              const SizedBox(height: AppSpacing.xs),
-              const Text('Restoring your workspace session'),
-            ],
+                const SizedBox(height: AppSpacing.xs),
+                const Text(PilotArabicCopy.restoringSession),
+              ],
+            ),
           ),
         ),
       ),

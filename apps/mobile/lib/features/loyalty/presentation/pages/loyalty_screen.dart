@@ -4,6 +4,7 @@ import 'package:flutter_bloc/flutter_bloc.dart';
 import '../../../../app/router/route_names.dart';
 import '../../../../core/constants/app_colors.dart';
 import '../../../../core/constants/app_spacing.dart';
+import '../../../../core/copy/pilot_arabic_copy.dart';
 import '../../../../shared/widgets/app_button.dart';
 import '../../../../shared/widgets/app_card.dart';
 import '../../../../shared/widgets/app_scaffold.dart';
@@ -95,7 +96,7 @@ class _LoyaltyScreenState extends State<LoyaltyScreen> {
               if (state.canUseDailyOperations) ...[
                 const SizedBox(height: AppSpacing.md),
                 AppButton(
-                  label: 'Wallet Scan',
+                  label: PilotArabicCopy.scanCustomerCard,
                   icon: Icons.document_scanner_outlined,
                   onPressed: () =>
                       Navigator.of(context).pushNamed(AppRouteNames.walletScan),

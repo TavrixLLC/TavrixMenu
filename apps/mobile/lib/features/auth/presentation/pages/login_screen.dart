@@ -1,6 +1,7 @@
+import 'dart:convert';
+
 import 'package:clerk_auth/clerk_auth.dart' as clerk;
 import 'package:clerk_flutter/clerk_flutter.dart';
-import 'package:flutter/foundation.dart';
 import 'package:flutter/material.dart';
 import 'package:flutter_bloc/flutter_bloc.dart';
 import 'package:url_launcher/url_launcher.dart';
@@ -10,6 +11,7 @@ import '../../../../core/config/app_config.dart';
 import '../../../../core/constants/app_colors.dart';
 import '../../../../core/constants/app_radius.dart';
 import '../../../../core/constants/app_spacing.dart';
+import '../../../../core/copy/pilot_arabic_copy.dart';
 import '../../../../shared/widgets/app_button.dart';
 import '../../../../shared/widgets/app_card.dart';
 import '../../../../shared/widgets/app_scaffold.dart';
@@ -44,45 +46,54 @@ class LoginScreen extends StatelessWidget {
       builder: (context, state) {
         if (state.status == AuthStatus.restoring) {
           return const AppScaffold(
-            child: LoadingView(message: 'Restoring your workspace session'),
+            child: Directionality(
+              textDirection: TextDirection.rtl,
+              child: LoadingView(message: PilotArabicCopy.restoringSession),
+            ),
           );
         }
 
-        return AppScaffold(
-          scrollable: true,
-          child: Column(
-            crossAxisAlignment: CrossAxisAlignment.start,
-            children: [
-              const _AuthHero(),
-              const SizedBox(height: AppSpacing.lg),
-              if (state.status == AuthStatus.failure &&
-                  state.errorMessage != null) ...[
-                const SizedBox(height: AppSpacing.md),
-                ErrorView(message: state.errorMessage!),
-              ],
-              const SizedBox(height: AppSpacing.lg),
-              if (config.missingQaConfigKeys.isNotEmpty)
-                _AuthConfigurationNotice(config: config),
-              if (config.hasClerkPublishableKey) ...[
-                if (config.missingQaConfigKeys.isNotEmpty)
+        return Directionality(
+          textDirection: TextDirection.rtl,
+          child: AppScaffold(
+            scrollable: true,
+            child: Column(
+              crossAxisAlignment: CrossAxisAlignment.start,
+              children: [
+                const _AuthHero(),
+                const SizedBox(height: AppSpacing.lg),
+                if (state.status == AuthStatus.failure &&
+                    state.errorMessage != null) ...[
                   const SizedBox(height: AppSpacing.md),
-                clerkPanelBuilder?.call(context, state.status) ??
-                    _ClerkSignInPanel(config: config, authStatus: state.status),
+                  ErrorView(message: state.errorMessage!),
+                ],
+                const SizedBox(height: AppSpacing.lg),
+                if (config.missingQaConfigKeys.isNotEmpty)
+                  _AuthConfigurationNotice(config: config),
+                if (config.hasClerkPublishableKey) ...[
+                  if (config.missingQaConfigKeys.isNotEmpty)
+                    const SizedBox(height: AppSpacing.md),
+                  clerkPanelBuilder?.call(context, state.status) ??
+                      _ClerkSignInPanel(
+                        config: config,
+                        authStatus: state.status,
+                      ),
+                ],
+                if (config.isDevAuthEnabled) ...[
+                  const SizedBox(height: AppSpacing.md),
+                  AppButton(
+                    label: state.status == AuthStatus.loading
+                        ? PilotArabicCopy.checkingBusinessAccess
+                        : PilotArabicCopy.testAccess,
+                    icon: Icons.login,
+                    variant: AppButtonVariant.secondary,
+                    onPressed: state.status == AuthStatus.loading
+                        ? null
+                        : () => context.read<AuthCubit>().signInDevMode(),
+                  ),
+                ],
               ],
-              if (config.isDevAuthEnabled) ...[
-                const SizedBox(height: AppSpacing.md),
-                AppButton(
-                  label: state.status == AuthStatus.loading
-                      ? 'Preparing'
-                      : 'Continue in dev mode',
-                  icon: Icons.login,
-                  variant: AppButtonVariant.secondary,
-                  onPressed: state.status == AuthStatus.loading
-                      ? null
-                      : () => context.read<AuthCubit>().signInDevMode(),
-                ),
-              ],
-            ],
+            ),
           ),
         );
       },
@@ -97,8 +108,6 @@ class _AuthConfigurationNotice extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
-    final missing = config.missingQaConfigKeys;
-    final missingList = missing.join(', ');
     final isAuthBlocked = config.missingOperatorAuthConfigKeys.isNotEmpty;
 
     return AppCard(
@@ -106,21 +115,15 @@ class _AuthConfigurationNotice extends StatelessWidget {
         crossAxisAlignment: CrossAxisAlignment.start,
         children: [
           Text(
-            kDebugMode
-                ? 'Debug configuration missing'
-                : 'Operator sign-in is not configured',
+            PilotArabicCopy.appConfigNeedsAttention,
             style: Theme.of(context).textTheme.titleMedium,
           ),
           const SizedBox(height: AppSpacing.xs),
-          Text(
-            kDebugMode
-                ? 'Missing config keys: $missingList. Rebuild the QA APK with the documented --dart-define values.'
-                : 'Contact Waflo support for the configured operator build.',
-          ),
-          if (kDebugMode && !isAuthBlocked) ...[
+          const Text(PilotArabicCopy.operatorBuildSupport),
+          if (!isAuthBlocked) ...[
             const SizedBox(height: AppSpacing.xs),
             const Text(
-              'Operator sign-in can continue, but QA should rebuild with all required keys.',
+              'تسجيل الدخول ممكن، لكن بعض الخدمات قد لا تعمل حتى تكتمل مراجعة نسخة التطبيق.',
             ),
           ],
         ],
@@ -145,14 +148,14 @@ class _AuthHero extends StatelessWidget {
           crossAxisAlignment: CrossAxisAlignment.start,
           children: [
             const WafloStatusBadge(
-              label: 'Business workspace',
+              label: PilotArabicCopy.authBadge,
               icon: Icons.verified_outlined,
               color: AppColors.charcoalSoft,
               foregroundColor: AppColors.surfaceWhite,
             ),
             const SizedBox(height: AppSpacing.xl),
             Text(
-              'Welcome to Waflo',
+              PilotArabicCopy.authTitle,
               style: Theme.of(context).textTheme.headlineMedium?.copyWith(
                 color: AppColors.surfaceWhite,
                 fontWeight: FontWeight.w900,
@@ -160,7 +163,7 @@ class _AuthHero extends StatelessWidget {
             ),
             const SizedBox(height: AppSpacing.sm),
             Text(
-              'Manage your business menu and loyalty workspace.',
+              PilotArabicCopy.authSubtitle,
               style: Theme.of(context).textTheme.bodyLarge?.copyWith(
                 color: AppColors.surfaceWhite.withValues(alpha: 0.84),
                 height: 1.35,
@@ -202,22 +205,20 @@ class _ClerkSignInPanel extends StatelessWidget {
               crossAxisAlignment: CrossAxisAlignment.start,
               children: [
                 Text(
-                  'Signed in',
+                  PilotArabicCopy.signedIn,
                   style: Theme.of(context).textTheme.titleMedium,
                 ),
                 const SizedBox(height: AppSpacing.xs),
-                const Text(
-                  'We still need to confirm which business workspace you can use.',
-                ),
+                const Text(PilotArabicCopy.confirmBusinessAccess),
                 const SizedBox(height: AppSpacing.md),
                 AppButton(
-                  label: 'Retry workspace check',
+                  label: PilotArabicCopy.retryWorkspaceCheck,
                   icon: Icons.refresh,
                   onPressed: () => context.read<AuthCubit>().signInWithClerk(),
                 ),
                 const SizedBox(height: AppSpacing.sm),
                 AppButton(
-                  label: 'Sign out',
+                  label: PilotArabicCopy.signOut,
                   icon: Icons.logout,
                   variant: AppButtonVariant.ghost,
                   onPressed: () => context.read<AuthCubit>().signOut(),
@@ -227,7 +228,9 @@ class _ClerkSignInPanel extends StatelessWidget {
           );
         }
 
-        return const LoadingView(message: 'Checking your business access');
+        return const LoadingView(
+          message: PilotArabicCopy.checkingBusinessAccess,
+        );
       },
     );
   }
@@ -274,7 +277,7 @@ class OwnerAuthCompletion {
   const OwnerAuthCompletion.passwordRequired()
     : this._(
         isComplete: false,
-        requiredStep: 'Add account password',
+        requiredStep: PilotArabicCopy.passwordRequiredStep,
         requiresPassword: true,
       );
 
@@ -285,6 +288,8 @@ class OwnerAuthCompletion {
 
 class ClerkOwnerAuthClient implements OwnerAuthClient {
   const ClerkOwnerAuthClient(this._authState);
+
+  static const _clerkPersistedClientKey = r'$client';
 
   final ClerkAuthState _authState;
 
@@ -305,6 +310,7 @@ class ClerkOwnerAuthClient implements OwnerAuthClient {
     required String code,
   }) async {
     await _authState.attemptSignIn(strategy: strategy, code: code);
+    await _persistActiveClerkClientIfSignedIn();
     return _completionFromAuthState(_authState);
   }
 
@@ -331,6 +337,7 @@ class ClerkOwnerAuthClient implements OwnerAuthClient {
       code: code,
     );
     await _activateCreatedSessionIfNeeded(client);
+    await _persistActiveClerkClientIfSignedIn();
     return _completionFromAuthState(_authState);
   }
 
@@ -363,6 +370,17 @@ class ClerkOwnerAuthClient implements OwnerAuthClient {
       await _authState.activate(refreshedSession);
     }
   }
+
+  Future<void> _persistActiveClerkClientIfSignedIn() async {
+    if (!_authState.isSignedIn || _authState.client.user == null) {
+      return;
+    }
+
+    await _authState.config.persistor.write<String>(
+      _clerkPersistedClientKey,
+      jsonEncode(_authState.client),
+    );
+  }
 }
 
 clerk.Session? _sessionById(clerk.Client client, String sessionId) {
@@ -389,51 +407,45 @@ OwnerAuthCompletion _completionFromAuthState(ClerkAuthState authState) {
     return OwnerAuthCompletion.incomplete(_pendingSignInStep(signIn));
   }
 
-  return const OwnerAuthCompletion.incomplete(
-    'Complete the required verification step',
-  );
+  return const OwnerAuthCompletion.incomplete('أكمل خطوة التحقق المطلوبة');
 }
 
 OwnerAuthCompletion _completionFromSignUp(clerk.SignUp signUp) {
   final unverified = signUp.unverifiedFields;
   if (unverified.contains(clerk.Field.emailAddress)) {
-    return const OwnerAuthCompletion.incomplete('Verify work email');
+    return const OwnerAuthCompletion.incomplete('تحقق من إيميل العمل');
   }
   if (unverified.contains(clerk.Field.phoneNumber)) {
-    return const OwnerAuthCompletion.incomplete('Verify work phone');
+    return const OwnerAuthCompletion.incomplete('تحقق من رقم الهاتف');
   }
 
   final missing = signUp.missingFields;
   if (missing.contains(clerk.Field.emailAddress)) {
-    return const OwnerAuthCompletion.incomplete('Add work email');
+    return const OwnerAuthCompletion.incomplete('أضف إيميل العمل');
   }
   if (missing.contains(clerk.Field.phoneNumber)) {
-    return const OwnerAuthCompletion.incomplete('Add work phone');
+    return const OwnerAuthCompletion.incomplete('أضف رقم الهاتف');
   }
   if (missing.contains(clerk.Field.firstName) ||
       missing.contains(clerk.Field.lastName)) {
-    return const OwnerAuthCompletion.incomplete('Complete business owner name');
+    return const OwnerAuthCompletion.incomplete('أكمل اسم صاحب المطعم');
   }
   if (signUp.status == clerk.Status.missingRequirements &&
       missing.contains(clerk.Field.password)) {
     return const OwnerAuthCompletion.passwordRequired();
   }
   if (missing.contains(clerk.Field.legalAccepted)) {
-    return const OwnerAuthCompletion.incomplete('Accept required terms');
+    return const OwnerAuthCompletion.incomplete('اقبل الشروط المطلوبة');
   }
   if (missing.contains(clerk.Field.enterpriseSSO) ||
       missing.contains(clerk.Field.saml)) {
-    return const OwnerAuthCompletion.incomplete('Complete enterprise sign-in');
+    return const OwnerAuthCompletion.incomplete('أكمل تسجيل الدخول المطلوب');
   }
   if (missing.contains(clerk.Field.externalAccount)) {
-    return const OwnerAuthCompletion.incomplete(
-      'Complete external account verification',
-    );
+    return const OwnerAuthCompletion.incomplete('أكمل تحقق الحساب الخارجي');
   }
 
-  return const OwnerAuthCompletion.incomplete(
-    'Complete the required verification step',
-  );
+  return const OwnerAuthCompletion.incomplete('أكمل خطوة التحقق المطلوبة');
 }
 
 String _pendingSignInStep(clerk.SignIn signIn) {
@@ -441,21 +453,21 @@ String _pendingSignInStep(clerk.SignIn signIn) {
   final strategy = verification?.strategy;
   if (strategy == clerk.Strategy.emailCode ||
       strategy == clerk.Strategy.emailLink) {
-    return 'Verify work email';
+    return 'تحقق من إيميل العمل';
   }
   if (strategy == clerk.Strategy.phoneCode) {
-    return 'Verify work phone';
+    return 'تحقق من رقم الهاتف';
   }
   if (strategy?.isPassword == true) {
-    return 'Enter account password';
+    return 'أدخل كلمة مرور الحساب';
   }
   if (strategy?.isSSO == true) {
-    return 'Complete external sign-in';
+    return 'أكمل تسجيل الدخول الخارجي';
   }
   if (signIn.needsSecondFactor) {
-    return 'Complete second verification factor';
+    return 'أكمل خطوة التحقق الثانية';
   }
-  return 'Complete the required verification step';
+  return 'أكمل خطوة التحقق المطلوبة';
 }
 
 enum _AuthFlow { signIn, ownerSignUp }
@@ -706,64 +718,61 @@ class _AuthNotice {
   final String? detail;
 
   static const chooseAuthPath = _AuthNotice(
-    title: 'Choose how to continue',
-    body: 'Choose sign in or create business workspace to continue.',
+    title: 'اختر طريقة البدء',
+    body: 'اختر دخول لمساحة موجودة أو إنشاء مساحة مطعم جديدة.',
   );
 
   static const missingIdentifier = _AuthNotice(
-    title: 'Enter account contact',
-    body: 'Enter your work email or phone number.',
+    title: 'أدخل وسيلة الدخول',
+    body: 'اكتب إيميل العمل أو رقم الهاتف.',
   );
 
   static const missingCode = _AuthNotice(
-    title: 'Enter verification code',
-    body: 'Enter the verification code from your email or phone.',
+    title: 'أدخل رمز التحقق',
+    body: 'اكتب الرمز الذي وصلك على الإيميل أو الهاتف.',
   );
 
   static const startAgain = _AuthNotice(
-    title: 'Start again',
-    body: 'Request a fresh code before continuing.',
+    title: 'ابدأ من جديد',
+    body: 'اطلب رمز جديد قبل الاستمرار.',
   );
 
   static const accountNotFound = _AuthNotice(
-    title: 'Account not found',
-    body:
-        "We couldn't find an existing Waflo business account for this email or phone. To start a new business, choose Create business workspace.",
+    title: PilotArabicCopy.accountNotFoundTitle,
+    body: PilotArabicCopy.accountNotFoundBody,
   );
 
   static const signInStartFailed = _AuthNotice(
-    title: 'Something went wrong',
-    body: "We couldn't complete this action right now. Please try again.",
+    title: PilotArabicCopy.authTemporaryErrorTitle,
+    body: PilotArabicCopy.authTemporaryErrorBody,
   );
 
   static const signUpStartFailed = _AuthNotice(
-    title: 'Something went wrong',
-    body: "We couldn't complete this action right now. Please try again.",
+    title: PilotArabicCopy.authTemporaryErrorTitle,
+    body: PilotArabicCopy.authTemporaryErrorBody,
   );
 
   static const verifyFailed = _AuthNotice(
-    title: 'Something went wrong',
-    body: "We couldn't complete this action right now. Please try again.",
+    title: PilotArabicCopy.verificationFailedTitle,
+    body: PilotArabicCopy.verificationFailedBody,
   );
 
   static _AuthNotice needsMoreVerification(String? requiredStep) => _AuthNotice(
-    title: 'More verification needed',
-    body: 'Complete the required verification step to continue.',
+    title: PilotArabicCopy.needsMoreVerificationTitle,
+    body: PilotArabicCopy.needsMoreVerificationBody,
     detail: requiredStep == null || requiredStep.trim().isEmpty
         ? null
-        : 'Required step: ${requiredStep.trim()}.',
+        : requiredStep.trim(),
   );
 
   static const passwordlessSignupConfigNeeded = _AuthNotice(
-    title: 'Signup configuration needs attention',
-    body:
-        'This build expects passwordless signup, but Clerk is requiring an account password. Update the staging Clerk signup settings or enable the password step.',
+    title: PilotArabicCopy.passwordlessSetupTitle,
+    body: PilotArabicCopy.passwordlessSetupBody,
   );
 
   static const tooManyAttempts = _AuthNotice(
-    title: 'Try again soon',
-    body:
-        'Too many attempts were made. Wait a moment, then request a new code.',
+    title: PilotArabicCopy.tooManyAttemptsTitle,
+    body: PilotArabicCopy.tooManyAttemptsBody,
   );
 }
 
@@ -837,32 +846,35 @@ class _AuthChoiceStep extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
-    return Column(
-      crossAxisAlignment: CrossAxisAlignment.start,
-      children: [
-        Text(
-          'Choose your workspace path',
-          style: Theme.of(context).textTheme.titleLarge,
-        ),
-        const SizedBox(height: AppSpacing.xs),
-        Text(
-          'Use an existing Waflo business account or create a new workspace.',
-          style: Theme.of(context).textTheme.bodyMedium,
-        ),
-        const SizedBox(height: AppSpacing.lg),
-        WafloButton(
-          label: 'Sign in to existing workspace',
-          icon: Icons.login,
-          onPressed: () => onSelect(_AuthFlow.signIn),
-        ),
-        const SizedBox(height: AppSpacing.sm),
-        WafloButton(
-          label: 'Create business workspace',
-          icon: Icons.storefront_outlined,
-          onPressed: () => onSelect(_AuthFlow.ownerSignUp),
-          variant: WafloButtonVariant.secondary,
-        ),
-      ],
+    return Directionality(
+      textDirection: TextDirection.rtl,
+      child: Column(
+        crossAxisAlignment: CrossAxisAlignment.start,
+        children: [
+          Text(
+            PilotArabicCopy.authChoiceTitle,
+            style: Theme.of(context).textTheme.titleLarge,
+          ),
+          const SizedBox(height: AppSpacing.xs),
+          Text(
+            PilotArabicCopy.authChoiceSubtitle,
+            style: Theme.of(context).textTheme.bodyMedium,
+          ),
+          const SizedBox(height: AppSpacing.lg),
+          WafloButton(
+            label: PilotArabicCopy.signInExistingWorkspace,
+            icon: Icons.login,
+            onPressed: () => onSelect(_AuthFlow.signIn),
+          ),
+          const SizedBox(height: AppSpacing.sm),
+          WafloButton(
+            label: PilotArabicCopy.createBusinessWorkspace,
+            icon: Icons.storefront_outlined,
+            onPressed: () => onSelect(_AuthFlow.ownerSignUp),
+            variant: WafloButtonVariant.secondary,
+          ),
+        ],
+      ),
     );
   }
 }
@@ -887,15 +899,15 @@ class _FlowHeader extends StatelessWidget {
         const SizedBox(height: AppSpacing.xs),
         Text(
           isSignIn
-              ? 'Sign in to your workspace'
-              : 'Create your Waflo business workspace',
+              ? PilotArabicCopy.signInHeader
+              : PilotArabicCopy.signUpHeader,
           style: Theme.of(context).textTheme.titleLarge,
         ),
         const SizedBox(height: AppSpacing.xs),
         Text(
           isSignIn
-              ? 'Enter the work email or phone on your Waflo account.'
-              : 'Start a new business owner workspace with your work email or phone.',
+              ? PilotArabicCopy.signInSubtitle
+              : PilotArabicCopy.signUpSubtitle,
           style: Theme.of(context).textTheme.bodyMedium,
         ),
       ],
@@ -921,8 +933,8 @@ class _IdentifierStep extends StatelessWidget {
     return Column(
       children: [
         WafloTextField(
-          label: 'Work email or phone',
-          hint: 'owner@example.com',
+          label: PilotArabicCopy.contactLabel,
+          hint: PilotArabicCopy.contactHint,
           controller: controller,
           keyboardType: TextInputType.emailAddress,
           textInputAction: TextInputAction.done,
@@ -937,7 +949,9 @@ class _IdentifierStep extends StatelessWidget {
         ),
         const SizedBox(height: AppSpacing.md),
         WafloButton(
-          label: isBusy ? 'Sending code' : 'Continue',
+          label: isBusy
+              ? PilotArabicCopy.sendingCode
+              : PilotArabicCopy.continueLabel,
           icon: Icons.arrow_forward,
           isLoading: isBusy,
           onPressed: isBusy ? null : onSubmit,
@@ -969,7 +983,7 @@ class _CodeStep extends StatelessWidget {
     return Column(
       children: [
         WafloTextField(
-          label: 'Verification code',
+          label: PilotArabicCopy.verificationCode,
           hint: '123456',
           controller: controller,
           keyboardType: TextInputType.number,
@@ -986,10 +1000,10 @@ class _CodeStep extends StatelessWidget {
         const SizedBox(height: AppSpacing.md),
         WafloButton(
           label: isBusy
-              ? 'Verifying'
+              ? PilotArabicCopy.verifying
               : flow == _AuthFlow.ownerSignUp
-              ? 'Verify and create workspace'
-              : 'Verify and sign in',
+              ? PilotArabicCopy.verifyAndCreate
+              : PilotArabicCopy.verifyAndSignIn,
           icon: Icons.verified_outlined,
           isLoading: isBusy,
           onPressed: isBusy ? null : onSubmit,
@@ -999,7 +1013,7 @@ class _CodeStep extends StatelessWidget {
           children: [
             Expanded(
               child: WafloButton(
-                label: 'Resend code',
+                label: PilotArabicCopy.resendCode,
                 icon: Icons.refresh,
                 onPressed: isBusy ? null : onResend,
                 variant: WafloButtonVariant.ghost,
@@ -1008,7 +1022,7 @@ class _CodeStep extends StatelessWidget {
             const SizedBox(width: AppSpacing.sm),
             Expanded(
               child: WafloButton(
-                label: 'Change login',
+                label: PilotArabicCopy.changeLogin,
                 icon: Icons.edit_outlined,
                 onPressed: isBusy ? null : onChangeIdentifier,
                 variant: WafloButtonVariant.secondary,
@@ -1030,12 +1044,12 @@ class _TrustLinks extends StatelessWidget {
       crossAxisAlignment: WrapCrossAlignment.center,
       children: [
         Text(
-          'By continuing, you agree to Waflo ',
+          'بالمتابعة أنت توافق على ',
           style: Theme.of(context).textTheme.bodyMedium,
         ),
-        _PolicyLink(label: 'Terms', uri: Uri.https('waflo.app', '/terms')),
-        Text(' and ', style: Theme.of(context).textTheme.bodyMedium),
-        _PolicyLink(label: 'Privacy', uri: Uri.https('waflo.app', '/privacy')),
+        _PolicyLink(label: 'الشروط', uri: Uri.https('waflo.app', '/terms')),
+        Text(' و ', style: Theme.of(context).textTheme.bodyMedium),
+        _PolicyLink(label: 'الخصوصية', uri: Uri.https('waflo.app', '/privacy')),
         Text('.', style: Theme.of(context).textTheme.bodyMedium),
       ],
     );

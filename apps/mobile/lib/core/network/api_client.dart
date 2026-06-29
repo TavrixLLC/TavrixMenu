@@ -63,7 +63,7 @@ class ApiClient {
     Set<int> validationStatusCodes = const {422},
   }) async {
     if (!canCallBackend) {
-      throw const ServerException('API_BASE_URL is not configured.');
+      throw const ServerException('Service is not available right now.');
     }
 
     final token = await _tokenProvider.getToken();

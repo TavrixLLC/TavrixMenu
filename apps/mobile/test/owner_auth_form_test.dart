@@ -8,6 +8,7 @@ import 'package:tavrix_menu_mobile/app/router/route_names.dart';
 import 'package:tavrix_menu_mobile/core/auth/auth_session_controller.dart';
 import 'package:tavrix_menu_mobile/core/auth/clerk_token_provider.dart';
 import 'package:tavrix_menu_mobile/core/auth/dev_token_provider.dart';
+import 'package:tavrix_menu_mobile/core/copy/pilot_arabic_copy.dart';
 import 'package:tavrix_menu_mobile/core/errors/failures.dart';
 import 'package:tavrix_menu_mobile/features/auth/domain/entities/current_user.dart';
 import 'package:tavrix_menu_mobile/features/auth/domain/repositories/me_repository.dart';
@@ -26,12 +27,18 @@ void main() {
         _ownerAuthWidget(authClient: authClient, authCubit: authCubit),
       );
 
-      expect(find.text('Sign in to existing workspace'), findsOneWidget);
-      expect(find.text('Create business workspace'), findsOneWidget);
-      expect(find.text('Work email or phone'), findsNothing);
-      expect(find.text('Verification code'), findsNothing);
-      expect(find.text('Sign in to your workspace'), findsNothing);
-      expect(find.text('Create your Waflo business workspace'), findsNothing);
+      expect(
+        find.text(PilotArabicCopy.signInExistingWorkspace),
+        findsOneWidget,
+      );
+      expect(
+        find.text(PilotArabicCopy.createBusinessWorkspace),
+        findsOneWidget,
+      );
+      expect(find.text(PilotArabicCopy.contactLabel), findsNothing);
+      expect(find.text(PilotArabicCopy.verificationCode), findsNothing);
+      expect(find.text(PilotArabicCopy.signInHeader), findsNothing);
+      expect(find.text(PilotArabicCopy.signUpHeader), findsNothing);
 
       await authCubit.close();
     },
@@ -47,23 +54,23 @@ void main() {
       _ownerAuthWidget(authClient: authClient, authCubit: authCubit),
     );
 
-    await tester.tap(find.text('Sign in to existing workspace'));
+    await tester.tap(find.text(PilotArabicCopy.signInExistingWorkspace));
     await tester.pumpAndSettle();
 
-    expect(find.text('Sign in to your workspace'), findsOneWidget);
-    expect(find.text('Create your Waflo business workspace'), findsNothing);
-    expect(find.text('Work email or phone'), findsOneWidget);
-    expect(find.text('Continue'), findsOneWidget);
+    expect(find.text(PilotArabicCopy.signInHeader), findsOneWidget);
+    expect(find.text(PilotArabicCopy.signUpHeader), findsNothing);
+    expect(find.text(PilotArabicCopy.contactLabel), findsOneWidget);
+    expect(find.text(PilotArabicCopy.continueLabel), findsOneWidget);
 
     await tester.tap(find.byTooltip('Back'));
     await tester.pumpAndSettle();
-    await tester.tap(find.text('Create business workspace'));
+    await tester.tap(find.text(PilotArabicCopy.createBusinessWorkspace));
     await tester.pumpAndSettle();
 
-    expect(find.text('Create your Waflo business workspace'), findsOneWidget);
-    expect(find.text('Sign in to your workspace'), findsNothing);
-    expect(find.text('Work email or phone'), findsOneWidget);
-    expect(find.text('Continue'), findsOneWidget);
+    expect(find.text(PilotArabicCopy.signUpHeader), findsOneWidget);
+    expect(find.text(PilotArabicCopy.signInHeader), findsNothing);
+    expect(find.text(PilotArabicCopy.contactLabel), findsOneWidget);
+    expect(find.text(PilotArabicCopy.continueLabel), findsOneWidget);
 
     await authCubit.close();
   });
@@ -84,19 +91,14 @@ void main() {
       _ownerAuthWidget(authClient: authClient, authCubit: authCubit),
     );
 
-    await tester.tap(find.text('Sign in to existing workspace'));
+    await tester.tap(find.text(PilotArabicCopy.signInExistingWorkspace));
     await tester.pumpAndSettle();
     await tester.enterText(find.byType(TextField).first, 'owner@example.test');
     await tester.tap(find.byIcon(Icons.arrow_forward));
     await tester.pumpAndSettle();
 
-    expect(find.text('Account not found'), findsOneWidget);
-    expect(
-      find.text(
-        "We couldn't find an existing Waflo business account for this email or phone. To start a new business, choose Create business workspace.",
-      ),
-      findsOneWidget,
-    );
+    expect(find.text(PilotArabicCopy.accountNotFoundTitle), findsOneWidget);
+    expect(find.text(PilotArabicCopy.accountNotFoundBody), findsOneWidget);
     expect(find.textContaining('ERROR_RECEIVED_FROM_SERVER'), findsNothing);
     expect(find.textContaining('ERROR RECEIVED FROM SERVER'), findsNothing);
     expect(find.textContaining("Couldn't find your account"), findsNothing);
@@ -114,7 +116,7 @@ void main() {
       _ownerAuthWidget(authClient: authClient, authCubit: authCubit),
     );
 
-    await tester.tap(find.text('Create business workspace'));
+    await tester.tap(find.text(PilotArabicCopy.createBusinessWorkspace));
     await tester.pumpAndSettle();
     await tester.enterText(find.byType(TextField).first, 'owner@example.test');
     await tester.ensureVisible(find.byIcon(Icons.arrow_forward));
@@ -124,7 +126,7 @@ void main() {
 
     expect(authClient.ownerSignUpStartCalls, 1);
     expect(authClient.signInStartCalls, 0);
-    expect(find.text('Verification code'), findsOneWidget);
+    expect(find.text(PilotArabicCopy.verificationCode), findsOneWidget);
     expect(
       find.textContaining(RegExp('customer signup', caseSensitive: false)),
       findsNothing,
@@ -150,7 +152,7 @@ void main() {
       _loginWidget(authClient: authClient, authCubit: authCubit),
     );
 
-    await tester.tap(find.text('Create business workspace'));
+    await tester.tap(find.text(PilotArabicCopy.createBusinessWorkspace));
     await tester.pumpAndSettle();
     await tester.enterText(find.byType(TextField).first, 'owner@example.test');
     await tester.ensureVisible(find.byIcon(Icons.arrow_forward));
@@ -158,17 +160,20 @@ void main() {
     await tester.tap(find.byIcon(Icons.arrow_forward));
     await tester.pumpAndSettle();
     await tester.enterText(find.byType(TextField).first, '123456');
-    await tester.ensureVisible(find.text('Verify and create workspace'));
+    await tester.ensureVisible(find.text(PilotArabicCopy.verifyAndCreate));
     await tester.pumpAndSettle();
-    await tester.tap(find.text('Verify and create workspace'));
+    await tester.tap(find.text(PilotArabicCopy.verifyAndCreate));
     await tester.pumpAndSettle();
 
     expect(authClient.ownerSignUpVerifyCalls, 1);
     expect(meRepository.getMeCalls, 1);
     expect(authCubit.state.shouldOpenDashboard, isFalse);
     expect(find.text('Business Setup route'), findsOneWidget);
-    expect(find.text('Signup configuration needs attention'), findsNothing);
-    expect(find.textContaining('Add account password'), findsNothing);
+    expect(find.text(PilotArabicCopy.passwordlessSetupTitle), findsNothing);
+    expect(
+      find.textContaining(PilotArabicCopy.passwordRequiredStep),
+      findsNothing,
+    );
 
     await authCubit.close();
   });
@@ -184,7 +189,7 @@ void main() {
       _loginWidget(authClient: authClient, authCubit: authCubit),
     );
 
-    await tester.tap(find.text('Create business workspace'));
+    await tester.tap(find.text(PilotArabicCopy.createBusinessWorkspace));
     await tester.pumpAndSettle();
     await tester.enterText(find.byType(TextField).first, 'owner@example.test');
     await tester.ensureVisible(find.byIcon(Icons.arrow_forward));
@@ -192,9 +197,9 @@ void main() {
     await tester.tap(find.byIcon(Icons.arrow_forward));
     await tester.pumpAndSettle();
     await tester.enterText(find.byType(TextField).first, '123456');
-    await tester.ensureVisible(find.text('Verify and create workspace'));
+    await tester.ensureVisible(find.text(PilotArabicCopy.verifyAndCreate));
     await tester.pumpAndSettle();
-    await tester.tap(find.text('Verify and create workspace'));
+    await tester.tap(find.text(PilotArabicCopy.verifyAndCreate));
     await tester.pumpAndSettle();
 
     expect(authClient.ownerSignUpVerifyCalls, 1);
@@ -210,7 +215,7 @@ void main() {
     (tester) async {
       final authClient = _FakeOwnerAuthClient(
         signUpCompletesSession: false,
-        signUpRequiredStep: 'Verify work phone',
+        signUpRequiredStep: 'تحقق من رقم الهاتف',
       );
       final meRepository = _FakeMeRepository(_noBusinessOwner);
       final authCubit = _authCubit(meRepository);
@@ -219,7 +224,7 @@ void main() {
         _loginWidget(authClient: authClient, authCubit: authCubit),
       );
 
-      await tester.tap(find.text('Create business workspace'));
+      await tester.tap(find.text(PilotArabicCopy.createBusinessWorkspace));
       await tester.pumpAndSettle();
       await tester.enterText(
         find.byType(TextField).first,
@@ -228,15 +233,18 @@ void main() {
       await tester.tap(find.byIcon(Icons.arrow_forward));
       await tester.pumpAndSettle();
       await tester.enterText(find.byType(TextField).first, '123456');
-      await tester.tap(find.text('Verify and create workspace'));
+      await tester.tap(find.text(PilotArabicCopy.verifyAndCreate));
       await tester.pumpAndSettle();
 
-      expect(find.text('More verification needed'), findsOneWidget);
       expect(
-        find.text('Complete the required verification step to continue.'),
+        find.text(PilotArabicCopy.needsMoreVerificationTitle),
         findsOneWidget,
       );
-      expect(find.text('Required step: Verify work phone.'), findsOneWidget);
+      expect(
+        find.text(PilotArabicCopy.needsMoreVerificationBody),
+        findsOneWidget,
+      );
+      expect(find.text('تحقق من رقم الهاتف'), findsOneWidget);
       expect(meRepository.getMeCalls, 0);
       expect(find.textContaining('missing_requirements'), findsNothing);
 
@@ -255,7 +263,7 @@ void main() {
         _loginWidget(authClient: authClient, authCubit: authCubit),
       );
 
-      await tester.tap(find.text('Create business workspace'));
+      await tester.tap(find.text(PilotArabicCopy.createBusinessWorkspace));
       await tester.pumpAndSettle();
       await tester.enterText(
         find.byType(TextField).first,
@@ -264,18 +272,15 @@ void main() {
       await tester.tap(find.byIcon(Icons.arrow_forward));
       await tester.pumpAndSettle();
       await tester.enterText(find.byType(TextField).first, '123456');
-      await tester.tap(find.text('Verify and create workspace'));
+      await tester.tap(find.text(PilotArabicCopy.verifyAndCreate));
       await tester.pumpAndSettle();
 
-      expect(find.text('Signup configuration needs attention'), findsOneWidget);
+      expect(find.text(PilotArabicCopy.passwordlessSetupTitle), findsOneWidget);
+      expect(find.text(PilotArabicCopy.passwordlessSetupBody), findsOneWidget);
       expect(
-        find.text(
-          'This build expects passwordless signup, but Clerk is requiring an account password. Update the staging Clerk signup settings or enable the password step.',
-        ),
-        findsOneWidget,
+        find.text(PilotArabicCopy.needsMoreVerificationTitle),
+        findsNothing,
       );
-      expect(find.text('More verification needed'), findsNothing);
-      expect(find.textContaining('Required step:'), findsNothing);
       expect(find.textContaining('missing_requirements'), findsNothing);
       expect(meRepository.getMeCalls, 0);
 

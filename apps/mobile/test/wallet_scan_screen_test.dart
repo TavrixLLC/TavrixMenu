@@ -5,6 +5,7 @@ import 'package:flutter/material.dart';
 import 'package:flutter_bloc/flutter_bloc.dart';
 import 'package:flutter_test/flutter_test.dart';
 import 'package:mobile_scanner/mobile_scanner.dart';
+import 'package:tavrix_menu_mobile/core/copy/pilot_arabic_copy.dart';
 import 'package:tavrix_menu_mobile/core/errors/failures.dart';
 import 'package:tavrix_menu_mobile/core/network/network_info.dart';
 import 'package:tavrix_menu_mobile/features/business_setup/domain/entities/business.dart';
@@ -43,7 +44,7 @@ void main() {
     await tester.tap(find.byKey(const ValueKey('walletScanButton')));
     await tester.pump();
 
-    expect(find.text('Enter the customer loyalty QR code.'), findsOneWidget);
+    expect(find.text(PilotArabicCopy.loyaltyQrRequired), findsOneWidget);
     expect(repository.scanCalls, 0);
   });
 
@@ -57,7 +58,7 @@ void main() {
     await tester.pumpWidget(_screen(cubit));
     await tester.pumpAndSettle();
 
-    expect(find.text('Scan customer wallet'), findsWidgets);
+    expect(find.text(PilotArabicCopy.scanCustomerCard), findsWidgets);
     expect(find.text('Staff loyalty scan'), findsNothing);
     expect(find.text('Staff scanner'), findsNothing);
   });
@@ -90,12 +91,7 @@ void main() {
       await tester.tap(find.byKey(const ValueKey('walletScanButton')));
       await tester.pumpAndSettle();
 
-      expect(
-        find.text(
-          'That loyalty QR is invalid or expired. Ask the customer to open their latest card and scan again.',
-        ),
-        findsOneWidget,
-      );
+      expect(find.text(PilotArabicCopy.invalidQr), findsOneWidget);
       expect(_tokenField(tester).controller?.text, 'invalid-token');
     },
   );
@@ -118,18 +114,21 @@ void main() {
     await tester.pump();
 
     expect(find.byKey(const ValueKey('walletScanLoading')), findsOneWidget);
-    expect(find.text('Checking card'), findsOneWidget);
+    expect(find.text(PilotArabicCopy.checkingCard), findsOneWidget);
 
     completer.complete(const Right(_scanResult));
     await tester.pumpAndSettle();
 
     expect(find.byKey(const ValueKey('walletScanResult')), findsOneWidget);
     expect(find.text('Demo Customer'), findsOneWidget);
-    expect(find.text('Phone ending 000'), findsOneWidget);
+    expect(find.text('${PilotArabicCopy.phoneEnding} 000'), findsOneWidget);
     expect(find.text('+9647700000000'), findsNothing);
     expect(find.text('Tavrix Cafe Stamp Card'), findsOneWidget);
     expect(find.text('3 of 10 stamps'), findsOneWidget);
-    expect(find.text('Free coffee is not ready yet.'), findsOneWidget);
+    expect(
+      find.text('Free coffee ${PilotArabicCopy.rewardNotReadySuffix}'),
+      findsOneWidget,
+    );
     expect(_tokenField(tester).controller?.text, isEmpty);
   });
 
@@ -168,10 +167,10 @@ void main() {
     );
     expect(find.textContaining('camera-test-token'), findsNothing);
 
-    await tester.tap(find.text('Open settings'));
+    await tester.tap(find.text(PilotArabicCopy.openSettings));
     await tester.pump();
     expect(settingsRequested, isTrue);
-    expect(find.text('Try camera again'), findsNothing);
+    expect(find.text(PilotArabicCopy.tryCameraAgain), findsNothing);
   });
 
   testWidgets('active camera overlay contains frame and secure badge', (
@@ -280,12 +279,7 @@ void main() {
 
       expect(repository.scanCalls, 1);
       expect(find.textContaining('camera-sensitive-token'), findsNothing);
-      expect(
-        find.text(
-          'That loyalty QR is invalid or expired. Ask the customer to open their latest card and scan again.',
-        ),
-        findsOneWidget,
-      );
+      expect(find.text(PilotArabicCopy.invalidQr), findsOneWidget);
       expect(
         find.byKey(const ValueKey('walletCameraRetryCard')),
         findsOneWidget,
@@ -372,12 +366,7 @@ void main() {
       'manual-sensitive-token',
     ]);
     expect(find.textContaining('camera-sensitive-token'), findsNothing);
-    expect(
-      find.text(
-        'That loyalty QR is invalid or expired. Ask the customer to open their latest card and scan again.',
-      ),
-      findsOneWidget,
-    );
+    expect(find.text(PilotArabicCopy.invalidQr), findsOneWidget);
     expect(find.byKey(const ValueKey('walletCameraRetryCard')), findsNothing);
   });
 
@@ -405,7 +394,7 @@ void main() {
     );
     expect(find.byKey(const ValueKey('walletScanTokenField')), findsOneWidget);
     expect(find.text('Wallet token'), findsNothing);
-    expect(find.text('Loyalty QR code'), findsOneWidget);
+    expect(find.text(PilotArabicCopy.loyaltyQrCode), findsOneWidget);
 
     await tester.enterText(
       find.byKey(const ValueKey('walletScanTokenField')),
@@ -477,12 +466,7 @@ void main() {
         find.byKey(const ValueKey('walletStampSuccessBanner')),
         findsOneWidget,
       );
-      expect(
-        find.text(
-          'Stamp added successfully. The live card is updated; Apple Wallet may refresh after sync.',
-        ),
-        findsOneWidget,
-      );
+      expect(find.text(PilotArabicCopy.stampSuccess), findsOneWidget);
       // Progress bar and count should update to 4/10
       expect(find.text('4 of 10 stamps'), findsOneWidget);
       // Button disabled after success
@@ -520,7 +504,7 @@ void main() {
     await tester.pump();
 
     expect(find.byKey(const ValueKey('walletAddStampLoading')), findsOneWidget);
-    expect(find.text('Adding stamp...'), findsOneWidget);
+    expect(find.text(PilotArabicCopy.addingStamp), findsOneWidget);
 
     // Second tap while loading — button is disabled so tap does nothing
     await tester.tap(

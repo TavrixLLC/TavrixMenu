@@ -4,6 +4,7 @@ import 'package:tavrix_menu_mobile/app/config/app_config.dart';
 import 'package:tavrix_menu_mobile/core/auth/auth_session_controller.dart';
 import 'package:tavrix_menu_mobile/core/auth/clerk_token_provider.dart';
 import 'package:tavrix_menu_mobile/core/auth/dev_token_provider.dart';
+import 'package:tavrix_menu_mobile/core/copy/pilot_arabic_copy.dart';
 import 'package:tavrix_menu_mobile/core/errors/failures.dart';
 import 'package:tavrix_menu_mobile/features/auth/domain/entities/current_user.dart';
 import 'package:tavrix_menu_mobile/features/auth/domain/repositories/me_repository.dart';
@@ -119,6 +120,43 @@ void main() {
     await cubit.close();
   });
 
+  test(
+    'restoreSession keeps owner in restore flow until late hydration completes',
+    () async {
+      final clerkTokenProvider = _DelayedClerkTokenProvider(
+        sessionAfterChecks: 6,
+      );
+      final cubit = _authCubit(
+        const CurrentUser(
+          id: 'usr_owner',
+          email: '',
+          fullName: 'Owner',
+          role: 'OWNER',
+          onboarding: CurrentUserOnboarding(
+            hasBusiness: true,
+            activeBusinessCount: 1,
+          ),
+        ),
+        clerkTokenProvider: clerkTokenProvider,
+        clerkRestoreTimeout: const Duration(milliseconds: 80),
+        clerkRestorePollInterval: const Duration(milliseconds: 1),
+      );
+      final statuses = <AuthStatus>[];
+      final subscription = cubit.stream.listen(
+        (state) => statuses.add(state.status),
+      );
+
+      await cubit.restoreSession();
+
+      expect(cubit.state.status, AuthStatus.authenticated);
+      expect(cubit.state.shouldOpenDashboard, isTrue);
+      expect(statuses, isNot(contains(AuthStatus.unauthenticated)));
+
+      await subscription.cancel();
+      await cubit.close();
+    },
+  );
+
   test('restoreSession restores a persisted staff session', () async {
     final cubit = _authCubit(
       const CurrentUser(
@@ -168,6 +206,29 @@ void main() {
     },
   );
 
+  test('signOut clears authenticated owner state', () async {
+    final cubit = _authCubit(
+      const CurrentUser(
+        id: 'usr_owner',
+        email: '',
+        fullName: 'Owner',
+        role: 'OWNER',
+        onboarding: CurrentUserOnboarding(
+          hasBusiness: true,
+          activeBusinessCount: 1,
+        ),
+      ),
+    );
+
+    await cubit.signInWithClerk();
+    await cubit.signOut();
+
+    expect(cubit.state.status, AuthStatus.unauthenticated);
+    expect(cubit.state.user, isNull);
+
+    await cubit.close();
+  });
+
   test(
     'backend reject shows support copy without raw technical enums',
     () async {
@@ -202,6 +263,50 @@ void main() {
       );
       expect(cubit.state.errorMessage, isNot(contains('ERROR_RECEIVED')));
       expect(cubit.state.shouldOpenDashboard, isFalse);
+
+      await cubit.close();
+    },
+  );
+
+  test(
+    'missing Clerk config shows support copy without internal key names',
+    () async {
+      final sessionController = AuthSessionController(
+        config: const AppConfig(
+          apiBaseUrl: 'https://api.example.test',
+          customerWebBaseUrl: 'https://menu.example.test',
+          devAuthToken: '',
+          appEnv: 'production',
+          enableDevAuth: false,
+          clerkPublishableKey: '',
+        ),
+        clerkTokenProvider: ClerkTokenProvider(),
+        devTokenProvider: const DevTokenProvider(''),
+      );
+      final cubit = AuthCubit(
+        getCurrentUser: GetCurrentUser(
+          _FakeMeRepository(
+            const CurrentUser(
+              id: 'usr_owner',
+              email: '',
+              fullName: 'Owner',
+              role: 'OWNER',
+            ),
+          ),
+        ),
+        authSessionController: sessionController,
+      );
+
+      await cubit.signInWithClerk();
+
+      expect(cubit.state.status, AuthStatus.failure);
+      expect(cubit.state.errorMessage, PilotArabicCopy.operatorBuildSupport);
+      expect(cubit.state.errorMessage, isNot(contains('API_BASE_URL')));
+      expect(
+        cubit.state.errorMessage,
+        isNot(contains('CLERK_PUBLISHABLE_KEY')),
+      );
+      expect(cubit.state.errorMessage, isNot(contains('dev auth')));
 
       await cubit.close();
     },
