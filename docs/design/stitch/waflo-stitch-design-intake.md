@@ -157,12 +157,13 @@ Web/customer Stitch export source:
 
 ## I) Recommended Next Implementation Slice
 
-First finish the real Android smoke for the existing Sprint 14B Arabic guided shell branch. If it passes, the next implementation slice should be:
+First finish the real Android smoke for the existing Sprint 14B Arabic guided shell branch. Do not jump to customer-web implementation before mobile 14B is verified. If it passes, the next implementation slice should be:
 
 `codex/sprint-14c-mobile-owner-foundation-stitch-polish`
 
 Goal:
 
+- Do not jump to a full redesign; implement small, acceptance-criteria-driven slices.
 - Apply only the safe mobile owner/staff decisions from the Stitch intake.
 - Keep it mobile-only unless tests require mobile package changes.
 - Do not implement uploads, broad designer controls, billing, customer-web, admin-web, API, OpenAPI, or schema changes.
