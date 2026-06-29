@@ -3,6 +3,7 @@ import 'package:flutter/material.dart';
 import 'package:flutter_bloc/flutter_bloc.dart';
 import 'package:flutter_test/flutter_test.dart';
 import 'package:tavrix_menu_mobile/app/config/app_config.dart';
+import 'package:tavrix_menu_mobile/app/router/route_names.dart';
 import 'package:tavrix_menu_mobile/core/auth/auth_session_controller.dart';
 import 'package:tavrix_menu_mobile/core/auth/clerk_token_provider.dart';
 import 'package:tavrix_menu_mobile/core/auth/dev_token_provider.dart';
@@ -81,6 +82,54 @@ void main() {
       ),
       findsNothing,
     );
+  });
+
+  testWidgets('staff scanner card opens wallet scan route', (tester) async {
+    final authCubit = AuthCubit(
+      getCurrentUser: GetCurrentUser(const _StaffMeRepository()),
+      authSessionController: AuthSessionController(
+        config: _config,
+        clerkTokenProvider: ClerkTokenProvider(),
+        devTokenProvider: const DevTokenProvider(''),
+      ),
+    );
+    final dashboardCubit = DashboardCubit(
+      getCurrentUser: GetCurrentUser(const _StaffMeRepository()),
+      getMyBusiness: GetMyBusiness(const _StaffBusinessRepository()),
+      getDashboardSummary: GetDashboardSummary(
+        const _StaffDashboardRepository(),
+      ),
+    );
+    addTearDown(authCubit.close);
+    addTearDown(dashboardCubit.close);
+
+    await tester.pumpWidget(
+      MultiBlocProvider(
+        providers: [
+          BlocProvider<AuthCubit>.value(value: authCubit),
+          BlocProvider<DashboardCubit>.value(value: dashboardCubit),
+        ],
+        child: MaterialApp(
+          home: const DashboardScreen(),
+          routes: {
+            AppRouteNames.walletScan: (_) =>
+                const Scaffold(body: Text('Wallet scan opened')),
+          },
+        ),
+      ),
+    );
+    await tester.pumpAndSettle();
+
+    final scannerAction = find.byKey(
+      const ValueKey('dashboardWalletScanAction'),
+    );
+    expect(scannerAction, findsOneWidget);
+
+    await tester.ensureVisible(scannerAction);
+    await tester.tap(scannerAction);
+    await tester.pumpAndSettle();
+
+    expect(find.text('Wallet scan opened'), findsOneWidget);
   });
 
   testWidgets(

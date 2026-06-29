@@ -40,21 +40,46 @@ void main() {
     await cubit.close();
   });
 
-  testWidgets('missing config shows debug key names only', (tester) async {
+  testWidgets('production missing config hides internal key names', (
+    tester,
+  ) async {
     final config = _missingConfig();
     final cubit = _authCubit(config);
     await tester.pumpWidget(_loginWidget(cubit: cubit, config: config));
 
     expect(find.text(PilotArabicCopy.appConfigNeedsAttention), findsOneWidget);
-    expect(find.textContaining('API_BASE_URL'), findsWidgets);
-    expect(find.textContaining('CLERK_PUBLISHABLE_KEY'), findsWidgets);
-    expect(find.textContaining('CUSTOMER_WEB_BASE_URL'), findsWidgets);
+    expect(find.text(PilotArabicCopy.operatorBuildSupport), findsOneWidget);
+    expect(find.textContaining('API_BASE_URL'), findsNothing);
+    expect(find.textContaining('APP_ENV'), findsNothing);
+    expect(find.textContaining('ENABLE_DEV_AUTH'), findsNothing);
+    expect(find.textContaining('CLERK_PUBLISHABLE_KEY'), findsNothing);
+    expect(find.textContaining('CUSTOMER_WEB_BASE_URL'), findsNothing);
     expect(find.textContaining('https://api.example.test'), findsNothing);
     expect(find.textContaining('pk_test'), findsNothing);
     expect(
       find.textContaining('Operator sign-in is not available'),
       findsNothing,
     );
+
+    await cubit.close();
+  });
+
+  testWidgets('development missing config still hides internal key names', (
+    tester,
+  ) async {
+    final config = _developmentMissingConfig();
+    final cubit = _authCubit(config);
+    await tester.pumpWidget(_loginWidget(cubit: cubit, config: config));
+
+    expect(find.text(PilotArabicCopy.appConfigNeedsAttention), findsOneWidget);
+    expect(find.text(PilotArabicCopy.operatorBuildSupport), findsOneWidget);
+    expect(find.textContaining('API_BASE_URL'), findsNothing);
+    expect(find.textContaining('APP_ENV'), findsNothing);
+    expect(find.textContaining('ENABLE_DEV_AUTH'), findsNothing);
+    expect(find.textContaining('CLERK_PUBLISHABLE_KEY'), findsNothing);
+    expect(find.textContaining('CUSTOMER_WEB_BASE_URL'), findsNothing);
+    expect(find.textContaining('https://api.example.test'), findsNothing);
+    expect(find.textContaining('pk_test'), findsNothing);
 
     await cubit.close();
   });
@@ -166,6 +191,17 @@ AppConfig _qaReadyConfig() {
 }
 
 AppConfig _missingConfig() {
+  return const AppConfig(
+    apiBaseUrl: '',
+    customerWebBaseUrl: '',
+    devAuthToken: '',
+    appEnv: 'production',
+    enableDevAuth: false,
+    clerkPublishableKey: '',
+  );
+}
+
+AppConfig _developmentMissingConfig() {
   return const AppConfig(
     apiBaseUrl: '',
     customerWebBaseUrl: '',

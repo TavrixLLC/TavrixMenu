@@ -66,7 +66,11 @@ class WafloCard extends StatelessWidget {
 
     return Material(
       color: Colors.transparent,
-      child: InkWell(borderRadius: radius, onTap: onTap, child: card),
+      child: InkWell(
+        borderRadius: radius,
+        onTap: onTap,
+        child: SizedBox(width: double.infinity, child: card),
+      ),
     );
   }
 }

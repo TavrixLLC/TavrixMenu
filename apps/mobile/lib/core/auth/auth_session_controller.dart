@@ -12,7 +12,7 @@ class AuthSessionController implements TokenProvider {
     required AppConfig config,
     required ClerkTokenProvider clerkTokenProvider,
     required DevTokenProvider devTokenProvider,
-    this.clerkRestoreTimeout = const Duration(seconds: 2),
+    this.clerkRestoreTimeout = const Duration(seconds: 8),
     this.clerkRestorePollInterval = const Duration(milliseconds: 80),
   }) : _config = config,
        _clerkTokenProvider = clerkTokenProvider,

@@ -98,6 +98,7 @@ class _DashboardScreenState extends State<DashboardScreen> {
                 ],
                 const SizedBox(height: AppSpacing.lg),
                 _DashboardActionCard(
+                  key: const ValueKey('dashboardWalletScanAction'),
                   enabled: _canScanCustomerWallet(state),
                   title: PilotArabicCopy.staffCashier,
                   subtitle: _canScanCustomerWallet(state)
@@ -660,6 +661,7 @@ class _DashboardActionCard extends StatelessWidget {
     required this.subtitle,
     required this.icon,
     required this.routeName,
+    super.key,
     this.enabled = true,
     this.accentColor = AppColors.primaryCoral,
     this.badge,

@@ -45,7 +45,7 @@ Map<String, Object?>? buildDebugQaContextSnapshot({
       'canScanCustomerWallet': permissions?.canScanCustomerWallet ?? false,
     },
     'selectedRoute': _safeRoute(selectedRoute),
-    if (config != null) 'authConfig': config.sanitizedAuthConfigStatus,
+    if (config != null) 'authConfigStatus': _authConfigStatus(config),
   };
 }
 
@@ -61,7 +61,7 @@ class DebugQaContextPanel extends StatelessWidget {
     }
 
     final data = snapshot!;
-    final authConfig = data['authConfig'];
+    final authConfigStatus = data['authConfigStatus'];
 
     return Card(
       child: Padding(
@@ -95,8 +95,8 @@ class DebugQaContextPanel extends StatelessWidget {
             ),
             _DebugLine(label: 'permissions', value: data['permissions']),
             _DebugLine(label: 'selected route', value: data['selectedRoute']),
-            if (authConfig != null)
-              _DebugLine(label: 'auth config', value: authConfig),
+            if (authConfigStatus != null)
+              _DebugLine(label: 'auth config status', value: authConfigStatus),
           ],
         ),
       ),
@@ -162,4 +162,8 @@ String _safeRoute(String selectedRoute) {
     'error' => 'error',
     _ => 'error',
   };
+}
+
+String _authConfigStatus(AppConfig config) {
+  return config.missingQaConfigKeys.isEmpty ? 'configured' : 'needs review';
 }

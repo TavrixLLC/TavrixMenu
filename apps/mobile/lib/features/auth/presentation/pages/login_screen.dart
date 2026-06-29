@@ -1,6 +1,7 @@
+import 'dart:convert';
+
 import 'package:clerk_auth/clerk_auth.dart' as clerk;
 import 'package:clerk_flutter/clerk_flutter.dart';
-import 'package:flutter/foundation.dart';
 import 'package:flutter/material.dart';
 import 'package:flutter_bloc/flutter_bloc.dart';
 import 'package:url_launcher/url_launcher.dart';
@@ -107,8 +108,6 @@ class _AuthConfigurationNotice extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
-    final missing = config.missingQaConfigKeys;
-    final missingList = missing.join(', ');
     final isAuthBlocked = config.missingOperatorAuthConfigKeys.isNotEmpty;
 
     return AppCard(
@@ -120,15 +119,11 @@ class _AuthConfigurationNotice extends StatelessWidget {
             style: Theme.of(context).textTheme.titleMedium,
           ),
           const SizedBox(height: AppSpacing.xs),
-          Text(
-            kDebugMode
-                ? 'مفاتيح ناقصة لهذا البناء: $missingList. أعد بناء نسخة الاختبار بالقيم الموثقة.'
-                : PilotArabicCopy.operatorBuildSupport,
-          ),
-          if (kDebugMode && !isAuthBlocked) ...[
+          const Text(PilotArabicCopy.operatorBuildSupport),
+          if (!isAuthBlocked) ...[
             const SizedBox(height: AppSpacing.xs),
             const Text(
-              'تسجيل الدخول ممكن، لكن نسخة الاختبار يجب أن تُبنى بكل القيم المطلوبة.',
+              'تسجيل الدخول ممكن، لكن بعض الخدمات قد لا تعمل حتى تكتمل مراجعة نسخة التطبيق.',
             ),
           ],
         ],
@@ -294,6 +289,8 @@ class OwnerAuthCompletion {
 class ClerkOwnerAuthClient implements OwnerAuthClient {
   const ClerkOwnerAuthClient(this._authState);
 
+  static const _clerkPersistedClientKey = r'$client';
+
   final ClerkAuthState _authState;
 
   @override
@@ -313,6 +310,7 @@ class ClerkOwnerAuthClient implements OwnerAuthClient {
     required String code,
   }) async {
     await _authState.attemptSignIn(strategy: strategy, code: code);
+    await _persistActiveClerkClientIfSignedIn();
     return _completionFromAuthState(_authState);
   }
 
@@ -339,6 +337,7 @@ class ClerkOwnerAuthClient implements OwnerAuthClient {
       code: code,
     );
     await _activateCreatedSessionIfNeeded(client);
+    await _persistActiveClerkClientIfSignedIn();
     return _completionFromAuthState(_authState);
   }
 
@@ -370,6 +369,17 @@ class ClerkOwnerAuthClient implements OwnerAuthClient {
     if (refreshedSession != null && !_authState.isSignedIn) {
       await _authState.activate(refreshedSession);
     }
+  }
+
+  Future<void> _persistActiveClerkClientIfSignedIn() async {
+    if (!_authState.isSignedIn || _authState.client.user == null) {
+      return;
+    }
+
+    await _authState.config.persistor.write<String>(
+      _clerkPersistedClientKey,
+      jsonEncode(_authState.client),
+    );
   }
 }
 

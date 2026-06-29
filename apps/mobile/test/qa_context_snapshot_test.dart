@@ -87,9 +87,12 @@ void main() {
     expect(snapshot?['membershipsCount'], 1);
     expect(snapshot?['rolesReturned'], ['OWNER']);
     expect(snapshot?['selectedRoute'], 'dashboard');
-    expect(snapshot.toString(), contains('API_BASE_URL'));
-    expect(snapshot.toString(), contains('CLERK_PUBLISHABLE_KEY'));
-    expect(snapshot.toString(), contains('CUSTOMER_WEB_BASE_URL'));
+    expect(snapshot?['authConfigStatus'], 'needs review');
+    expect(snapshot.toString(), isNot(contains('API_BASE_URL')));
+    expect(snapshot.toString(), isNot(contains('APP_ENV')));
+    expect(snapshot.toString(), isNot(contains('ENABLE_DEV_AUTH')));
+    expect(snapshot.toString(), isNot(contains('CLERK_PUBLISHABLE_KEY')));
+    expect(snapshot.toString(), isNot(contains('CUSTOMER_WEB_BASE_URL')));
     expect(snapshot.toString(), isNot(contains('owner@example.test')));
     expect(snapshot.toString(), isNot(contains('usr_secret')));
     expect(snapshot.toString(), isNot(contains('bus_secret')));

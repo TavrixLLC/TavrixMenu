@@ -1,6 +1,7 @@
 import 'package:flutter_bloc/flutter_bloc.dart';
 
 import '../../../../core/auth/auth_session_controller.dart';
+import '../../../../core/copy/pilot_arabic_copy.dart';
 import '../../../../core/errors/failures.dart';
 import '../../../../core/utils/failure_message.dart';
 import '../../domain/usecases/get_current_user.dart';
@@ -39,8 +40,7 @@ class AuthCubit extends Cubit<AuthState> {
       emit(
         const AuthState(
           status: AuthStatus.failure,
-          errorMessage:
-              'Operator sign-in is missing required configuration. Rebuild the QA APK with the documented config keys.',
+          errorMessage: PilotArabicCopy.operatorBuildSupport,
         ),
       );
       return;
@@ -55,7 +55,7 @@ class AuthCubit extends Cubit<AuthState> {
       emit(
         const AuthState(
           status: AuthStatus.failure,
-          errorMessage: 'Development login is disabled for this build.',
+          errorMessage: PilotArabicCopy.operatorBuildSupport,
         ),
       );
       return;
