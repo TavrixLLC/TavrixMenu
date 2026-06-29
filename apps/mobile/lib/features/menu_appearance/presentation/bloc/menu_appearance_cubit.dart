@@ -1,5 +1,6 @@
 import 'package:flutter_bloc/flutter_bloc.dart';
 
+import '../../../../core/copy/pilot_arabic_copy.dart';
 import '../../../../core/errors/failures.dart';
 import '../../../../core/utils/failure_message.dart';
 import '../../../business_setup/domain/usecases/get_my_business.dart';
@@ -50,8 +51,7 @@ class MenuAppearanceCubit extends Cubit<MenuAppearanceState> {
           emit(
             const MenuAppearanceState(
               status: MenuAppearanceStatus.failure,
-              errorMessage:
-                  'Create a business profile before changing menu appearance.',
+              errorMessage: PilotArabicCopy.businessProfileMissingBody,
             ),
           );
           return;
@@ -107,7 +107,7 @@ class MenuAppearanceCubit extends Cubit<MenuAppearanceState> {
       emit(
         state.copyWith(
           status: MenuAppearanceStatus.success,
-          errorMessage: 'This menu template is not available.',
+          errorMessage: PilotArabicCopy.menuAppearanceEmpty,
           clearSuccess: true,
         ),
       );
@@ -166,7 +166,7 @@ class MenuAppearanceCubit extends Cubit<MenuAppearanceState> {
             draftTemplateId: resolvedTemplateId,
             isSaving: false,
             saveForbidden: false,
-            successMessage: 'Menu template saved.',
+            successMessage: PilotArabicCopy.menuAppearanceSaved,
             clearError: true,
           ),
         );
@@ -186,7 +186,7 @@ class MenuAppearanceCubit extends Cubit<MenuAppearanceState> {
 
   String _saveFailureMessage(Failure failure) {
     if (failure is ForbiddenFailure) {
-      return 'You do not have permission to change menu appearance for this business.';
+      return PilotArabicCopy.menuAppearancePermission;
     }
     if (failure is ValidationFailure) {
       return failure.message ?? 'Choose an available menu template.';

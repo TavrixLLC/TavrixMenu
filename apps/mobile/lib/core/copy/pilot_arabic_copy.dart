@@ -71,7 +71,7 @@ class PilotArabicCopy {
   static const publicQrMenu = 'QR والمنيو العام';
   static const loyaltyCard = 'بطاقة الولاء';
   static const staffCashier = 'الموظفون والكاشير';
-  static const businessInfo = 'أضف معلومات المطعم';
+  static const businessInfo = 'معلومات المطعم';
   static const addCategories = 'أضف الأقسام';
   static const addItems = 'أضف المنتجات';
   static const shareQr = 'شارك QR';
@@ -108,6 +108,77 @@ class PilotArabicCopy {
       'عدّل الاسم، المدينة، اللغة، وصور المطعم.';
   static const businessWorkspaceDenied =
       'صلاحيتك الحالية لا تسمح بتعديل معلومات المطعم.';
+
+  static const businessSetupTitle = 'جهّز مساحة المطعم';
+  static const businessSetupSubtitle =
+      'نحتاج الأساسيات فقط حتى يفتح Waflo لوحة المطعم والمنيو العام.';
+  static const businessSetupSaved = 'تم حفظ مساحة المطعم';
+  static const businessCreateLoading = 'نجهّز المساحة';
+  static const businessCreateAction = 'إنشاء مساحة المطعم';
+  static const restaurantInfo = 'معلومات المطعم';
+  static const restaurantInfoSubtitle = 'الاسم ونوع النشاط الذي يظهر للفريق.';
+  static const restaurantName = 'اسم المطعم';
+  static const restaurantNameHint = 'مثال: Royal Cup';
+  static const restaurantType = 'نوع النشاط';
+  static const restaurantTypeCafe = 'كافيه';
+  static const restaurantTypeRestaurant = 'مطعم';
+  static const restaurantTypeShop = 'محل / متجر';
+  static const identityAndPhotos = 'الهوية والصور';
+  static const managedPhotosBody =
+      'فريق Waflo يساعدك برفع الشعار وصور المطعم بالبداية. تقدر ترسل الصور للفريق ونرتبها قبل التجربة.';
+  static const locationCurrencyLanguage = 'المدينة والعملة واللغة';
+  static const locationCurrencyLanguageSubtitle =
+      'هذه الخيارات تحدد شكل الأسعار والمنيو للزبائن.';
+  static const city = 'المدينة';
+  static const currency = 'العملة';
+  static const language = 'لغة المنيو';
+  static const currencyIqd = 'الدينار العراقي (IQD)';
+  static const currencyUsd = 'الدولار الأمريكي (USD)';
+  static const languageArabic = 'العربية';
+  static const languageEnglish = 'English';
+  static const contactAndAddress = 'التواصل والعنوان';
+  static const contactAndAddressBody =
+      'تفاصيل التواصل والعنوان نرتبها معك أثناء التجهيز حتى لا تظهر للزبائن بشكل ناقص.';
+  static const businessProfileTitle = 'معلومات المطعم';
+  static const businessProfileLoading = 'نفتح معلومات المطعم';
+  static const businessProfileMissingTitle = 'مساحة المطعم غير جاهزة';
+  static const businessProfileMissingBody =
+      'أنشئ مساحة مطعم قبل تعديل المعلومات.';
+  static const businessProfileRestrictedTitle = 'صلاحية محدودة';
+  static const businessProfileRestrictedBody =
+      'صلاحيتك الحالية لا تسمح بتعديل معلومات المطعم.';
+  static const businessProfileEditTitle = 'عدّل معلومات المطعم';
+  static const businessProfileEditSubtitle =
+      'هذه التفاصيل تظهر في لوحة العمل وتساعد فريق Waflo على تجهيز المنيو.';
+  static const businessProfileSaved = 'تم حفظ معلومات المطعم';
+  static const saveChanges = 'حفظ التغييرات';
+  static const savingChanges = 'جاري الحفظ';
+  static const optionalLogoLink = 'رابط الشعار اختياري';
+  static const optionalCoverLink = 'رابط الغلاف اختياري';
+  static const optionalImageLinkHint = 'رابط صورة اختياري إذا كان جاهزاً';
+
+  static const menuAppearanceTitle = 'شكل المنيو';
+  static const menuAppearanceLoading = 'نحمّل أشكال المنيو';
+  static const menuAppearanceLoadFailed = 'ما قدرنا نفتح أشكال المنيو حالياً.';
+  static const menuAppearanceEmpty =
+      'لا توجد أشكال منيو جاهزة حالياً. حاول مرة ثانية لاحقاً.';
+  static const publicMenuDesign = 'تصميم المنيو العام';
+  static const publicMenuDesignSubtitle =
+      'اختر الشكل الأقرب لطابع المطعم. المعاينة لا تحفظ التغيير.';
+  static const previewDraftMenu =
+      'المعاينة تفتح منيو QR بشكل مؤقت حتى تشوفه مثل الزبون، بدون حفظ التغيير.';
+  static const previewCouldNotOpen = 'ما قدرنا نفتح المعاينة حالياً.';
+  static const previewUnavailable =
+      'المعاينة تحتاج رابط منيو عام جاهز لهذا المطعم.';
+  static const previewAction = 'معاينة';
+  static const selectTemplate = 'اختيار';
+  static const selectedTemplate = 'مختار';
+  static const currentTemplate = 'الحالي';
+  static const saveTemplate = 'حفظ الشكل';
+  static const savingTemplate = 'نحفظ الشكل';
+  static const menuAppearanceSaved = 'تم حفظ شكل المنيو';
+  static const menuAppearancePermission =
+      'صلاحيتك الحالية لا تسمح بتغيير شكل المنيو.';
 
   static const staffScannerTitle = 'امسح كارت الزبون';
   static const staffScannerLoading = 'نجهّز صلاحية المسح';

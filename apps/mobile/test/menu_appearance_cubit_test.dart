@@ -2,6 +2,7 @@ import 'package:dartz/dartz.dart';
 import 'package:flutter/material.dart';
 import 'package:flutter_bloc/flutter_bloc.dart';
 import 'package:flutter_test/flutter_test.dart';
+import 'package:tavrix_menu_mobile/core/copy/pilot_arabic_copy.dart';
 import 'package:tavrix_menu_mobile/core/errors/failures.dart';
 import 'package:tavrix_menu_mobile/features/business_setup/domain/entities/business.dart';
 import 'package:tavrix_menu_mobile/features/business_setup/domain/repositories/business_repository.dart';
@@ -33,7 +34,7 @@ void main() {
     await cubit.save();
     expect(appearanceRepository.savedTemplateId, 'minimal-modern');
     expect(cubit.state.currentTemplateId, 'minimal-modern');
-    expect(cubit.state.successMessage, 'Menu template saved.');
+    expect(cubit.state.successMessage, PilotArabicCopy.menuAppearanceSaved);
 
     await cubit.close();
   });
@@ -51,7 +52,7 @@ void main() {
     expect(cubit.state.currentTemplateId, 'waflo-warm');
     expect(cubit.state.draftTemplateId, 'minimal-modern');
     expect(cubit.state.saveForbidden, isTrue);
-    expect(cubit.state.errorMessage, contains('permission'));
+    expect(cubit.state.errorMessage, PilotArabicCopy.menuAppearancePermission);
 
     await cubit.close();
   });
@@ -124,9 +125,7 @@ void main() {
     await tester.pumpAndSettle();
 
     expect(
-      find.text(
-        "Preview opens Tavrix Cafe's public menu with this design without saving changes.",
-      ),
+      find.text('${PilotArabicCopy.previewDraftMenu} (Tavrix Cafe)'),
       findsOneWidget,
     );
     expect(find.text('Waflo Warm'), findsOneWidget);
@@ -161,7 +160,7 @@ void main() {
 
     expect(find.text(unavailablePreviewMessage), findsWidgets);
     final previewButton = tester.widget<WafloButton>(
-      find.widgetWithText(WafloButton, 'Preview').first,
+      find.widgetWithText(WafloButton, PilotArabicCopy.previewAction).first,
     );
     expect(previewButton.onPressed, isNull);
   });

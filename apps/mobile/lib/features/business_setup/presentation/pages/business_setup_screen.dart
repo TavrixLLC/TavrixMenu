@@ -3,6 +3,7 @@ import 'package:flutter_bloc/flutter_bloc.dart';
 
 import '../../../../app/router/route_names.dart';
 import '../../../../core/constants/app_spacing.dart';
+import '../../../../core/copy/pilot_arabic_copy.dart';
 import '../../../../shared/widgets/app_button.dart';
 import '../../../../shared/widgets/app_card.dart';
 import '../../../../shared/widgets/app_scaffold.dart';
@@ -23,15 +24,14 @@ class BusinessSetupScreen extends StatefulWidget {
 
 class _BusinessSetupScreenState extends State<BusinessSetupScreen> {
   final _nameController = TextEditingController();
-  final _cityController = TextEditingController();
   String _type = 'cafe';
+  String _city = _cityOptions.first;
   String _currency = 'IQD';
   String _language = 'ar';
 
   @override
   void dispose() {
     _nameController.dispose();
-    _cityController.dispose();
     super.dispose();
   }
 
@@ -46,64 +46,56 @@ class _BusinessSetupScreenState extends State<BusinessSetupScreen> {
           if (business != null) {
             context.read<DashboardCubit>().primeBusiness(business);
           }
-          ScaffoldMessenger.of(
-            context,
-          ).showSnackBar(const SnackBar(content: Text('Business setup saved')));
+          ScaffoldMessenger.of(context).showSnackBar(
+            const SnackBar(content: Text(PilotArabicCopy.businessSetupSaved)),
+          );
           Navigator.of(context).pushReplacementNamed(AppRouteNames.dashboard);
         }
       },
       builder: (context, state) {
         final isLoading = state.status == BusinessSetupStatus.loading;
 
-        return AppScaffold(
-          title: 'Create your Waflo business workspace',
-          scrollable: true,
-          child: Column(
-            crossAxisAlignment: CrossAxisAlignment.start,
-            children: [
-              const SectionHeader(
-                title: 'Create your Waflo business workspace',
-                subtitle: 'Set up your menu and loyalty tools.',
-              ),
-              const SizedBox(height: AppSpacing.lg),
-              const AppCard(
-                child: Row(
-                  crossAxisAlignment: CrossAxisAlignment.start,
-                  children: [
-                    Icon(Icons.visibility_outlined),
-                    SizedBox(width: AppSpacing.md),
-                    Expanded(
-                      child: Text(
-                        'After saving, your Waflo Workspace opens and Waflo prepares a public QR menu for this business.',
-                      ),
-                    ),
-                  ],
+        return Directionality(
+          textDirection: TextDirection.rtl,
+          child: AppScaffold(
+            title: PilotArabicCopy.businessSetupTitle,
+            scrollable: true,
+            child: Column(
+              crossAxisAlignment: CrossAxisAlignment.start,
+              children: [
+                const SectionHeader(
+                  title: PilotArabicCopy.businessSetupTitle,
+                  subtitle: PilotArabicCopy.businessSetupSubtitle,
                 ),
-              ),
-              const SizedBox(height: AppSpacing.md),
-              AppCard(
-                child: Column(
+                const SizedBox(height: AppSpacing.lg),
+                _SetupSectionCard(
+                  icon: Icons.storefront_outlined,
+                  title: PilotArabicCopy.restaurantInfo,
+                  subtitle: PilotArabicCopy.restaurantInfoSubtitle,
                   children: [
                     AppTextField(
-                      label: 'Business name',
+                      label: PilotArabicCopy.restaurantName,
                       controller: _nameController,
-                      hint: 'Royal Cup',
+                      hint: PilotArabicCopy.restaurantNameHint,
                     ),
                     const SizedBox(height: AppSpacing.md),
                     DropdownButtonFormField<String>(
                       initialValue: _type,
                       decoration: const InputDecoration(
-                        labelText: 'Business type',
+                        labelText: PilotArabicCopy.restaurantType,
                       ),
                       items: const [
-                        DropdownMenuItem(value: 'cafe', child: Text('Cafe')),
+                        DropdownMenuItem(
+                          value: 'cafe',
+                          child: Text(PilotArabicCopy.restaurantTypeCafe),
+                        ),
                         DropdownMenuItem(
                           value: 'restaurant',
-                          child: Text('Restaurant'),
+                          child: Text(PilotArabicCopy.restaurantTypeRestaurant),
                         ),
                         DropdownMenuItem(
                           value: 'shop',
-                          child: Text('Retail shop'),
+                          child: Text(PilotArabicCopy.restaurantTypeShop),
                         ),
                       ],
                       onChanged: isLoading
@@ -112,27 +104,49 @@ class _BusinessSetupScreenState extends State<BusinessSetupScreen> {
                               _type = value ?? 'cafe';
                             }),
                     ),
-                    const SizedBox(height: AppSpacing.md),
-                    AppTextField(
-                      label: 'City',
-                      controller: _cityController,
-                      hint: 'Baghdad',
+                  ],
+                ),
+                const SizedBox(height: AppSpacing.md),
+                const _SetupSectionCard(
+                  icon: Icons.image_outlined,
+                  title: PilotArabicCopy.identityAndPhotos,
+                  subtitle: PilotArabicCopy.managedPhotosBody,
+                ),
+                const SizedBox(height: AppSpacing.md),
+                _SetupSectionCard(
+                  icon: Icons.tune_outlined,
+                  title: PilotArabicCopy.locationCurrencyLanguage,
+                  subtitle: PilotArabicCopy.locationCurrencyLanguageSubtitle,
+                  children: [
+                    DropdownButtonFormField<String>(
+                      initialValue: _city,
+                      decoration: const InputDecoration(
+                        labelText: PilotArabicCopy.city,
+                      ),
+                      items: [
+                        for (final city in _cityOptions)
+                          DropdownMenuItem(value: city, child: Text(city)),
+                      ],
+                      onChanged: isLoading
+                          ? null
+                          : (value) => setState(() {
+                              _city = value ?? _cityOptions.first;
+                            }),
                     ),
                     const SizedBox(height: AppSpacing.md),
                     DropdownButtonFormField<String>(
                       initialValue: _currency,
                       decoration: const InputDecoration(
-                        labelText: 'Menu currency',
-                        helperText: 'Used for prices customers see.',
+                        labelText: PilotArabicCopy.currency,
                       ),
                       items: const [
                         DropdownMenuItem(
                           value: 'IQD',
-                          child: Text('Iraqi dinar (IQD)'),
+                          child: Text(PilotArabicCopy.currencyIqd),
                         ),
                         DropdownMenuItem(
                           value: 'USD',
-                          child: Text('US dollar (USD)'),
+                          child: Text(PilotArabicCopy.currencyUsd),
                         ),
                       ],
                       onChanged: isLoading
@@ -145,14 +159,17 @@ class _BusinessSetupScreenState extends State<BusinessSetupScreen> {
                     DropdownButtonFormField<String>(
                       initialValue: _language,
                       decoration: const InputDecoration(
-                        labelText: 'Default menu language',
+                        labelText: PilotArabicCopy.language,
                       ),
                       items: const [
                         DropdownMenuItem(
                           value: 'ar',
-                          child: Text('Arabic / Kurdish ready'),
+                          child: Text(PilotArabicCopy.languageArabic),
                         ),
-                        DropdownMenuItem(value: 'en', child: Text('English')),
+                        DropdownMenuItem(
+                          value: 'en',
+                          child: Text(PilotArabicCopy.languageEnglish),
+                        ),
                       ],
                       onChanged: isLoading
                           ? null
@@ -162,30 +179,95 @@ class _BusinessSetupScreenState extends State<BusinessSetupScreen> {
                     ),
                   ],
                 ),
-              ),
-              if (state.status == BusinessSetupStatus.failure &&
-                  state.errorMessage != null) ...[
                 const SizedBox(height: AppSpacing.md),
-                ErrorView(message: state.errorMessage!),
+                const _SetupSectionCard(
+                  icon: Icons.location_on_outlined,
+                  title: PilotArabicCopy.contactAndAddress,
+                  subtitle: PilotArabicCopy.contactAndAddressBody,
+                ),
+                if (state.status == BusinessSetupStatus.failure &&
+                    state.errorMessage != null) ...[
+                  const SizedBox(height: AppSpacing.md),
+                  ErrorView(message: state.errorMessage!),
+                ],
+                const SizedBox(height: AppSpacing.lg),
+                AppButton(
+                  label: isLoading
+                      ? PilotArabicCopy.businessCreateLoading
+                      : PilotArabicCopy.businessCreateAction,
+                  icon: Icons.storefront,
+                  onPressed: isLoading
+                      ? null
+                      : () => context.read<BusinessSetupCubit>().submit(
+                          name: _nameController.text,
+                          type: _type,
+                          city: _city,
+                          currency: _currency,
+                          language: _language,
+                        ),
+                ),
               ],
-              const SizedBox(height: AppSpacing.lg),
-              AppButton(
-                label: isLoading ? 'Creating business' : 'Create business',
-                icon: Icons.storefront,
-                onPressed: isLoading
-                    ? null
-                    : () => context.read<BusinessSetupCubit>().submit(
-                        name: _nameController.text,
-                        type: _type,
-                        city: _cityController.text,
-                        currency: _currency,
-                        language: _language,
-                      ),
-              ),
-            ],
+            ),
           ),
         );
       },
+    );
+  }
+}
+
+const _cityOptions = [
+  'الموصل',
+  'أربيل',
+  'دهوك',
+  'بغداد',
+  'السليمانية',
+  'كركوك',
+  'البصرة',
+  'أخرى',
+];
+
+class _SetupSectionCard extends StatelessWidget {
+  const _SetupSectionCard({
+    required this.icon,
+    required this.title,
+    required this.subtitle,
+    this.children = const [],
+  });
+
+  final IconData icon;
+  final String title;
+  final String subtitle;
+  final List<Widget> children;
+
+  @override
+  Widget build(BuildContext context) {
+    return AppCard(
+      child: Column(
+        crossAxisAlignment: CrossAxisAlignment.start,
+        children: [
+          Row(
+            crossAxisAlignment: CrossAxisAlignment.start,
+            children: [
+              Icon(icon),
+              const SizedBox(width: AppSpacing.md),
+              Expanded(
+                child: Column(
+                  crossAxisAlignment: CrossAxisAlignment.start,
+                  children: [
+                    Text(title, style: Theme.of(context).textTheme.titleMedium),
+                    const SizedBox(height: AppSpacing.xs),
+                    Text(subtitle),
+                  ],
+                ),
+              ),
+            ],
+          ),
+          if (children.isNotEmpty) ...[
+            const SizedBox(height: AppSpacing.md),
+            ...children,
+          ],
+        ],
+      ),
     );
   }
 }

@@ -7,6 +7,7 @@ import 'package:tavrix_menu_mobile/app/router/route_names.dart';
 import 'package:tavrix_menu_mobile/core/auth/auth_session_controller.dart';
 import 'package:tavrix_menu_mobile/core/auth/clerk_token_provider.dart';
 import 'package:tavrix_menu_mobile/core/auth/dev_token_provider.dart';
+import 'package:tavrix_menu_mobile/core/copy/pilot_arabic_copy.dart';
 import 'package:tavrix_menu_mobile/core/errors/failures.dart';
 import 'package:tavrix_menu_mobile/features/auth/domain/entities/current_user.dart';
 import 'package:tavrix_menu_mobile/features/auth/domain/repositories/me_repository.dart';
@@ -29,6 +30,11 @@ void main() {
   testWidgets('business creation refreshes auth before opening dashboard', (
     tester,
   ) async {
+    tester.view.physicalSize = const Size(800, 1200);
+    tester.view.devicePixelRatio = 1;
+    addTearDown(tester.view.resetPhysicalSize);
+    addTearDown(tester.view.resetDevicePixelRatio);
+
     final meRepository = _QueuedMeRepository([
       _currentUser(
         hasBusiness: false,
@@ -65,9 +71,18 @@ void main() {
       ),
     );
 
-    expect(find.text('Create your Waflo business workspace'), findsWidgets);
-    expect(find.text('Set up your menu and loyalty tools.'), findsOneWidget);
+    expect(find.text(PilotArabicCopy.businessSetupTitle), findsWidgets);
+    expect(find.text(PilotArabicCopy.businessSetupSubtitle), findsOneWidget);
+    expect(find.text(PilotArabicCopy.restaurantInfo), findsOneWidget);
+    expect(find.text(PilotArabicCopy.identityAndPhotos), findsOneWidget);
+    expect(find.text(PilotArabicCopy.managedPhotosBody), findsOneWidget);
+    expect(find.text(PilotArabicCopy.locationCurrencyLanguage), findsOneWidget);
+    expect(find.text(PilotArabicCopy.contactAndAddress), findsOneWidget);
+    expect(find.text(PilotArabicCopy.city), findsOneWidget);
+    expect(find.text('الموصل'), findsOneWidget);
     expect(find.text('Debug QA context'), findsNothing);
+    expect(find.text('Logo URL'), findsNothing);
+    expect(find.text('Cover URL'), findsNothing);
     expect(
       find.textContaining(RegExp('customer signup', caseSensitive: false)),
       findsNothing,
@@ -84,18 +99,18 @@ void main() {
     await tester.enterText(find.byType(TextField).first, 'Tavrix Cafe');
 
     final meCallsBeforeSubmit = meRepository.getMeCalls;
-    expect(find.text('Menu currency'), findsOneWidget);
-    expect(find.text('Iraqi dinar (IQD)'), findsOneWidget);
+    expect(find.text(PilotArabicCopy.currency), findsOneWidget);
+    expect(find.text(PilotArabicCopy.currencyIqd), findsOneWidget);
+    expect(find.text(PilotArabicCopy.language), findsOneWidget);
+    expect(find.text(PilotArabicCopy.languageArabic), findsOneWidget);
 
-    await tester.ensureVisible(find.text('Create business'));
-    await tester.pumpAndSettle();
-    await tester.tap(find.text('Create business'));
+    await tester.tap(find.text(PilotArabicCopy.businessCreateAction).last);
     await tester.pumpAndSettle();
 
     expect(businessRepository.createBusinessCalls, 1);
     expect(businessRepository.lastName, 'Tavrix Cafe');
     expect(businessRepository.lastType, 'cafe');
-    expect(businessRepository.lastCity, '');
+    expect(businessRepository.lastCity, 'الموصل');
     expect(businessRepository.lastCurrency, 'IQD');
     expect(businessRepository.lastLanguage, 'ar');
     expect(

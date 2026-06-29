@@ -5,6 +5,7 @@ import 'package:url_launcher/url_launcher.dart';
 import '../../../../core/constants/app_colors.dart';
 import '../../../../core/constants/app_radius.dart';
 import '../../../../core/constants/app_spacing.dart';
+import '../../../../core/copy/pilot_arabic_copy.dart';
 import '../../../../shared/widgets/app_scaffold.dart';
 import '../../../../shared/widgets/error_view.dart';
 import '../../../../shared/widgets/loading_view.dart';
@@ -41,110 +42,117 @@ class _MenuAppearanceScreenState extends State<MenuAppearanceScreen> {
 
   @override
   Widget build(BuildContext context) {
-    return AppScaffold(
-      title: 'Menu Appearance',
-      scrollable: true,
-      child: BlocConsumer<MenuAppearanceCubit, MenuAppearanceState>(
-        listener: (context, state) {
-          final successMessage = state.successMessage;
-          if (successMessage != null) {
-            ScaffoldMessenger.of(
-              context,
-            ).showSnackBar(SnackBar(content: Text(successMessage)));
-          }
-        },
-        builder: (context, state) {
-          if (state.status == MenuAppearanceStatus.initial ||
-              state.status == MenuAppearanceStatus.loading) {
-            return const LoadingView(message: 'Loading menu templates');
-          }
+    return Directionality(
+      textDirection: TextDirection.rtl,
+      child: AppScaffold(
+        title: PilotArabicCopy.menuAppearanceTitle,
+        scrollable: true,
+        child: BlocConsumer<MenuAppearanceCubit, MenuAppearanceState>(
+          listener: (context, state) {
+            final successMessage = state.successMessage;
+            if (successMessage != null) {
+              ScaffoldMessenger.of(
+                context,
+              ).showSnackBar(SnackBar(content: Text(successMessage)));
+            }
+          },
+          builder: (context, state) {
+            if (state.status == MenuAppearanceStatus.initial ||
+                state.status == MenuAppearanceStatus.loading) {
+              return const LoadingView(
+                message: PilotArabicCopy.menuAppearanceLoading,
+              );
+            }
 
-          if (state.status == MenuAppearanceStatus.failure) {
-            return ErrorView(
-              message:
-                  state.errorMessage ?? 'Menu appearance could not be loaded.',
-              onRetry: () => context.read<MenuAppearanceCubit>().load(),
-            );
-          }
+            if (state.status == MenuAppearanceStatus.failure) {
+              return ErrorView(
+                message:
+                    state.errorMessage ??
+                    PilotArabicCopy.menuAppearanceLoadFailed,
+                onRetry: () => context.read<MenuAppearanceCubit>().load(),
+              );
+            }
 
-          if (!state.hasTemplates) {
-            return ErrorView(
-              message:
-                  'No public menu templates are available yet. Try again later.',
-              onRetry: () => context.read<MenuAppearanceCubit>().load(),
-            );
-          }
+            if (!state.hasTemplates) {
+              return ErrorView(
+                message: PilotArabicCopy.menuAppearanceEmpty,
+                onRetry: () => context.read<MenuAppearanceCubit>().load(),
+              );
+            }
 
-          final business = state.business;
+            final business = state.business;
 
-          return Column(
-            crossAxisAlignment: CrossAxisAlignment.start,
-            children: [
-              SectionHeader(
-                title: 'Public menu design',
-                subtitle: business == null
-                    ? 'Choose how customers see your QR menu.'
-                    : 'Choose how customers see ${business.name}.',
-              ),
-              const SizedBox(height: AppSpacing.md),
-              _PreviewNotice(business: business),
-              if (state.errorMessage != null) ...[
-                const SizedBox(height: AppSpacing.md),
-                _InlineNotice(
-                  icon: Icons.warning_amber_outlined,
-                  color: AppColors.dangerTint,
-                  foregroundColor: AppColors.dangerRed,
-                  message: state.errorMessage!,
-                ),
-              ],
-              const SizedBox(height: AppSpacing.lg),
-              for (final template in state.templates) ...[
-                Builder(
-                  builder: (context) {
-                    final canPreview =
-                        buildMenuTemplatePreviewUri(
-                          business: business,
-                          templateId: template.id,
-                          customerWebBaseUrl: widget.customerWebBaseUrl,
-                        ) !=
-                        null;
-                    return _TemplateCard(
-                      template: template,
-                      isCurrent: template.id == state.currentTemplateId,
-                      isDraft: template.id == state.draftTemplateId,
-                      isSaving: state.isSaving,
-                      canPreview: canPreview,
-                      onSelect: () => context
-                          .read<MenuAppearanceCubit>()
-                          .selectTemplate(template.id),
-                      onPreview: () =>
-                          _openPreview(context, business, template),
-                    );
-                  },
+            return Column(
+              crossAxisAlignment: CrossAxisAlignment.start,
+              children: [
+                SectionHeader(
+                  title: PilotArabicCopy.publicMenuDesign,
+                  subtitle: business == null
+                      ? PilotArabicCopy.publicMenuDesignSubtitle
+                      : '${PilotArabicCopy.publicMenuDesignSubtitle} (${business.name})',
                 ),
                 const SizedBox(height: AppSpacing.md),
-              ],
-              const SizedBox(height: AppSpacing.sm),
-              WafloButton(
-                label: state.isSaving ? 'Saving template' : 'Save template',
-                icon: Icons.check_circle_outline,
-                isLoading: state.isSaving,
-                onPressed: state.canSave
-                    ? () => context.read<MenuAppearanceCubit>().save()
-                    : null,
-              ),
-              if (state.saveForbidden || !state.canManageAppearance) ...[
+                _PreviewNotice(business: business),
+                if (state.errorMessage != null) ...[
+                  const SizedBox(height: AppSpacing.md),
+                  _InlineNotice(
+                    icon: Icons.warning_amber_outlined,
+                    color: AppColors.dangerTint,
+                    foregroundColor: AppColors.dangerRed,
+                    message: state.errorMessage!,
+                  ),
+                ],
+                const SizedBox(height: AppSpacing.lg),
+                for (final template in state.templates) ...[
+                  Builder(
+                    builder: (context) {
+                      final canPreview =
+                          buildMenuTemplatePreviewUri(
+                            business: business,
+                            templateId: template.id,
+                            customerWebBaseUrl: widget.customerWebBaseUrl,
+                          ) !=
+                          null;
+                      return _TemplateCard(
+                        template: template,
+                        isCurrent: template.id == state.currentTemplateId,
+                        isDraft: template.id == state.draftTemplateId,
+                        isSaving: state.isSaving,
+                        canPreview: canPreview,
+                        onSelect: () => context
+                            .read<MenuAppearanceCubit>()
+                            .selectTemplate(template.id),
+                        onPreview: () =>
+                            _openPreview(context, business, template),
+                      );
+                    },
+                  ),
+                  const SizedBox(height: AppSpacing.md),
+                ],
                 const SizedBox(height: AppSpacing.sm),
-                Text(
-                  'Your workspace permissions do not allow menu design changes.',
-                  style: Theme.of(
-                    context,
-                  ).textTheme.bodyMedium?.copyWith(color: AppColors.mutedText),
+                WafloButton(
+                  label: state.isSaving
+                      ? PilotArabicCopy.savingTemplate
+                      : PilotArabicCopy.saveTemplate,
+                  icon: Icons.check_circle_outline,
+                  isLoading: state.isSaving,
+                  onPressed: state.canSave
+                      ? () => context.read<MenuAppearanceCubit>().save()
+                      : null,
                 ),
+                if (state.saveForbidden || !state.canManageAppearance) ...[
+                  const SizedBox(height: AppSpacing.sm),
+                  Text(
+                    PilotArabicCopy.menuAppearancePermission,
+                    style: Theme.of(context).textTheme.bodyMedium?.copyWith(
+                      color: AppColors.mutedText,
+                    ),
+                  ),
+                ],
               ],
-            ],
-          );
-        },
+            );
+          },
+        ),
       ),
     );
   }
@@ -172,7 +180,7 @@ class _MenuAppearanceScreenState extends State<MenuAppearanceScreen> {
     }
 
     ScaffoldMessenger.of(context).showSnackBar(
-      const SnackBar(content: Text('Preview could not be opened.')),
+      const SnackBar(content: Text(PilotArabicCopy.previewCouldNotOpen)),
     );
   }
 }
@@ -195,8 +203,8 @@ class _PreviewNotice extends StatelessWidget {
           Expanded(
             child: Text(
               business == null
-                  ? 'Preview opens the public QR menu with a draft template. It does not save changes.'
-                  : 'Preview opens ${business!.name}\'s public menu with this design without saving changes.',
+                  ? PilotArabicCopy.previewDraftMenu
+                  : '${PilotArabicCopy.previewDraftMenu} (${business!.name})',
             ),
           ),
         ],
@@ -255,14 +263,14 @@ class _TemplateCard extends StatelessWidget {
               const SizedBox(width: AppSpacing.sm),
               if (isCurrent)
                 const WafloStatusBadge(
-                  label: 'Current',
+                  label: PilotArabicCopy.currentTemplate,
                   icon: Icons.check,
                   color: AppColors.greenTint,
                   foregroundColor: AppColors.freshGreenDark,
                 )
               else if (isDraft)
                 const WafloStatusBadge(
-                  label: 'Selected',
+                  label: PilotArabicCopy.selectedTemplate,
                   icon: Icons.edit_outlined,
                   color: AppColors.coralTint,
                   foregroundColor: AppColors.primaryCoralDark,
@@ -291,7 +299,7 @@ class _TemplateCard extends StatelessWidget {
             children: [
               Expanded(
                 child: WafloButton(
-                  label: 'Preview',
+                  label: PilotArabicCopy.previewAction,
                   icon: Icons.open_in_new,
                   variant: WafloButtonVariant.secondary,
                   onPressed: canPreview ? onPreview : null,
@@ -300,7 +308,9 @@ class _TemplateCard extends StatelessWidget {
               const SizedBox(width: AppSpacing.sm),
               Expanded(
                 child: WafloButton(
-                  label: isDraft ? 'Selected' : 'Select',
+                  label: isDraft
+                      ? PilotArabicCopy.selectedTemplate
+                      : PilotArabicCopy.selectTemplate,
                   icon: isDraft
                       ? Icons.radio_button_checked
                       : Icons.radio_button_unchecked,

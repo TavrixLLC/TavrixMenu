@@ -1,6 +1,7 @@
 import '../../../business_setup/domain/entities/business.dart';
 
-const unavailablePreviewMessage = 'Public menu link is not ready yet.';
+const unavailablePreviewMessage =
+    'المعاينة تحتاج رابط منيو عام جاهز لهذا المطعم.';
 
 Uri? buildMenuTemplatePreviewUri({
   required Business? business,

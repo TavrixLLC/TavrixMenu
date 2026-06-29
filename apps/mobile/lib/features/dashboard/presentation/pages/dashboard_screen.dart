@@ -96,19 +96,21 @@ class _DashboardScreenState extends State<DashboardScreen> {
                   const SizedBox(height: AppSpacing.lg),
                   const _ManagedSetupCard(),
                 ],
-                const SizedBox(height: AppSpacing.lg),
-                _DashboardActionCard(
-                  key: const ValueKey('dashboardWalletScanAction'),
-                  enabled: _canScanCustomerWallet(state),
-                  title: PilotArabicCopy.staffCashier,
-                  subtitle: _canScanCustomerWallet(state)
-                      ? PilotArabicCopy.scannerSubtitle
-                      : PilotArabicCopy.scanDisabled,
-                  icon: Icons.qr_code_scanner,
-                  routeName: AppRouteNames.walletScan,
-                  accentColor: AppColors.primaryCoral,
-                  badge: PilotArabicCopy.readyBadge,
-                ),
+                if (isStaff) ...[
+                  const SizedBox(height: AppSpacing.lg),
+                  _DashboardActionCard(
+                    key: const ValueKey('dashboardWalletScanAction'),
+                    enabled: _canScanCustomerWallet(state),
+                    title: PilotArabicCopy.staffCashier,
+                    subtitle: _canScanCustomerWallet(state)
+                        ? PilotArabicCopy.scannerSubtitle
+                        : PilotArabicCopy.scanDisabled,
+                    icon: Icons.qr_code_scanner,
+                    routeName: AppRouteNames.walletScan,
+                    accentColor: AppColors.primaryCoral,
+                    badge: PilotArabicCopy.readyBadge,
+                  ),
+                ],
                 if (state.summary != null) ...[
                   const SizedBox(height: AppSpacing.lg),
                   _DashboardSummarySection(state: state),
@@ -124,14 +126,14 @@ class _DashboardScreenState extends State<DashboardScreen> {
                 ),
                 const SizedBox(height: AppSpacing.md),
                 _DashboardActionCard(
-                  enabled: _canManageAppearance(state),
-                  title: PilotArabicCopy.menuAppearance,
-                  subtitle: _canManageAppearance(state)
-                      ? PilotArabicCopy.menuAppearanceSubtitle
-                      : PilotArabicCopy.menuAppearanceDenied,
-                  icon: Icons.palette_outlined,
-                  routeName: AppRouteNames.menuAppearance,
-                  accentColor: AppColors.primaryCoral,
+                  enabled: _canManageBusiness(state),
+                  title: PilotArabicCopy.businessInfo,
+                  subtitle: _canManageBusiness(state)
+                      ? PilotArabicCopy.businessWorkspaceSubtitle
+                      : PilotArabicCopy.businessWorkspaceDenied,
+                  icon: Icons.storefront,
+                  routeName: AppRouteNames.businessProfile,
+                  accentColor: AppColors.rewardGold,
                 ),
                 const SizedBox(height: AppSpacing.sm),
                 _DashboardActionCard(
@@ -142,14 +144,6 @@ class _DashboardScreenState extends State<DashboardScreen> {
                       : PilotArabicCopy.menuToolsDenied,
                   icon: Icons.restaurant_menu,
                   routeName: AppRouteNames.menu,
-                  accentColor: AppColors.freshGreen,
-                ),
-                const SizedBox(height: AppSpacing.sm),
-                _DashboardActionCard(
-                  title: PilotArabicCopy.loyaltyCard,
-                  subtitle: PilotArabicCopy.loyaltyToolsSubtitle,
-                  icon: Icons.loyalty_outlined,
-                  routeName: AppRouteNames.loyalty,
                   accentColor: AppColors.freshGreen,
                 ),
                 const SizedBox(height: AppSpacing.sm),
@@ -165,14 +159,37 @@ class _DashboardScreenState extends State<DashboardScreen> {
                 ),
                 const SizedBox(height: AppSpacing.sm),
                 _DashboardActionCard(
-                  enabled: _canManageBusiness(state),
-                  title: PilotArabicCopy.businessInfo,
-                  subtitle: _canManageBusiness(state)
-                      ? PilotArabicCopy.businessWorkspaceSubtitle
-                      : PilotArabicCopy.businessWorkspaceDenied,
-                  icon: Icons.storefront,
-                  routeName: AppRouteNames.businessProfile,
-                  accentColor: AppColors.rewardGold,
+                  title: PilotArabicCopy.loyaltyCard,
+                  subtitle: PilotArabicCopy.loyaltyToolsSubtitle,
+                  icon: Icons.loyalty_outlined,
+                  routeName: AppRouteNames.loyalty,
+                  accentColor: AppColors.freshGreen,
+                ),
+                const SizedBox(height: AppSpacing.sm),
+                if (!isStaff) ...[
+                  _DashboardActionCard(
+                    key: const ValueKey('dashboardWalletScanAction'),
+                    enabled: _canScanCustomerWallet(state),
+                    title: PilotArabicCopy.staffCashier,
+                    subtitle: _canScanCustomerWallet(state)
+                        ? PilotArabicCopy.scannerSubtitle
+                        : PilotArabicCopy.scanDisabled,
+                    icon: Icons.qr_code_scanner,
+                    routeName: AppRouteNames.walletScan,
+                    accentColor: AppColors.primaryCoral,
+                    badge: PilotArabicCopy.readyBadge,
+                  ),
+                  const SizedBox(height: AppSpacing.sm),
+                ],
+                _DashboardActionCard(
+                  enabled: _canManageAppearance(state),
+                  title: PilotArabicCopy.menuAppearance,
+                  subtitle: _canManageAppearance(state)
+                      ? PilotArabicCopy.menuAppearanceSubtitle
+                      : PilotArabicCopy.menuAppearanceDenied,
+                  icon: Icons.palette_outlined,
+                  routeName: AppRouteNames.menuAppearance,
+                  accentColor: AppColors.primaryCoral,
                 ),
               ],
             );
