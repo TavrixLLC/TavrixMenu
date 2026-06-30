@@ -234,6 +234,9 @@ class _TemplateCard extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
+    final merchantCopy = _merchantTemplateCopy(template);
+    final bestForLabels = merchantCopy.bestFor.take(3).toList(growable: false);
+
     return WafloCard(
       onTap: isSaving ? null : onSelect,
       elevated: isDraft,
@@ -250,13 +253,19 @@ class _TemplateCard extends StatelessWidget {
                   crossAxisAlignment: CrossAxisAlignment.start,
                   children: [
                     Text(
-                      template.displayName,
+                      merchantCopy.title,
+                      maxLines: 2,
+                      overflow: TextOverflow.ellipsis,
                       style: Theme.of(context).textTheme.titleMedium?.copyWith(
                         fontWeight: FontWeight.w900,
                       ),
                     ),
                     const SizedBox(height: AppSpacing.xs),
-                    Text(template.description),
+                    Text(
+                      merchantCopy.description,
+                      maxLines: 3,
+                      overflow: TextOverflow.ellipsis,
+                    ),
                   ],
                 ),
               ),
@@ -278,20 +287,28 @@ class _TemplateCard extends StatelessWidget {
             ],
           ),
           const SizedBox(height: AppSpacing.md),
-          _TemplatePreview(template: template),
-          if (template.bestFor.isNotEmpty) ...[
+          _TemplatePreview(
+            template: template,
+            layoutLabel: merchantCopy.layoutLabel,
+          ),
+          if (bestForLabels.isNotEmpty) ...[
             const SizedBox(height: AppSpacing.md),
-            Wrap(
-              spacing: AppSpacing.xs,
-              runSpacing: AppSpacing.xs,
-              children: [
-                for (final label in template.bestFor.take(3))
-                  WafloStatusBadge(
-                    label: label,
-                    color: AppColors.surfaceWhite,
-                    foregroundColor: AppColors.textDark,
-                  ),
-              ],
+            LayoutBuilder(
+              builder: (context, constraints) {
+                return Wrap(
+                  spacing: AppSpacing.xs,
+                  runSpacing: AppSpacing.xs,
+                  children: [
+                    for (final label in bestForLabels)
+                      ConstrainedBox(
+                        constraints: BoxConstraints(
+                          maxWidth: constraints.maxWidth,
+                        ),
+                        child: _TemplateTraitChip(label: label),
+                      ),
+                  ],
+                );
+              },
             ),
           ],
           const SizedBox(height: AppSpacing.md),
@@ -337,10 +354,42 @@ class _TemplateCard extends StatelessWidget {
   }
 }
 
+class _TemplateTraitChip extends StatelessWidget {
+  const _TemplateTraitChip({required this.label});
+
+  final String label;
+
+  @override
+  Widget build(BuildContext context) {
+    return DecoratedBox(
+      decoration: BoxDecoration(
+        color: AppColors.surfaceWhite,
+        borderRadius: BorderRadius.circular(AppRadius.pill),
+        border: Border.all(color: AppColors.textDark.withValues(alpha: 0.12)),
+      ),
+      child: Padding(
+        padding: const EdgeInsetsDirectional.symmetric(
+          horizontal: AppSpacing.sm,
+          vertical: AppSpacing.xs,
+        ),
+        child: Text(
+          label,
+          softWrap: true,
+          style: Theme.of(context).textTheme.labelMedium?.copyWith(
+            color: AppColors.textDark,
+            fontWeight: FontWeight.w800,
+          ),
+        ),
+      ),
+    );
+  }
+}
+
 class _TemplatePreview extends StatelessWidget {
-  const _TemplatePreview({required this.template});
+  const _TemplatePreview({required this.template, required this.layoutLabel});
 
   final MenuTemplate template;
+  final String? layoutLabel;
 
   @override
   Widget build(BuildContext context) {
@@ -367,10 +416,10 @@ class _TemplatePreview extends StatelessWidget {
                 ],
               ],
             ),
-            if (template.layoutLabel != null) ...[
+            if (layoutLabel != null) ...[
               const SizedBox(height: AppSpacing.sm),
               Text(
-                template.layoutLabel!,
+                layoutLabel!,
                 style: Theme.of(context).textTheme.labelLarge?.copyWith(
                   color: AppColors.mutedText,
                   fontWeight: FontWeight.w800,
@@ -429,6 +478,154 @@ class _InlineNotice extends StatelessWidget {
         ],
       ),
     );
+  }
+}
+
+class _MerchantTemplateCopy {
+  const _MerchantTemplateCopy({
+    required this.title,
+    required this.description,
+    required this.bestFor,
+    this.layoutLabel,
+  });
+
+  final String title;
+  final String description;
+  final List<String> bestFor;
+  final String? layoutLabel;
+}
+
+const _defaultMerchantTemplateCopy = _MerchantTemplateCopy(
+  title: 'شكل منيو جاهز',
+  description: 'تصميم واضح يساعد الزبائن يشوفون الأقسام والمنتجات بسهولة.',
+  bestFor: ['مطاعم', 'كافيهات', 'منيو واضح'],
+  layoutLabel: 'عرض واضح للزبائن',
+);
+
+const _merchantTemplateCopyById = <String, _MerchantTemplateCopy>{
+  'waflo-warm': _MerchantTemplateCopy(
+    title: 'دافئ ومريح',
+    description: 'ألوان دافئة تناسب أغلب المطاعم والكافيهات.',
+    bestFor: ['مطاعم عامة', 'كافيهات', 'مخابز'],
+    layoutLabel: 'بطاقات دافئة',
+  ),
+  'coffeehouse-premium': _MerchantTemplateCopy(
+    title: 'كافيه أنيق',
+    description: 'ألوان هادئة مناسبة للقهوة والحلويات.',
+    bestFor: ['قهوة مختصة', 'حلويات', 'مخابز'],
+    layoutLabel: 'واجهة كافيه',
+  ),
+  'street-bites': _MerchantTemplateCopy(
+    title: 'أكل سريع وحيوي',
+    description: 'ألوان قوية تناسب البركر والشاورما والطلبات السريعة.',
+    bestFor: ['بركر', 'شاورما', 'طلبات سريعة'],
+    layoutLabel: 'واجهة سريعة',
+  ),
+  'minimal-modern': _MerchantTemplateCopy(
+    title: 'بسيط وحديث',
+    description: 'مساحات بيضاء ولمسات هادئة لمنيو واضح.',
+    bestFor: ['مطاعم هادئة', 'كافيهات حديثة', 'منيو بسيط'],
+    layoutLabel: 'قائمة بسيطة',
+  ),
+  'luxury-dining': _MerchantTemplateCopy(
+    title: 'مطعم راقٍ',
+    description: 'طابع داكن وأنيق لمطاعم الجلسات الهادئة.',
+    bestFor: ['مطاعم راقية', 'فنادق', 'جلسات هادئة'],
+    layoutLabel: 'بطاقات أنيقة',
+  ),
+  'artisan-cafe': _MerchantTemplateCopy(
+    title: 'كافيه حرفي',
+    description: 'ألوان كريمية وصور بارزة للكافيهات والمخابز.',
+    bestFor: ['قهوة مختصة', 'مخابز', 'فطور'],
+    layoutLabel: 'بطاقات بالصور',
+  ),
+  'quick-serve-bold': _MerchantTemplateCopy(
+    title: 'خدمة سريعة',
+    description: 'تصميم واضح وسريع القراءة للمنيو المختصر.',
+    bestFor: ['وجبات سريعة', 'شاورما', 'حلويات'],
+    layoutLabel: 'صفوف مختصرة',
+  ),
+};
+
+_MerchantTemplateCopy _merchantTemplateCopy(MenuTemplate template) {
+  final knownCopy = _merchantTemplateCopyById[template.id.trim().toLowerCase()];
+  if (knownCopy != null) {
+    return knownCopy;
+  }
+
+  final title = _safeTemplateTitle(template.displayName);
+  final description = _safeTemplateDescription(template.description);
+  final bestFor = _safeBestForLabels(template.bestFor);
+  final layoutLabel = _safeTemplateLayoutLabel(template.layoutLabel);
+
+  return _MerchantTemplateCopy(
+    title: title,
+    description: description,
+    bestFor: bestFor,
+    layoutLabel: layoutLabel,
+  );
+}
+
+String _safeTemplateTitle(String value) {
+  final trimmed = value.trim();
+  if (trimmed.isEmpty || _containsInternalTemplateTerm(trimmed)) {
+    return _defaultMerchantTemplateCopy.title;
+  }
+  return trimmed;
+}
+
+String _safeTemplateDescription(String value) {
+  final trimmed = value.trim();
+  if (trimmed.isEmpty || _containsInternalTemplateTerm(trimmed)) {
+    return _defaultMerchantTemplateCopy.description;
+  }
+  return trimmed;
+}
+
+List<String> _safeBestForLabels(List<String> values) {
+  final labels = _bestForLabels(values)
+      .where((label) => !_containsInternalTemplateTerm(label))
+      .take(3)
+      .toList(growable: false);
+  return labels.isEmpty ? _defaultMerchantTemplateCopy.bestFor : labels;
+}
+
+String? _safeTemplateLayoutLabel(String? value) {
+  final trimmed = value?.trim();
+  if (trimmed == null || trimmed.isEmpty) {
+    return _defaultMerchantTemplateCopy.layoutLabel;
+  }
+  if (_containsInternalTemplateTerm(trimmed)) {
+    return _defaultMerchantTemplateCopy.layoutLabel;
+  }
+  return trimmed;
+}
+
+bool _containsInternalTemplateTerm(String value) {
+  final normalized = value.toLowerCase();
+  return normalized.contains('api_base_url') ||
+      normalized.contains('app_env') ||
+      normalized.contains('billing') ||
+      normalized.contains('clerk_publishable_key') ||
+      normalized.contains('css') ||
+      normalized.contains('dev auth') ||
+      normalized.contains('enable_dev_auth') ||
+      normalized.contains('google sign-in') ||
+      normalized.contains('localhost') ||
+      normalized.contains('premium') ||
+      normalized.contains('previewtemplateid') ||
+      normalized.contains('subscription') ||
+      normalized.contains('/dev/') ||
+      RegExp(r'^[a-z0-9]+(?:-[a-z0-9]+)+$').hasMatch(normalized);
+}
+
+Iterable<String> _bestForLabels(Iterable<String> values) sync* {
+  for (final value in values) {
+    final labels = value
+        .split(RegExp(r'[,،]'))
+        .map((label) => label.trim())
+        .where((label) => label.isNotEmpty);
+    yield* labels;
   }
 }
 

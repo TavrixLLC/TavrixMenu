@@ -128,9 +128,54 @@ void main() {
       find.text('${PilotArabicCopy.previewDraftMenu} (Tavrix Cafe)'),
       findsOneWidget,
     );
-    expect(find.text('Waflo Warm'), findsOneWidget);
-    expect(find.text('Minimal Modern'), findsOneWidget);
+    expect(find.text(_wafloWarmArabicTitle), findsOneWidget);
+    expect(find.text(_minimalModernArabicTitle), findsOneWidget);
+    expect(find.text('Waflo Warm'), findsNothing);
+    expect(find.text('Minimal Modern'), findsNothing);
+    expect(
+      find.textContaining(RegExp('css|premium|template', caseSensitive: false)),
+      findsNothing,
+    );
     expect(find.textContaining('previewTemplateId'), findsNothing);
+  });
+
+  testWidgets('template cards render on a small Android viewport', (
+    tester,
+  ) async {
+    tester.view.physicalSize = const Size(360, 740);
+    tester.view.devicePixelRatio = 1;
+    addTearDown(tester.view.resetPhysicalSize);
+    addTearDown(tester.view.resetDevicePixelRatio);
+
+    final appearanceRepository = _FakeMenuAppearanceRepository(
+      templates: _smallAndroidTemplates,
+    );
+    final cubit = _cubit(appearanceRepository);
+    addTearDown(cubit.close);
+
+    await tester.pumpWidget(
+      BlocProvider<MenuAppearanceCubit>.value(
+        value: cubit,
+        child: const MaterialApp(
+          home: MenuAppearanceScreen(
+            customerWebBaseUrl: 'https://menu.example.test',
+          ),
+        ),
+      ),
+    );
+    await tester.pumpAndSettle();
+
+    expect(tester.takeException(), isNull);
+    expect(
+      find.textContaining(PilotArabicCopy.previewDraftMenu),
+      findsOneWidget,
+    );
+    expect(find.text(_arabicTemplateName), findsOneWidget);
+    expect(find.text(_arabicTemplateDescription), findsOneWidget);
+    expect(find.text(_arabicCafeLabel), findsOneWidget);
+    expect(find.text(_arabicLayoutLabel), findsOneWidget);
+    expect(find.textContaining('previewTemplateId'), findsNothing);
+    expect(find.textContaining('minimal-modern'), findsNothing);
   });
 
   testWidgets('preview is disabled when public menu link is not ready', (
@@ -252,6 +297,42 @@ const _readyBusiness = Business(
   permissions: BusinessPermissions.owner(),
 );
 
+const _arabicTemplateName = '\u0642\u0627\u0644\u0628 \u062f\u0627\u0641\u0626';
+const _arabicTemplateDescription =
+    '\u0623\u0644\u0648\u0627\u0646 \u062f\u0627\u0641\u0626\u0629 '
+    '\u0644\u0644\u0645\u0646\u064a\u0648 '
+    '\u0648\u0627\u0644\u0648\u0644\u0627\u0621.';
+const _arabicCafeLabel = '\u0643\u0627\u0641\u064a\u0647\u0627\u062a';
+const _arabicLayoutLabel =
+    '\u0628\u0637\u0627\u0642\u0627\u062a '
+    '\u0648\u0627\u0636\u062d\u0629';
+const _wafloWarmArabicTitle =
+    '\u062f\u0627\u0641\u0626 \u0648\u0645\u0631\u064a\u062d';
+const _minimalModernArabicTitle =
+    '\u0628\u0633\u064a\u0637 \u0648\u062d\u062f\u064a\u062b';
+
+const _smallAndroidTemplates = [
+  MenuTemplate(
+    id: 'pilotWarm',
+    displayName: _arabicTemplateName,
+    description: _arabicTemplateDescription,
+    bestFor: [
+      '\u0643\u0627\u0641\u064a\u0647\u0627\u062a\u060c '
+          '\u0645\u0637\u0627\u0639\u0645 '
+          '\u0639\u0627\u0626\u0644\u064a\u0629\u060c '
+          '\u0645\u062e\u0627\u0628\u0632 '
+          '\u0648\u062d\u0644\u0648\u064a\u0627\u062a',
+    ],
+    previewColors: ['#FF6B4A', '#FFF8F2', '#43A047'],
+    layoutLabel: _arabicLayoutLabel,
+  ),
+  MenuTemplate(
+    id: 'minimal-modern',
+    displayName: 'Minimal Modern',
+    description: 'Clean template.',
+  ),
+];
+
 class _FakeBusinessRepository implements BusinessRepository {
   const _FakeBusinessRepository(this.business);
 
@@ -289,25 +370,31 @@ class _FakeBusinessRepository implements BusinessRepository {
 }
 
 class _FakeMenuAppearanceRepository implements MenuAppearanceRepository {
-  _FakeMenuAppearanceRepository({this.updateFailure});
+  _FakeMenuAppearanceRepository({
+    this.updateFailure,
+    List<MenuTemplate>? templates,
+  }) : templates =
+           templates ??
+           const [
+             MenuTemplate(
+               id: 'waflo-warm',
+               displayName: 'Waflo Warm',
+               description: 'Default template.',
+             ),
+             MenuTemplate(
+               id: 'minimal-modern',
+               displayName: 'Minimal Modern',
+               description: 'Clean template.',
+             ),
+           ];
 
   final Failure? updateFailure;
+  final List<MenuTemplate> templates;
   String? savedTemplateId;
 
   @override
   Future<Either<Failure, List<MenuTemplate>>> getTemplates() async {
-    return const Right([
-      MenuTemplate(
-        id: 'waflo-warm',
-        displayName: 'Waflo Warm',
-        description: 'Default template.',
-      ),
-      MenuTemplate(
-        id: 'minimal-modern',
-        displayName: 'Minimal Modern',
-        description: 'Clean template.',
-      ),
-    ]);
+    return Right(templates);
   }
 
   @override
