@@ -16,6 +16,7 @@ import '../../domain/usecases/reorder_menu_categories.dart';
 import '../../domain/usecases/reorder_menu_items.dart';
 import '../../domain/usecases/restore_menu_category.dart';
 import '../../domain/usecases/restore_menu_item.dart';
+import '../../domain/usecases/update_menu_item.dart';
 import 'menu_state.dart';
 
 class MenuCubit extends Cubit<MenuState> {
@@ -25,6 +26,7 @@ class MenuCubit extends Cubit<MenuState> {
     required GetMenuItems getMenuItems,
     required CreateMenuCategory createMenuCategory,
     required CreateMenuItem createMenuItem,
+    required UpdateMenuItem updateMenuItem,
     required DeleteMenuCategory deleteMenuCategory,
     required RestoreMenuCategory restoreMenuCategory,
     required DeleteMenuItem deleteMenuItem,
@@ -37,6 +39,7 @@ class MenuCubit extends Cubit<MenuState> {
        _getMenuItems = getMenuItems,
        _createMenuCategory = createMenuCategory,
        _createMenuItem = createMenuItem,
+       _updateMenuItem = updateMenuItem,
        _deleteMenuCategory = deleteMenuCategory,
        _restoreMenuCategory = restoreMenuCategory,
        _deleteMenuItem = deleteMenuItem,
@@ -51,6 +54,7 @@ class MenuCubit extends Cubit<MenuState> {
   final GetMenuItems _getMenuItems;
   final CreateMenuCategory _createMenuCategory;
   final CreateMenuItem _createMenuItem;
+  final UpdateMenuItem _updateMenuItem;
   final DeleteMenuCategory _deleteMenuCategory;
   final RestoreMenuCategory _restoreMenuCategory;
   final DeleteMenuItem _deleteMenuItem;
@@ -189,6 +193,12 @@ class MenuCubit extends Cubit<MenuState> {
       }
       return;
     }
+    if (priceCents <= 0) {
+      _emitOperationFailure(
+        'اكتب سعراً صحيحاً بالدينار العراقي بدون كسور وبقيمة أكبر من صفر.',
+      );
+      return;
+    }
     if (!_ensureCanManageMenu()) {
       return;
     }
@@ -199,6 +209,40 @@ class MenuCubit extends Cubit<MenuState> {
       name: name.trim(),
       description: description.trim(),
       priceCents: priceCents,
+    );
+    await result.fold(
+      (failure) async => _emitOperationFailure(failureMessage(failure)),
+      (_) async => load(showArchived: state.showArchived),
+    );
+  }
+
+  Future<void> updateItem({
+    required String id,
+    required String name,
+    required String description,
+    required int priceCents,
+    required bool isAvailable,
+  }) async {
+    final cleanId = id.trim();
+    if (cleanId.isEmpty || name.trim().isEmpty) {
+      return;
+    }
+    if (priceCents <= 0) {
+      _emitOperationFailure(
+        'اكتب سعراً صحيحاً بالدينار العراقي بدون كسور وبقيمة أكبر من صفر.',
+      );
+      return;
+    }
+    if (!_ensureCanManageMenu()) {
+      return;
+    }
+
+    final result = await _updateMenuItem(
+      id: cleanId,
+      name: name.trim(),
+      description: description.trim(),
+      priceCents: priceCents,
+      isAvailable: isAvailable,
     );
     await result.fold(
       (failure) async => _emitOperationFailure(failureMessage(failure)),

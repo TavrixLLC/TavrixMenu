@@ -41,6 +41,7 @@ import '../../features/menu/domain/usecases/reorder_menu_categories.dart';
 import '../../features/menu/domain/usecases/reorder_menu_items.dart';
 import '../../features/menu/domain/usecases/restore_menu_category.dart';
 import '../../features/menu/domain/usecases/restore_menu_item.dart';
+import '../../features/menu/domain/usecases/update_menu_item.dart';
 import '../../features/menu/presentation/bloc/menu_cubit.dart';
 import '../../features/menu_appearance/data/datasources/menu_appearance_remote_data_source.dart';
 import '../../features/menu_appearance/data/repositories/menu_appearance_repository_impl.dart';
@@ -118,6 +119,7 @@ class AppDependencies {
     final getMenuItems = GetMenuItems(menuRepository);
     final createMenuCategory = CreateMenuCategory(menuRepository);
     final createMenuItem = CreateMenuItem(menuRepository);
+    final updateMenuItem = UpdateMenuItem(menuRepository);
     final deleteMenuCategory = DeleteMenuCategory(menuRepository);
     final restoreMenuCategory = RestoreMenuCategory(menuRepository);
     final deleteMenuItem = DeleteMenuItem(menuRepository);
@@ -190,6 +192,7 @@ class AppDependencies {
         getMenuItems: getMenuItems,
         createMenuCategory: createMenuCategory,
         createMenuItem: createMenuItem,
+        updateMenuItem: updateMenuItem,
         deleteMenuCategory: deleteMenuCategory,
         restoreMenuCategory: restoreMenuCategory,
         deleteMenuItem: deleteMenuItem,

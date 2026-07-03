@@ -1,6 +1,6 @@
 import 'package:flutter_test/flutter_test.dart';
 import 'package:tavrix_menu_mobile/app/config/app_config.dart';
-import 'package:tavrix_menu_mobile/core/auth/dev_token_provider.dart';
+import 'package:tavrix_menu_mobile/core/auth/token_provider.dart';
 import 'package:tavrix_menu_mobile/core/network/api_client.dart';
 import 'package:tavrix_menu_mobile/features/menu/data/datasources/menu_remote_data_source.dart';
 import 'package:tavrix_menu_mobile/features/menu/domain/entities/reorder_menu_record.dart';
@@ -54,6 +54,41 @@ void main() {
     expect(apiClient.lastPatchBody, {'isAvailable': true});
   });
 
+  test('create item keeps whole IQD price payload compatible', () async {
+    final apiClient = _RecordingApiClient(
+      response: {
+        'id': 'item_123',
+        'businessId': 'bus_123',
+        'categoryId': 'cat_123',
+        'nameAr': 'قهوة عربية',
+        'descriptionAr': 'بدون سكر',
+        'price': '3000',
+        'isAvailable': true,
+        'sortOrder': 0,
+      },
+    );
+    final dataSource = MenuRemoteDataSourceImpl(apiClient);
+
+    await dataSource.createItem(
+      businessId: 'bus_123',
+      categoryId: 'cat_123',
+      name: 'قهوة عربية',
+      description: 'بدون سكر',
+      priceCents: 3000,
+    );
+
+    expect(apiClient.lastPostPath, '/businesses/bus_123/items');
+    expect(apiClient.lastPostBody, {
+      'categoryId': 'cat_123',
+      'nameAr': 'قهوة عربية',
+      'descriptionAr': 'بدون سكر',
+      'price': '3000',
+      'isAvailable': true,
+      'sortOrder': 0,
+    });
+    expect(apiClient.lastPostBody!.containsKey('imageUrl'), isFalse);
+  });
+
   test('reorder endpoints send orders wrapper with id and sortOrder', () async {
     final apiClient = _RecordingApiClient(response: <Map<String, dynamic>>[]);
     final dataSource = MenuRemoteDataSourceImpl(apiClient);
@@ -88,17 +123,19 @@ class _RecordingApiClient extends ApiClient {
         config: const AppConfig(
           apiBaseUrl: 'https://api.example.test',
           customerWebBaseUrl: 'https://menu.example.test',
-          devAuthToken: 'dev:user',
-          appEnv: 'development',
-          enableDevAuth: true,
+          devAuthToken: '',
+          appEnv: 'production',
+          enableDevAuth: false,
           clerkPublishableKey: '',
         ),
-        tokenProvider: const DevTokenProvider('dev:user'),
+        tokenProvider: const _NoTokenProvider(),
       );
 
   dynamic response;
   String? lastGetPath;
   Map<String, dynamic>? lastGetQuery;
+  String? lastPostPath;
+  Map<String, dynamic>? lastPostBody;
   String? lastPatchPath;
   Map<String, dynamic>? lastPatchBody;
 
@@ -113,9 +150,23 @@ class _RecordingApiClient extends ApiClient {
   }
 
   @override
+  Future<dynamic> post(String path, {Map<String, dynamic>? body}) async {
+    lastPostPath = path;
+    lastPostBody = body;
+    return response;
+  }
+
+  @override
   Future<dynamic> patch(String path, {Map<String, dynamic>? body}) async {
     lastPatchPath = path;
     lastPatchBody = body;
     return response;
   }
+}
+
+class _NoTokenProvider implements TokenProvider {
+  const _NoTokenProvider();
+
+  @override
+  Future<String?> getToken() async => null;
 }
