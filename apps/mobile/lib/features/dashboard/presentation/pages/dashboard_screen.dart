@@ -17,6 +17,7 @@ import '../../../../shared/widgets/role_badge.dart';
 import '../../../../shared/widgets/section_header.dart';
 import '../../../../shared/widgets/waflo_action_tile.dart';
 import '../../../../shared/widgets/waflo_metric_card.dart';
+import '../../../../shared/widgets/v2/waflo_shell_v2.dart';
 import '../../../auth/presentation/bloc/auth_cubit.dart';
 import '../../domain/entities/dashboard_summary.dart';
 import '../bloc/dashboard_cubit.dart';
@@ -701,7 +702,26 @@ class _DashboardActionCard extends StatelessWidget {
       enabled: enabled,
       accentColor: accentColor,
       badge: badge,
-      onTap: enabled ? () => Navigator.of(context).pushNamed(routeName) : null,
+      onTap: enabled
+          ? () {
+              final shell = WafloShellV2.of(context);
+              if (shell != null) {
+                if (routeName == AppRouteNames.menu) {
+                  shell.setTab(1);
+                } else if (routeName == AppRouteNames.loyalty) {
+                  shell.setTab(2);
+                } else if (routeName == AppRouteNames.walletScan) {
+                  shell.setTab(3);
+                } else if (routeName == AppRouteNames.businessProfile) {
+                  shell.setTab(4);
+                } else {
+                  Navigator.of(context).pushNamed(routeName);
+                }
+              } else {
+                Navigator.of(context).pushNamed(routeName);
+              }
+            }
+          : null,
     );
   }
 }
