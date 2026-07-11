@@ -3,7 +3,7 @@ import 'package:flutter/material.dart';
 import '../../app/config/app_config.dart';
 import '../../features/auth/presentation/pages/login_screen.dart';
 import '../../features/business_setup/presentation/pages/business_profile_screen.dart';
-import '../../features/business_setup/presentation/pages/business_setup_screen.dart';
+import '../../features/onboarding/presentation/pages/waflo_first_run_wizard_screen.dart';
 import '../../features/loyalty/presentation/pages/loyalty_screen.dart';
 import '../../features/menu/presentation/pages/menu_screen.dart';
 import '../../features/menu_appearance/presentation/pages/menu_appearance_screen.dart';
@@ -21,7 +21,7 @@ class AppRouter {
       AppRouteNames.splash: (_) => const SplashScreen(),
       AppRouteNames.login: (_) => LoginScreen(config: config),
       AppRouteNames.dashboard: (_) => WafloShellV2(config: config),
-      AppRouteNames.businessSetup: (_) => const BusinessSetupScreen(),
+      AppRouteNames.businessSetup: (_) => const WafloFirstRunWizardScreen(),
       AppRouteNames.businessProfile: (_) => const BusinessProfileScreen(),
       AppRouteNames.menu: (_) => const MenuScreen(),
       AppRouteNames.menuAppearance: (_) => MenuAppearanceScreen(
