@@ -44,10 +44,15 @@ class BusinessRemoteDataSourceImpl implements BusinessRemoteDataSource {
       context: 'current businesses response',
     );
     if (businesses.isEmpty) {
-      throw const ServerException('No active business found.');
+      throw const NotFoundException();
+    }
+    if (businesses.length > 1) {
+      throw const ValidationException(
+        'Select one workspace before continuing.',
+      );
     }
 
-    final business = businesses.first;
+    final business = businesses.single;
     if (business.id.trim().isEmpty) {
       return business;
     }

@@ -56,8 +56,15 @@ class LoyaltyCubit extends Cubit<LoyaltyState> {
   final AddLoyaltyStamps _addStamps;
   final RedeemLoyaltyReward _redeemReward;
   final ListLoyaltyTransactions _listTransactions;
+  int _sessionGeneration = 0;
+
+  void reset() {
+    _sessionGeneration++;
+    emit(const LoyaltyState.initial());
+  }
 
   Future<void> load({String search = ''}) async {
+    final generation = _sessionGeneration;
     emit(
       state.copyWith(
         status: LoyaltyStatus.loading,
@@ -72,8 +79,12 @@ class LoyaltyCubit extends Cubit<LoyaltyState> {
     );
 
     final businessResult = await _getMyBusiness();
+    if (!_isCurrent(generation)) {
+      return;
+    }
     await businessResult.fold(
-      (failure) async => emit(
+      (failure) async => _emitIfCurrent(
+        generation,
         LoyaltyState(
           status: LoyaltyStatus.failure,
           errorMessage: failureMessage(failure),
@@ -87,6 +98,9 @@ class LoyaltyCubit extends Cubit<LoyaltyState> {
 
         if (business.id.trim().isNotEmpty) {
           final summaryResult = await _getDashboardSummary(business.id);
+          if (!_isCurrent(generation)) {
+            return;
+          }
           summaryResult.fold(
             (failure) => summaryErrorMessage = failureMessage(failure),
             (summary) {
@@ -100,10 +114,14 @@ class LoyaltyCubit extends Cubit<LoyaltyState> {
         }
 
         final programResult = await _getActiveProgram(resolvedBusiness.id);
+        if (!_isCurrent(generation)) {
+          return;
+        }
         await programResult.fold(
           (failure) async {
             if (_isRecoverableProgramLookupFailure(failure)) {
-              emit(
+              _emitIfCurrent(
+                generation,
                 LoyaltyState(
                   status: LoyaltyStatus.success,
                   business: resolvedBusiness,
@@ -120,7 +138,8 @@ class LoyaltyCubit extends Cubit<LoyaltyState> {
               return;
             }
 
-            emit(
+            _emitIfCurrent(
+              generation,
               LoyaltyState(
                 status: LoyaltyStatus.failure,
                 business: resolvedBusiness,
@@ -139,13 +158,17 @@ class LoyaltyCubit extends Cubit<LoyaltyState> {
                 businessId: resolvedBusiness.id,
                 search: search,
               );
+              if (!_isCurrent(generation)) {
+                return;
+              }
               membershipsResult.fold(
                 (failure) => membershipErrorMessage = failureMessage(failure),
                 (items) => memberships = items,
               );
             }
 
-            emit(
+            _emitIfCurrent(
+              generation,
               LoyaltyState(
                 status: LoyaltyStatus.success,
                 business: resolvedBusiness,
@@ -183,6 +206,8 @@ class LoyaltyCubit extends Cubit<LoyaltyState> {
       return;
     }
 
+    final generation = _sessionGeneration;
+    final businessId = business.id;
     emit(
       state.copyWith(
         status: LoyaltyStatus.success,
@@ -192,18 +217,23 @@ class LoyaltyCubit extends Cubit<LoyaltyState> {
       ),
     );
     final result = await _listMemberships(
-      businessId: business.id,
+      businessId: businessId,
       search: search,
     );
+    if (!_isCurrentBusiness(generation, businessId)) {
+      return;
+    }
     result.fold(
-      (failure) => emit(
+      (failure) => _emitIfCurrent(
+        generation,
         state.copyWith(
           status: LoyaltyStatus.success,
           isSearching: false,
           errorMessage: failureMessage(failure),
         ),
       ),
-      (memberships) => emit(
+      (memberships) => _emitIfCurrent(
+        generation,
         state.copyWith(
           status: LoyaltyStatus.success,
           memberships: memberships,
@@ -229,17 +259,23 @@ class LoyaltyCubit extends Cubit<LoyaltyState> {
       return;
     }
 
+    final generation = _sessionGeneration;
+    final businessId = business.id;
     emit(
       state.copyWith(isMutating: true, clearError: true, clearSuccess: true),
     );
     final result = await _createProgram(
-      businessId: business.id,
+      businessId: businessId,
       request: request,
     );
+    if (!_isCurrentBusiness(generation, businessId)) {
+      return;
+    }
     await result.fold(
       (failure) async => _emitOperationFailure(failureMessage(failure)),
       (program) async {
-        emit(
+        _emitIfCurrent(
+          generation,
           state.copyWith(
             status: LoyaltyStatus.success,
             program: program,
@@ -268,17 +304,23 @@ class LoyaltyCubit extends Cubit<LoyaltyState> {
       return;
     }
 
+    final generation = _sessionGeneration;
+    final businessId = business.id;
     emit(
       state.copyWith(isMutating: true, clearError: true, clearSuccess: true),
     );
     final result = await _updateProgram(
-      businessId: business.id,
+      businessId: businessId,
       programId: program.id,
       request: request,
     );
+    if (!_isCurrentBusiness(generation, businessId)) {
+      return;
+    }
     result.fold(
       (failure) => _emitOperationFailure(failureMessage(failure)),
-      (updatedProgram) => emit(
+      (updatedProgram) => _emitIfCurrent(
+        generation,
         state.copyWith(
           status: LoyaltyStatus.success,
           program: updatedProgram,
@@ -303,6 +345,8 @@ class LoyaltyCubit extends Cubit<LoyaltyState> {
       return;
     }
 
+    final generation = _sessionGeneration;
+    final businessId = business.id;
     emit(
       state.copyWith(isMutating: true, clearError: true, clearSuccess: true),
     );
@@ -313,13 +357,17 @@ class LoyaltyCubit extends Cubit<LoyaltyState> {
       programId: request.programId ?? state.program?.id,
     );
     final result = await _enrollCustomer(
-      businessId: business.id,
+      businessId: businessId,
       request: resolvedRequest,
     );
+    if (!_isCurrentBusiness(generation, businessId)) {
+      return;
+    }
     await result.fold(
       (failure) async => _emitOperationFailure(failureMessage(failure)),
       (enrollResult) async {
-        emit(
+        _emitIfCurrent(
+          generation,
           state.copyWith(
             status: LoyaltyStatus.success,
             program: enrollResult.program,
@@ -345,6 +393,8 @@ class LoyaltyCubit extends Cubit<LoyaltyState> {
     final preview = state.memberships
         .where((membership) => membership.id == membershipId)
         .firstOrNull;
+    final generation = _sessionGeneration;
+    final businessId = business.id;
     emit(
       state.copyWith(
         status: LoyaltyStatus.success,
@@ -356,11 +406,15 @@ class LoyaltyCubit extends Cubit<LoyaltyState> {
     );
 
     final membershipResult = await _getMembership(
-      businessId: business.id,
+      businessId: businessId,
       membershipId: membershipId,
     );
+    if (!_isCurrentBusiness(generation, businessId)) {
+      return;
+    }
     await membershipResult.fold(
-      (failure) async => emit(
+      (failure) async => _emitIfCurrent(
+        generation,
         state.copyWith(
           status: LoyaltyStatus.success,
           isDetailLoading: false,
@@ -371,15 +425,19 @@ class LoyaltyCubit extends Cubit<LoyaltyState> {
         var transactions = membership.transactions;
         String? transactionErrorMessage;
         final transactionResult = await _listTransactions(
-          businessId: business.id,
+          businessId: businessId,
           membershipId: membershipId,
         );
+        if (!_isCurrentBusiness(generation, businessId)) {
+          return;
+        }
         transactionResult.fold(
           (failure) => transactionErrorMessage = failureMessage(failure),
           (items) => transactions = items,
         );
 
-        emit(
+        _emitIfCurrent(
+          generation,
           state.copyWith(
             status: LoyaltyStatus.success,
             selectedMembership: membership.copyWith(transactions: transactions),
@@ -407,14 +465,19 @@ class LoyaltyCubit extends Cubit<LoyaltyState> {
       return;
     }
 
+    final generation = _sessionGeneration;
+    final businessId = business.id;
     emit(
       state.copyWith(isMutating: true, clearError: true, clearSuccess: true),
     );
     final result = await _addStamps(
-      businessId: business.id,
+      businessId: businessId,
       membershipId: membership.id,
       request: AddStampsRequest(count: count, reason: reason),
     );
+    if (!_isCurrentBusiness(generation, businessId)) {
+      return;
+    }
     await result.fold(
       (failure) async => _emitOperationFailure(failureMessage(failure)),
       (actionResult) async {
@@ -424,7 +487,8 @@ class LoyaltyCubit extends Cubit<LoyaltyState> {
           totalStampsEarned: actionResult.membership.totalStampsEarned,
           cardState: actionResult.cardState,
         );
-        emit(
+        _emitIfCurrent(
+          generation,
           state.copyWith(
             status: LoyaltyStatus.success,
             selectedMembership: updated,
@@ -454,14 +518,19 @@ class LoyaltyCubit extends Cubit<LoyaltyState> {
       return;
     }
 
+    final generation = _sessionGeneration;
+    final businessId = business.id;
     emit(
       state.copyWith(isMutating: true, clearError: true, clearSuccess: true),
     );
     final result = await _redeemReward(
-      businessId: business.id,
+      businessId: businessId,
       membershipId: membership.id,
       request: RedeemRewardRequest(reason: reason),
     );
+    if (!_isCurrentBusiness(generation, businessId)) {
+      return;
+    }
     await result.fold(
       (failure) async => _emitOperationFailure(failureMessage(failure)),
       (actionResult) async {
@@ -471,7 +540,8 @@ class LoyaltyCubit extends Cubit<LoyaltyState> {
           totalRewardsRedeemed: actionResult.membership.totalRewardsRedeemed,
           cardState: actionResult.cardState,
         );
-        emit(
+        _emitIfCurrent(
+          generation,
           state.copyWith(
             status: LoyaltyStatus.success,
             selectedMembership: updated,
@@ -559,5 +629,19 @@ class LoyaltyCubit extends Cubit<LoyaltyState> {
       return second;
     }
     return '$cleanFirst $second';
+  }
+
+  bool _isCurrent(int generation) {
+    return !isClosed && generation == _sessionGeneration;
+  }
+
+  bool _isCurrentBusiness(int generation, String businessId) {
+    return _isCurrent(generation) && state.business?.id == businessId;
+  }
+
+  void _emitIfCurrent(int generation, LoyaltyState nextState) {
+    if (_isCurrent(generation)) {
+      emit(nextState);
+    }
   }
 }

@@ -15,6 +15,12 @@ class BusinessSetupCubit extends Cubit<BusinessSetupState> {
 
   final CreateBusiness _createBusiness;
   final UpdateBusiness _updateBusiness;
+  int _sessionGeneration = 0;
+
+  void reset() {
+    _sessionGeneration++;
+    emit(const BusinessSetupState.initial());
+  }
 
   Future<void> submit({
     required String name,
@@ -38,6 +44,7 @@ class BusinessSetupCubit extends Cubit<BusinessSetupState> {
       return;
     }
 
+    final generation = _sessionGeneration;
     emit(state.copyWith(status: BusinessSetupStatus.loading, clearError: true));
 
     final result = await _createBusiness(
@@ -47,6 +54,9 @@ class BusinessSetupCubit extends Cubit<BusinessSetupState> {
       currency: cleanCurrency,
       language: cleanLanguage,
     );
+    if (!_isCurrent(generation)) {
+      return;
+    }
     result.fold(
       (failure) => emit(
         BusinessSetupState(
@@ -88,6 +98,7 @@ class BusinessSetupCubit extends Cubit<BusinessSetupState> {
       return;
     }
 
+    final generation = _sessionGeneration;
     emit(state.copyWith(status: BusinessSetupStatus.loading, clearError: true));
 
     final result = await _updateBusiness(
@@ -100,6 +111,9 @@ class BusinessSetupCubit extends Cubit<BusinessSetupState> {
       logoUrl: logoUrl,
       coverUrl: coverUrl,
     );
+    if (!_isCurrent(generation)) {
+      return;
+    }
     result.fold(
       (failure) => emit(
         BusinessSetupState(
@@ -114,5 +128,9 @@ class BusinessSetupCubit extends Cubit<BusinessSetupState> {
         ),
       ),
     );
+  }
+
+  bool _isCurrent(int generation) {
+    return !isClosed && generation == _sessionGeneration;
   }
 }

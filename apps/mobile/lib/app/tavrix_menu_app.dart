@@ -15,6 +15,7 @@ import '../features/staff_scanner/presentation/bloc/wallet_scan_cubit.dart';
 import 'di/injection.dart';
 import 'router/app_router.dart';
 import 'router/route_names.dart';
+import 'session/workspace_session_coordinator.dart';
 
 class TavrixMenuApp extends StatefulWidget {
   const TavrixMenuApp({super.key, this.dependencies});
@@ -28,6 +29,15 @@ class TavrixMenuApp extends StatefulWidget {
 class _TavrixMenuAppState extends State<TavrixMenuApp> {
   late final AppDependencies _dependencies =
       widget.dependencies ?? AppDependencies.create();
+  late final WorkspaceSessionCoordinator _workspaceSessionCoordinator =
+      WorkspaceSessionCoordinator(
+        dashboardCubit: _dependencies.dashboardCubit,
+        walletScanCubit: _dependencies.walletScanCubit,
+        menuCubit: _dependencies.menuCubit,
+        loyaltyCubit: _dependencies.loyaltyCubit,
+        menuAppearanceCubit: _dependencies.menuAppearanceCubit,
+        businessSetupCubit: _dependencies.businessSetupCubit,
+      );
 
   @override
   void dispose() {
@@ -54,7 +64,7 @@ class _TavrixMenuAppState extends State<TavrixMenuApp> {
         ),
       ],
       child: _WorkspaceSessionResetter(
-        dependencies: _dependencies,
+        coordinator: _workspaceSessionCoordinator,
         child: MaterialApp(
           title: 'Waflo Operator',
           debugShowCheckedModeBanner: false,
@@ -91,21 +101,17 @@ class _TavrixMenuAppState extends State<TavrixMenuApp> {
 
 class _WorkspaceSessionResetter extends StatelessWidget {
   const _WorkspaceSessionResetter({
-    required this.dependencies,
+    required this.coordinator,
     required this.child,
   });
 
-  final AppDependencies dependencies;
+  final WorkspaceSessionCoordinator coordinator;
   final Widget child;
 
   @override
   Widget build(BuildContext context) {
     return BlocListener<AuthCubit, AuthState>(
-      listenWhen: (previous, current) =>
-          previous.status != current.status &&
-          (current.status == AuthStatus.unauthenticated ||
-              current.status == AuthStatus.failure),
-      listener: (_, _) => dependencies.dashboardCubit.reset(),
+      listener: (_, state) => coordinator.handleAuthStateChange(state),
       child: child,
     );
   }

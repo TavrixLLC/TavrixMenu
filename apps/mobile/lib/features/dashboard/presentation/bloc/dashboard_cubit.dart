@@ -21,8 +21,10 @@ class DashboardCubit extends Cubit<DashboardState> {
   final GetCurrentUser _getCurrentUser;
   final GetMyBusiness _getMyBusiness;
   final GetDashboardSummary _getDashboardSummary;
+  int _sessionGeneration = 0;
 
   void reset() {
+    _sessionGeneration++;
     emit(const DashboardState.initial());
   }
 
@@ -31,6 +33,7 @@ class DashboardCubit extends Cubit<DashboardState> {
   }
 
   Future<void> load() async {
+    final generation = _sessionGeneration;
     emit(
       state.copyWith(
         status: DashboardStatus.loading,
@@ -40,8 +43,12 @@ class DashboardCubit extends Cubit<DashboardState> {
     );
 
     final userResult = await _getCurrentUser();
+    if (!_isCurrent(generation)) {
+      return;
+    }
     await userResult.fold(
-      (failure) async => emit(
+      (failure) async => _emitIfCurrent(
+        generation,
         DashboardState(
           status: DashboardStatus.failure,
           errorMessage: failureMessage(failure),
@@ -49,15 +56,23 @@ class DashboardCubit extends Cubit<DashboardState> {
       ),
       (user) async {
         final businessResult = await _getMyBusiness();
+        if (!_isCurrent(generation)) {
+          return;
+        }
         await businessResult.fold(
-          (failure) async => emit(
+          (failure) async => _emitIfCurrent(
+            generation,
             DashboardState(
               status: DashboardStatus.failure,
               user: user,
               errorMessage: failureMessage(failure),
             ),
           ),
-          (business) => _loadSummary(user: user, business: business),
+          (business) => _loadSummary(
+            generation: generation,
+            user: user,
+            business: business,
+          ),
         );
       },
     );
@@ -68,15 +83,21 @@ class DashboardCubit extends Cubit<DashboardState> {
       return;
     }
 
+    final generation = _sessionGeneration;
     final result = await _getDashboardSummary(businessId);
+    if (!_isCurrent(generation)) {
+      return;
+    }
     result.fold(
-      (failure) => emit(
+      (failure) => _emitIfCurrent(
+        generation,
         state.copyWith(
           status: DashboardStatus.success,
           summaryErrorMessage: failureMessage(failure),
         ),
       ),
-      (summary) => emit(
+      (summary) => _emitIfCurrent(
+        generation,
         state.copyWith(
           status: DashboardStatus.success,
           business: summary.business,
@@ -88,11 +109,13 @@ class DashboardCubit extends Cubit<DashboardState> {
   }
 
   Future<void> _loadSummary({
+    required int generation,
     required CurrentUser user,
     required Business business,
   }) async {
     if (business.id.trim().isEmpty) {
-      emit(
+      _emitIfCurrent(
+        generation,
         DashboardState(
           status: DashboardStatus.success,
           user: user,
@@ -103,8 +126,12 @@ class DashboardCubit extends Cubit<DashboardState> {
     }
 
     final summaryResult = await _getDashboardSummary(business.id);
+    if (!_isCurrent(generation)) {
+      return;
+    }
     summaryResult.fold(
-      (failure) => emit(
+      (failure) => _emitIfCurrent(
+        generation,
         DashboardState(
           status: DashboardStatus.success,
           user: user,
@@ -112,7 +139,8 @@ class DashboardCubit extends Cubit<DashboardState> {
           summaryErrorMessage: failureMessage(failure),
         ),
       ),
-      (summary) => emit(
+      (summary) => _emitIfCurrent(
+        generation,
         DashboardState(
           status: DashboardStatus.success,
           user: user,
@@ -124,6 +152,16 @@ class DashboardCubit extends Cubit<DashboardState> {
         ),
       ),
     );
+  }
+
+  bool _isCurrent(int generation) {
+    return !isClosed && generation == _sessionGeneration;
+  }
+
+  void _emitIfCurrent(int generation, DashboardState nextState) {
+    if (_isCurrent(generation)) {
+      emit(nextState);
+    }
   }
 }
 

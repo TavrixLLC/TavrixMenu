@@ -26,8 +26,15 @@ class MenuAppearanceCubit extends Cubit<MenuAppearanceState> {
   final GetMenuTemplateCatalog _getMenuTemplateCatalog;
   final GetBusinessAppearance _getBusinessAppearance;
   final UpdateBusinessAppearance _updateBusinessAppearance;
+  int _sessionGeneration = 0;
+
+  void reset() {
+    _sessionGeneration++;
+    emit(const MenuAppearanceState.initial());
+  }
 
   Future<void> load() async {
+    final generation = _sessionGeneration;
     emit(
       state.copyWith(
         status: MenuAppearanceStatus.loading,
@@ -39,8 +46,12 @@ class MenuAppearanceCubit extends Cubit<MenuAppearanceState> {
     );
 
     final businessResult = await _getMyBusiness();
+    if (!_isCurrent(generation)) {
+      return;
+    }
     await businessResult.fold(
-      (failure) async => emit(
+      (failure) async => _emitIfCurrent(
+        generation,
         MenuAppearanceState(
           status: MenuAppearanceStatus.failure,
           errorMessage: failureMessage(failure),
@@ -48,7 +59,8 @@ class MenuAppearanceCubit extends Cubit<MenuAppearanceState> {
       ),
       (business) async {
         if (business.id.trim().isEmpty) {
-          emit(
+          _emitIfCurrent(
+            generation,
             const MenuAppearanceState(
               status: MenuAppearanceStatus.failure,
               errorMessage: PilotArabicCopy.businessProfileMissingBody,
@@ -58,8 +70,12 @@ class MenuAppearanceCubit extends Cubit<MenuAppearanceState> {
         }
 
         final templatesResult = await _getMenuTemplateCatalog();
+        if (!_isCurrent(generation)) {
+          return;
+        }
         await templatesResult.fold(
-          (failure) async => emit(
+          (failure) async => _emitIfCurrent(
+            generation,
             MenuAppearanceState(
               status: MenuAppearanceStatus.failure,
               business: business,
@@ -71,8 +87,12 @@ class MenuAppearanceCubit extends Cubit<MenuAppearanceState> {
                 .where((template) => template.isEnabled)
                 .toList(growable: false);
             final appearanceResult = await _getBusinessAppearance(business.id);
+            if (!_isCurrent(generation)) {
+              return;
+            }
             appearanceResult.fold(
-              (failure) => emit(
+              (failure) => _emitIfCurrent(
+                generation,
                 MenuAppearanceState(
                   status: MenuAppearanceStatus.failure,
                   business: business,
@@ -85,7 +105,8 @@ class MenuAppearanceCubit extends Cubit<MenuAppearanceState> {
                   appearance.menuTemplateId,
                   enabledTemplates,
                 );
-                emit(
+                _emitIfCurrent(
+                  generation,
                   MenuAppearanceState(
                     status: MenuAppearanceStatus.success,
                     business: business,
@@ -131,6 +152,8 @@ class MenuAppearanceCubit extends Cubit<MenuAppearanceState> {
       return;
     }
 
+    final generation = _sessionGeneration;
+    final businessId = business.id;
     emit(
       state.copyWith(
         status: MenuAppearanceStatus.success,
@@ -142,11 +165,15 @@ class MenuAppearanceCubit extends Cubit<MenuAppearanceState> {
     );
 
     final result = await _updateBusinessAppearance(
-      businessId: business.id,
+      businessId: businessId,
       menuTemplateId: state.draftTemplateId,
     );
+    if (!_isCurrentBusiness(generation, businessId)) {
+      return;
+    }
     result.fold(
-      (failure) => emit(
+      (failure) => _emitIfCurrent(
+        generation,
         state.copyWith(
           status: MenuAppearanceStatus.success,
           isSaving: false,
@@ -159,7 +186,8 @@ class MenuAppearanceCubit extends Cubit<MenuAppearanceState> {
           appearance.menuTemplateId,
           state.templates,
         );
-        emit(
+        _emitIfCurrent(
+          generation,
           state.copyWith(
             status: MenuAppearanceStatus.success,
             currentTemplateId: resolvedTemplateId,
@@ -192,5 +220,19 @@ class MenuAppearanceCubit extends Cubit<MenuAppearanceState> {
       return failure.message ?? 'Choose an available menu template.';
     }
     return failureMessage(failure);
+  }
+
+  bool _isCurrent(int generation) {
+    return !isClosed && generation == _sessionGeneration;
+  }
+
+  bool _isCurrentBusiness(int generation, String businessId) {
+    return _isCurrent(generation) && state.business?.id == businessId;
+  }
+
+  void _emitIfCurrent(int generation, MenuAppearanceState nextState) {
+    if (_isCurrent(generation)) {
+      emit(nextState);
+    }
   }
 }

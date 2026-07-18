@@ -58,8 +58,15 @@ class MenuCubit extends Cubit<MenuState> {
   final ReorderMenuCategories _reorderMenuCategories;
   final ReorderMenuItems _reorderMenuItems;
   final GetDashboardSummary _getDashboardSummary;
+  int _sessionGeneration = 0;
+
+  void reset() {
+    _sessionGeneration++;
+    emit(const MenuState.initial());
+  }
 
   Future<void> load({bool? showArchived}) async {
+    final generation = _sessionGeneration;
     final archived = showArchived ?? state.showArchived;
     emit(
       state.copyWith(
@@ -71,8 +78,12 @@ class MenuCubit extends Cubit<MenuState> {
     );
 
     final businessResult = await _getMyBusiness();
+    if (!_isCurrent(generation)) {
+      return;
+    }
     await businessResult.fold(
-      (failure) async => emit(
+      (failure) async => _emitIfCurrent(
+        generation,
         MenuState(
           status: MenuStatus.failure,
           errorMessage: failureMessage(failure),
@@ -85,6 +96,9 @@ class MenuCubit extends Cubit<MenuState> {
 
         if (business.id.trim().isNotEmpty) {
           final summaryResult = await _getDashboardSummary(business.id);
+          if (!_isCurrent(generation)) {
+            return;
+          }
           summaryResult.fold(
             (failure) => summaryErrorMessage = failureMessage(failure),
             (summary) {
@@ -100,8 +114,12 @@ class MenuCubit extends Cubit<MenuState> {
           resolvedBusiness.id,
           includeInactive: archived,
         );
+        if (!_isCurrent(generation)) {
+          return;
+        }
         await categoriesResult.fold(
-          (failure) async => emit(
+          (failure) async => _emitIfCurrent(
+            generation,
             MenuState(
               status: MenuStatus.failure,
               business: resolvedBusiness,
@@ -116,8 +134,12 @@ class MenuCubit extends Cubit<MenuState> {
               resolvedBusiness.id,
               includeInactive: archived,
             );
+            if (!_isCurrent(generation)) {
+              return;
+            }
             itemsResult.fold(
-              (failure) => emit(
+              (failure) => _emitIfCurrent(
+                generation,
                 MenuState(
                   status: MenuStatus.failure,
                   business: resolvedBusiness,
@@ -128,7 +150,8 @@ class MenuCubit extends Cubit<MenuState> {
                   errorMessage: failureMessage(failure),
                 ),
               ),
-              (items) => emit(
+              (items) => _emitIfCurrent(
+                generation,
                 MenuState(
                   status: MenuStatus.success,
                   business: resolvedBusiness,
@@ -160,10 +183,15 @@ class MenuCubit extends Cubit<MenuState> {
       return;
     }
 
+    final generation = _sessionGeneration;
+    final businessId = business.id;
     final result = await _createMenuCategory(
-      businessId: business.id,
+      businessId: businessId,
       name: cleanName,
     );
+    if (!_isCurrentBusiness(generation, businessId)) {
+      return;
+    }
     await result.fold(
       (failure) async => _emitOperationFailure(failureMessage(failure)),
       (_) async => load(showArchived: state.showArchived),
@@ -193,13 +221,18 @@ class MenuCubit extends Cubit<MenuState> {
       return;
     }
 
+    final generation = _sessionGeneration;
+    final businessId = business.id;
     final result = await _createMenuItem(
-      businessId: business.id,
+      businessId: businessId,
       categoryId: category.id,
       name: name.trim(),
       description: description.trim(),
       priceCents: priceCents,
     );
+    if (!_isCurrentBusiness(generation, businessId)) {
+      return;
+    }
     await result.fold(
       (failure) async => _emitOperationFailure(failureMessage(failure)),
       (_) async => load(showArchived: state.showArchived),
@@ -207,11 +240,20 @@ class MenuCubit extends Cubit<MenuState> {
   }
 
   Future<void> archiveCategory(String id) async {
+    final business = state.business;
+    if (business == null) {
+      return;
+    }
     if (!_ensureCanManageMenu()) {
       return;
     }
 
+    final generation = _sessionGeneration;
+    final businessId = business.id;
     final result = await _deleteMenuCategory(id);
+    if (!_isCurrentBusiness(generation, businessId)) {
+      return;
+    }
     await result.fold(
       (failure) async => _emitOperationFailure(failureMessage(failure)),
       (_) async => load(showArchived: state.showArchived),
@@ -219,11 +261,20 @@ class MenuCubit extends Cubit<MenuState> {
   }
 
   Future<void> restoreCategory(String id) async {
+    final business = state.business;
+    if (business == null) {
+      return;
+    }
     if (!_ensureCanManageMenu()) {
       return;
     }
 
+    final generation = _sessionGeneration;
+    final businessId = business.id;
     final result = await _restoreMenuCategory(id);
+    if (!_isCurrentBusiness(generation, businessId)) {
+      return;
+    }
     await result.fold(
       (failure) async => _emitOperationFailure(failureMessage(failure)),
       (_) async => load(showArchived: state.showArchived),
@@ -231,11 +282,20 @@ class MenuCubit extends Cubit<MenuState> {
   }
 
   Future<void> archiveItem(String id) async {
+    final business = state.business;
+    if (business == null) {
+      return;
+    }
     if (!_ensureCanManageMenu()) {
       return;
     }
 
+    final generation = _sessionGeneration;
+    final businessId = business.id;
     final result = await _deleteMenuItem(id);
+    if (!_isCurrentBusiness(generation, businessId)) {
+      return;
+    }
     await result.fold(
       (failure) async => _emitOperationFailure(failureMessage(failure)),
       (_) async => load(showArchived: state.showArchived),
@@ -243,11 +303,20 @@ class MenuCubit extends Cubit<MenuState> {
   }
 
   Future<void> restoreItem(String id) async {
+    final business = state.business;
+    if (business == null) {
+      return;
+    }
     if (!_ensureCanManageMenu()) {
       return;
     }
 
+    final generation = _sessionGeneration;
+    final businessId = business.id;
     final result = await _restoreMenuItem(id);
+    if (!_isCurrentBusiness(generation, businessId)) {
+      return;
+    }
     await result.fold(
       (failure) async => _emitOperationFailure(failureMessage(failure)),
       (_) async => load(showArchived: state.showArchived),
@@ -264,10 +333,15 @@ class MenuCubit extends Cubit<MenuState> {
       for (var index = 0; index < categories.length; index++)
         ReorderMenuRecord(id: categories[index].id, sortOrder: index),
     ];
+    final generation = _sessionGeneration;
+    final businessId = business.id;
     final result = await _reorderMenuCategories(
-      businessId: business.id,
+      businessId: businessId,
       orders: orders,
     );
+    if (!_isCurrentBusiness(generation, businessId)) {
+      return;
+    }
     await result.fold(
       (failure) async => _emitOperationFailure(failureMessage(failure)),
       (_) async => load(showArchived: state.showArchived),
@@ -284,10 +358,15 @@ class MenuCubit extends Cubit<MenuState> {
       for (var index = 0; index < items.length; index++)
         ReorderMenuRecord(id: items[index].id, sortOrder: index),
     ];
+    final generation = _sessionGeneration;
+    final businessId = business.id;
     final result = await _reorderMenuItems(
-      businessId: business.id,
+      businessId: businessId,
       orders: orders,
     );
+    if (!_isCurrentBusiness(generation, businessId)) {
+      return;
+    }
     await result.fold(
       (failure) async => _emitOperationFailure(failureMessage(failure)),
       (_) async => load(showArchived: state.showArchived),
@@ -311,5 +390,19 @@ class MenuCubit extends Cubit<MenuState> {
 
   void _emitOperationFailure(String message) {
     emit(state.copyWith(status: MenuStatus.success, errorMessage: message));
+  }
+
+  bool _isCurrent(int generation) {
+    return !isClosed && generation == _sessionGeneration;
+  }
+
+  bool _isCurrentBusiness(int generation, String businessId) {
+    return _isCurrent(generation) && state.business?.id == businessId;
+  }
+
+  void _emitIfCurrent(int generation, MenuState nextState) {
+    if (_isCurrent(generation)) {
+      emit(nextState);
+    }
   }
 }

@@ -21,33 +21,31 @@ class WalletScanCubit extends Cubit<WalletScanState> {
   final GetMyBusiness _getMyBusiness;
   final ScanWalletPass _scanWalletPass;
   final AddLoyaltyStamps _addLoyaltyStamps;
+  int _sessionGeneration = 0;
+
+  void reset() {
+    _sessionGeneration++;
+    emit(const WalletScanState.initial());
+  }
 
   Future<void> load() async {
-    if (state.business != null) {
-      emit(
-        state.copyWith(
-          status: WalletScanStatus.ready,
-          clearResult: true,
-          clearError: true,
-          stampStatus: StampStatus.idle,
-          clearStampError: true,
-          clearUpdatedStamps: true,
-        ),
-      );
+    final generation = _sessionGeneration;
+    emit(const WalletScanState(status: WalletScanStatus.loading));
+    final result = await _getMyBusiness();
+    if (!_isCurrent(generation)) {
       return;
     }
-
-    emit(state.copyWith(status: WalletScanStatus.loading, clearError: true));
-    final result = await _getMyBusiness();
     result.fold(
-      (failure) => emit(
-        state.copyWith(
+      (failure) => _emitIfCurrent(
+        generation,
+        const WalletScanState.initial().copyWith(
           status: WalletScanStatus.failure,
           errorMessage: failureMessage(failure),
         ),
       ),
-      (business) => emit(
-        state.copyWith(
+      (business) => _emitIfCurrent(
+        generation,
+        const WalletScanState.initial().copyWith(
           status: WalletScanStatus.ready,
           business: business,
           clearError: true,
@@ -85,6 +83,8 @@ class WalletScanCubit extends Cubit<WalletScanState> {
       return false;
     }
 
+    final generation = _sessionGeneration;
+    final businessId = business.id;
     emit(
       state.copyWith(
         status: WalletScanStatus.scanning,
@@ -96,13 +96,17 @@ class WalletScanCubit extends Cubit<WalletScanState> {
       ),
     );
     final result = await _scanWalletPass(
-      businessId: business.id,
+      businessId: businessId,
       token: cleanToken,
     );
+    if (!_isCurrentBusiness(generation, businessId)) {
+      return false;
+    }
 
     return result.fold(
       (failure) {
-        emit(
+        _emitIfCurrent(
+          generation,
           state.copyWith(
             status: WalletScanStatus.failure,
             errorMessage: failureMessage(failure),
@@ -111,7 +115,8 @@ class WalletScanCubit extends Cubit<WalletScanState> {
         return false;
       },
       (scanResult) {
-        emit(
+        _emitIfCurrent(
+          generation,
           state.copyWith(
             status: WalletScanStatus.success,
             result: scanResult,
@@ -136,19 +141,25 @@ class WalletScanCubit extends Cubit<WalletScanState> {
       return;
     }
 
+    final generation = _sessionGeneration;
+    final businessId = business.id;
     emit(
       state.copyWith(stampStatus: StampStatus.stamping, clearStampError: true),
     );
 
     final stampResult = await _addLoyaltyStamps(
-      businessId: business.id,
+      businessId: businessId,
       membershipId: result.membershipId,
       request: const AddStampsRequest(count: 1),
     );
+    if (!_isCurrentBusiness(generation, businessId)) {
+      return;
+    }
 
     stampResult.fold(
       (failure) {
-        emit(
+        _emitIfCurrent(
+          generation,
           state.copyWith(
             stampStatus: StampStatus.stampFailure,
             stampErrorMessage: failureMessage(failure),
@@ -156,7 +167,8 @@ class WalletScanCubit extends Cubit<WalletScanState> {
         );
       },
       (actionResult) {
-        emit(
+        _emitIfCurrent(
+          generation,
           state.copyWith(
             stampStatus: StampStatus.stampSuccess,
             clearStampError: true,
@@ -166,5 +178,19 @@ class WalletScanCubit extends Cubit<WalletScanState> {
         );
       },
     );
+  }
+
+  bool _isCurrent(int generation) {
+    return !isClosed && generation == _sessionGeneration;
+  }
+
+  bool _isCurrentBusiness(int generation, String businessId) {
+    return _isCurrent(generation) && state.business?.id == businessId;
+  }
+
+  void _emitIfCurrent(int generation, WalletScanState nextState) {
+    if (_isCurrent(generation)) {
+      emit(nextState);
+    }
   }
 }

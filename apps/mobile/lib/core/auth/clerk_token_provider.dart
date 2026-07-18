@@ -6,7 +6,6 @@ class ClerkTokenProvider implements TokenProvider {
   ClerkTokenProvider();
 
   ClerkAuthState? _authState;
-  String? _lastToken;
 
   bool get hasSession =>
       _authState?.session != null && _authState?.user != null;
@@ -24,16 +23,14 @@ class ClerkTokenProvider implements TokenProvider {
 
     try {
       final token = await authState.sessionToken();
-      _lastToken = token.jwt;
       return token.jwt;
     } catch (_) {
-      return _lastToken;
+      return null;
     }
   }
 
   Future<void> signOut() async {
     final authState = _authState;
-    _lastToken = null;
     if (authState != null && hasSession) {
       await authState.signOut();
     }
