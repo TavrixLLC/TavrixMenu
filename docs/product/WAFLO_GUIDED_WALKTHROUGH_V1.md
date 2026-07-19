@@ -345,22 +345,11 @@ Rules:
 - A skipped step is not the same as a completed step.
 - If real backend state contradicts local walkthrough state, real backend state wins.
 
-## 14. P0 Product/Data Issues To Investigate
+## 14. Scanner Security Status
 
-P0 issue: during human review, the scanner currently showed `Waflo QA Restaurant` for multiple or all accounts.
+W2A workspace and scanner-context isolation is complete and verified. Owner A → logout → Owner B clears workspace-scoped state, and late Owner A scanner results are discarded. Evidence: `f9abd774386a71b786459ab15bda329d1aadc3a0`.
 
-Risk:
-
-- This may indicate fixture/default business leakage.
-- This may indicate wrong business context in scanner loading.
-- This may indicate stale QA data or account/business association confusion.
-
-Rule:
-
-- Codex must diagnose this separately before scanner/staff polish.
-- Do not hide this issue with UI.
-- Do not rename the displayed restaurant to mask the context bug.
-- Do not proceed with scanner/staff polish until the business context source is understood.
+Remaining pre-release scanner and Loyalty security work is a broader audit of staff authorization, mutation boundaries, customer and loyalty-card tenant ownership, token replay or rotation, rate limiting, abuse resistance, and end-to-end negative tests. This does not reopen W2A workspace or scanner-context isolation.
 
 ## 15. AI Implementation Rules
 

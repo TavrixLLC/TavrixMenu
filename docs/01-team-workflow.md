@@ -24,7 +24,7 @@ Person 2 Flutter owns:
 - API integration
 - Menu management screens
 - QR screen
-- Staff scanner later
+- Staff scanner workflow and workspace-isolation maintenance
 
 Person 3 Web owns:
 

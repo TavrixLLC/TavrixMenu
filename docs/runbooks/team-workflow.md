@@ -24,5 +24,5 @@ To maintain a high standard of security, efficiency, and code quality, team resp
 To protect sensitive development and production credentials:
 1. **Zero Secret Sharing:** Secrets, private keys, `.p12`/`.pem` certificates, and database password strings must **never** be shared in chat logs, emails, repositories, or pull requests.
 2. **Branch Separation:** Each person must work on their respective feature or sprint branches. Cross-boundary code modifications (e.g. mobile devs altering backend modules) are strictly prohibited.
-3. **Automated Audit Pipeline:** Antigravity must audit all pull requests and branches before they are merged into the main development branch (`dev`).
+3. **Planned Automated Audit Pipeline:** Automated pull-request and branch auditing is planned, but no tracked pipeline currently establishes it as an active merge gate. Until one is implemented and verified, required reviews and checks remain explicit human workflow steps.
 4. **Staging Environment Shift:** Moving forward, local laptop-bound development dependencies (like local reverse proxies and tunnels) must be replaced with a persistent staging VPS environment. This prevents Wi-Fi dropouts or local power outages from disrupting E2E mobile and customer tests.

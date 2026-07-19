@@ -2,7 +2,7 @@
 
 Tavrix Menu is a SaaS platform for restaurants and cafes that provides QR menus, AI-powered product recommendations, loyalty cards, staff scanning, and subscription billing.
 
-This repository is the initial production foundation only. It sets up the monorepo, app shells, database schema, infrastructure, and docs needed for the team to start building safely.
+This repository contains the active Waflo product foundations and ongoing implementation work across the monorepo. Capability and release readiness must be read from the current product, API, security, and design authority documents.
 
 ## Monorepo Structure
 
@@ -19,7 +19,7 @@ infra/            Docker Compose services
 docs/             API, database, auth, billing, env, and team docs
 ```
 
-Customers do not need to download an app. The Flutter app is only for business owners, managers, and staff. Clerk is planned only for business users, staff, and admins. Public customer menu browsing does not require authentication.
+Customers do not need to download an app. The Flutter app is only for business owners, managers, and staff. Clerk is used only for business users, staff, and admins. Public customer menu browsing does not require authentication.
 
 ## Documentation
 
@@ -118,7 +118,7 @@ The Flutter app is for business owners, managers, and staff only.
 - Keep changes small and focused.
 - Keep API contract updated before frontend integration.
 - Do not add real secrets.
-- Do not implement AI, loyalty, wallet, or custom domains in this foundation pass.
+- Do not present any unsupported capability as implemented or release-ready.
 
 ## Branching Rules
 
@@ -131,23 +131,11 @@ The Flutter app is for business owners, managers, and staff only.
   - feature/customer-web-menu
   - feature/admin-dashboard
 
-## Current Foundation Status
+## Current Implementation Status
 
-- NestJS API shell with `/health`.
-- Prisma schema with users, businesses, menus, billing, and audit logs.
-- Public customer web shell with mock menu and product detail pages.
-- Internal admin web shell with mock dashboards and Clerk placeholders.
-- Flutter app shell with placeholder business user screens.
-- Docker Compose for PostgreSQL and Redis.
-- Initial docs for API contract, database, Clerk, Stripe plans, env vars, and task ownership.
+The repository has advanced beyond its original app-shell foundation. It now contains real auth, business, menu, Loyalty, wallet/scanner, and mobile workflow foundations, but the presence of code does not establish full security or release readiness.
 
-## Intentionally Not Implemented Yet
-
-- Full business logic.
-- Loyalty.
-- AI recommendations beyond mock UI cards.
-- Wallet integration.
-- Custom domains.
-- Real Clerk authentication.
-- Real Stripe billing flows.
-- Customer accounts or customer authentication.
+Use `docs/05-api-contract.md` for API truth and
+`docs/design/stitch/waflo-mobile-redesign/CAPABILITY_MATRIX.md` for the current
+Mobile V3 capability and release-blocker status. In particular, Customer tenant
+isolation remains a release blocker before Loyalty release.

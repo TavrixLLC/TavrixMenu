@@ -28,11 +28,15 @@ This matrix records present evidence, not intended future behavior. “UI approv
 | Product availability | `AVAILABLE` | `AVAILABLE` | `PARTIAL` | `AVAILABLE` | `AVAILABLE` | Replace archive/restore-style presentation with the locked labeled control while retaining confirmed-state rollback, permission checks, and owner visibility of unavailable items. | No |
 | Save as Draft | `AVAILABLE` | `AVAILABLE` | `MISSING` | `MISSING` | `MISSING` | Omit or fully disable. Availability is not a draft; provide no persistence or success feedback. | No — drafts are outside current capability |
 | Create Loyalty Card | `AVAILABLE` | `AVAILABLE` | `AVAILABLE` | `AVAILABLE` | `BLOCKED` | Existing loyalty-program behavior is not visually approved by this archive. Keep the V3 entry gated and do not release Loyalty until the customer tenant-isolation blocker is resolved. | Yes — before Loyalty release |
-| Scan Loyalty Card | `AVAILABLE` | `AVAILABLE` | `AVAILABLE` | `PARTIAL` | `BLOCKED` | Preserve camera/manual and business-role foundations, but complete the dedicated scanner context audit and customer isolation gate before V3 scanner polish/release. | Yes — before Loyalty/scanner release |
+| Scan Loyalty Card | `AVAILABLE` | `AVAILABLE` | `AVAILABLE` | `PARTIAL` | `BLOCKED` | Preserve camera/manual, business-role, and completed W2A workspace/scanner-context isolation foundations. Before release, resolve customer tenant isolation and complete the separate broader scanner/Loyalty security audit. | Yes — before Loyalty/scanner release |
 | Send Notification | `AVAILABLE` | `AVAILABLE` | `MISSING` | `MISSING` | `MISSING` | Keep disabled, omitted, or informational with an honest explanation; do not simulate send or success. | No — it can remain unavailable |
 | Billing/Entitlement states | `MISSING` | `AVAILABLE` | `DEFERRED` | `PARTIAL` | `PARTIAL` | Billing plans/actions do not establish active entitlements. Hide or show clearly staged information until authoritative entitlement state and real mobile actions exist. | No — defer without fake gating |
 | Multi-business workspace selection | `MISSING` | `PARTIAL` | `BLOCKED` | `PARTIAL` | `AVAILABLE` | Continue the current fail-closed behavior. Add no list-position fallback; implement a separate authoritative selector before supporting multi-business users. | Yes — for multi-business user support |
 | Customer tenant isolation | `MISSING` | `PARTIAL` | `BLOCKED` | `BLOCKED` | `BLOCKED` | Resolve and verify the backend tenant model/queries before Loyalty release; UI hiding cannot mitigate this release blocker. | Yes — backend release blocker before Loyalty |
+
+W2A workspace and scanner-context isolation is complete and verified. Owner A → logout → Owner B clears workspace-scoped state, and late Owner A scanner results are discarded. Evidence: `f9abd774386a71b786459ab15bda329d1aadc3a0`.
+
+Remaining pre-release scanner and Loyalty security work is a broader audit of staff authorization, mutation boundaries, customer and loyalty-card tenant ownership, token replay or rotation, rate limiting, abuse resistance, and end-to-end negative tests. This does not reopen W2A workspace or scanner-context isolation.
 
 ## Evidence basis
 

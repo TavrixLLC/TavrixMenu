@@ -28,7 +28,7 @@ No scenario requires fake behavior to reproduce the approved visual hierarchy. N
 | Interaction coverage | Product doctrine defines the resumable guided journey, optional versus required steps, and real completion conditions. Current Flutter source contains a first-run wizard and real business/menu flows, but those are not accepted as V3 visual implementations. |
 | Backend coverage | Real authenticated user bootstrap, business creation/app context, category creation, product creation, dashboard summary, and public link contracts exist. Optional image upload is partial; draft persistence is missing and unnecessary for the minimum real path. |
 | Loading/error coverage | Doctrine requires resume from the exact incomplete step. Screen contracts cover category/product loading, validation, failure preservation, retry, and no fake progress. Exact wizard loading/error visuals remain unapproved. |
-| Security/tenant coverage | The journey must establish an authoritative active workspace before scoped requests. W2A clearing remains mandatory. Multi-business users fail closed until explicit selection exists. |
+| Security/tenant coverage | The journey must establish an authoritative active workspace before scoped requests. Completed W2A clearing and late-result protections must not regress. Multi-business users fail closed until explicit selection exists. |
 | Remaining blocker | Missing approved visuals for Login, guided setup, workspace setup, and no-category/category-create states. Multi-business selection remains unavailable. |
 | Implementation recommendation | Do not infer those missing screens from the four PNGs. Implement only after separate visual approval; reuse the locked primitives and real completion conditions. Keep image optional and draft absent. |
 | Status | **`ALIGNED_WITH_DOCUMENTED_GAP`** |
@@ -78,6 +78,10 @@ No scenario requires fake behavior to reproduce the approved visual hierarchy. N
 | Implementation recommendation | Preserve the coordinator/reset and stale-result protections in every V3 slice. Add component/screen regression tests whenever new local state is introduced. Never select a workspace by list position. |
 | Status | **`ALIGNED`** |
 
+W2A workspace and scanner-context isolation is complete and verified. Owner A → logout → Owner B clears workspace-scoped state, and late Owner A scanner results are discarded. Evidence: `f9abd774386a71b786459ab15bda329d1aadc3a0`.
+
+Remaining pre-release scanner and Loyalty security work is a broader audit of staff authorization, mutation boundaries, customer and loyalty-card tenant ownership, token replay or rotation, rate limiting, abuse resistance, and end-to-end negative tests. This does not reopen W2A workspace or scanner-context isolation.
+
 ## Scenario E — No category
 
 `Menu Management → create first category → then enable Add Product`
@@ -118,7 +122,7 @@ No scenario requires fake behavior to reproduce the approved visual hierarchy. N
 | Interaction coverage | Draft is omitted/disabled. Media separates local selection from upload. Preview requires real readiness/link. Loyalty/scanner/notification actions require real routes, permission, state, and release readiness. |
 | Backend coverage | Draft, recent activity, notifications, and authoritative entitlement state are missing. Media upload is source-backed but absent from the canonical API contract. Public link/menu, loyalty baseline, and scanner source routes exist with stated limitations. |
 | Loading/error coverage | Shared contracts require honest disabled explanations, real upload progress/failure, real preview errors, and no success before confirmation. Missing capabilities never enter fake loading/success states. |
-| Security/tenant coverage | W2A remains mandatory for every action. Multi-business selection fails closed. Customer tenant isolation remains a backend release blocker before Loyalty release; scanner context requires its dedicated safety audit before polish/release. |
+| Security/tenant coverage | Completed W2A isolation remains a required regression invariant. Multi-business selection fails closed. Customer tenant isolation remains a backend release blocker before Loyalty release, alongside the separate broader scanner/Loyalty security audit described in Scenario D. |
 | Remaining blocker | Media contract completion/integration; customer isolation for Loyalty; multi-business selection; missing notification/activity/entitlement/draft contracts; unapproved destination visuals. |
 | Implementation recommendation | Ship only capabilities whose full prerequisite chain is real. Use disabled/omitted/informational treatments for all others. P1 product creation remains image-free; P2, Loyalty, scanner, and later destinations retain their explicit gates. |
 | Status | **`ALIGNED_WITH_DOCUMENTED_GAP`** |

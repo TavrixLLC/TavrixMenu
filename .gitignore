@@ -74,5 +74,13 @@ tmp/
 temp/
 
 # Agent Customizations
-.agents/
+# Keep local agent content ignored. Only these two repository Skills may be
+# tracked by later explicitly scoped tasks.
+.agents/*
+!.agents/skills/
+.agents/skills/*
+!.agents/skills/waflo-mobile-screen-slice/
+!.agents/skills/waflo-mobile-screen-slice/**
+!.agents/skills/waflo-tenant-isolation/
+!.agents/skills/waflo-tenant-isolation/**
 skills-lock.json
