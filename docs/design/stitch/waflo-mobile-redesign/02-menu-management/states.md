@@ -1,6 +1,6 @@
 # Menu Management States
 
-Only `EMPTY_ONE_CATEGORY` currently has an approved visual. Other states define product behavior without authorizing a fabricated screenshot.
+`EMPTY_ONE_CATEGORY` and `POPULATED` have approved visuals. Other states define product behavior without authorizing a fabricated screenshot.
 
 ## `LOADING`
 
@@ -36,12 +36,32 @@ Approved visual: [empty-approved.png](empty-approved.png).
 
 ## `POPULATED`
 
-- Behavior is documented only; an approved populated visual is missing.
-- Products are real backend records for the authoritative business and selected category.
-- Availability status must come from the backend.
+- Approved visual: [populated-approved.png](populated-approved.png).
+- The category list comes from the authoritative active business.
+- The selected category is an authoritative selection from that real list, remains visually obvious, and is never chosen from unordered records by arbitrary position.
+- The product list contains real business-scoped records filtered by the selected category.
+- Search filters supported fields on real loaded records and clearing search restores the selected category product list.
+- Availability status is backend-backed.
 - Do not invent thumbnails; use an honest no-image treatment when a record has no image.
 - Unavailable products remain visible to the owner when the owner list requests the documented inactive/unavailable records.
-- Customer preview is available only when a real public-menu route exists and the menu is actually ready.
+- Product edits require confirmed backend success.
+- Do not show an optimistic success message before mutation success is confirmed.
+- Customer preview is enabled only when a real public-menu route exists and the menu is actually ready.
+
+## `POPULATED_SEARCH_RESULT`
+
+- Show matching real products from the selected category only.
+- Preserve the selected category and keep its selected treatment visually obvious.
+- Allow clearing search to restore the selected category product list.
+- Never replace populated search results with onboarding empty-state copy.
+
+## `POPULATED_MUTATION_IN_PROGRESS`
+
+- Prevent repeated availability or edit mutations while a mutation is pending.
+- Show restrained progress on the affected control or product without blocking unrelated reading.
+- Preserve the last confirmed backend state while the mutation is pending.
+- On failure, restore the last confirmed state or refresh it from the backend and show an honest error.
+- Do not display success until the backend confirms the mutation.
 
 ## `SEARCH_EMPTY_RESULT`
 
