@@ -6,13 +6,23 @@ Status in this index is intentionally conservative. An approved visual means tha
 | --- | --- | --- | --- | --- | --- | --- | --- |
 | 01 Owner Dashboard | Returning owner / one category / zero products | Yes | Yes | Yes | Yes | Product-populated state is documented only | Not started |
 | 02 Menu Management | Empty and populated category states | Yes — empty and populated | Yes | Yes | Yes | Loading, error, and search-empty visuals are documented only | Not started |
-| 03 Product Editor | Not specified | Missing | Not started | Not started | Not started | Specification not started | Not started |
+| 03 Product Editor | Create Product | Yes — Create Product | Yes | Yes | Yes | Edit visual missing; validation and responsive behavior specified | Not started |
 
 ## Canonical approved references
 
 - Owner Dashboard: [01-owner-dashboard/returning-zero-products-approved.png](01-owner-dashboard/returning-zero-products-approved.png)
 - Menu Management empty state: [02-menu-management/empty-approved.png](02-menu-management/empty-approved.png)
 - Menu Management populated state: [02-menu-management/populated-approved.png](02-menu-management/populated-approved.png)
+- Product Editor Create Product: [03-product-editor/create-product-approved.png](03-product-editor/create-product-approved.png)
+
+## Product Editor specification status
+
+| State | Approved visual | States | Validation contract | Interaction contract | Backend mapping | Responsive rules | Implementation status |
+| --- | --- | --- | --- | --- | --- | --- | --- |
+| Create Product | Yes | Yes | Yes | Yes | Yes | Yes | Not started |
+| Edit Product | Missing | Documented only | Reuses applicable documented validation | Documented only | Partial read / available update | Reuses applicable rules | Not started |
+
+Edit Product has no approved visual; its behavior is documented only, and implementation is not started.
 
 ## Menu Management visual status
 
@@ -24,9 +34,9 @@ Status in this index is intentionally conservative. An approved visual means tha
 | Error | Documented only |
 | Search empty | Documented only |
 
-## Next visual task
+## Next project task
 
-03 Product Editor
+Waflo Mobile UI V3 Visual System Lock and Scenario Alignment Review
 
 ## Upcoming screens
 
@@ -35,7 +45,6 @@ The following screens are future work. Their presence here does not define featu
 - authentication
 - guided onboarding
 - category management
-- product editor
 - customer menu preview
 - QR publish/share
 - menu appearance
