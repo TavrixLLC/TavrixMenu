@@ -2,6 +2,17 @@
 
 Status in this index is intentionally conservative. An approved visual means that exact state has a human-approved visual reference; it does not mean implementation or post-implementation visual QA has started.
 
+## Archive review status
+
+| Review | Status | Authority |
+| --- | --- | --- |
+| Visual System Lock | `VISUAL_SYSTEM_LOCKED_WITH_DOCUMENTED_GAPS` | [VISUAL_SYSTEM_LOCK.md](VISUAL_SYSTEM_LOCK.md) |
+| Component contracts | Complete — 20 named contracts | [COMPONENT_CONTRACTS.md](COMPONENT_CONTRACTS.md) |
+| Scenario alignment | Complete — no `SCENARIO_DRIFT` | [SCENARIO_ALIGNMENT_REVIEW.md](SCENARIO_ALIGNMENT_REVIEW.md) |
+| Capability alignment | Complete — current evidence and blockers recorded | [CAPABILITY_MATRIX.md](CAPABILITY_MATRIX.md) |
+| Future implementation sequence | Bounded — F1 through P3 | [IMPLEMENTATION_SEQUENCE.md](IMPLEMENTATION_SEQUENCE.md) |
+| Flutter V3 implementation | Not started by this documentation task | Future explicitly scoped branches only |
+
 | Screen | Canonical state | Approved visual | States | Interaction contract | Backend mapping | Additional visual status | Implementation status |
 | --- | --- | --- | --- | --- | --- | --- | --- |
 | 01 Owner Dashboard | Returning owner / one category / zero products | Yes | Yes | Yes | Yes | Product-populated state is documented only | Not started |
@@ -36,7 +47,20 @@ Edit Product has no approved visual; its behavior is documented only, and implem
 
 ## Next project task
 
-Waflo Mobile UI V3 Visual System Lock and Scenario Alignment Review
+Codex tooling foundation. This is not authorization to begin Flutter implementation.
+
+Next branch: `codex/waflo-codex-tooling-v1`
+
+## Known documented gaps
+
+- Dashboard recent activity has no authoritative owner activity-feed contract.
+- Customer total and active entitlement state cannot be inferred from current contracts.
+- Edit Product has no approved visual and only a partial authenticated record-read path.
+- Product image upload is source-backed but not canonical in `docs/05-api-contract.md` and is not integrated in Product Editor.
+- Save as Draft, notification sending, and authoritative entitlement behavior are missing.
+- Multi-business selection is not implemented; affected users continue to fail closed.
+- Customer tenant isolation remains a backend release blocker before Loyalty release.
+- Loading/error and several future-screen visuals remain documented behavior only and require later human visual review.
 
 ## Upcoming screens
 
