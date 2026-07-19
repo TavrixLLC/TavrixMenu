@@ -1,0 +1,193 @@
+# Layered command safeguards for trusted Waflo repositories.
+# Content and changed-path checks belong to the PowerShell guards.
+
+prefix_rule(
+    pattern = ["git", "add", [".", "-A", "--all"]],
+    decision = "forbidden",
+    justification = "Stage explicit reviewed paths instead of the whole worktree.",
+    match = ["git add .", "git add -A", "git add --all"],
+    not_match = ["git add scripts/codex/guard-scope.ps1"],
+)
+
+prefix_rule(
+    pattern = ["git", "reset", "--hard"],
+    decision = "forbidden",
+    justification = "Preserve uncommitted work; use a reviewed non-destructive Git operation.",
+    match = ["git reset --hard HEAD"],
+)
+
+prefix_rule(
+    pattern = ["git", "clean", ["-fd", "-df", "-fdx", "-fxd", "-dfx", "-dxf", "-xfd", "-xdf"]],
+    decision = "forbidden",
+    justification = "Do not delete untracked files or directories; inspect them explicitly.",
+    match = ["git clean -fd", "git clean -fdx", "git clean -xdf"],
+    not_match = ["git clean -n", "git status --short"],
+)
+
+prefix_rule(
+    pattern = ["git", "clean", ["-f", "--force"], ["-d", "--directories"]],
+    decision = "forbidden",
+    justification = "Do not delete untracked directories; inspect them explicitly.",
+    match = ["git clean -f -d", "git clean --force --directories"],
+)
+
+prefix_rule(
+    pattern = ["git", "clean", ["-d", "--directories"], ["-f", "--force"]],
+    decision = "forbidden",
+    justification = "Do not delete untracked directories; inspect them explicitly.",
+    match = ["git clean -d -f", "git clean --directories --force"],
+)
+
+prefix_rule(
+    pattern = ["npx", "prisma", "migrate", "reset"],
+    decision = "forbidden",
+    justification = "Never reset repository databases through Codex.",
+    match = ["npx prisma migrate reset"],
+)
+
+prefix_rule(
+    pattern = ["npx", "prisma", "db", "push", "--force-reset"],
+    decision = "forbidden",
+    justification = "Do not force-reset a database; use reviewed migrations.",
+    match = ["npx prisma db push --force-reset"],
+)
+
+prefix_rule(
+    pattern = ["docker", "compose", "down", ["-v", "--volumes"]],
+    decision = "forbidden",
+    justification = "Preserve Docker volumes; omit the volume-removal flag.",
+    match = ["docker compose down -v", "docker compose down --volumes"],
+    not_match = ["docker compose down"],
+)
+
+prefix_rule(
+    pattern = ["docker-compose", "down", ["-v", "--volumes"]],
+    decision = "forbidden",
+    justification = "Preserve Docker volumes; omit the volume-removal flag.",
+    match = ["docker-compose down -v"],
+)
+
+prefix_rule(
+    pattern = ["supabase", "db", "reset", ["--linked", "--db-url"]],
+    decision = "forbidden",
+    justification = "Do not reset a linked or explicitly addressed database.",
+    match = ["supabase db reset --linked", "supabase db reset --db-url placeholder"],
+)
+
+prefix_rule(
+    pattern = ["codex", ["--dangerously-bypass-approvals-and-sandbox", "--dangerously-bypass-hook-trust"]],
+    decision = "forbidden",
+    justification = "Do not bypass Codex sandbox, approval, or hook-trust protections.",
+    match = ["codex --dangerously-bypass-approvals-and-sandbox", "codex --dangerously-bypass-hook-trust"],
+)
+
+prefix_rule(
+    pattern = ["codex", ["exec", "e"], ["--dangerously-bypass-approvals-and-sandbox", "--dangerously-bypass-hook-trust", "--ignore-rules"]],
+    decision = "forbidden",
+    justification = "Do not bypass Codex sandbox, approval, hook-trust, or project Rules protections.",
+    match = ["codex exec --ignore-rules task", "codex exec --dangerously-bypass-hook-trust task"],
+)
+
+prefix_rule(
+    pattern = ["git", ["commit", "push", "merge", "rebase"]],
+    decision = "prompt",
+    justification = "Require explicit approval for repository history or remote changes.",
+    match = ["git commit -m test", "git push origin test", "git merge topic", "git rebase dev"],
+    not_match = ["git status --short", "git diff --check"],
+)
+
+prefix_rule(
+    pattern = ["git", "branch", "-D"],
+    decision = "prompt",
+    justification = "Require approval before force-deleting a branch.",
+    match = ["git branch -D topic"],
+)
+
+prefix_rule(
+    pattern = ["git", "branch", "--delete", "--force"],
+    decision = "prompt",
+    justification = "Require approval before force-deleting a branch.",
+    match = ["git branch --delete --force topic"],
+)
+
+prefix_rule(
+    pattern = ["git", ["restore", "checkout"]],
+    decision = "prompt",
+    justification = "Review restore and checkout operations because they may discard work.",
+    match = ["git restore file.txt", "git checkout -- file.txt"],
+    not_match = ["git status", "git diff"],
+)
+
+prefix_rule(
+    pattern = [["npm", "pnpm", "yarn"], ["install", "add"]],
+    decision = "prompt",
+    justification = "Require approval before installing packages or changing dependency metadata.",
+    match = ["npm install package-name", "npm add package-name", "pnpm add package-name", "yarn add package-name"],
+)
+
+prefix_rule(
+    pattern = [["flutter", "dart"], "pub", "add"],
+    decision = "prompt",
+    justification = "Require approval before changing Dart or Flutter dependencies.",
+    match = ["flutter pub add package-name", "dart pub add package-name"],
+    not_match = ["flutter analyze", "flutter test"],
+)
+
+prefix_rule(
+    pattern = ["flutter", "build", ["apk", "appbundle", "ios", "ipa", "web", "windows", "macos", "linux"], "--release"],
+    decision = "prompt",
+    justification = "Require approval before producing an explicit Flutter release build.",
+    match = ["flutter build apk --release", "flutter build appbundle --release", "flutter build web --release"],
+    not_match = ["flutter analyze", "flutter test"],
+)
+
+prefix_rule(
+    pattern = [["firebase", "fly", "netlify", "wrangler"], "deploy"],
+    decision = "prompt",
+    justification = "Require approval before starting a deployment.",
+    match = ["firebase deploy", "fly deploy", "netlify deploy", "wrangler deploy"],
+)
+
+prefix_rule(
+    pattern = ["vercel", ["deploy", "--prod"]],
+    decision = "prompt",
+    justification = "Require approval before starting a Vercel deployment.",
+    match = ["vercel deploy", "vercel --prod"],
+)
+
+prefix_rule(
+    pattern = ["railway", "up"],
+    decision = "prompt",
+    justification = "Require approval before starting a Railway deployment.",
+    match = ["railway up"],
+)
+
+prefix_rule(
+    pattern = ["kubectl", "apply"],
+    decision = "prompt",
+    justification = "Require approval before applying cluster configuration.",
+    match = ["kubectl apply -f deployment.yaml"],
+)
+
+prefix_rule(
+    pattern = ["helm", "upgrade"],
+    decision = "prompt",
+    justification = "Require approval before applying a Helm release.",
+    match = ["helm upgrade release chart"],
+)
+
+prefix_rule(
+    pattern = ["npx", "prisma", "migrate", ["dev", "deploy", "resolve"]],
+    decision = "prompt",
+    justification = "Require approval before creating, applying, or resolving migrations.",
+    match = ["npx prisma migrate dev", "npx prisma migrate deploy", "npx prisma migrate resolve --applied migration-name"],
+    not_match = ["npx prisma migrate status", "npx prisma validate"],
+)
+
+prefix_rule(
+    pattern = ["npx", "prisma", "db", "push"],
+    decision = "prompt",
+    justification = "Require approval before pushing schema changes to a database.",
+    match = ["npx prisma db push", "npx prisma db push --force-reset"],
+    not_match = ["npx prisma validate", "npx prisma migrate status"],
+)
