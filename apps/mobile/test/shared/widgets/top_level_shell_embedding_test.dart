@@ -9,6 +9,7 @@ import 'package:tavrix_menu_mobile/features/business_setup/domain/entities/busin
 import 'package:tavrix_menu_mobile/features/business_setup/presentation/bloc/business_setup_cubit.dart';
 import 'package:tavrix_menu_mobile/features/business_setup/presentation/bloc/business_setup_state.dart';
 import 'package:tavrix_menu_mobile/features/business_setup/presentation/pages/business_profile_screen.dart';
+import 'package:tavrix_menu_mobile/features/dashboard/domain/entities/dashboard_summary.dart';
 import 'package:tavrix_menu_mobile/features/dashboard/presentation/bloc/dashboard_cubit.dart';
 import 'package:tavrix_menu_mobile/features/dashboard/presentation/bloc/dashboard_state.dart';
 import 'package:tavrix_menu_mobile/features/dashboard/presentation/pages/dashboard_screen.dart';
@@ -76,7 +77,7 @@ void main() {
     }
   });
 
-  testWidgets('dashboard embedded mode hides identity but keeps actions', (
+  testWidgets('dashboard embedded mode has V3 content without local identity', (
     tester,
   ) async {
     await _pumpScreen(
@@ -86,14 +87,14 @@ void main() {
 
     expect(find.byType(AppBar), findsNothing);
     expect(find.byType(BusinessHeaderCard), findsNothing);
-    expect(find.byTooltip(PilotArabicCopy.signOut), findsOneWidget);
     expect(
-      find.byKey(const ValueKey('dashboardWalletScanAction')),
+      find.byKey(const ValueKey('dashboard-v3-progress-hero')),
       findsOneWidget,
     );
 
     await _pumpScreen(tester, const DashboardScreen());
-    expect(find.byType(BusinessHeaderCard), findsOneWidget);
+    expect(find.byType(AppBar), findsOneWidget);
+    expect(find.byType(BusinessHeaderCard), findsNothing);
   });
 
   testWidgets('menu and loyalty hide workspace identity only when embedded', (
@@ -242,6 +243,7 @@ class _FakeDashboardCubit extends Cubit<DashboardState>
         const DashboardState(
           status: DashboardStatus.success,
           business: _business,
+          summary: _dashboardSummary,
         ),
       );
 
@@ -301,4 +303,23 @@ const _business = Business(
   slug: 'fixture-workspace',
   publicMenuUrl: 'https://menu.example.test/m/fixture-workspace',
   permissions: BusinessPermissions.owner(),
+);
+
+const _dashboardSummary = DashboardSummary(
+  business: _business,
+  currentUser: DashboardCurrentUser(
+    role: 'OWNER',
+    permissions: BusinessPermissions.owner(),
+    permissionsAvailable: true,
+  ),
+  counts: DashboardCounts(activeCategories: 1),
+  publicMenu: DashboardPublicMenu(
+    path: '/m/fixture-workspace',
+    url: 'https://menu.example.test/m/fixture-workspace',
+    qrPayload: 'https://menu.example.test/m/fixture-workspace',
+  ),
+  onboardingHints: DashboardOnboardingHints(
+    hasCategories: true,
+    recommendedNextStep: 'CREATE_ITEM',
+  ),
 );

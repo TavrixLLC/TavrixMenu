@@ -30,77 +30,83 @@ import 'package:tavrix_menu_mobile/shared/widgets/v2/waflo_shell_v2.dart';
 
 void main() {
   group('Waflo V2 App Shell Navigation Tests', () {
-    testWidgets('renders shell with bottom navigation items and switches tabs', (
-      tester,
-    ) async {
-      final authCubit = AuthCubit(
-        getCurrentUser: GetCurrentUser(const _MeRepository()),
-        authSessionController: AuthSessionController(
-          config: _config,
-          clerkTokenProvider: ClerkTokenProvider(),
-          devTokenProvider: const DevTokenProvider(''),
-        ),
-      );
+    testWidgets(
+      'renders shell with bottom navigation items and switches tabs',
+      (tester) async {
+        final authCubit = AuthCubit(
+          getCurrentUser: GetCurrentUser(const _MeRepository()),
+          authSessionController: AuthSessionController(
+            config: _config,
+            clerkTokenProvider: ClerkTokenProvider(),
+            devTokenProvider: const DevTokenProvider(''),
+          ),
+        );
 
-      final dashboardCubit = DashboardCubit(
-        getCurrentUser: GetCurrentUser(const _MeRepository()),
-        getMyBusiness: GetMyBusiness(const _BusinessRepository()),
-        getDashboardSummary: GetDashboardSummary(const _DashboardRepository()),
-      );
+        final dashboardCubit = DashboardCubit(
+          getCurrentUser: GetCurrentUser(const _MeRepository()),
+          getMyBusiness: GetMyBusiness(const _BusinessRepository()),
+          getDashboardSummary: GetDashboardSummary(
+            const _DashboardRepository(),
+          ),
+        );
 
-      final menuCubit = FakeMenuCubit();
-      final loyaltyCubit = FakeLoyaltyCubit();
-      final walletScanCubit = FakeWalletScanCubit();
-      final businessSetupCubit = FakeBusinessSetupCubit();
+        final menuCubit = FakeMenuCubit();
+        final loyaltyCubit = FakeLoyaltyCubit();
+        final walletScanCubit = FakeWalletScanCubit();
+        final businessSetupCubit = FakeBusinessSetupCubit();
 
-      addTearDown(authCubit.close);
-      addTearDown(dashboardCubit.close);
-      addTearDown(menuCubit.close);
-      addTearDown(loyaltyCubit.close);
-      addTearDown(walletScanCubit.close);
-      addTearDown(businessSetupCubit.close);
+        addTearDown(authCubit.close);
+        addTearDown(dashboardCubit.close);
+        addTearDown(menuCubit.close);
+        addTearDown(loyaltyCubit.close);
+        addTearDown(walletScanCubit.close);
+        addTearDown(businessSetupCubit.close);
 
-      await tester.pumpWidget(
-        MultiBlocProvider(
-          providers: [
-            BlocProvider<AuthCubit>.value(value: authCubit),
-            BlocProvider<DashboardCubit>.value(value: dashboardCubit),
-            BlocProvider<MenuCubit>.value(value: menuCubit),
-            BlocProvider<LoyaltyCubit>.value(value: loyaltyCubit),
-            BlocProvider<WalletScanCubit>.value(value: walletScanCubit),
-            BlocProvider<BusinessSetupCubit>.value(value: businessSetupCubit),
-          ],
-          child: const MaterialApp(home: WafloShellV2(config: _config)),
-        ),
-      );
-      await tester.pumpAndSettle();
+        await tester.pumpWidget(
+          MultiBlocProvider(
+            providers: [
+              BlocProvider<AuthCubit>.value(value: authCubit),
+              BlocProvider<DashboardCubit>.value(value: dashboardCubit),
+              BlocProvider<MenuCubit>.value(value: menuCubit),
+              BlocProvider<LoyaltyCubit>.value(value: loyaltyCubit),
+              BlocProvider<WalletScanCubit>.value(value: walletScanCubit),
+              BlocProvider<BusinessSetupCubit>.value(value: businessSetupCubit),
+            ],
+            child: const MaterialApp(home: WafloShellV2(config: _config)),
+          ),
+        );
+        await tester.pumpAndSettle();
 
-      // Verify bottom navigation bar exists with correct Arabic sections
-      expect(find.text('الرئيسية'), findsWidgets);
-      expect(find.text('المنيو'), findsWidgets);
-      expect(find.text('الولاء'), findsWidgets);
-      expect(find.text('المسح'), findsWidgets);
-      expect(find.text('الإعدادات'), findsWidgets);
+        // Verify bottom navigation bar exists with correct Arabic sections
+        expect(find.text('الرئيسية'), findsWidgets);
+        expect(find.text('المنيو'), findsWidgets);
+        expect(find.text('الولاء'), findsWidgets);
+        expect(find.text('المسح'), findsWidgets);
+        expect(find.text('الإعدادات'), findsWidgets);
 
-      // Verify first tab is selected by default (الرئيسية / DashboardScreen content)
-      expect(find.text('لوحة Waflo'), findsWidgets);
+        // The legacy shell harness still renders the canonical Dashboard body.
+        expect(
+          find.byKey(const ValueKey('dashboard-v3-progress-hero')),
+          findsOneWidget,
+        );
 
-      // Tap on the 'المنيو' tab and verify switching
-      await tester.tap(find.text('المنيو').first);
-      await tester.pumpAndSettle();
+        // Tap on the 'المنيو' tab and verify switching
+        await tester.tap(find.text('المنيو').first);
+        await tester.pumpAndSettle();
 
-      // Tap on the 'الولاء' tab and verify switching
-      await tester.tap(find.text('الولاء').first);
-      await tester.pumpAndSettle();
+        // Tap on the 'الولاء' tab and verify switching
+        await tester.tap(find.text('الولاء').first);
+        await tester.pumpAndSettle();
 
-      // Tap on the 'المسح' tab and verify switching
-      await tester.tap(find.text('المسح').first);
-      await tester.pumpAndSettle();
+        // Tap on the 'المسح' tab and verify switching
+        await tester.tap(find.text('المسح').first);
+        await tester.pumpAndSettle();
 
-      // Tap on the 'الإعدادات' tab and verify switching
-      await tester.tap(find.text('الإعدادات').first);
-      await tester.pumpAndSettle();
-    });
+        // Tap on the 'الإعدادات' tab and verify switching
+        await tester.tap(find.text('الإعدادات').first);
+        await tester.pumpAndSettle();
+      },
+    );
   });
 }
 

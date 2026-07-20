@@ -3,30 +3,31 @@ import 'dart:async';
 import 'package:flutter/material.dart';
 import 'package:flutter_bloc/flutter_bloc.dart';
 
-import '../../../../app/router/route_names.dart';
-import '../../../../core/constants/app_colors.dart';
-import '../../../../core/constants/app_radius.dart';
-import '../../../../core/constants/app_spacing.dart';
-import '../../../../core/copy/pilot_arabic_copy.dart';
-import '../../../../shared/widgets/app_card.dart';
+import '../../../../core/theme/v3/waflo_v3_tokens.dart';
 import '../../../../shared/widgets/app_scaffold.dart';
-import '../../../../shared/widgets/business_header_card.dart';
-import '../../../../shared/widgets/error_view.dart';
-import '../../../../shared/widgets/loading_view.dart';
-import '../../../../shared/widgets/role_badge.dart';
-import '../../../../shared/widgets/section_header.dart';
-import '../../../../shared/widgets/waflo_action_tile.dart';
-import '../../../../shared/widgets/waflo_metric_card.dart';
-import '../../../../shared/widgets/v2/waflo_shell_v2.dart';
-import '../../../auth/presentation/bloc/auth_cubit.dart';
-import '../../domain/entities/dashboard_summary.dart';
+import '../../../../shared/widgets/v3/waflo_bottom_navigation.dart';
+import '../../../../shared/widgets/v3/waflo_empty_state.dart';
+import '../../../../shared/widgets/v3/waflo_inline_error.dart';
+import '../../../../shared/widgets/v3/waflo_primary_button.dart';
+import '../../../../shared/widgets/v3/waflo_secondary_button.dart';
+import '../../../../shared/widgets/v3/waflo_section_header.dart';
+import '../../../../shared/widgets/v3/waflo_shell_v3.dart';
+import '../../../../shared/widgets/v3/waflo_skeleton.dart';
+import '../../../../shared/widgets/v3/waflo_status_badge.dart';
 import '../bloc/dashboard_cubit.dart';
 import '../bloc/dashboard_state.dart';
 
 class DashboardScreen extends StatefulWidget {
-  const DashboardScreen({super.key, this.embeddedInWorkspaceShell = false});
+  const DashboardScreen({
+    super.key,
+    this.embeddedInWorkspaceShell = false,
+    this.onDestinationSelected,
+    this.onOpenPublicMenu,
+  });
 
   final bool embeddedInWorkspaceShell;
+  final ValueChanged<WafloWorkspaceDestination>? onDestinationSelected;
+  final VoidCallback? onOpenPublicMenu;
 
   @override
   State<DashboardScreen> createState() => _DashboardScreenState();
@@ -41,704 +42,752 @@ class _DashboardScreenState extends State<DashboardScreen> {
 
   @override
   Widget build(BuildContext context) {
+    final dashboard = BlocBuilder<DashboardCubit, DashboardState>(
+      builder: (context, state) => _DashboardStateView(
+        state: state,
+        onRetry: () => context.read<DashboardCubit>().load(),
+        onDestinationSelected: (destination) {
+          final callback = widget.onDestinationSelected;
+          if (callback != null) {
+            callback(destination);
+            return;
+          }
+          WafloShellV3.maybeControllerOf(
+            context,
+          )?.selectDestination(destination);
+        },
+        onOpenPublicMenu: widget.onOpenPublicMenu,
+      ),
+    );
+
     return Directionality(
       textDirection: TextDirection.rtl,
-      child: AppScaffold(
-        title: PilotArabicCopy.dashboardTitle,
-        embeddedInWorkspaceShell: widget.embeddedInWorkspaceShell,
-        actions: widget.embeddedInWorkspaceShell
-            ? null
-            : [_buildSignOutAction(context)],
-        scrollable: true,
-        child: BlocBuilder<DashboardCubit, DashboardState>(
-          builder: (context, state) {
-            if (state.status == DashboardStatus.loading ||
-                state.status == DashboardStatus.initial) {
-              return const LoadingView(
-                message: PilotArabicCopy.dashboardLoading,
-              );
-            }
+      child: widget.embeddedInWorkspaceShell
+          ? ColoredBox(
+              color: WafloV3Colors.background,
+              child: ListView(
+                key: const ValueKey('dashboard-v3-scroll-view'),
+                padding: const EdgeInsetsDirectional.fromSTEB(
+                  WafloV3Spacing.standardPageMargin,
+                  WafloV3Spacing.space8,
+                  WafloV3Spacing.standardPageMargin,
+                  WafloV3Spacing.space24,
+                ),
+                children: [dashboard],
+              ),
+            )
+          : AppScaffold(title: 'الرئيسية', scrollable: true, child: dashboard),
+    );
+  }
+}
 
-            if (state.status == DashboardStatus.failure) {
-              return ErrorView(
-                message:
-                    state.errorMessage ?? PilotArabicCopy.dashboardLoadFailed,
-                onRetry: () => context.read<DashboardCubit>().load(),
-              );
-            }
+class _DashboardStateView extends StatelessWidget {
+  const _DashboardStateView({
+    required this.state,
+    required this.onRetry,
+    required this.onDestinationSelected,
+    required this.onOpenPublicMenu,
+  });
 
-            final isStaff = state.effectiveRole == 'STAFF';
+  final DashboardState state;
+  final VoidCallback onRetry;
+  final ValueChanged<WafloWorkspaceDestination> onDestinationSelected;
+  final VoidCallback? onOpenPublicMenu;
 
-            return Column(
-              crossAxisAlignment: CrossAxisAlignment.start,
-              children: [
-                if (widget.embeddedInWorkspaceShell) ...[
-                  Align(
-                    alignment: AlignmentDirectional.centerEnd,
-                    child: _buildSignOutAction(context),
-                  ),
-                  const SizedBox(height: AppSpacing.md),
-                ] else
-                  BusinessHeaderCard(
-                    business: state.business,
-                    role: state.workspaceRoleDisplayLabel,
-                  ),
-                if (state.summaryErrorMessage != null) ...[
-                  if (!widget.embeddedInWorkspaceShell)
-                    const SizedBox(height: AppSpacing.md),
-                  _InlineNotice(
-                    title: PilotArabicCopy.latestCountsFailed,
-                    message: PilotArabicCopy.latestCountsRetry,
-                  ),
-                ],
-                if (!widget.embeddedInWorkspaceShell ||
-                    state.summaryErrorMessage != null)
-                  const SizedBox(height: AppSpacing.lg),
-                _AccessCard(state: state),
-                if (!isStaff) ...[
-                  const SizedBox(height: AppSpacing.lg),
-                  const _ManagedSetupCard(),
-                ],
-                if (isStaff) ...[
-                  const SizedBox(height: AppSpacing.lg),
-                  _DashboardActionCard(
-                    key: const ValueKey('dashboardWalletScanAction'),
-                    enabled: _canScanCustomerWallet(state),
-                    title: PilotArabicCopy.staffCashier,
-                    subtitle: _canScanCustomerWallet(state)
-                        ? PilotArabicCopy.scannerSubtitle
-                        : PilotArabicCopy.scanDisabled,
-                    icon: Icons.qr_code_scanner,
-                    routeName: AppRouteNames.walletScan,
-                    accentColor: AppColors.primaryCoral,
-                    badge: PilotArabicCopy.readyBadge,
-                  ),
-                ],
-                if (state.summary != null) ...[
-                  const SizedBox(height: AppSpacing.lg),
-                  _DashboardSummarySection(state: state),
-                ],
-                const SizedBox(height: AppSpacing.lg),
-                SectionHeader(
-                  title: isStaff
-                      ? PilotArabicCopy.staffCashier
-                      : PilotArabicCopy.guidedSetupTitle,
-                  subtitle: isStaff
-                      ? PilotArabicCopy.scannerSubtitle
-                      : PilotArabicCopy.guidedSetupSubtitle,
-                ),
-                const SizedBox(height: AppSpacing.md),
-                _DashboardActionCard(
-                  enabled: _canManageBusiness(state),
-                  title: PilotArabicCopy.businessInfo,
-                  subtitle: _canManageBusiness(state)
-                      ? PilotArabicCopy.businessWorkspaceSubtitle
-                      : PilotArabicCopy.businessWorkspaceDenied,
-                  icon: Icons.storefront,
-                  routeName: AppRouteNames.businessProfile,
-                  accentColor: AppColors.rewardGold,
-                ),
-                const SizedBox(height: AppSpacing.sm),
-                _DashboardActionCard(
-                  enabled: _canManageMenu(state),
-                  title: PilotArabicCopy.menuProducts,
-                  subtitle: _canManageMenu(state)
-                      ? PilotArabicCopy.menuToolsSubtitle
-                      : PilotArabicCopy.menuToolsDenied,
-                  icon: Icons.restaurant_menu,
-                  routeName: AppRouteNames.menu,
-                  accentColor: AppColors.freshGreen,
-                ),
-                const SizedBox(height: AppSpacing.sm),
-                _DashboardActionCard(
-                  enabled: _canViewPublicLink(state),
-                  title: PilotArabicCopy.publicQrMenu,
-                  subtitle: _canViewPublicLink(state)
-                      ? PilotArabicCopy.publicLinkSubtitle
-                      : PilotArabicCopy.publicLinkDenied,
-                  icon: Icons.qr_code_2,
-                  routeName: AppRouteNames.qr,
-                  accentColor: AppColors.primaryCoral,
-                ),
-                const SizedBox(height: AppSpacing.sm),
-                _DashboardActionCard(
-                  title: PilotArabicCopy.loyaltyCard,
-                  subtitle: PilotArabicCopy.loyaltyToolsSubtitle,
-                  icon: Icons.loyalty_outlined,
-                  routeName: AppRouteNames.loyalty,
-                  accentColor: AppColors.freshGreen,
-                ),
-                const SizedBox(height: AppSpacing.sm),
-                if (!isStaff) ...[
-                  _DashboardActionCard(
-                    key: const ValueKey('dashboardWalletScanAction'),
-                    enabled: _canScanCustomerWallet(state),
-                    title: PilotArabicCopy.staffCashier,
-                    subtitle: _canScanCustomerWallet(state)
-                        ? PilotArabicCopy.scannerSubtitle
-                        : PilotArabicCopy.scanDisabled,
-                    icon: Icons.qr_code_scanner,
-                    routeName: AppRouteNames.walletScan,
-                    accentColor: AppColors.primaryCoral,
-                    badge: PilotArabicCopy.readyBadge,
-                  ),
-                  const SizedBox(height: AppSpacing.sm),
-                ],
-                _DashboardActionCard(
-                  enabled: _canManageAppearance(state),
-                  title: PilotArabicCopy.menuAppearance,
-                  subtitle: _canManageAppearance(state)
-                      ? PilotArabicCopy.menuAppearanceSubtitle
-                      : PilotArabicCopy.menuAppearanceDenied,
-                  icon: Icons.palette_outlined,
-                  routeName: AppRouteNames.menuAppearance,
-                  accentColor: AppColors.primaryCoral,
-                ),
-              ],
-            );
-          },
+  @override
+  Widget build(BuildContext context) {
+    if (state.status == DashboardStatus.initial ||
+        state.status == DashboardStatus.loading) {
+      return const _DashboardLoadingState();
+    }
+
+    if (state.status == DashboardStatus.failure) {
+      return WafloInlineError(
+        key: const ValueKey('dashboard-v3-load-error'),
+        title: 'تعذّر تحميل الرئيسية',
+        message: state.errorMessage ?? 'حاول مرة ثانية بعد قليل.',
+        onRetry: onRetry,
+      );
+    }
+
+    final summary = state.summary;
+    if (summary == null) {
+      return WafloInlineError(
+        key: const ValueKey('dashboard-v3-summary-error'),
+        title: 'تعذّر تحميل تفاصيل المطعم',
+        message:
+            state.summaryErrorMessage ??
+            'لا نعرض أرقاماً تقديرية. أعد المحاولة لعرض البيانات الحقيقية.',
+        onRetry: onRetry,
+      );
+    }
+
+    return Column(
+      key: const ValueKey('dashboard-v3-content'),
+      crossAxisAlignment: CrossAxisAlignment.stretch,
+      children: [
+        if (state.summaryErrorMessage != null) ...[
+          WafloInlineError(
+            title: 'تعذّر تحديث بعض التفاصيل',
+            message: state.summaryErrorMessage!,
+            onRetry: onRetry,
+          ),
+          const SizedBox(height: WafloV3Spacing.space16),
+        ],
+        _ProgressHero(
+          state: state,
+          onSelectMenu: () =>
+              onDestinationSelected(WafloWorkspaceDestination.menu),
+          onOpenPublicMenu: onOpenPublicMenu,
         ),
+        const SizedBox(height: WafloV3Spacing.space24),
+        const WafloSectionHeader(title: 'إجراءات سريعة'),
+        const SizedBox(height: WafloV3Spacing.space12),
+        _QuickActions(
+          state: state,
+          onDestinationSelected: onDestinationSelected,
+        ),
+        const SizedBox(height: WafloV3Spacing.space24),
+        const WafloSectionHeader(title: 'لمحة سريعة'),
+        const SizedBox(height: WafloV3Spacing.space12),
+        _MetricsGrid(state: state),
+        const SizedBox(height: WafloV3Spacing.space24),
+        const WafloSectionHeader(title: 'النشاط الأخير'),
+        const SizedBox(height: WafloV3Spacing.space12),
+        const _Surface(
+          child: WafloEmptyState(
+            key: ValueKey('dashboard-v3-activity-unavailable'),
+            icon: Icons.inbox_outlined,
+            title: 'النشاط الأخير غير متاح حالياً',
+            description: 'سنُظهر النشاط هنا عندما تتوفر بيانات موثوقة للمطعم.',
+          ),
+        ),
+        const SizedBox(height: WafloV3Spacing.space24),
+        _LoyaltyPanel(
+          enabled: _canAccessLoyalty(state),
+          onPressed: () =>
+              onDestinationSelected(WafloWorkspaceDestination.loyalty),
+        ),
+      ],
+    );
+  }
+}
+
+class _ProgressHero extends StatelessWidget {
+  const _ProgressHero({
+    required this.state,
+    required this.onSelectMenu,
+    required this.onOpenPublicMenu,
+  });
+
+  final DashboardState state;
+  final VoidCallback onSelectMenu;
+  final VoidCallback? onOpenPublicMenu;
+
+  @override
+  Widget build(BuildContext context) {
+    final summary = state.summary!;
+    final hasCategories = summary.counts.activeCategories > 0;
+    final hasProducts = summary.counts.availableItems > 0;
+    final publicMenuReady =
+        hasProducts &&
+        summary.onboardingHints.hasPublicMenuReady &&
+        summary.publicMenu.url.trim().isNotEmpty;
+    final completedSteps =
+        1 +
+        (hasCategories ? 1 : 0) +
+        (hasProducts ? 1 : 0) +
+        (publicMenuReady ? 1 : 0);
+    final canManageMenu = _canManageMenu(state);
+    final canOpenMenu = publicMenuReady && onOpenPublicMenu != null;
+    final title = !hasCategories
+        ? 'ابدأ بأول قسم في منيوك'
+        : !hasProducts
+        ? 'خلّ منيوك جاهز للزبائن'
+        : publicMenuReady
+        ? 'منيوك جاهز للمشاركة'
+        : 'راجع منيوك قبل مشاركته';
+    final description = !hasCategories
+        ? 'رتّب المنيو بإضافة قسم حقيقي، وبعدها أضف منتجاتك.'
+        : !hasProducts
+        ? 'أضف أول منتجاتك حتى تقدر تعرض المنيو وتشاركه مع الزبائن.'
+        : publicMenuReady
+        ? 'المنتجات والمنيو العام جاهزان. افتح المنيو وراجعه قبل المشاركة.'
+        : 'بيانات المنتجات موجودة، لكن المنيو العام غير جاهز للفتح بعد.';
+
+    return _Surface(
+      key: const ValueKey('dashboard-v3-progress-hero'),
+      warm: true,
+      child: Column(
+        crossAxisAlignment: CrossAxisAlignment.stretch,
+        children: [
+          Align(
+            alignment: AlignmentDirectional.centerStart,
+            child: WafloStatusBadge(
+              label: '$completedSteps من 4 خطوات جاهزة',
+              status: completedSteps == 4
+                  ? WafloStatusKind.active
+                  : WafloStatusKind.warning,
+            ),
+          ),
+          const SizedBox(height: WafloV3Spacing.space16),
+          Text(
+            title,
+            key: const ValueKey('dashboard-v3-hero-title'),
+            style: Theme.of(context).textTheme.headlineSmall?.copyWith(
+              color: WafloV3Colors.primaryText,
+              fontWeight: FontWeight.w800,
+              height: 1.35,
+            ),
+          ),
+          const SizedBox(height: WafloV3Spacing.space8),
+          Text(
+            description,
+            style: Theme.of(context).textTheme.bodyLarge?.copyWith(
+              color: WafloV3Colors.primaryText.withValues(alpha: 0.72),
+              height: 1.55,
+            ),
+          ),
+          const SizedBox(height: WafloV3Spacing.space20),
+          _ProgressSteps(completedSteps: completedSteps),
+          const SizedBox(height: WafloV3Spacing.space20),
+          WafloPrimaryButton(
+            key: const ValueKey('dashboard-v3-primary-menu-action'),
+            label: hasCategories ? 'إضافة منتج' : 'إدارة الأقسام',
+            onPressed: canManageMenu ? onSelectMenu : null,
+          ),
+          if (!canManageMenu) ...[
+            const SizedBox(height: WafloV3Spacing.space8),
+            const _HelperText(text: 'صلاحيتك الحالية لا تسمح بتعديل المنيو.'),
+          ],
+          const SizedBox(height: WafloV3Spacing.space8),
+          WafloSecondaryButton(
+            key: const ValueKey('dashboard-v3-open-menu-action'),
+            label: 'فتح المنيو',
+            onPressed: canOpenMenu ? onOpenPublicMenu : null,
+          ),
+          if (!canOpenMenu) ...[
+            const SizedBox(height: WafloV3Spacing.space8),
+            const _HelperText(
+              key: ValueKey('dashboard-v3-open-menu-helper'),
+              text: 'يتوفر فتح المنيو بعد إضافة منتج وتجهيز الرابط العام.',
+            ),
+          ],
+        ],
       ),
     );
   }
+}
 
-  Widget _buildSignOutAction(BuildContext context) {
-    return IconButton(
-      tooltip: PilotArabicCopy.signOut,
-      icon: const Icon(Icons.logout),
-      onPressed: () async {
-        await context.read<AuthCubit>().signOut();
-        if (context.mounted) {
-          Navigator.of(
-            context,
-          ).pushNamedAndRemoveUntil(AppRouteNames.login, (_) => false);
-        }
+class _ProgressSteps extends StatelessWidget {
+  const _ProgressSteps({required this.completedSteps});
+
+  final int completedSteps;
+
+  @override
+  Widget build(BuildContext context) {
+    return Semantics(
+      label: '$completedSteps من 4 خطوات جاهزة',
+      excludeSemantics: true,
+      child: Row(
+        children: List.generate(4, (index) {
+          final completed = index < completedSteps;
+          return Expanded(
+            child: Padding(
+              padding: EdgeInsetsDirectional.only(
+                end: index == 3 ? 0 : WafloV3Spacing.space8,
+              ),
+              child: Container(
+                height: WafloV3Spacing.space8,
+                decoration: BoxDecoration(
+                  color: completed
+                      ? WafloV3Colors.primary
+                      : WafloV3Colors.primaryText.withValues(alpha: 0.10),
+                  borderRadius: const BorderRadius.all(
+                    Radius.circular(WafloV3Radius.pill),
+                  ),
+                ),
+              ),
+            ),
+          );
+        }),
+      ),
+    );
+  }
+}
+
+class _QuickActions extends StatelessWidget {
+  const _QuickActions({
+    required this.state,
+    required this.onDestinationSelected,
+  });
+
+  final DashboardState state;
+  final ValueChanged<WafloWorkspaceDestination> onDestinationSelected;
+
+  @override
+  Widget build(BuildContext context) {
+    final actions = [
+      _QuickActionData(
+        key: const ValueKey('dashboard-v3-loyalty-action'),
+        label: 'إنشاء بطاقة ولاء',
+        icon: Icons.loyalty_outlined,
+        enabled: _canAccessLoyalty(state),
+        helper: _canAccessLoyalty(state) ? null : 'غير متاح لصلاحيتك الحالية',
+        onPressed: () =>
+            onDestinationSelected(WafloWorkspaceDestination.loyalty),
+      ),
+      _QuickActionData(
+        key: const ValueKey('dashboard-v3-categories-action'),
+        label: 'إدارة الأقسام',
+        icon: Icons.grid_view_rounded,
+        enabled: _canManageMenu(state),
+        helper: _canManageMenu(state) ? null : 'تحتاج صلاحية إدارة المنيو',
+        onPressed: () => onDestinationSelected(WafloWorkspaceDestination.menu),
+      ),
+      _QuickActionData(
+        key: const ValueKey('dashboard-v3-scanner-action'),
+        label: 'مسح بطاقة',
+        icon: Icons.qr_code_scanner_rounded,
+        enabled: _canScanCustomerWallet(state),
+        helper: _canScanCustomerWallet(state)
+            ? null
+            : 'المسح غير متاح لصلاحيتك الحالية',
+        onPressed: () =>
+            onDestinationSelected(WafloWorkspaceDestination.scanner),
+      ),
+      const _QuickActionData(
+        key: ValueKey('dashboard-v3-notification-action'),
+        label: 'إرسال إشعار',
+        icon: Icons.send_outlined,
+        enabled: false,
+        helper: 'يتفعّل عند توفر إشعارات العملاء',
+      ),
+    ];
+
+    return LayoutBuilder(
+      builder: (context, constraints) {
+        const gap = WafloV3Spacing.space12;
+        final width = (constraints.maxWidth - gap) / 2;
+        return Wrap(
+          spacing: gap,
+          runSpacing: gap,
+          children: actions
+              .map((action) => SizedBox(width: width, child: action.build()))
+              .toList(growable: false),
+        );
       },
     );
   }
 }
 
-bool _canManageAppearance(DashboardState state) {
-  final permissions = state.permissions;
-  if (permissions != null) {
-    return permissions.canManageAppearance;
-  }
-  if (!state.hasKnownRole) {
-    return true;
-  }
-  return state.effectiveRole == 'OWNER' ||
-      state.effectiveRole == 'ADMIN' ||
-      state.effectiveRole == 'MANAGER';
-}
-
-bool _canManageBusiness(DashboardState state) {
-  final permissions = state.permissions;
-  if (permissions != null) {
-    return permissions.canManageBusiness;
-  }
-  if (!state.hasKnownRole) {
-    return true;
-  }
-  return state.effectiveRole == 'OWNER' ||
-      state.effectiveRole == 'ADMIN' ||
-      state.effectiveRole == 'MANAGER';
-}
-
-bool _canManageMenu(DashboardState state) {
-  final permissions = state.permissions;
-  if (permissions != null) {
-    return permissions.canManageMenu;
-  }
-  if (!state.hasKnownRole) {
-    return true;
-  }
-  return state.effectiveRole == 'OWNER' ||
-      state.effectiveRole == 'ADMIN' ||
-      state.effectiveRole == 'MANAGER';
-}
-
-bool _canViewPublicLink(DashboardState state) {
-  return state.permissions?.canViewPublicLink ?? true;
-}
-
-bool _canScanCustomerWallet(DashboardState state) {
-  return state.permissions?.canScanCustomerWallet ?? true;
-}
-
-class _ManagedSetupCard extends StatelessWidget {
-  const _ManagedSetupCard();
-
-  @override
-  Widget build(BuildContext context) {
-    return AppCard(
-      child: Column(
-        crossAxisAlignment: CrossAxisAlignment.start,
-        children: [
-          const Icon(Icons.handshake_outlined, color: AppColors.primaryCoral),
-          const SizedBox(height: AppSpacing.sm),
-          Text(
-            PilotArabicCopy.guidedSetupTitle,
-            style: Theme.of(context).textTheme.titleLarge,
-          ),
-          const SizedBox(height: AppSpacing.xs),
-          const Text(PilotArabicCopy.managedSetupBody),
-        ],
-      ),
-    );
-  }
-}
-
-class _AccessCard extends StatelessWidget {
-  const _AccessCard({required this.state});
-
-  final DashboardState state;
-
-  @override
-  Widget build(BuildContext context) {
-    final fullName = state.user?.fullName.trim() ?? '';
-    final businessName = state.business?.name.trim() ?? 'this business';
-    final title = fullName.isNotEmpty ? fullName : 'Your access';
-    final subtitle = _roleGuidance(state, businessName);
-
-    return AppCard(
-      child: Row(
-        children: [
-          const Icon(
-            Icons.verified_user_outlined,
-            color: AppColors.primaryCoral,
-          ),
-          const SizedBox(width: AppSpacing.md),
-          Expanded(
-            child: Column(
-              crossAxisAlignment: CrossAxisAlignment.start,
-              children: [
-                Text(title, style: Theme.of(context).textTheme.titleMedium),
-                const SizedBox(height: AppSpacing.xxs),
-                Text(subtitle),
-              ],
-            ),
-          ),
-          const SizedBox(width: AppSpacing.md),
-          RoleBadge(role: state.workspaceRoleDisplayLabel),
-        ],
-      ),
-    );
-  }
-
-  String _roleGuidance(DashboardState state, String businessName) {
-    return switch (state.effectiveRole) {
-      'OWNER' => '${PilotArabicCopy.ownerAccess} ($businessName)',
-      'ADMIN' => '${PilotArabicCopy.ownerAccess} ($businessName)',
-      'MANAGER' => '${PilotArabicCopy.managerAccess} ($businessName)',
-      'STAFF' => '${PilotArabicCopy.staffAccess} ($businessName)',
-      _ => '${PilotArabicCopy.unknownAccess} ($businessName)',
-    };
-  }
-}
-
-class _DashboardSummarySection extends StatelessWidget {
-  const _DashboardSummarySection({required this.state});
-
-  final DashboardState state;
-
-  @override
-  Widget build(BuildContext context) {
-    final summary = state.summary!;
-    final hint = _hintText(summary.onboardingHints.recommendedNextStep);
-    final needsMenuSetup =
-        summary.counts.activeCategories == 0 ||
-        summary.counts.availableItems == 0;
-
-    return Column(
-      crossAxisAlignment: CrossAxisAlignment.start,
-      children: [
-        AppCard(
-          child: Column(
-            crossAxisAlignment: CrossAxisAlignment.start,
-            children: [
-              Row(
-                children: [
-                  const Icon(Icons.dashboard_customize_outlined),
-                  const SizedBox(width: AppSpacing.sm),
-                  Expanded(
-                    child: Column(
-                      crossAxisAlignment: CrossAxisAlignment.start,
-                      children: [
-                        Text(
-                          PilotArabicCopy.guidedSetupTitle,
-                          style: Theme.of(context).textTheme.titleLarge,
-                        ),
-                        const SizedBox(height: AppSpacing.xxs),
-                        Text(
-                          PilotArabicCopy.guidedSetupSubtitle,
-                          style: Theme.of(context).textTheme.bodyMedium,
-                        ),
-                      ],
-                    ),
-                  ),
-                ],
-              ),
-              const SizedBox(height: AppSpacing.md),
-              if (needsMenuSetup) ...[
-                _MenuSetupPrompt(summary: summary),
-                const SizedBox(height: AppSpacing.md),
-              ],
-              LayoutBuilder(
-                builder: (context, constraints) {
-                  const gap = AppSpacing.sm;
-                  final tileWidth = (constraints.maxWidth - gap) / 2;
-                  return Wrap(
-                    spacing: gap,
-                    runSpacing: gap,
-                    children: [
-                      _WorkflowMetricTile(
-                        width: tileWidth,
-                        label: PilotArabicCopy.activeCategories,
-                        value: summary.counts.activeCategories,
-                        icon: Icons.category_outlined,
-                      ),
-                      _WorkflowMetricTile(
-                        width: tileWidth,
-                        label: PilotArabicCopy.availableItems,
-                        value: summary.counts.availableItems,
-                        icon: Icons.restaurant_menu,
-                      ),
-                      _WorkflowMetricTile(
-                        width: tileWidth,
-                        label: PilotArabicCopy.inactiveCategories,
-                        value: summary.counts.inactiveCategories,
-                        icon: Icons.archive_outlined,
-                      ),
-                      _WorkflowMetricTile(
-                        width: tileWidth,
-                        label: PilotArabicCopy.unavailableItems,
-                        value: summary.counts.unavailableItems,
-                        icon: Icons.visibility_off_outlined,
-                      ),
-                    ],
-                  );
-                },
-              ),
-              if (summary.permissions.canViewMembers ||
-                  summary.permissions.canManageMembers) ...[
-                const SizedBox(height: AppSpacing.sm),
-                _WorkflowMemberRow(value: summary.counts.activeMembers),
-              ],
-              const SizedBox(height: AppSpacing.md),
-              _WorkflowNextStep(message: hint),
-            ],
-          ),
-        ),
-      ],
-    );
-  }
-
-  String _hintText(String? step) {
-    return switch (step) {
-      'CREATE_CATEGORY' => 'ابدأ بإضافة أول قسم حتى يصير المنيو مرتباً.',
-      'CREATE_ITEM' => 'أضف أول منتج حتى يصير المنيو مفيداً للزبائن.',
-      'SHARE_PUBLIC_MENU' =>
-        'المنيو جاهز. افتح رابط QR والمنيو العام وشاركه عند الحاجة.',
-      'OPEN_DASHBOARD' => 'راجع الخطوات وكمل تجهيز المطعم.',
-      _ => 'حافظ على معلومات المطعم والمنيو ورابط QR محدثة.',
-    };
-  }
-}
-
-class _MenuSetupPrompt extends StatelessWidget {
-  const _MenuSetupPrompt({required this.summary});
-
-  final DashboardSummary summary;
-
-  @override
-  Widget build(BuildContext context) {
-    return DecoratedBox(
-      decoration: BoxDecoration(
-        color: AppColors.goldTint,
-        borderRadius: BorderRadius.circular(AppRadius.md),
-        border: Border.all(color: AppColors.softBorder),
-      ),
-      child: Padding(
-        padding: const EdgeInsets.all(AppSpacing.md),
-        child: Column(
-          crossAxisAlignment: CrossAxisAlignment.start,
-          children: [
-            Row(
-              children: [
-                const Icon(
-                  Icons.auto_awesome_outlined,
-                  color: AppColors.rewardGold,
-                ),
-                const SizedBox(width: AppSpacing.sm),
-                Expanded(
-                  child: Text(
-                    PilotArabicCopy.guidedSetupTitle,
-                    style: Theme.of(context).textTheme.titleMedium,
-                  ),
-                ),
-              ],
-            ),
-            const SizedBox(height: AppSpacing.xs),
-            const Text(PilotArabicCopy.guidedSetupSubtitle),
-            const SizedBox(height: AppSpacing.md),
-            Wrap(
-              spacing: AppSpacing.sm,
-              runSpacing: AppSpacing.sm,
-              children: [
-                const _SetupStep(
-                  label: PilotArabicCopy.businessInfo,
-                  completed: true,
-                ),
-                _SetupStep(
-                  label: PilotArabicCopy.addCategories,
-                  completed: summary.counts.activeCategories > 0,
-                ),
-                _SetupStep(
-                  label: PilotArabicCopy.addItems,
-                  completed: summary.counts.availableItems > 0,
-                ),
-                _SetupStep(
-                  label: PilotArabicCopy.shareQr,
-                  completed: summary.publicMenu.url.trim().isNotEmpty,
-                ),
-                const _SetupStep(label: PilotArabicCopy.enableLoyalty),
-                const _SetupStep(label: PilotArabicCopy.prepareCashier),
-              ],
-            ),
-          ],
-        ),
-      ),
-    );
-  }
-}
-
-class _SetupStep extends StatelessWidget {
-  const _SetupStep({required this.label, this.completed = false});
-
-  final String label;
-  final bool completed;
-
-  @override
-  Widget build(BuildContext context) {
-    return DecoratedBox(
-      decoration: BoxDecoration(
-        color: AppColors.surfaceWhite,
-        borderRadius: BorderRadius.circular(AppRadius.pill),
-        border: Border.all(color: AppColors.softBorder),
-      ),
-      child: Padding(
-        padding: const EdgeInsets.symmetric(
-          horizontal: AppSpacing.sm,
-          vertical: AppSpacing.xs,
-        ),
-        child: Row(
-          mainAxisSize: MainAxisSize.min,
-          children: [
-            Icon(
-              completed ? Icons.check_circle_outline : Icons.radio_button_off,
-              size: 16,
-              color: completed
-                  ? AppColors.freshGreenDark
-                  : AppColors.primaryCoral,
-            ),
-            const SizedBox(width: AppSpacing.xs),
-            Text(
-              label,
-              style: Theme.of(context).textTheme.labelLarge?.copyWith(
-                color: AppColors.textDark,
-                fontWeight: FontWeight.w800,
-              ),
-            ),
-          ],
-        ),
-      ),
-    );
-  }
-}
-
-class _WorkflowMetricTile extends StatelessWidget {
-  const _WorkflowMetricTile({
-    required this.width,
+class _QuickActionData {
+  const _QuickActionData({
+    required this.key,
     required this.label,
-    required this.value,
     required this.icon,
+    required this.enabled,
+    this.helper,
+    this.onPressed,
   });
 
-  final double width;
+  final Key key;
   final String label;
-  final int value;
   final IconData icon;
+  final bool enabled;
+  final String? helper;
+  final VoidCallback? onPressed;
 
-  @override
-  Widget build(BuildContext context) {
-    return SizedBox(
-      width: width,
-      child: WafloMetricCard(
-        label: label,
-        value: '$value',
-        icon: icon,
-        accentColor: value == 0 ? AppColors.mutedText : AppColors.primaryCoral,
-      ),
+  Widget build() {
+    return _QuickActionCard(
+      key: key,
+      label: label,
+      icon: icon,
+      enabled: enabled,
+      helper: helper,
+      onPressed: onPressed,
     );
   }
 }
 
-class _WorkflowMemberRow extends StatelessWidget {
-  const _WorkflowMemberRow({required this.value});
+class _QuickActionCard extends StatelessWidget {
+  const _QuickActionCard({
+    required this.label,
+    required this.icon,
+    required this.enabled,
+    super.key,
+    this.helper,
+    this.onPressed,
+  });
 
-  final int value;
+  final String label;
+  final IconData icon;
+  final bool enabled;
+  final String? helper;
+  final VoidCallback? onPressed;
 
   @override
   Widget build(BuildContext context) {
-    return DecoratedBox(
-      decoration: BoxDecoration(
-        color: AppColors.greenTint,
-        borderRadius: BorderRadius.circular(AppRadius.md),
-      ),
-      child: Padding(
-        padding: const EdgeInsets.all(AppSpacing.md),
-        child: Row(
-          children: [
-            const Icon(Icons.groups_outlined, color: AppColors.freshGreenDark),
-            const SizedBox(width: AppSpacing.md),
-            Expanded(
-              child: Text(
-                PilotArabicCopy.activeMembers,
-                style: Theme.of(context).textTheme.titleMedium,
-              ),
-            ),
-            Text(
-              '$value',
-              style: Theme.of(context).textTheme.titleLarge?.copyWith(
-                color: AppColors.houseGreen,
-                fontWeight: FontWeight.w800,
-              ),
-            ),
-          ],
+    final foreground = enabled
+        ? WafloV3Colors.primaryText
+        : WafloV3Colors.primaryText.withValues(alpha: 0.42);
+    return Semantics(
+      button: true,
+      enabled: enabled,
+      label: label,
+      hint: helper,
+      child: Material(
+        color: enabled
+            ? WafloV3Colors.surface
+            : WafloV3Colors.primaryText.withValues(alpha: 0.04),
+        borderRadius: const BorderRadius.all(
+          Radius.circular(WafloV3Radius.standardCard),
         ),
-      ),
-    );
-  }
-}
-
-class _WorkflowNextStep extends StatelessWidget {
-  const _WorkflowNextStep({required this.message});
-
-  final String message;
-
-  @override
-  Widget build(BuildContext context) {
-    return DecoratedBox(
-      decoration: BoxDecoration(
-        border: Border.all(color: AppColors.softBorder),
-        borderRadius: BorderRadius.circular(AppRadius.md),
-      ),
-      child: Padding(
-        padding: const EdgeInsets.all(AppSpacing.md),
-        child: Row(
-          crossAxisAlignment: CrossAxisAlignment.start,
-          children: [
-            const Icon(Icons.info_outline, color: AppColors.primaryCoral),
-            const SizedBox(width: AppSpacing.md),
-            Expanded(
+        child: InkWell(
+          onTap: enabled ? onPressed : null,
+          borderRadius: const BorderRadius.all(
+            Radius.circular(WafloV3Radius.standardCard),
+          ),
+          child: ConstrainedBox(
+            constraints: const BoxConstraints(minHeight: 132),
+            child: Padding(
+              padding: const EdgeInsets.all(WafloV3Spacing.space16),
               child: Column(
                 crossAxisAlignment: CrossAxisAlignment.start,
                 children: [
-                  Text(
-                    PilotArabicCopy.nextStepTitle,
-                    style: Theme.of(context).textTheme.titleMedium,
+                  DecoratedBox(
+                    decoration: BoxDecoration(
+                      color: WafloV3Colors.primary.withValues(
+                        alpha: enabled ? 0.10 : 0.05,
+                      ),
+                      shape: BoxShape.circle,
+                    ),
+                    child: Padding(
+                      padding: const EdgeInsets.all(WafloV3Spacing.space8),
+                      child: Icon(icon, color: foreground),
+                    ),
                   ),
-                  const SizedBox(height: AppSpacing.xs),
-                  Text(message),
+                  const SizedBox(height: WafloV3Spacing.space12),
+                  Text(
+                    label,
+                    style: Theme.of(context).textTheme.titleSmall?.copyWith(
+                      color: foreground,
+                      fontWeight: FontWeight.w700,
+                    ),
+                  ),
+                  if (helper != null) ...[
+                    const SizedBox(height: WafloV3Spacing.space4),
+                    Text(
+                      helper!,
+                      style: Theme.of(context).textTheme.bodySmall?.copyWith(
+                        color: foreground,
+                        height: 1.35,
+                      ),
+                    ),
+                  ],
                 ],
               ),
             ),
-          ],
+          ),
         ),
       ),
     );
   }
 }
 
-class _InlineNotice extends StatelessWidget {
-  const _InlineNotice({required this.title, required this.message});
+class _MetricsGrid extends StatelessWidget {
+  const _MetricsGrid({required this.state});
 
-  final String title;
-  final String message;
+  final DashboardState state;
 
   @override
   Widget build(BuildContext context) {
-    return AppCard(
-      child: Row(
+    final counts = state.summary!.counts;
+    final metrics = [
+      _MetricData(
+        key: const ValueKey('dashboard-v3-products-metric'),
+        label: 'المنتجات',
+        value: '${counts.availableItems}',
+        icon: Icons.shopping_bag_outlined,
+      ),
+      _MetricData(
+        key: const ValueKey('dashboard-v3-categories-metric'),
+        label: 'الأقسام',
+        value: '${counts.activeCategories}',
+        icon: Icons.receipt_long_outlined,
+      ),
+      const _MetricData(
+        key: ValueKey('dashboard-v3-loyalty-metric'),
+        label: 'بطاقات الولاء',
+        value: 'غير متاح',
+        icon: Icons.credit_card_outlined,
+        unavailable: true,
+      ),
+      const _MetricData(
+        key: ValueKey('dashboard-v3-customers-metric'),
+        label: 'العملاء',
+        value: 'غير متاح',
+        icon: Icons.groups_outlined,
+        unavailable: true,
+      ),
+    ];
+
+    return LayoutBuilder(
+      builder: (context, constraints) {
+        const gap = WafloV3Spacing.space12;
+        final width = (constraints.maxWidth - gap) / 2;
+        return Wrap(
+          spacing: gap,
+          runSpacing: gap,
+          children: metrics
+              .map(
+                (metric) => SizedBox(
+                  width: width,
+                  child: _MetricCard(metric: metric),
+                ),
+              )
+              .toList(growable: false),
+        );
+      },
+    );
+  }
+}
+
+class _MetricData {
+  const _MetricData({
+    required this.key,
+    required this.label,
+    required this.value,
+    required this.icon,
+    this.unavailable = false,
+  });
+
+  final Key key;
+  final String label;
+  final String value;
+  final IconData icon;
+  final bool unavailable;
+}
+
+class _MetricCard extends StatelessWidget {
+  const _MetricCard({required this.metric});
+
+  final _MetricData metric;
+
+  @override
+  Widget build(BuildContext context) {
+    return _Surface(
+      key: metric.key,
+      padding: WafloV3Spacing.space16,
+      child: Column(
         crossAxisAlignment: CrossAxisAlignment.start,
         children: [
-          const Icon(Icons.info_outline, color: AppColors.primaryCoral),
-          const SizedBox(width: AppSpacing.md),
-          Expanded(
-            child: Column(
-              crossAxisAlignment: CrossAxisAlignment.start,
-              children: [
-                Text(title, style: Theme.of(context).textTheme.titleMedium),
-                const SizedBox(height: AppSpacing.xxs),
-                Text(message),
-              ],
-            ),
+          Row(
+            children: [
+              Icon(
+                metric.icon,
+                color: metric.unavailable
+                    ? WafloV3Colors.primaryText.withValues(alpha: 0.45)
+                    : WafloV3Colors.primary,
+              ),
+              const SizedBox(width: WafloV3Spacing.space8),
+              Expanded(
+                child: Text(
+                  metric.label,
+                  style: Theme.of(
+                    context,
+                  ).textTheme.labelLarge?.copyWith(fontWeight: FontWeight.w700),
+                ),
+              ),
+            ],
           ),
+          const SizedBox(height: WafloV3Spacing.space12),
+          if (metric.unavailable)
+            WafloStatusBadge(
+              label: metric.value,
+              status: WafloStatusKind.inactive,
+            )
+          else
+            Text(
+              metric.value,
+              style: Theme.of(
+                context,
+              ).textTheme.headlineMedium?.copyWith(fontWeight: FontWeight.w800),
+            ),
         ],
       ),
     );
   }
 }
 
-class _DashboardActionCard extends StatelessWidget {
-  const _DashboardActionCard({
-    required this.title,
-    required this.subtitle,
-    required this.icon,
-    required this.routeName,
-    super.key,
-    this.enabled = true,
-    this.accentColor = AppColors.primaryCoral,
-    this.badge,
-  });
+class _LoyaltyPanel extends StatelessWidget {
+  const _LoyaltyPanel({required this.enabled, required this.onPressed});
 
-  final String title;
-  final String subtitle;
-  final IconData icon;
-  final String routeName;
   final bool enabled;
-  final Color accentColor;
-  final String? badge;
+  final VoidCallback onPressed;
 
   @override
   Widget build(BuildContext context) {
-    return WafloActionTile(
-      title: title,
-      subtitle: subtitle,
-      icon: icon,
-      enabled: enabled,
-      accentColor: accentColor,
-      badge: badge,
-      onTap: enabled
-          ? () {
-              final shell = WafloShellV2.of(context);
-              if (shell != null) {
-                if (routeName == AppRouteNames.menu) {
-                  shell.setTab(1);
-                } else if (routeName == AppRouteNames.loyalty) {
-                  shell.setTab(2);
-                } else if (routeName == AppRouteNames.walletScan) {
-                  shell.setTab(3);
-                } else if (routeName == AppRouteNames.businessProfile) {
-                  shell.setTab(4);
-                } else {
-                  Navigator.of(context).pushNamed(routeName);
-                }
-              } else {
-                Navigator.of(context).pushNamed(routeName);
-              }
-            }
-          : null,
+    return _Surface(
+      key: const ValueKey('dashboard-v3-loyalty-panel'),
+      warm: true,
+      child: Column(
+        crossAxisAlignment: CrossAxisAlignment.stretch,
+        children: [
+          Row(
+            crossAxisAlignment: CrossAxisAlignment.start,
+            children: [
+              DecoratedBox(
+                decoration: BoxDecoration(
+                  color: WafloV3Colors.primary.withValues(alpha: 0.10),
+                  shape: BoxShape.circle,
+                ),
+                child: const Padding(
+                  padding: EdgeInsets.all(WafloV3Spacing.space12),
+                  child: Icon(
+                    Icons.loyalty_outlined,
+                    color: WafloV3Colors.primary,
+                  ),
+                ),
+              ),
+              const SizedBox(width: WafloV3Spacing.space12),
+              Expanded(
+                child: Column(
+                  crossAxisAlignment: CrossAxisAlignment.start,
+                  children: [
+                    Text(
+                      'رجّع زبائنك ببرنامج ولاء',
+                      style: Theme.of(context).textTheme.titleLarge?.copyWith(
+                        fontWeight: FontWeight.w800,
+                      ),
+                    ),
+                    const SizedBox(height: WafloV3Spacing.space8),
+                    Text(
+                      'افتح قسم الولاء لإعداد البرنامج أو متابعة بطاقات الزبائن.',
+                      style: Theme.of(context).textTheme.bodyMedium?.copyWith(
+                        color: WafloV3Colors.primaryText.withValues(
+                          alpha: 0.72,
+                        ),
+                        height: 1.5,
+                      ),
+                    ),
+                  ],
+                ),
+              ),
+            ],
+          ),
+          const SizedBox(height: WafloV3Spacing.space16),
+          WafloSecondaryButton(
+            key: const ValueKey('dashboard-v3-open-loyalty-action'),
+            label: 'فتح الولاء',
+            onPressed: enabled ? onPressed : null,
+          ),
+          if (!enabled) ...[
+            const SizedBox(height: WafloV3Spacing.space8),
+            const _HelperText(
+              text: 'صلاحيتك الحالية لا تسمح بإدارة برنامج الولاء.',
+            ),
+          ],
+        ],
+      ),
     );
   }
+}
+
+class _DashboardLoadingState extends StatelessWidget {
+  const _DashboardLoadingState();
+
+  @override
+  Widget build(BuildContext context) {
+    return const Column(
+      key: ValueKey('dashboard-v3-loading'),
+      crossAxisAlignment: CrossAxisAlignment.stretch,
+      children: [
+        WafloSkeleton(height: 280, radius: WafloV3Radius.largeCard),
+        SizedBox(height: WafloV3Spacing.space24),
+        WafloSkeleton(width: 140, height: WafloV3Spacing.space24),
+        SizedBox(height: WafloV3Spacing.space12),
+        WafloSkeleton(height: 132, radius: WafloV3Radius.standardCard),
+        SizedBox(height: WafloV3Spacing.space12),
+        WafloSkeleton(height: 132, radius: WafloV3Radius.standardCard),
+      ],
+    );
+  }
+}
+
+class _HelperText extends StatelessWidget {
+  const _HelperText({required this.text, super.key});
+
+  final String text;
+
+  @override
+  Widget build(BuildContext context) {
+    return Text(
+      text,
+      style: Theme.of(context).textTheme.bodySmall?.copyWith(
+        color: WafloV3Colors.primaryText.withValues(alpha: 0.62),
+        height: 1.4,
+      ),
+    );
+  }
+}
+
+class _Surface extends StatelessWidget {
+  const _Surface({
+    required this.child,
+    super.key,
+    this.warm = false,
+    this.padding = WafloV3Spacing.commonCardPadding,
+  });
+
+  final Widget child;
+  final bool warm;
+  final double padding;
+
+  @override
+  Widget build(BuildContext context) {
+    return DecoratedBox(
+      decoration: BoxDecoration(
+        color: warm
+            ? Color.alphaBlend(
+                WafloV3Colors.accent.withValues(alpha: 0.045),
+                WafloV3Colors.surface,
+              )
+            : WafloV3Colors.surface,
+        borderRadius: const BorderRadius.all(
+          Radius.circular(WafloV3Radius.largeCard),
+        ),
+        border: Border.all(
+          color: warm
+              ? WafloV3Colors.primary.withValues(alpha: 0.14)
+              : WafloV3Colors.primaryText.withValues(alpha: 0.08),
+        ),
+        boxShadow: [
+          BoxShadow(
+            color: WafloV3Colors.primaryText.withValues(alpha: 0.045),
+            blurRadius: WafloV3Spacing.space16,
+            offset: const Offset(0, WafloV3Spacing.space4),
+          ),
+        ],
+      ),
+      child: Padding(padding: EdgeInsets.all(padding), child: child),
+    );
+  }
+}
+
+bool _canManageMenu(DashboardState state) {
+  return state.permissions?.canManageMenu ?? false;
+}
+
+bool _canScanCustomerWallet(DashboardState state) {
+  return state.permissions?.canScanCustomerWallet ?? false;
+}
+
+bool _canAccessLoyalty(DashboardState state) {
+  if (!state.hasKnownRole) {
+    return false;
+  }
+  return state.effectiveRole == 'OWNER' ||
+      state.effectiveRole == 'ADMIN' ||
+      state.effectiveRole == 'MANAGER';
 }
