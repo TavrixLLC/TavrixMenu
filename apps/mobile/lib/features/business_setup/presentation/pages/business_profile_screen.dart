@@ -19,7 +19,12 @@ import '../bloc/business_setup_cubit.dart';
 import '../bloc/business_setup_state.dart';
 
 class BusinessProfileScreen extends StatefulWidget {
-  const BusinessProfileScreen({super.key});
+  const BusinessProfileScreen({
+    super.key,
+    this.embeddedInWorkspaceShell = false,
+  });
+
+  final bool embeddedInWorkspaceShell;
 
   @override
   State<BusinessProfileScreen> createState() => _BusinessProfileScreenState();
@@ -128,9 +133,10 @@ class _BusinessProfileScreenState extends State<BusinessProfileScreen> {
             builder: (context, dashboardState) {
               if (dashboardState.status == DashboardStatus.initial ||
                   dashboardState.status == DashboardStatus.loading) {
-                return const AppScaffold(
+                return AppScaffold(
                   title: PilotArabicCopy.businessProfileTitle,
-                  child: LoadingView(
+                  embeddedInWorkspaceShell: widget.embeddedInWorkspaceShell,
+                  child: const LoadingView(
                     message: PilotArabicCopy.businessProfileLoading,
                   ),
                 );
@@ -138,9 +144,10 @@ class _BusinessProfileScreenState extends State<BusinessProfileScreen> {
 
               final business = dashboardState.business;
               if (business == null) {
-                return const AppScaffold(
+                return AppScaffold(
                   title: PilotArabicCopy.businessProfileTitle,
-                  child: EmptyState(
+                  embeddedInWorkspaceShell: widget.embeddedInWorkspaceShell,
+                  child: const EmptyState(
                     title: PilotArabicCopy.businessProfileMissingTitle,
                     message: PilotArabicCopy.businessProfileMissingBody,
                     icon: Icons.storefront,
@@ -154,9 +161,10 @@ class _BusinessProfileScreenState extends State<BusinessProfileScreen> {
                   dashboardState.permissions?.canManageBusiness ??
                   (dashboardState.effectiveRole == 'OWNER');
               if (!canManageBusiness) {
-                return const AppScaffold(
+                return AppScaffold(
                   title: PilotArabicCopy.businessProfileTitle,
-                  child: EmptyState(
+                  embeddedInWorkspaceShell: widget.embeddedInWorkspaceShell,
+                  child: const EmptyState(
                     title: PilotArabicCopy.businessProfileRestrictedTitle,
                     message: PilotArabicCopy.businessProfileRestrictedBody,
                     icon: Icons.lock_outline,
@@ -170,6 +178,7 @@ class _BusinessProfileScreenState extends State<BusinessProfileScreen> {
 
               return AppScaffold(
                 title: PilotArabicCopy.businessProfileTitle,
+                embeddedInWorkspaceShell: widget.embeddedInWorkspaceShell,
                 scrollable: true,
                 child: Column(
                   crossAxisAlignment: CrossAxisAlignment.start,

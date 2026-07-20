@@ -24,9 +24,14 @@ import '../bloc/loyalty_state.dart';
 import '../widgets/loyalty_enrollment_card.dart';
 
 class LoyaltyScreen extends StatefulWidget {
-  const LoyaltyScreen({super.key, this.customerWebBaseUrl = ''});
+  const LoyaltyScreen({
+    super.key,
+    this.customerWebBaseUrl = '',
+    this.embeddedInWorkspaceShell = false,
+  });
 
   final String customerWebBaseUrl;
+  final bool embeddedInWorkspaceShell;
 
   @override
   State<LoyaltyScreen> createState() => _LoyaltyScreenState();
@@ -53,6 +58,7 @@ class _LoyaltyScreenState extends State<LoyaltyScreen> {
   Widget build(BuildContext context) {
     return AppScaffold(
       title: 'Loyalty',
+      embeddedInWorkspaceShell: widget.embeddedInWorkspaceShell,
       scrollable: true,
       child: BlocBuilder<LoyaltyCubit, LoyaltyState>(
         builder: (context, state) {
@@ -88,13 +94,16 @@ class _LoyaltyScreenState extends State<LoyaltyScreen> {
           return Column(
             crossAxisAlignment: CrossAxisAlignment.start,
             children: [
-              SectionHeader(
-                title: business.name,
-                subtitle:
-                    'Stamp-card loyalty operations for the workspace team.',
-              ),
+              if (!widget.embeddedInWorkspaceShell) ...[
+                SectionHeader(
+                  title: business.name,
+                  subtitle:
+                      'Stamp-card loyalty operations for the workspace team.',
+                ),
+              ],
               if (state.canUseDailyOperations) ...[
-                const SizedBox(height: AppSpacing.md),
+                if (!widget.embeddedInWorkspaceShell)
+                  const SizedBox(height: AppSpacing.md),
                 AppButton(
                   label: PilotArabicCopy.scanCustomerCard,
                   icon: Icons.document_scanner_outlined,

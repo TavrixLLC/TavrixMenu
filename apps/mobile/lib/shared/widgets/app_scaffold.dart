@@ -12,6 +12,7 @@ class AppScaffold extends StatelessWidget {
     this.scrollable = false,
     this.padding = const EdgeInsetsDirectional.all(AppSpacing.md),
     this.bottomNavigation,
+    this.embeddedInWorkspaceShell = false,
   });
 
   final String? title;
@@ -20,12 +21,13 @@ class AppScaffold extends StatelessWidget {
   final bool scrollable;
   final EdgeInsetsGeometry padding;
   final Widget? bottomNavigation;
+  final bool embeddedInWorkspaceShell;
 
   @override
   Widget build(BuildContext context) {
     return WafloScaffold(
-      title: title,
-      actions: actions,
+      title: embeddedInWorkspaceShell ? null : title,
+      actions: embeddedInWorkspaceShell ? null : actions,
       scrollable: scrollable,
       padding: padding,
       bottomNavigation: bottomNavigation,

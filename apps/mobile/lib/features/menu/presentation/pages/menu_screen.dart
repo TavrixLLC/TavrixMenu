@@ -20,7 +20,9 @@ import '../bloc/menu_cubit.dart';
 import '../bloc/menu_state.dart';
 
 class MenuScreen extends StatefulWidget {
-  const MenuScreen({super.key});
+  const MenuScreen({super.key, this.embeddedInWorkspaceShell = false});
+
+  final bool embeddedInWorkspaceShell;
 
   @override
   State<MenuScreen> createState() => _MenuScreenState();
@@ -54,6 +56,7 @@ class _MenuScreenState extends State<MenuScreen> {
   Widget build(BuildContext context) {
     return AppScaffold(
       title: 'Menu management',
+      embeddedInWorkspaceShell: widget.embeddedInWorkspaceShell,
       scrollable: true,
       child: BlocBuilder<MenuCubit, MenuState>(
         builder: (context, state) {
@@ -89,13 +92,15 @@ class _MenuScreenState extends State<MenuScreen> {
           return Column(
             crossAxisAlignment: CrossAxisAlignment.start,
             children: [
-              SectionHeader(
-                title: state.business!.name,
-                subtitle: state.showArchived
-                    ? 'Restore archived categories and unavailable menu items.'
-                    : 'Manage active categories and available menu items.',
-              ),
-              const SizedBox(height: AppSpacing.md),
+              if (!widget.embeddedInWorkspaceShell) ...[
+                SectionHeader(
+                  title: state.business!.name,
+                  subtitle: state.showArchived
+                      ? 'Restore archived categories and unavailable menu items.'
+                      : 'Manage active categories and available menu items.',
+                ),
+                const SizedBox(height: AppSpacing.md),
+              ],
               AppButton(
                 label: 'Menu appearance',
                 icon: Icons.palette_outlined,

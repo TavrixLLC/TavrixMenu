@@ -25,9 +25,14 @@ typedef WalletCameraScannerBuilder =
     );
 
 class StaffScannerScreen extends StatefulWidget {
-  const StaffScannerScreen({super.key, this.cameraScannerBuilder});
+  const StaffScannerScreen({
+    super.key,
+    this.cameraScannerBuilder,
+    this.embeddedInWorkspaceShell = false,
+  });
 
   final WalletCameraScannerBuilder? cameraScannerBuilder;
+  final bool embeddedInWorkspaceShell;
 
   @override
   State<StaffScannerScreen> createState() => _StaffScannerScreenState();
@@ -59,6 +64,7 @@ class _StaffScannerScreenState extends State<StaffScannerScreen> {
       textDirection: TextDirection.rtl,
       child: AppScaffold(
         title: PilotArabicCopy.staffScannerTitle,
+        embeddedInWorkspaceShell: widget.embeddedInWorkspaceShell,
         scrollable: true,
         child: BlocBuilder<WalletScanCubit, WalletScanState>(
           builder: (context, state) {

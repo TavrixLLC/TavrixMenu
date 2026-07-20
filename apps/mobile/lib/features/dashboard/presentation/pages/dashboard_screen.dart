@@ -24,7 +24,9 @@ import '../bloc/dashboard_cubit.dart';
 import '../bloc/dashboard_state.dart';
 
 class DashboardScreen extends StatefulWidget {
-  const DashboardScreen({super.key});
+  const DashboardScreen({super.key, this.embeddedInWorkspaceShell = false});
+
+  final bool embeddedInWorkspaceShell;
 
   @override
   State<DashboardScreen> createState() => _DashboardScreenState();
@@ -43,20 +45,10 @@ class _DashboardScreenState extends State<DashboardScreen> {
       textDirection: TextDirection.rtl,
       child: AppScaffold(
         title: PilotArabicCopy.dashboardTitle,
-        actions: [
-          IconButton(
-            tooltip: PilotArabicCopy.signOut,
-            icon: const Icon(Icons.logout),
-            onPressed: () async {
-              await context.read<AuthCubit>().signOut();
-              if (context.mounted) {
-                Navigator.of(
-                  context,
-                ).pushNamedAndRemoveUntil(AppRouteNames.login, (_) => false);
-              }
-            },
-          ),
-        ],
+        embeddedInWorkspaceShell: widget.embeddedInWorkspaceShell,
+        actions: widget.embeddedInWorkspaceShell
+            ? null
+            : [_buildSignOutAction(context)],
         scrollable: true,
         child: BlocBuilder<DashboardCubit, DashboardState>(
           builder: (context, state) {
@@ -80,18 +72,28 @@ class _DashboardScreenState extends State<DashboardScreen> {
             return Column(
               crossAxisAlignment: CrossAxisAlignment.start,
               children: [
-                BusinessHeaderCard(
-                  business: state.business,
-                  role: state.workspaceRoleDisplayLabel,
-                ),
-                if (state.summaryErrorMessage != null) ...[
+                if (widget.embeddedInWorkspaceShell) ...[
+                  Align(
+                    alignment: AlignmentDirectional.centerEnd,
+                    child: _buildSignOutAction(context),
+                  ),
                   const SizedBox(height: AppSpacing.md),
+                ] else
+                  BusinessHeaderCard(
+                    business: state.business,
+                    role: state.workspaceRoleDisplayLabel,
+                  ),
+                if (state.summaryErrorMessage != null) ...[
+                  if (!widget.embeddedInWorkspaceShell)
+                    const SizedBox(height: AppSpacing.md),
                   _InlineNotice(
                     title: PilotArabicCopy.latestCountsFailed,
                     message: PilotArabicCopy.latestCountsRetry,
                   ),
                 ],
-                const SizedBox(height: AppSpacing.lg),
+                if (!widget.embeddedInWorkspaceShell ||
+                    state.summaryErrorMessage != null)
+                  const SizedBox(height: AppSpacing.lg),
                 _AccessCard(state: state),
                 if (!isStaff) ...[
                   const SizedBox(height: AppSpacing.lg),
@@ -197,6 +199,21 @@ class _DashboardScreenState extends State<DashboardScreen> {
           },
         ),
       ),
+    );
+  }
+
+  Widget _buildSignOutAction(BuildContext context) {
+    return IconButton(
+      tooltip: PilotArabicCopy.signOut,
+      icon: const Icon(Icons.logout),
+      onPressed: () async {
+        await context.read<AuthCubit>().signOut();
+        if (context.mounted) {
+          Navigator.of(
+            context,
+          ).pushNamedAndRemoveUntil(AppRouteNames.login, (_) => false);
+        }
+      },
     );
   }
 }
