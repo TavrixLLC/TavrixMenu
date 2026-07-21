@@ -2,6 +2,14 @@
 
 Status: source of truth for walkthrough, onboarding, and guided dashboard work.
 
+Product-surface ownership is defined by
+[`WAFLO_PRODUCT_SURFACE_SPLIT_V1.md`](WAFLO_PRODUCT_SURFACE_SPLIT_V1.md):
+advanced configuration and billing are Web Studio-first; Mobile is
+operations-first; customer menu and loyalty experiences belong to Customer Web;
+and Platform Backend authorization and entitlement enforcement remain
+authoritative. The mobile walkthrough may guide owners toward real daily
+operations without expanding Mobile into a second full administration studio.
+
 This document extends `docs/product/WAFLO_PRODUCT_UX_V2.md`. It defines how Waflo should guide a restaurant owner from first signup to a usable, sellable QR menu product. It is product and UX doctrine only. It is not a request to implement mock screens, simulated progress, fake staff, fake upload, fake QR, fake billing, fake Google, or human-review-only production routes.
 
 ## 1. Decision Record
@@ -188,6 +196,10 @@ Owner-facing explanation must make this clear:
 - The owner should understand whether the menu is draft, incomplete, or public.
 
 ## 9. Billing / Subscription Rules
+
+Billing administration and purchase are Web Studio-first. Mobile walkthroughs
+may explain authoritative status or a real limit, but they must not assume an
+in-app Stripe purchase path or universal external-payment link permission.
 
 - Value comes first. Do not block first setup too early.
 - A trial message may appear after workspace creation if product/business decision confirms it.
@@ -376,9 +388,9 @@ Remaining pre-release scanner and Loyalty security work is a broader audit of st
 4. V2-W3 Menu empty states + first category/product guided flow
 5. V2-W4 Product editor polished flow
 6. V2-W5 Customer preview + QR honest flow
-7. V2-W6 Loyalty onboarding
-8. V2-W7 Staff management/scanner
-9. V2-W8 Billing/trial/subscription
+7. V2-W6 Web Studio Loyalty setup + Customer Web enrollment
+8. V2-W7 Web Studio staff management + Mobile scanner
+9. V2-W8 Web Studio billing/trial/subscription, with Mobile status read-only
 10. V2-W9 Full polish/sellable QA
 
 ## 17. Human Acceptance Criteria

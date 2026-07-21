@@ -1,5 +1,14 @@
 # Waflo Mobile UI V3 Capability Matrix
 
+Product-surface ownership is governed by
+[`docs/product/WAFLO_PRODUCT_SURFACE_SPLIT_V1.md`](../../../product/WAFLO_PRODUCT_SURFACE_SPLIT_V1.md),
+with the cross-surface current-state view in
+[`WAFLO_CAPABILITY_OWNERSHIP_MATRIX_V1.md`](../../../product/WAFLO_CAPABILITY_OWNERSHIP_MATRIX_V1.md).
+Advanced configuration and billing are Web Studio-first, Mobile remains
+operations-first, customer menu and loyalty experiences belong to Customer Web,
+and Platform Backend authorization and entitlement enforcement are
+authoritative.
+
 This matrix records present evidence, not intended future behavior. “UI approved visual” means a capability or entry intent appears in one of the four approved references; it does not mean the destination screen or Flutter implementation is approved.
 
 ## Status vocabulary
@@ -18,14 +27,14 @@ This matrix records present evidence, not intended future behavior. “UI approv
 | --- | --- | --- | --- | --- | --- | --- | --- |
 | Dashboard metrics | `AVAILABLE` | `AVAILABLE` | `AVAILABLE` | `AVAILABLE` | `AVAILABLE` | Rebuild the V3 presentation from real dashboard-summary counts. Unsupported customer, activity, or entitlement values stay unavailable. | No |
 | Dashboard recent activity | `AVAILABLE` | `AVAILABLE` | `MISSING` | `MISSING` | `MISSING` | Keep unavailable or omit until a dedicated business-scoped owner activity contract exists; never infer empty from failure. | No — it can be omitted honestly |
-| Add Product | `AVAILABLE` | `AVAILABLE` | `PARTIAL` | `AVAILABLE` | `AVAILABLE` | Replace the current inline/basic add flow with the focused V3-P1 route, gated by real business, category, permission, and submission state. | No |
+| Add Product | `AVAILABLE` | `AVAILABLE` | `AVAILABLE` | `AVAILABLE` | `AVAILABLE` | Finalized M1P1 uses a focused V3 route gated by real business, category, permission, and submission state. Advanced editing remains separate. | No |
 | Manage Categories | `AVAILABLE` | `AVAILABLE` | `PARTIAL` | `AVAILABLE` | `AVAILABLE` | Preserve real create/archive/restore/reorder foundations; separately define/approve the V3 create/edit workflow and never fabricate a category. | No |
 | Public Menu Preview | `AVAILABLE` | `AVAILABLE` | `PARTIAL` | `AVAILABLE` | `AVAILABLE` | Enable only from a real public URL plus confirmed readiness. Remove/avoid fabricated fallback URLs and keep unavailable states muted. | No — it can remain disabled |
 | Product image selection | `AVAILABLE` | `AVAILABLE` | `MISSING` | `PARTIAL` | `PARTIAL` | Defer the active picker field until native selection, permission handling, workspace clearing, and the upload handoff are integrated; otherwise omit/disable. | No — image is optional |
-| Product image upload | `AVAILABLE` | `AVAILABLE` | `MISSING` | `PARTIAL` | `PARTIAL` | Implement only in V3-P2 after the media route is canonical in the API contract and end-to-end authorization/error behavior is audited. | No — V3-P1 is image-free |
-| Create Product | `AVAILABLE` | `AVAILABLE` | `PARTIAL` | `AVAILABLE` | `AVAILABLE` | Implement V3-P1 with deterministic major-unit price parsing, real category ownership, explicit availability, no draft, and optional image omitted. | No |
+| Product image upload | `AVAILABLE` | `AVAILABLE` | `MISSING` | `AVAILABLE` | `PARTIAL` | The canonical media route exists, but Mobile integration remains a separately scoped V3-P2 task requiring native selection, lifecycle, handoff, and security review. | No — V3-P1 is image-free |
+| Create Product | `AVAILABLE` | `AVAILABLE` | `AVAILABLE` | `AVAILABLE` | `AVAILABLE` | Finalized M1P1 provides deterministic whole-dinar IQD parsing, real category ownership, explicit availability, no draft, and no fake image upload. | No |
 | Edit Product | `AVAILABLE` | `PARTIAL` | `MISSING` | `PARTIAL` | `PARTIAL` | Defer to V3-P3 after the authenticated record-load/update audit and separate edit visual approval; never load from the public route or stale cache. | Yes — required for the sellable menu-management MVP |
-| Product availability | `AVAILABLE` | `AVAILABLE` | `PARTIAL` | `AVAILABLE` | `AVAILABLE` | Replace archive/restore-style presentation with the locked labeled control while retaining confirmed-state rollback, permission checks, and owner visibility of unavailable items. | No |
+| Product availability | `AVAILABLE` | `AVAILABLE` | `AVAILABLE` | `AVAILABLE` | `AVAILABLE` | Finalized M1P1 provides a labeled control with backend-confirmed persistence, permission checks, and owner visibility of unavailable items. | No |
 | Save as Draft | `AVAILABLE` | `AVAILABLE` | `MISSING` | `MISSING` | `MISSING` | Omit or fully disable. Availability is not a draft; provide no persistence or success feedback. | No — drafts are outside current capability |
 | Create Loyalty Card | `AVAILABLE` | `AVAILABLE` | `AVAILABLE` | `AVAILABLE` | `BLOCKED` | Existing loyalty-program behavior is not visually approved by this archive. Keep the V3 entry gated and do not release Loyalty until the customer tenant-isolation blocker is resolved. | Yes — before Loyalty release |
 | Scan Loyalty Card | `AVAILABLE` | `AVAILABLE` | `AVAILABLE` | `PARTIAL` | `BLOCKED` | Preserve camera/manual, business-role, and completed W2A workspace/scanner-context isolation foundations. Before release, resolve customer tenant isolation and complete the separate broader scanner/Loyalty security audit. | Yes — before Loyalty/scanner release |

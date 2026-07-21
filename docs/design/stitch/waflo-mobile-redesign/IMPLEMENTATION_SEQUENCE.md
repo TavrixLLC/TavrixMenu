@@ -1,6 +1,18 @@
 # Waflo Mobile UI V3 Implementation Sequence
 
-This is a bounded future engineering sequence, not authorization to start Flutter work from this documentation branch. The next engineering task is the Codex tooling foundation on `codex/waflo-codex-tooling-v1`. V3 implementation starts only through later explicitly scoped branches after those guards are available.
+Product-surface ownership is governed by
+[`docs/product/WAFLO_PRODUCT_SURFACE_SPLIT_V1.md`](../../../product/WAFLO_PRODUCT_SURFACE_SPLIT_V1.md).
+Advanced configuration and billing are Web Studio-first, Mobile remains
+operations-first, customer menu and loyalty experiences belong to Customer Web,
+and Platform Backend authorization and entitlement enforcement are
+authoritative. This does not invalidate the Mobile V3 Dashboard, daily Menu
+Management, simple Product Editor, or scanner sequence.
+
+This sequence began as a bounded future engineering plan and is not standing
+authorization to start Flutter work. Finalized V3 foundation, shell/dashboard,
+and M1P1 Menu/simple Product slices are current implementation evidence; later
+rows remain subject to explicitly scoped branches, current contract review, and
+the required human gates.
 
 ## Sequence principles
 
@@ -116,7 +128,7 @@ This is a bounded future engineering sequence, not authorization to start Flutte
 | Excluded scope | Generated images, screenshot assets, remote hard-coded URLs, required-image policy, draft persistence, unrelated media types, backend work hidden in this UI slice. |
 | Source areas likely affected | Product media presentation/state, platform picker integration, media repository/data source, create-product coordination, platform configuration explicitly required by the approved picker, and focused tests. |
 | Tests required | Permission denied; cancel; supported type/size hints; replace/remove; one upload; failure preservation; retry; only confirmed URL submitted; image-free create; workspace/logout cleanup; metadata/privacy handling review. |
-| Backend dependency | **Hard gate:** media upload route must be canonical in `docs/05-api-contract.md`, with authorized request/response/error/limit behavior reviewed. |
+| Backend dependency | The media upload route is canonical in `docs/05-api-contract.md`. Native selection, authorized handoff, response/error behavior, and lifecycle security still require an explicitly scoped current-contract audit before Mobile integration. |
 | Security checks | Business-scoped role authorization, safe MIME/content handling, no local-path submission/logging, no cross-workspace retained preview/URL, no sensitive metadata exposure. |
 | Visual reference | Product Editor Create media area and populated Menu media hierarchy; raster art/photos remain reference-only. |
 | Human QA checkpoint | Review every image lifecycle state, progress/error clarity, native placeholder, crop/aspect behavior, permission copy, and create-without-image path. |

@@ -25,6 +25,17 @@ Customers do not need to download an app. The Flutter app is only for business o
 
 Start with [docs/README.md](docs/README.md). The numbered docs are the project handoff source for team workflow, architecture, API contracts, database rules, auth, billing, security, roadmap, and reusable Codex prompts.
 
+Product-surface authority:
+
+- [Waflo Product Surface Split V1](docs/product/WAFLO_PRODUCT_SURFACE_SPLIT_V1.md)
+- [Waflo Capability Ownership Matrix V1](docs/product/WAFLO_CAPABILITY_OWNERSHIP_MATRIX_V1.md)
+- [Waflo Billing and Entitlements V1](docs/product/WAFLO_BILLING_ENTITLEMENTS_V1.md)
+
+Advanced configuration and billing are Web Studio-first. Mobile is
+operations-first. Customer-facing menu and loyalty flows belong to Customer
+Web. Platform Backend authorization and entitlement enforcement remain
+authoritative.
+
 ## Install Dependencies
 
 Enable pnpm through Corepack if pnpm is not already installed:

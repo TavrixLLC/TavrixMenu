@@ -2,6 +2,14 @@
 
 Status: source of truth for UI/UX V2 reset.
 
+Product-surface ownership is defined by
+[`WAFLO_PRODUCT_SURFACE_SPLIT_V1.md`](WAFLO_PRODUCT_SURFACE_SPLIT_V1.md):
+advanced configuration and billing are Web Studio-first; Mobile is
+operations-first; customer menu and loyalty experiences belong to Customer Web;
+and Platform Backend authorization and entitlement enforcement remain
+authoritative. This split preserves the completed Mobile Dashboard, daily Menu
+Management, simple Product Editor, and scanner direction.
+
 This document defines the product experience Waflo must become before any new UI implementation begins. It is not an implementation plan for auth, backend, billing, or database changes. It is a product and UX blueprint for rebuilding the mobile owner experience and related surfaces from a clean visual foundation.
 
 ## 1. Product Promise
@@ -178,13 +186,20 @@ The owner journey starts with first launch and ends with a restaurant that can s
    The dashboard should not be a statistics dump on first launch. It should guide the owner through remaining setup tasks: menu basics, preview, QR, staff, loyalty, and subscription readiness.
 
 14. Add staff
-   The owner can invite or create staff access for scanner use. Staff permissions must be limited and clear.
+   The owner manages invitations and permissions through Web Studio when that
+   workflow is implemented. Mobile then gives staff only the authorized daily
+   tools and scanner access. Staff permissions must be limited and clear.
 
 15. Activate loyalty
-   The owner can understand what loyalty does, configure baseline rewards if available, and enable it only when real functionality is ready.
+   The owner understands what loyalty does and configures or activates it
+   through Web Studio only when the functionality and security gates are ready.
+   Mobile remains focused on the resulting daily loyalty operations.
 
 16. Manage subscription later
-   Billing appears when value is clear. The owner should see plans and benefits, but onboarding should not be blocked too early unless the business model explicitly requires it.
+   Web Studio billing appears when value is clear. The owner should see plans
+   and benefits on the web, while Mobile may consume authoritative status.
+   Onboarding should not be blocked too early unless the business model
+   explicitly requires it.
 
 ## 5. Customer Story
 
@@ -236,6 +251,11 @@ The staff journey is intentionally narrow.
 ## 7. Billing Story
 
 Billing is a future subscription UX and must be handled honestly.
+
+Under the product-surface split, plan comparison, checkout, portal, invoices,
+and payment-method administration are Web Studio-first. Mobile may later show
+authoritative read-only plan and entitlement status, subject to store-policy
+review; it must not be treated as the default purchase surface.
 
 ### Trial/value-first approach
 
@@ -318,6 +338,9 @@ These rules apply to Codex, Antigravity, DeepSeek, and any other AI agent workin
 
 Required V2 screens:
 
+This is a cross-surface inventory. It does not assign every listed screen to
+Mobile; use the product-surface doctrine for ownership.
+
 - Welcome / auth.
 - Owner onboarding.
 - Workspace setup.
@@ -369,7 +392,9 @@ Build a restaurant owner dashboard that teaches the next action instead of showi
 
 ### V2-5 Menu Builder/Product Editor
 
-Rebuild menu management around restaurant workflows: categories, products, IQD prices, image state, availability, edit flow, and honest upload behavior.
+Build advanced menu administration in Web Studio while preserving the bounded
+Mobile daily Menu Management and simple Product Editor. Both use the same real
+categories, products, IQD prices, image state, and availability truth.
 
 ### V2-6 Customer Preview/QR
 
@@ -377,15 +402,22 @@ Build the customer menu preview and QR publish/share experience. Preview must re
 
 ### V2-7 Staff/Scanner
 
-Build staff management and scanner experience with strict permission boundaries. Staff scanner must stay focused and cannot become an owner dashboard.
+Build staff management in Web Studio and the scanner experience in Mobile with
+strict permission boundaries. Staff scanner must stay focused and cannot become
+an owner dashboard.
 
 ### V2-8 Loyalty
 
-Build loyalty dashboard, status, setup, customer card visibility, scan outcomes, and honest disabled states if a capability is not ready.
+Build loyalty configuration in Web Studio, enrollment/card access in Customer
+Web, and scan outcomes in Mobile. Use honest disabled states if a capability or
+release-security gate is not ready.
 
 ### V2-9 Billing/Stripe
 
-Build subscription UX when Stripe-backed behavior is ready. Plans, checkout, invoices, trial state, and upgrade prompts must be real and honest.
+Build the Web Studio-first subscription UX when Stripe-backed behavior is
+ready. Plans, checkout, invoices, trial state, and upgrade prompts must be real
+and honest. Mobile work in this phase is limited to approved, authoritative
+read-only status and store-policy-safe handoff behavior.
 
 ## 12. Acceptance Criteria
 
