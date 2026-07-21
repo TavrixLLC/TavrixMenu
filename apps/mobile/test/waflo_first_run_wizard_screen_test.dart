@@ -580,6 +580,7 @@ class _MockMenuRepository implements MenuRepository {
     required String name,
     required String description,
     required int priceCents,
+    bool isAvailable = true,
   }) async {
     final item = MenuItem(
       id: 'item_${items.length + 1}',
@@ -588,7 +589,7 @@ class _MockMenuRepository implements MenuRepository {
       name: name,
       description: description,
       priceCents: priceCents,
-      isAvailable: true,
+      isAvailable: isAvailable,
       sortOrder: items.length,
     );
     items.add(item);

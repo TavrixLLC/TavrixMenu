@@ -110,14 +110,18 @@ class _WafloShellV3State extends State<WafloShellV3> {
         backgroundColor: WafloV3Colors.background,
         body: Column(
           children: [
-            Padding(
-              padding: const EdgeInsetsDirectional.fromSTEB(
-                WafloV3Spacing.standardPageMargin,
-                WafloV3Spacing.space8,
-                WafloV3Spacing.standardPageMargin,
-                WafloV3Spacing.space8,
+            SafeArea(
+              key: const ValueKey('waflo-shell-v3-header-region'),
+              bottom: false,
+              child: Padding(
+                padding: const EdgeInsetsDirectional.fromSTEB(
+                  WafloV3Spacing.standardPageMargin,
+                  WafloV3Spacing.space4,
+                  WafloV3Spacing.standardPageMargin,
+                  WafloV3Spacing.space4,
+                ),
+                child: _buildWorkspaceIdentity(),
               ),
-              child: _buildWorkspaceIdentity(),
             ),
             Expanded(
               key: const ValueKey('waflo-shell-v3-body'),
@@ -205,41 +209,37 @@ class _WorkspaceLoadingHeader extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
-    return SafeArea(
-      bottom: false,
-      child: DecoratedBox(
-        decoration: BoxDecoration(
-          color: WafloV3Colors.surface,
-          borderRadius: const BorderRadius.all(
-            Radius.circular(WafloV3Radius.largeCard),
-          ),
-          border: Border.all(
-            color: WafloV3Colors.primaryText.withValues(alpha: 0.08),
-          ),
+    return DecoratedBox(
+      decoration: BoxDecoration(
+        color: WafloV3Colors.surface,
+        borderRadius: const BorderRadius.all(
+          Radius.circular(WafloV3Radius.largeCard),
         ),
-        child: const Padding(
-          padding: EdgeInsetsDirectional.all(WafloV3Spacing.space16),
-          child: Row(
-            children: [
-              WafloSkeleton(
-                width: WafloV3Spacing.minimumTouchTarget,
-                height: WafloV3Spacing.minimumTouchTarget,
-                radius: WafloV3Radius.pill,
+        border: Border.all(
+          color: WafloV3Colors.primaryText.withValues(alpha: 0.08),
+        ),
+      ),
+      child: const Padding(
+        padding: EdgeInsetsDirectional.symmetric(
+          horizontal: WafloV3Spacing.space12,
+          vertical: WafloV3Spacing.space8,
+        ),
+        child: Row(
+          children: [
+            WafloSkeleton(width: 40, height: 40, radius: WafloV3Radius.pill),
+            SizedBox(width: WafloV3Spacing.space8),
+            Expanded(
+              child: Column(
+                mainAxisSize: MainAxisSize.min,
+                crossAxisAlignment: CrossAxisAlignment.start,
+                children: [
+                  WafloSkeleton(width: 176, height: WafloV3Spacing.space16),
+                  SizedBox(height: WafloV3Spacing.space4),
+                  WafloSkeleton(width: 88, height: WafloV3Spacing.space12),
+                ],
               ),
-              SizedBox(width: WafloV3Spacing.space12),
-              Expanded(
-                child: Column(
-                  mainAxisSize: MainAxisSize.min,
-                  crossAxisAlignment: CrossAxisAlignment.start,
-                  children: [
-                    WafloSkeleton(width: 176, height: WafloV3Spacing.space20),
-                    SizedBox(height: WafloV3Spacing.space8),
-                    WafloSkeleton(width: 88, height: WafloV3Spacing.space12),
-                  ],
-                ),
-              ),
-            ],
-          ),
+            ),
+          ],
         ),
       ),
     );
@@ -253,6 +253,6 @@ class _WorkspaceUnavailableHeader extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
-    return SafeArea(bottom: false, child: WafloInlineError(message: message));
+    return WafloInlineError(message: message);
   }
 }

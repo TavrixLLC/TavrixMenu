@@ -1,23 +1,21 @@
+import 'dart:async';
+
 import 'package:flutter/material.dart';
 import 'package:flutter_bloc/flutter_bloc.dart';
 
 import '../../../../app/router/route_names.dart';
-import '../../../../core/constants/app_spacing.dart';
+import '../../../../core/theme/v3/waflo_v3_tokens.dart';
 import '../../../../core/utils/money_formatter.dart';
-import '../../../../shared/widgets/app_button.dart';
-import '../../../../shared/widgets/app_card.dart';
 import '../../../../shared/widgets/app_scaffold.dart';
-import '../../../../shared/widgets/app_text_field.dart';
-import '../../../../shared/widgets/empty_state.dart';
-import '../../../../shared/widgets/error_view.dart';
-import '../../../../shared/widgets/loading_view.dart';
-import '../../../../shared/widgets/section_header.dart';
-import '../../../../shared/widgets/status_badge.dart';
-import '../../../dashboard/presentation/bloc/dashboard_cubit.dart';
+import '../../../../shared/widgets/v3/waflo_empty_state.dart';
+import '../../../../shared/widgets/v3/waflo_inline_error.dart';
+import '../../../../shared/widgets/v3/waflo_secondary_button.dart';
+import '../../../../shared/widgets/v3/waflo_skeleton.dart';
 import '../../domain/entities/menu_category.dart';
 import '../../domain/entities/menu_item.dart';
 import '../bloc/menu_cubit.dart';
 import '../bloc/menu_state.dart';
+import 'product_editor_screen.dart';
 
 class MenuScreen extends StatefulWidget {
   const MenuScreen({super.key, this.embeddedInWorkspaceShell = false});
@@ -29,267 +27,255 @@ class MenuScreen extends StatefulWidget {
 }
 
 class _MenuScreenState extends State<MenuScreen> {
-  final _categoryController = TextEditingController();
-  final _itemNameController = TextEditingController();
-  final _itemDescriptionController = TextEditingController();
-  final _itemPriceController = TextEditingController(text: '3000');
-  String? _selectedCategoryId;
+  final _searchController = TextEditingController();
 
   @override
   void initState() {
     super.initState();
     WidgetsBinding.instance.addPostFrameCallback((_) {
-      context.read<MenuCubit>().load();
+      if (!mounted) return;
+      final cubit = context.read<MenuCubit>();
+      if (cubit.state.status == MenuStatus.initial) {
+        unawaited(cubit.load());
+      }
     });
   }
 
   @override
   void dispose() {
-    _categoryController.dispose();
-    _itemNameController.dispose();
-    _itemDescriptionController.dispose();
-    _itemPriceController.dispose();
+    _searchController.dispose();
     super.dispose();
   }
 
   @override
   Widget build(BuildContext context) {
-    return AppScaffold(
-      title: 'Menu management',
-      embeddedInWorkspaceShell: widget.embeddedInWorkspaceShell,
-      scrollable: true,
-      child: BlocBuilder<MenuCubit, MenuState>(
-        builder: (context, state) {
-          if (state.status == MenuStatus.loading ||
-              state.status == MenuStatus.initial) {
-            return const LoadingView(message: 'Loading menu');
-          }
-
-          if (state.status == MenuStatus.failure) {
-            return ErrorView(
-              message: state.errorMessage ?? 'Menu could not load.',
-              onRetry: () => context.read<MenuCubit>().load(),
-            );
-          }
-
-          if (state.business == null) {
-            return const EmptyState(
-              title: 'Business setup needed',
-              message:
-                  'Create a business profile before managing categories and menu items.',
-              icon: Icons.storefront,
-            );
-          }
-
-          final visibleCategories = state.visibleCategories;
-          final visibleItems = state.visibleItems;
-          final canManageMenu = state.canManageMenu;
-          final activeCategories =
-              state.categories.where((category) => category.isActive).toList()
-                ..sort((a, b) => a.sortOrder.compareTo(b.sortOrder));
-          final selectedCategoryId = _selectedCategoryIdFor(activeCategories);
-
-          return Column(
-            crossAxisAlignment: CrossAxisAlignment.start,
-            children: [
-              if (!widget.embeddedInWorkspaceShell) ...[
-                SectionHeader(
-                  title: state.business!.name,
-                  subtitle: state.showArchived
-                      ? 'Restore archived categories and unavailable menu items.'
-                      : 'Manage active categories and available menu items.',
-                ),
-                const SizedBox(height: AppSpacing.md),
-              ],
-              AppButton(
-                label: 'Menu appearance',
-                icon: Icons.palette_outlined,
-                variant: AppButtonVariant.secondary,
-                onPressed: () => Navigator.of(
-                  context,
-                ).pushNamed(AppRouteNames.menuAppearance),
+    return Directionality(
+      textDirection: TextDirection.rtl,
+      child: AppScaffold(
+        key: const ValueKey('menu-management-v3'),
+        title: 'إدارة المنيو',
+        embeddedInWorkspaceShell: widget.embeddedInWorkspaceShell,
+        scrollable: true,
+        padding: const EdgeInsets.all(WafloV3Spacing.standardPageMargin),
+        child: BlocBuilder<MenuCubit, MenuState>(
+          builder: (context, state) {
+            return switch (state.status) {
+              MenuStatus.initial ||
+              MenuStatus.loading => const _MenuLoadingState(),
+              MenuStatus.failure => _MenuLoadError(
+                message: state.errorMessage ?? 'تعذّر تحميل المنيو.',
+                onRetry: () => context.read<MenuCubit>().load(),
               ),
-              if (state.summaryErrorMessage != null) ...[
-                const SizedBox(height: AppSpacing.md),
-                _MenuNotice(
-                  title: 'Permissions summary unavailable',
-                  message:
-                      'Menu data loaded, but latest dashboard permissions could not be refreshed. ${state.summaryErrorMessage}',
-                ),
-              ],
-              if (!canManageMenu) ...[
-                const SizedBox(height: AppSpacing.md),
-                const _MenuNotice(
-                  title: 'Restricted access',
-                  message:
-                      'You can view this menu, but your business permissions do not allow menu changes.',
-                ),
-              ],
-              if (state.errorMessage != null) ...[
-                const SizedBox(height: AppSpacing.md),
-                ErrorView(message: state.errorMessage!),
-              ],
-              const SizedBox(height: AppSpacing.lg),
-              SegmentedButton<bool>(
-                segments: const [
-                  ButtonSegment<bool>(
-                    value: false,
-                    icon: Icon(Icons.visibility_outlined),
-                    label: Text('Active'),
-                  ),
-                  ButtonSegment<bool>(
-                    value: true,
-                    icon: Icon(Icons.archive_outlined),
-                    label: Text('Archived'),
-                  ),
-                ],
-                selected: {state.showArchived},
-                onSelectionChanged: (selection) {
-                  context.read<MenuCubit>().setArchivedView(selection.first);
-                },
+              MenuStatus.mutating || MenuStatus.success => _MenuContent(
+                state: state,
+                searchController: _searchController,
+                onAddCategory: _openAddCategoryDialog,
+                onAddProduct: _openProductEditor,
+                onPreview: state.canPreviewPublicMenu
+                    ? () => Navigator.of(context).pushNamed(AppRouteNames.qr)
+                    : null,
               ),
-              if (canManageMenu && !state.showArchived) ...[
-                const SizedBox(height: AppSpacing.lg),
-                _AddCategoryCard(
-                  controller: _categoryController,
-                  onSubmit: () async {
-                    await _runMenuMutation(
-                      (cubit) => cubit.addCategory(_categoryController.text),
-                    );
-                    _categoryController.clear();
-                  },
-                ),
-                const SizedBox(height: AppSpacing.lg),
-                _AddItemCard(
-                  categories: activeCategories,
-                  selectedCategoryId: selectedCategoryId,
-                  onCategoryChanged: (categoryId) {
-                    setState(() {
-                      _selectedCategoryId = categoryId;
-                    });
-                  },
-                  nameController: _itemNameController,
-                  descriptionController: _itemDescriptionController,
-                  priceController: _itemPriceController,
-                  enabled: activeCategories.isNotEmpty,
-                  onSubmit: () async {
-                    final priceCents =
-                        int.tryParse(_itemPriceController.text) ?? 0;
-                    final categoryId = _selectedCategoryIdFor(activeCategories);
-                    if (categoryId == null) {
-                      return;
-                    }
-                    await _runMenuMutation(
-                      (cubit) => cubit.addItem(
-                        categoryId: categoryId,
-                        name: _itemNameController.text,
-                        description: _itemDescriptionController.text,
-                        priceCents: priceCents,
-                      ),
-                    );
-                    _itemNameController.clear();
-                    _itemDescriptionController.clear();
-                  },
-                ),
-              ],
-              const SizedBox(height: AppSpacing.lg),
-              SectionHeader(
-                title: state.showArchived
-                    ? 'Archived categories'
-                    : 'Active categories',
-              ),
-              const SizedBox(height: AppSpacing.md),
-              _CategoryList(
-                categories: visibleCategories,
-                canManageMenu: canManageMenu,
-                showArchived: state.showArchived,
-                onArchive: (id) =>
-                    _runMenuMutation((cubit) => cubit.archiveCategory(id)),
-                onRestore: (id) =>
-                    _runMenuMutation((cubit) => cubit.restoreCategory(id)),
-                onReorder: (categories) => _runMenuMutation(
-                  (cubit) => cubit.reorderCategories(categories),
-                ),
-              ),
-              const SizedBox(height: AppSpacing.lg),
-              SectionHeader(
-                title: state.showArchived ? 'Unavailable items' : 'Menu items',
-              ),
-              const SizedBox(height: AppSpacing.md),
-              _ItemList(
-                items: visibleItems,
-                canManageMenu: canManageMenu,
-                showArchived: state.showArchived,
-                onArchive: (id) =>
-                    _runMenuMutation((cubit) => cubit.archiveItem(id)),
-                onRestore: (id) =>
-                    _runMenuMutation((cubit) => cubit.restoreItem(id)),
-                onReorder: (items) =>
-                    _runMenuMutation((cubit) => cubit.reorderItems(items)),
-              ),
-            ],
-          );
-        },
+            };
+          },
+        ),
       ),
     );
   }
 
-  Future<void> _runMenuMutation(
-    Future<void> Function(MenuCubit cubit) action,
-  ) async {
-    final menuCubit = context.read<MenuCubit>();
-    await action(menuCubit);
-    if (!mounted) {
-      return;
-    }
-
-    final businessId = menuCubit.state.business?.id;
-    if (businessId == null || businessId.trim().isEmpty) {
-      return;
-    }
-
-    await context.read<DashboardCubit>().refreshSummary(businessId);
+  Future<void> _openAddCategoryDialog() async {
+    await showDialog<void>(
+      context: context,
+      barrierDismissible: false,
+      builder: (_) => BlocProvider.value(
+        value: context.read<MenuCubit>(),
+        child: const _AddCategoryDialog(),
+      ),
+    );
   }
 
-  String? _selectedCategoryIdFor(List<MenuCategory> categories) {
-    if (categories.isEmpty) {
-      return null;
-    }
+  Future<void> _openProductEditor() async {
+    final cubit = context.read<MenuCubit>();
+    final category = cubit.state.selectedCategory;
+    if (category == null || !cubit.state.canManageMenu) return;
 
-    final selectedCategoryId = _selectedCategoryId;
-    if (selectedCategoryId != null &&
-        categories.any((category) => category.id == selectedCategoryId)) {
-      return selectedCategoryId;
-    }
-
-    return categories.first.id;
+    final result = await Navigator.of(context).push<ProductEditorResult>(
+      MaterialPageRoute(
+        settings: const RouteSettings(name: '/menu/products/create'),
+        builder: (_) => BlocProvider.value(
+          value: cubit,
+          child: ProductEditorScreen(initialCategoryId: category.id),
+        ),
+      ),
+    );
+    if (!mounted || result == null) return;
+    await cubit.load(preferredCategoryId: result.categoryId);
   }
 }
 
-class _AddCategoryCard extends StatelessWidget {
-  const _AddCategoryCard({required this.controller, required this.onSubmit});
+class _MenuContent extends StatelessWidget {
+  const _MenuContent({
+    required this.state,
+    required this.searchController,
+    required this.onAddCategory,
+    required this.onAddProduct,
+    required this.onPreview,
+  });
 
-  final TextEditingController controller;
-  final VoidCallback onSubmit;
+  final MenuState state;
+  final TextEditingController searchController;
+  final VoidCallback onAddCategory;
+  final VoidCallback onAddProduct;
+  final VoidCallback? onPreview;
 
   @override
   Widget build(BuildContext context) {
-    return AppCard(
-      child: Column(
-        crossAxisAlignment: CrossAxisAlignment.start,
-        children: [
-          Text('Add category', style: Theme.of(context).textTheme.titleMedium),
-          const SizedBox(height: AppSpacing.md),
-          AppTextField(
-            label: 'Category name',
-            controller: controller,
-            hint: 'Breakfast',
+    final categories = state.visibleCategories;
+    final selectedItems = state.selectedCategoryItems;
+    final filteredItems = state.filteredSelectedCategoryItems;
+
+    return Column(
+      key: const ValueKey('menu-v3-content'),
+      crossAxisAlignment: CrossAxisAlignment.stretch,
+      children: [
+        Text(
+          'إدارة المنيو',
+          style: Theme.of(
+            context,
+          ).textTheme.headlineMedium?.copyWith(fontWeight: FontWeight.w800),
+        ),
+        const SizedBox(height: WafloV3Spacing.space8),
+        Text(
+          'رتّب أقسام مطعمك وأضف المنتجات التي سيراها زبائنك.',
+          style: Theme.of(context).textTheme.bodyLarge?.copyWith(
+            color: WafloV3Colors.primaryText.withValues(alpha: 0.68),
           ),
-          const SizedBox(height: AppSpacing.md),
-          AppButton(
-            label: 'Add category',
-            icon: Icons.add,
-            onPressed: onSubmit,
+        ),
+        const SizedBox(height: WafloV3Spacing.space16),
+        _ReadinessCard(state: state),
+        if (state.summaryErrorMessage != null) ...[
+          const SizedBox(height: WafloV3Spacing.space12),
+          Text(
+            state.summaryErrorMessage!,
+            style: Theme.of(context).textTheme.bodySmall?.copyWith(
+              color: WafloV3Colors.primaryText.withValues(alpha: 0.68),
+            ),
+          ),
+        ],
+        if (state.errorMessage != null) ...[
+          const SizedBox(height: WafloV3Spacing.space12),
+          WafloInlineError(message: state.errorMessage!),
+        ],
+        const SizedBox(height: WafloV3Spacing.space16),
+        if (categories.isEmpty)
+          _NoCategoriesState(
+            canManage: state.canManageMenu,
+            onAddCategory: onAddCategory,
+          )
+        else ...[
+          _CategorySection(
+            categories: categories,
+            selectedCategoryId: state.selectedCategoryId,
+            canManage: state.canManageMenu,
+            isAdding: state.isCategoryMutationPending,
+            onAddCategory: onAddCategory,
+          ),
+          const SizedBox(height: WafloV3Spacing.space16),
+          TextField(
+            key: const ValueKey('menu-product-search'),
+            controller: searchController,
+            textInputAction: TextInputAction.search,
+            decoration: InputDecoration(
+              hintText: 'ابحث عن منتج',
+              prefixIcon: const Icon(Icons.search_rounded),
+              suffixIcon: state.searchQuery.isEmpty
+                  ? null
+                  : IconButton(
+                      tooltip: 'مسح البحث',
+                      onPressed: () {
+                        searchController.clear();
+                        context.read<MenuCubit>().setSearchQuery('');
+                      },
+                      icon: const Icon(Icons.close_rounded),
+                    ),
+              filled: true,
+              fillColor: WafloV3Colors.surface,
+              border: const OutlineInputBorder(
+                borderRadius: BorderRadius.all(
+                  Radius.circular(WafloV3Radius.inputControl),
+                ),
+              ),
+            ),
+            onChanged: context.read<MenuCubit>().setSearchQuery,
+          ),
+          const SizedBox(height: WafloV3Spacing.space16),
+          if (selectedItems.isEmpty)
+            _NoProductsState(
+              canManage: state.canManageMenu,
+              onAddProduct: onAddProduct,
+            )
+          else if (filteredItems.isEmpty)
+            _SearchEmptyState(
+              onClear: () {
+                searchController.clear();
+                context.read<MenuCubit>().setSearchQuery('');
+              },
+            )
+          else
+            _ProductList(
+              items: filteredItems,
+              state: state,
+              onAddProduct: onAddProduct,
+            ),
+          const SizedBox(height: WafloV3Spacing.space16),
+          _PreviewCard(enabled: onPreview != null, onPressed: onPreview),
+        ],
+        const SizedBox(
+          key: ValueKey('menu-bottom-navigation-clearance'),
+          height: WafloV3Spacing.space32,
+        ),
+      ],
+    );
+  }
+}
+
+class _ReadinessCard extends StatelessWidget {
+  const _ReadinessCard({required this.state});
+
+  final MenuState state;
+
+  @override
+  Widget build(BuildContext context) {
+    final categories = state.visibleCategories.length;
+    final products = state.items.length;
+    return _Surface(
+      key: const ValueKey('menu-readiness-card'),
+      child: Column(
+        crossAxisAlignment: CrossAxisAlignment.stretch,
+        children: [
+          Row(
+            children: [
+              Expanded(
+                child: _Metric(label: 'الأقسام', value: '$categories'),
+              ),
+              Expanded(
+                child: _Metric(label: 'المنتجات', value: '$products'),
+              ),
+              Expanded(
+                child: _Metric(
+                  label: 'حالة المنيو',
+                  value: state.canPreviewPublicMenu ? 'جاهز' : 'غير جاهز',
+                  emphasized: !state.canPreviewPublicMenu,
+                ),
+              ),
+            ],
+          ),
+          const SizedBox(height: WafloV3Spacing.space16),
+          Text(
+            categories == 0
+                ? 'أضف أول قسم حتى تبدأ بناء منيوك.'
+                : products == 0
+                ? 'أضف أول منتج حتى يبدأ منيوك بالتكوّن.'
+                : 'منتجاتك محمّلة من مساحة عملك وجاهزة للإدارة.',
           ),
         ],
       ),
@@ -297,364 +283,617 @@ class _AddCategoryCard extends StatelessWidget {
   }
 }
 
-class _AddItemCard extends StatelessWidget {
-  const _AddItemCard({
+class _Metric extends StatelessWidget {
+  const _Metric({
+    required this.label,
+    required this.value,
+    this.emphasized = false,
+  });
+
+  final String label;
+  final String value;
+  final bool emphasized;
+
+  @override
+  Widget build(BuildContext context) {
+    return Column(
+      children: [
+        Text(label, textAlign: TextAlign.center),
+        const SizedBox(height: WafloV3Spacing.space4),
+        Text(
+          value,
+          textAlign: TextAlign.center,
+          style: Theme.of(context).textTheme.titleMedium?.copyWith(
+            color: emphasized ? WafloV3Colors.error : WafloV3Colors.primaryText,
+            fontWeight: FontWeight.w800,
+          ),
+        ),
+      ],
+    );
+  }
+}
+
+class _NoCategoriesState extends StatelessWidget {
+  const _NoCategoriesState({
+    required this.canManage,
+    required this.onAddCategory,
+  });
+
+  final bool canManage;
+  final VoidCallback onAddCategory;
+
+  @override
+  Widget build(BuildContext context) {
+    return _Surface(
+      key: const ValueKey('menu-no-categories-state'),
+      child: Column(
+        children: [
+          WafloEmptyState(
+            icon: Icons.grid_view_rounded,
+            title: 'ابدأ بأول قسم في منيوك',
+            description:
+                'رتّب منتجاتك ضمن أقسام واضحة ليسهل على زبائنك الاختيار.',
+            primaryActionLabel: 'إضافة قسم',
+            onPrimaryAction: canManage ? onAddCategory : null,
+          ),
+          if (!canManage)
+            const Padding(
+              padding: EdgeInsets.only(bottom: WafloV3Spacing.space16),
+              child: Text('صلاحيتك الحالية لا تسمح بإضافة قسم.'),
+            ),
+        ],
+      ),
+    );
+  }
+}
+
+class _CategorySection extends StatelessWidget {
+  const _CategorySection({
     required this.categories,
     required this.selectedCategoryId,
-    required this.onCategoryChanged,
-    required this.nameController,
-    required this.descriptionController,
-    required this.priceController,
-    required this.enabled,
-    required this.onSubmit,
+    required this.canManage,
+    required this.isAdding,
+    required this.onAddCategory,
   });
 
   final List<MenuCategory> categories;
   final String? selectedCategoryId;
-  final ValueChanged<String?> onCategoryChanged;
-  final TextEditingController nameController;
-  final TextEditingController descriptionController;
-  final TextEditingController priceController;
-  final bool enabled;
-  final VoidCallback onSubmit;
+  final bool canManage;
+  final bool isAdding;
+  final VoidCallback onAddCategory;
 
   @override
   Widget build(BuildContext context) {
-    return AppCard(
-      child: Column(
-        crossAxisAlignment: CrossAxisAlignment.start,
-        children: [
-          Text('Add menu item', style: Theme.of(context).textTheme.titleMedium),
-          const SizedBox(height: AppSpacing.md),
-          if (categories.isEmpty)
-            const Row(
-              crossAxisAlignment: CrossAxisAlignment.start,
-              children: [
-                Icon(Icons.info_outline),
-                SizedBox(width: AppSpacing.md),
-                Expanded(
-                  child: Text(
-                    'Add an active category first so this item has a place in the menu.',
-                  ),
-                ),
-              ],
-            )
-          else
-            DropdownButtonFormField<String>(
-              initialValue: selectedCategoryId,
-              decoration: const InputDecoration(labelText: 'Category'),
-              items: [
-                for (final category in categories)
-                  DropdownMenuItem(
-                    value: category.id,
-                    child: Text(category.name),
-                  ),
-              ],
-              onChanged: enabled ? onCategoryChanged : null,
+    return Column(
+      crossAxisAlignment: CrossAxisAlignment.stretch,
+      children: [
+        Row(
+          children: [
+            Expanded(
+              child: Text(
+                'الأقسام',
+                style: Theme.of(
+                  context,
+                ).textTheme.titleLarge?.copyWith(fontWeight: FontWeight.w800),
+              ),
             ),
-          const SizedBox(height: AppSpacing.md),
-          AppTextField(
-            label: 'Item name',
-            controller: nameController,
-            hint: 'Cardamom latte',
-          ),
-          const SizedBox(height: AppSpacing.md),
-          AppTextField(
-            label: 'Description',
-            controller: descriptionController,
-            maxLines: 2,
-          ),
-          const SizedBox(height: AppSpacing.md),
-          AppTextField(
-            label: 'Price',
-            controller: priceController,
-            keyboardType: TextInputType.number,
-          ),
-          const SizedBox(height: AppSpacing.md),
-          AppButton(
-            label: 'Add item',
-            icon: Icons.add_circle_outline,
-            onPressed: enabled ? onSubmit : null,
-          ),
-        ],
-      ),
-    );
-  }
-}
-
-class _CategoryList extends StatelessWidget {
-  const _CategoryList({
-    required this.categories,
-    required this.canManageMenu,
-    required this.showArchived,
-    required this.onArchive,
-    required this.onRestore,
-    required this.onReorder,
-  });
-
-  final List<MenuCategory> categories;
-  final bool canManageMenu;
-  final bool showArchived;
-  final Future<void> Function(String id) onArchive;
-  final Future<void> Function(String id) onRestore;
-  final Future<void> Function(List<MenuCategory> categories) onReorder;
-
-  @override
-  Widget build(BuildContext context) {
-    if (categories.isEmpty) {
-      return EmptyState(
-        title: showArchived ? 'No archived categories' : 'No categories yet',
-        message: showArchived
-            ? 'Archived categories will appear here after you archive them.'
-            : 'Add your first category to organize the menu.',
-      );
-    }
-
-    if (!canManageMenu || categories.length < 2) {
-      return Column(
-        children: [
-          for (final category in categories) ...[
-            _CategoryCard(
-              category: category,
-              canManageMenu: canManageMenu,
-              showArchived: showArchived,
-              onArchive: onArchive,
-              onRestore: onRestore,
-            ),
-            const SizedBox(height: AppSpacing.sm),
-          ],
-        ],
-      );
-    }
-
-    return ReorderableListView.builder(
-      shrinkWrap: true,
-      physics: const NeverScrollableScrollPhysics(),
-      itemCount: categories.length,
-      onReorder: (oldIndex, newIndex) {
-        final reordered = _reordered(categories, oldIndex, newIndex);
-        onReorder(reordered);
-      },
-      itemBuilder: (context, index) {
-        final category = categories[index];
-        return Padding(
-          key: ValueKey('category-${category.id}'),
-          padding: const EdgeInsets.only(bottom: AppSpacing.sm),
-          child: _CategoryCard(
-            category: category,
-            canManageMenu: canManageMenu,
-            showArchived: showArchived,
-            onArchive: onArchive,
-            onRestore: onRestore,
-          ),
-        );
-      },
-    );
-  }
-}
-
-class _CategoryCard extends StatelessWidget {
-  const _CategoryCard({
-    required this.category,
-    required this.canManageMenu,
-    required this.showArchived,
-    required this.onArchive,
-    required this.onRestore,
-  });
-
-  final MenuCategory category;
-  final bool canManageMenu;
-  final bool showArchived;
-  final Future<void> Function(String id) onArchive;
-  final Future<void> Function(String id) onRestore;
-
-  @override
-  Widget build(BuildContext context) {
-    return AppCard(
-      child: Row(
-        children: [
-          const Icon(Icons.drag_indicator),
-          const SizedBox(width: AppSpacing.sm),
-          Expanded(
-            child: Text(
-              category.name,
-              style: Theme.of(context).textTheme.titleMedium,
-            ),
-          ),
-          StatusBadge(label: category.isActive ? 'Active' : 'Archived'),
-          if (canManageMenu) ...[
-            const SizedBox(width: AppSpacing.sm),
             TextButton.icon(
-              onPressed: () => showArchived
-                  ? onRestore(category.id)
-                  : onArchive(category.id),
-              icon: Icon(showArchived ? Icons.restore : Icons.archive_outlined),
-              label: Text(showArchived ? 'Restore' : 'Archive'),
+              key: const ValueKey('menu-add-category-action'),
+              onPressed: canManage && !isAdding ? onAddCategory : null,
+              icon: const Icon(Icons.add_rounded),
+              label: const Text('إضافة قسم'),
             ),
           ],
+        ),
+        const SizedBox(height: WafloV3Spacing.space8),
+        SingleChildScrollView(
+          scrollDirection: Axis.horizontal,
+          child: Row(
+            children: [
+              for (final category in categories) ...[
+                ChoiceChip(
+                  key: ValueKey('menu-category-${category.id}'),
+                  label: Text(category.name),
+                  selected: category.id == selectedCategoryId,
+                  onSelected: (_) =>
+                      context.read<MenuCubit>().selectCategory(category.id),
+                ),
+                const SizedBox(width: WafloV3Spacing.space8),
+              ],
+            ],
+          ),
+        ),
+      ],
+    );
+  }
+}
+
+class _NoProductsState extends StatelessWidget {
+  const _NoProductsState({required this.canManage, required this.onAddProduct});
+
+  final bool canManage;
+  final VoidCallback onAddProduct;
+
+  @override
+  Widget build(BuildContext context) {
+    return _Surface(
+      key: const ValueKey('menu-no-products-state'),
+      child: Column(
+        children: [
+          WafloEmptyState(
+            icon: Icons.restaurant_menu_rounded,
+            title: 'هذا القسم بعده بدون منتجات',
+            description:
+                'أضف أول منتج وحدد اسمه وسعره حتى يبدأ منيوك بالتكوّن.',
+            primaryActionLabel: 'إضافة أول منتج',
+            onPrimaryAction: canManage ? onAddProduct : null,
+          ),
+          if (!canManage)
+            const Padding(
+              padding: EdgeInsets.only(bottom: WafloV3Spacing.space16),
+              child: Text('صلاحيتك الحالية لا تسمح بإضافة منتج.'),
+            ),
         ],
       ),
     );
   }
 }
 
-class _ItemList extends StatelessWidget {
-  const _ItemList({
+class _SearchEmptyState extends StatelessWidget {
+  const _SearchEmptyState({required this.onClear});
+
+  final VoidCallback onClear;
+
+  @override
+  Widget build(BuildContext context) {
+    return _Surface(
+      key: const ValueKey('menu-search-empty-state'),
+      child: WafloEmptyState(
+        icon: Icons.search_off_rounded,
+        title: 'لا توجد نتائج للبحث',
+        description: 'جرّب كلمة أخرى أو امسح البحث لعرض كل منتجات القسم.',
+        secondaryActionLabel: 'مسح البحث',
+        onSecondaryAction: onClear,
+      ),
+    );
+  }
+}
+
+class _ProductList extends StatelessWidget {
+  const _ProductList({
     required this.items,
-    required this.canManageMenu,
-    required this.showArchived,
-    required this.onArchive,
-    required this.onRestore,
-    required this.onReorder,
+    required this.state,
+    required this.onAddProduct,
   });
 
   final List<MenuItem> items;
-  final bool canManageMenu;
-  final bool showArchived;
-  final Future<void> Function(String id) onArchive;
-  final Future<void> Function(String id) onRestore;
-  final Future<void> Function(List<MenuItem> items) onReorder;
+  final MenuState state;
+  final VoidCallback onAddProduct;
 
   @override
   Widget build(BuildContext context) {
-    if (items.isEmpty) {
-      return EmptyState(
-        title: showArchived ? 'No unavailable items' : 'No menu items yet',
-        message: showArchived
-            ? 'Archived or unavailable items will appear here.'
-            : 'Add a simple item shell now. Images and advanced tools come later.',
-      );
-    }
-
-    if (!canManageMenu || items.length < 2) {
-      return Column(
-        children: [
-          for (final item in items) ...[
-            _ItemCard(
-              item: item,
-              canManageMenu: canManageMenu,
-              showArchived: showArchived,
-              onArchive: onArchive,
-              onRestore: onRestore,
+    final available = state.selectedCategoryItems
+        .where((item) => item.isAvailable)
+        .length;
+    return Column(
+      key: const ValueKey('menu-populated-state'),
+      crossAxisAlignment: CrossAxisAlignment.stretch,
+      children: [
+        Row(
+          children: [
+            Expanded(
+              child: Text(
+                '${state.selectedCategoryItems.length} منتج في هذا القسم • $available متوفر',
+              ),
             ),
-            const SizedBox(height: AppSpacing.sm),
+            TextButton.icon(
+              key: const ValueKey('menu-add-product-action'),
+              onPressed: state.canManageMenu ? onAddProduct : null,
+              icon: const Icon(Icons.add_circle_outline_rounded),
+              label: const Text('إضافة منتج'),
+            ),
           ],
+        ),
+        const SizedBox(height: WafloV3Spacing.space12),
+        for (final item in items) ...[
+          _ProductCard(item: item, state: state),
+          const SizedBox(height: WafloV3Spacing.space12),
         ],
-      );
-    }
-
-    return ReorderableListView.builder(
-      shrinkWrap: true,
-      physics: const NeverScrollableScrollPhysics(),
-      itemCount: items.length,
-      onReorder: (oldIndex, newIndex) {
-        final reordered = _reordered(items, oldIndex, newIndex);
-        onReorder(reordered);
-      },
-      itemBuilder: (context, index) {
-        final item = items[index];
-        return Padding(
-          key: ValueKey('item-${item.id}'),
-          padding: const EdgeInsets.only(bottom: AppSpacing.sm),
-          child: _ItemCard(
-            item: item,
-            canManageMenu: canManageMenu,
-            showArchived: showArchived,
-            onArchive: onArchive,
-            onRestore: onRestore,
-          ),
-        );
-      },
+      ],
     );
   }
 }
 
-class _ItemCard extends StatelessWidget {
-  const _ItemCard({
+class _ProductCard extends StatelessWidget {
+  const _ProductCard({required this.item, required this.state});
+
+  final MenuItem item;
+  final MenuState state;
+
+  @override
+  Widget build(BuildContext context) {
+    final pending = state.pendingAvailabilityItemIds.contains(item.id);
+    return _Surface(
+      key: ValueKey('menu-product-${item.id}'),
+      padding: EdgeInsets.zero,
+      child: Column(
+        crossAxisAlignment: CrossAxisAlignment.stretch,
+        children: [
+          LayoutBuilder(
+            builder: (context, constraints) {
+              final mediaHeight = (constraints.maxWidth / 3.2).clamp(
+                96.0,
+                112.0,
+              );
+              return SizedBox(
+                key: ValueKey('menu-product-media-${item.id}'),
+                height: mediaHeight,
+                child: _ProductMedia(imageUrl: item.imageUrl),
+              );
+            },
+          ),
+          Padding(
+            padding: const EdgeInsets.all(WafloV3Spacing.space16),
+            child: Column(
+              crossAxisAlignment: CrossAxisAlignment.stretch,
+              children: [
+                Text(
+                  item.name,
+                  maxLines: 2,
+                  overflow: TextOverflow.ellipsis,
+                  style: Theme.of(
+                    context,
+                  ).textTheme.titleLarge?.copyWith(fontWeight: FontWeight.w800),
+                ),
+                if (item.description.trim().isNotEmpty) ...[
+                  const SizedBox(height: WafloV3Spacing.space8),
+                  Text(
+                    item.description,
+                    maxLines: 2,
+                    overflow: TextOverflow.ellipsis,
+                  ),
+                ],
+                const SizedBox(height: WafloV3Spacing.space12),
+                Text(
+                  MoneyFormatter.formatMajorUnits(
+                    item.priceCents,
+                    currency: state.business?.currency ?? 'IQD',
+                  ),
+                  style: Theme.of(context).textTheme.titleMedium?.copyWith(
+                    color: WafloV3Colors.primary,
+                    fontWeight: FontWeight.w800,
+                  ),
+                ),
+                const SizedBox(height: WafloV3Spacing.space12),
+                _AvailabilityControl(
+                  item: item,
+                  pending: pending,
+                  enabled: state.canManageMenu && !pending,
+                  onChanged: (value) => context
+                      .read<MenuCubit>()
+                      .setItemAvailability(item, value),
+                ),
+              ],
+            ),
+          ),
+        ],
+      ),
+    );
+  }
+}
+
+class _ProductMedia extends StatelessWidget {
+  const _ProductMedia({required this.imageUrl});
+
+  final String? imageUrl;
+
+  @override
+  Widget build(BuildContext context) {
+    final uri = imageUrl == null ? null : Uri.tryParse(imageUrl!);
+    final valid =
+        uri != null && (uri.scheme == 'https' || uri.scheme == 'http');
+    if (!valid) return const _ProductMediaPlaceholder();
+    return ClipRRect(
+      borderRadius: const BorderRadius.vertical(
+        top: Radius.circular(WafloV3Radius.standardCard),
+      ),
+      child: Image.network(
+        imageUrl!,
+        fit: BoxFit.cover,
+        errorBuilder: (_, _, _) => const _ProductMediaPlaceholder(),
+      ),
+    );
+  }
+}
+
+class _ProductMediaPlaceholder extends StatelessWidget {
+  const _ProductMediaPlaceholder();
+
+  @override
+  Widget build(BuildContext context) {
+    return ColoredBox(
+      color: WafloV3Colors.primary.withValues(alpha: 0.07),
+      child: const Center(
+        child: Icon(
+          Icons.restaurant_rounded,
+          size: WafloV3Spacing.space48,
+          color: WafloV3Colors.primary,
+        ),
+      ),
+    );
+  }
+}
+
+class _AvailabilityControl extends StatelessWidget {
+  const _AvailabilityControl({
     required this.item,
-    required this.canManageMenu,
-    required this.showArchived,
-    required this.onArchive,
-    required this.onRestore,
+    required this.pending,
+    required this.enabled,
+    required this.onChanged,
   });
 
   final MenuItem item;
-  final bool canManageMenu;
-  final bool showArchived;
-  final Future<void> Function(String id) onArchive;
-  final Future<void> Function(String id) onRestore;
+  final bool pending;
+  final bool enabled;
+  final ValueChanged<bool> onChanged;
 
   @override
   Widget build(BuildContext context) {
-    return AppCard(
+    final color = item.isAvailable
+        ? const Color(0xFF1B6E3C)
+        : WafloV3Colors.error;
+    return Container(
+      key: ValueKey('menu-availability-control-${item.id}'),
+      constraints: const BoxConstraints(
+        minHeight: WafloV3Spacing.minimumTouchTarget,
+      ),
+      padding: const EdgeInsetsDirectional.only(start: WafloV3Spacing.space12),
+      decoration: BoxDecoration(
+        color: color.withValues(alpha: 0.08),
+        borderRadius: const BorderRadius.all(
+          Radius.circular(WafloV3Radius.inputControl),
+        ),
+        border: Border.all(color: color.withValues(alpha: 0.18)),
+      ),
       child: Row(
-        crossAxisAlignment: CrossAxisAlignment.start,
         children: [
-          const Icon(Icons.drag_indicator),
-          const SizedBox(width: AppSpacing.sm),
+          Icon(
+            item.isAvailable
+                ? Icons.check_circle_outline_rounded
+                : Icons.visibility_off_outlined,
+            size: WafloV3Spacing.space20,
+            color: color,
+          ),
+          const SizedBox(width: WafloV3Spacing.space8),
           Expanded(
-            child: Column(
-              crossAxisAlignment: CrossAxisAlignment.start,
-              children: [
-                Text(item.name, style: Theme.of(context).textTheme.titleMedium),
-                if (item.description.isNotEmpty) ...[
-                  const SizedBox(height: AppSpacing.xs),
-                  Text(item.description),
-                ],
-                const SizedBox(height: AppSpacing.sm),
-                Text(MoneyFormatter.formatCents(item.priceCents)),
-              ],
+            child: Text(
+              pending
+                  ? 'جارٍ تحديث التوفر…'
+                  : item.isAvailable
+                  ? 'متوفر للزبائن'
+                  : 'غير متوفر للزبائن',
+              style: TextStyle(color: color, fontWeight: FontWeight.w700),
             ),
           ),
-          StatusBadge(label: item.isAvailable ? 'Active' : 'Hidden'),
-          if (canManageMenu) ...[
-            const SizedBox(width: AppSpacing.sm),
-            TextButton.icon(
-              onPressed: () =>
-                  showArchived ? onRestore(item.id) : onArchive(item.id),
-              icon: Icon(showArchived ? Icons.restore : Icons.archive_outlined),
-              label: Text(showArchived ? 'Restore' : 'Archive'),
-            ),
-          ],
+          Switch(
+            key: ValueKey('menu-availability-${item.id}'),
+            value: item.isAvailable,
+            onChanged: enabled ? onChanged : null,
+          ),
         ],
       ),
     );
   }
 }
 
-class _MenuNotice extends StatelessWidget {
-  const _MenuNotice({required this.title, required this.message});
+class _PreviewCard extends StatelessWidget {
+  const _PreviewCard({required this.enabled, required this.onPressed});
 
-  final String title;
+  final bool enabled;
+  final VoidCallback? onPressed;
+
+  @override
+  Widget build(BuildContext context) {
+    return _Surface(
+      key: const ValueKey('menu-preview-card'),
+      child: Column(
+        crossAxisAlignment: CrossAxisAlignment.stretch,
+        children: [
+          Text(
+            'معاينة منيو الزبائن',
+            style: Theme.of(
+              context,
+            ).textTheme.titleMedium?.copyWith(fontWeight: FontWeight.w800),
+          ),
+          const SizedBox(height: WafloV3Spacing.space4),
+          Text(
+            enabled
+                ? 'افتح الرابط الحقيقي الذي سيراه زبائنك.'
+                : 'تتفعّل المعاينة بعد جاهزية منيو الزبائن.',
+          ),
+          const SizedBox(height: WafloV3Spacing.space12),
+          WafloSecondaryButton(
+            label: 'معاينة منيو الزبائن',
+            onPressed: enabled ? onPressed : null,
+          ),
+        ],
+      ),
+    );
+  }
+}
+
+class _AddCategoryDialog extends StatefulWidget {
+  const _AddCategoryDialog();
+
+  @override
+  State<_AddCategoryDialog> createState() => _AddCategoryDialogState();
+}
+
+class _AddCategoryDialogState extends State<_AddCategoryDialog> {
+  final _controller = TextEditingController();
+  String? _error;
+  bool _submitting = false;
+
+  @override
+  void dispose() {
+    _controller.dispose();
+    super.dispose();
+  }
+
+  @override
+  Widget build(BuildContext context) {
+    return Directionality(
+      textDirection: TextDirection.rtl,
+      child: AlertDialog(
+        key: const ValueKey('add-category-dialog'),
+        scrollable: true,
+        insetPadding: const EdgeInsets.symmetric(
+          horizontal: WafloV3Spacing.space16,
+          vertical: WafloV3Spacing.space24,
+        ),
+        title: const Text('إضافة قسم'),
+        contentPadding: const EdgeInsetsDirectional.fromSTEB(
+          WafloV3Spacing.space24,
+          WafloV3Spacing.space8,
+          WafloV3Spacing.space24,
+          0,
+        ),
+        content: TextField(
+          key: const ValueKey('add-category-name-field'),
+          controller: _controller,
+          autofocus: true,
+          maxLength: 160,
+          decoration: InputDecoration(
+            labelText: 'اسم القسم',
+            hintText: 'مثال: المقبلات',
+            errorText: _error,
+          ),
+          onSubmitted: (_) => _submit(),
+        ),
+        actionsPadding: const EdgeInsetsDirectional.fromSTEB(
+          WafloV3Spacing.space16,
+          WafloV3Spacing.space8,
+          WafloV3Spacing.space16,
+          WafloV3Spacing.space16,
+        ),
+        actions: [
+          TextButton(
+            key: const ValueKey('add-category-cancel'),
+            style: TextButton.styleFrom(
+              minimumSize: const Size(96, WafloV3Spacing.minimumTouchTarget),
+            ),
+            onPressed: _submitting ? null : () => Navigator.of(context).pop(),
+            child: const Text('إلغاء'),
+          ),
+          FilledButton(
+            key: const ValueKey('add-category-submit'),
+            style: FilledButton.styleFrom(
+              minimumSize: const Size(96, WafloV3Spacing.minimumTouchTarget),
+            ),
+            onPressed: _submitting ? null : _submit,
+            child: _submitting
+                ? const SizedBox.square(
+                    dimension: 20,
+                    child: CircularProgressIndicator(strokeWidth: 2),
+                  )
+                : const Text('إضافة'),
+          ),
+        ],
+      ),
+    );
+  }
+
+  Future<void> _submit() async {
+    final name = _controller.text.trim();
+    if (name.isEmpty) {
+      setState(() => _error = 'اكتب اسم القسم.');
+      return;
+    }
+    setState(() {
+      _submitting = true;
+      _error = null;
+    });
+    final created = await context.read<MenuCubit>().addCategory(name);
+    if (!mounted) return;
+    if (created == null) {
+      setState(() {
+        _submitting = false;
+        _error = 'تعذّرت إضافة القسم. حاول مرة ثانية.';
+      });
+      return;
+    }
+    Navigator.of(context).pop();
+  }
+}
+
+class _MenuLoadingState extends StatelessWidget {
+  const _MenuLoadingState();
+
+  @override
+  Widget build(BuildContext context) {
+    return const Column(
+      key: ValueKey('menu-loading-state'),
+      crossAxisAlignment: CrossAxisAlignment.stretch,
+      children: [
+        WafloSkeleton(width: 180, height: 34),
+        SizedBox(height: WafloV3Spacing.space12),
+        WafloSkeleton(height: 120),
+        SizedBox(height: WafloV3Spacing.space16),
+        WafloSkeleton(height: 56),
+        SizedBox(height: WafloV3Spacing.space16),
+        WafloSkeleton(height: 220),
+      ],
+    );
+  }
+}
+
+class _MenuLoadError extends StatelessWidget {
+  const _MenuLoadError({required this.message, required this.onRetry});
+
   final String message;
+  final VoidCallback onRetry;
 
   @override
   Widget build(BuildContext context) {
-    return AppCard(
-      child: Row(
-        crossAxisAlignment: CrossAxisAlignment.start,
-        children: [
-          const Icon(Icons.info_outline),
-          const SizedBox(width: AppSpacing.md),
-          Expanded(
-            child: Column(
-              crossAxisAlignment: CrossAxisAlignment.start,
-              children: [
-                Text(title, style: Theme.of(context).textTheme.titleMedium),
-                const SizedBox(height: AppSpacing.xxs),
-                Text(message),
-              ],
-            ),
-          ),
-        ],
-      ),
+    return WafloInlineError(
+      key: const ValueKey('menu-load-error'),
+      title: 'لم نتمكن من فتح المنيو',
+      message: message,
+      onRetry: onRetry,
     );
   }
 }
 
-List<T> _reordered<T>(List<T> items, int oldIndex, int newIndex) {
-  final next = [...items];
-  final moved = next.removeAt(oldIndex);
-  next.insert(newIndex, moved);
-  return next;
+class _Surface extends StatelessWidget {
+  const _Surface({required this.child, super.key, this.padding});
+
+  final Widget child;
+  final EdgeInsetsGeometry? padding;
+
+  @override
+  Widget build(BuildContext context) {
+    return DecoratedBox(
+      decoration: BoxDecoration(
+        color: WafloV3Colors.surface,
+        borderRadius: const BorderRadius.all(
+          Radius.circular(WafloV3Radius.standardCard),
+        ),
+        border: Border.all(
+          color: WafloV3Colors.primaryText.withValues(alpha: 0.08),
+        ),
+        boxShadow: [
+          BoxShadow(
+            color: WafloV3Colors.primaryText.withValues(alpha: 0.05),
+            blurRadius: 18,
+            offset: const Offset(0, 8),
+          ),
+        ],
+      ),
+      child: Padding(
+        padding:
+            padding ?? const EdgeInsets.all(WafloV3Spacing.commonCardPadding),
+        child: child,
+      ),
+    );
+  }
 }

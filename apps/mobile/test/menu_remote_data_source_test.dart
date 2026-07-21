@@ -22,6 +22,43 @@ void main() {
     },
   );
 
+  test(
+    'create item sends explicit availability and exact major-unit price',
+    () async {
+      final apiClient = _RecordingApiClient(
+        response: {
+          'id': 'item_123',
+          'businessId': 'bus_123',
+          'categoryId': 'cat_123',
+          'nameAr': 'قهوة',
+          'descriptionAr': null,
+          'price': '6500',
+          'isAvailable': false,
+          'sortOrder': 0,
+        },
+      );
+      final dataSource = MenuRemoteDataSourceImpl(apiClient);
+
+      await dataSource.createItem(
+        businessId: 'bus_123',
+        categoryId: 'cat_123',
+        name: 'قهوة',
+        description: '',
+        priceCents: 6500,
+        isAvailable: false,
+      );
+
+      expect(apiClient.lastPostPath, '/businesses/bus_123/items');
+      expect(apiClient.lastPostBody, {
+        'categoryId': 'cat_123',
+        'nameAr': 'قهوة',
+        'price': '6500',
+        'isAvailable': false,
+        'sortOrder': 0,
+      });
+    },
+  );
+
   test('restore category and item send minimal Sprint 4 DTO bodies', () async {
     final apiClient = _RecordingApiClient(
       response: {
@@ -101,6 +138,8 @@ class _RecordingApiClient extends ApiClient {
   Map<String, dynamic>? lastGetQuery;
   String? lastPatchPath;
   Map<String, dynamic>? lastPatchBody;
+  String? lastPostPath;
+  Map<String, dynamic>? lastPostBody;
 
   @override
   Future<dynamic> get(
@@ -116,6 +155,13 @@ class _RecordingApiClient extends ApiClient {
   Future<dynamic> patch(String path, {Map<String, dynamic>? body}) async {
     lastPatchPath = path;
     lastPatchBody = body;
+    return response;
+  }
+
+  @override
+  Future<dynamic> post(String path, {Map<String, dynamic>? body}) async {
+    lastPostPath = path;
+    lastPostBody = body;
     return response;
   }
 }

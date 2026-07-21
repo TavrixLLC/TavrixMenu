@@ -15,6 +15,7 @@ class CreateMenuItem {
     required String name,
     required String description,
     required int priceCents,
+    bool isAvailable = true,
   }) {
     return _repository.createItem(
       businessId: businessId,
@@ -22,6 +23,7 @@ class CreateMenuItem {
       name: name,
       description: description,
       priceCents: priceCents,
+      isAvailable: isAvailable,
     );
   }
 }

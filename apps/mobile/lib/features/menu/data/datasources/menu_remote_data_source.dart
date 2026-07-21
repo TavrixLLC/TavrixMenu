@@ -45,6 +45,7 @@ abstract class MenuRemoteDataSource {
     required String name,
     required String description,
     required int priceCents,
+    bool isAvailable = true,
   });
 
   Future<MenuItemModel> updateItem({
@@ -164,6 +165,7 @@ class MenuRemoteDataSourceImpl implements MenuRemoteDataSource {
     required String name,
     required String description,
     required int priceCents,
+    bool isAvailable = true,
   }) async {
     final data = await apiClient.post(
       '/businesses/$businessId/items',
@@ -172,7 +174,7 @@ class MenuRemoteDataSourceImpl implements MenuRemoteDataSource {
         'nameAr': name,
         if (description.trim().isNotEmpty) 'descriptionAr': description,
         'price': priceCents.toString(),
-        'isAvailable': true,
+        'isAvailable': isAvailable,
         'sortOrder': 0,
       },
     );

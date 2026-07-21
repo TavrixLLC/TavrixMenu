@@ -43,6 +43,7 @@ abstract class MenuRepository {
     required String name,
     required String description,
     required int priceCents,
+    bool isAvailable = true,
   });
 
   Future<Either<Failure, Unit>> updateItem({

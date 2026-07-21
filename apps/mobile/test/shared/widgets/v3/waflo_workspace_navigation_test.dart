@@ -259,8 +259,29 @@ void main() {
       expect(size.height, greaterThanOrEqualTo(48));
     });
 
+    testWidgets('12. header stays compact without a fixed oversized height', (
+      tester,
+    ) async {
+      await tester.pumpWidget(
+        _harness(
+          width: 390,
+          child: WafloWorkspaceHeader(
+            workspaceName: _workspaceName,
+            statusLabel: _statusLabel,
+            onNotificationPressed: () {},
+          ),
+        ),
+      );
+
+      final size = tester.getSize(
+        find.byKey(const ValueKey('waflo-workspace-header-surface')),
+      );
+      expect(size.height, greaterThanOrEqualTo(48));
+      expect(size.height, lessThan(96));
+    });
+
     test(
-      '12. header performs no repository, Cubit, auth, or network lookup',
+      '13. header performs no repository, Cubit, auth, or network lookup',
       () {
         final source = File(
           'lib/shared/widgets/v3/waflo_workspace_header.dart',
@@ -279,7 +300,7 @@ void main() {
   });
 
   group('WafloBottomNavigation', () {
-    testWidgets('13. exactly five destinations render', (tester) async {
+    testWidgets('14. exactly five destinations render', (tester) async {
       await tester.pumpWidget(_harness(child: _navigation()));
 
       for (final destination in WafloWorkspaceDestination.values) {

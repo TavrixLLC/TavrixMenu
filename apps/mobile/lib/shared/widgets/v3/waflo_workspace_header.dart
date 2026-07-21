@@ -41,70 +41,71 @@ class WafloWorkspaceHeader extends StatelessWidget {
 
     return Directionality(
       textDirection: TextDirection.rtl,
-      child: SafeArea(
-        bottom: false,
-        child: DecoratedBox(
-          decoration: BoxDecoration(
-            color: WafloV3Colors.surface,
-            borderRadius: const BorderRadius.all(
-              Radius.circular(WafloV3Radius.largeCard),
-            ),
-            border: Border.all(
-              color: WafloV3Colors.primaryText.withValues(alpha: 0.08),
-            ),
-            boxShadow: [
-              BoxShadow(
-                color: WafloV3Colors.primaryText.withValues(alpha: 0.05),
-                blurRadius: WafloV3Spacing.space12,
-                offset: const Offset(0, WafloV3Spacing.space4),
-              ),
-            ],
+      child: DecoratedBox(
+        key: const ValueKey('waflo-workspace-header-surface'),
+        decoration: BoxDecoration(
+          color: WafloV3Colors.surface,
+          borderRadius: const BorderRadius.all(
+            Radius.circular(WafloV3Radius.largeCard),
           ),
-          child: Padding(
-            padding: const EdgeInsetsDirectional.all(WafloV3Spacing.space16),
-            child: Row(
-              crossAxisAlignment: CrossAxisAlignment.center,
-              children: [
-                _WorkspaceAvatar(
-                  avatarBytes: avatarBytes,
-                  fallbackInitial: avatarFallbackInitial,
-                ),
-                const SizedBox(width: WafloV3Spacing.space12),
-                Expanded(
-                  child: Column(
-                    mainAxisSize: MainAxisSize.min,
-                    crossAxisAlignment: CrossAxisAlignment.start,
-                    children: [
-                      Text(
-                        workspaceName,
-                        maxLines: 2,
-                        overflow: TextOverflow.ellipsis,
-                        style: Theme.of(context).textTheme.titleLarge?.copyWith(
-                          color: WafloV3Colors.primaryText,
-                          fontWeight: FontWeight.w800,
-                          height: 1.3,
-                        ),
-                      ),
-                      if (status != null) ...[
-                        const SizedBox(height: WafloV3Spacing.space8),
-                        Align(
-                          alignment: AlignmentDirectional.centerStart,
-                          child: status,
-                        ),
-                      ],
-                    ],
-                  ),
-                ),
-                if (onNotificationPressed != null) ...[
-                  const SizedBox(width: WafloV3Spacing.space8),
-                  _NotificationAction(
-                    onPressed: onNotificationPressed!,
-                    unreadCount: unreadCount,
-                    semanticLabel: notificationSemanticLabel,
-                  ),
-                ],
-              ],
+          border: Border.all(
+            color: WafloV3Colors.primaryText.withValues(alpha: 0.08),
+          ),
+          boxShadow: [
+            BoxShadow(
+              color: WafloV3Colors.primaryText.withValues(alpha: 0.05),
+              blurRadius: WafloV3Spacing.space12,
+              offset: const Offset(0, WafloV3Spacing.space4),
             ),
+          ],
+        ),
+        child: Padding(
+          padding: const EdgeInsetsDirectional.symmetric(
+            horizontal: WafloV3Spacing.space12,
+            vertical: WafloV3Spacing.space8,
+          ),
+          child: Row(
+            crossAxisAlignment: CrossAxisAlignment.center,
+            children: [
+              _WorkspaceAvatar(
+                avatarBytes: avatarBytes,
+                fallbackInitial: avatarFallbackInitial,
+              ),
+              const SizedBox(width: WafloV3Spacing.space8),
+              Expanded(
+                child: Column(
+                  mainAxisSize: MainAxisSize.min,
+                  crossAxisAlignment: CrossAxisAlignment.start,
+                  children: [
+                    Text(
+                      workspaceName,
+                      maxLines: 2,
+                      overflow: TextOverflow.ellipsis,
+                      style: Theme.of(context).textTheme.titleMedium?.copyWith(
+                        color: WafloV3Colors.primaryText,
+                        fontWeight: FontWeight.w800,
+                        height: 1.2,
+                      ),
+                    ),
+                    if (status != null) ...[
+                      const SizedBox(height: WafloV3Spacing.space4),
+                      Align(
+                        alignment: AlignmentDirectional.centerStart,
+                        child: status,
+                      ),
+                    ],
+                  ],
+                ),
+              ),
+              if (onNotificationPressed != null) ...[
+                const SizedBox(width: WafloV3Spacing.space4),
+                _NotificationAction(
+                  onPressed: onNotificationPressed!,
+                  unreadCount: unreadCount,
+                  semanticLabel: notificationSemanticLabel,
+                ),
+              ],
+            ],
           ),
         ),
       ),
@@ -120,7 +121,7 @@ class _WorkspaceAvatar extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
-    const size = WafloV3Spacing.minimumTouchTarget;
+    const size = 40.0;
     final fallback = _AvatarFallback(initial: fallbackInitial);
 
     return Semantics(

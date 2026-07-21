@@ -10,6 +10,7 @@ class MenuItem extends Equatable {
     required this.priceCents,
     required this.isAvailable,
     required this.sortOrder,
+    this.imageUrl,
   });
 
   final String id;
@@ -20,6 +21,7 @@ class MenuItem extends Equatable {
   final int priceCents;
   final bool isAvailable;
   final int sortOrder;
+  final String? imageUrl;
 
   MenuItem copyWith({
     String? id,
@@ -30,6 +32,8 @@ class MenuItem extends Equatable {
     int? priceCents,
     bool? isAvailable,
     int? sortOrder,
+    String? imageUrl,
+    bool clearImageUrl = false,
   }) {
     return MenuItem(
       id: id ?? this.id,
@@ -40,6 +44,7 @@ class MenuItem extends Equatable {
       priceCents: priceCents ?? this.priceCents,
       isAvailable: isAvailable ?? this.isAvailable,
       sortOrder: sortOrder ?? this.sortOrder,
+      imageUrl: clearImageUrl ? null : imageUrl ?? this.imageUrl,
     );
   }
 
@@ -53,5 +58,6 @@ class MenuItem extends Equatable {
     priceCents,
     isAvailable,
     sortOrder,
+    imageUrl,
   ];
 }

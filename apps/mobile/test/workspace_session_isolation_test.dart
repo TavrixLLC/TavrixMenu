@@ -488,6 +488,7 @@ class _FakeMenuRepository implements MenuRepository {
     required String name,
     required String description,
     required int priceCents,
+    bool isAvailable = true,
   }) async {
     return Right(
       MenuItem(
@@ -497,7 +498,7 @@ class _FakeMenuRepository implements MenuRepository {
         name: name,
         description: description,
         priceCents: priceCents,
-        isAvailable: true,
+        isAvailable: isAvailable,
         sortOrder: 0,
       ),
     );

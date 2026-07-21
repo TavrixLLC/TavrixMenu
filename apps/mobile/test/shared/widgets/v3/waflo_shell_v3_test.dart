@@ -214,6 +214,23 @@ void main() {
     },
   );
 
+  testWidgets(
+    'shell body starts below header and cannot render underneath it',
+    (tester) async {
+      await tester.pumpWidget(_harness(shell: _shell(), topInset: 28));
+
+      final headerBottom = tester
+          .getBottomLeft(
+            find.byKey(const ValueKey('waflo-shell-v3-header-region')),
+          )
+          .dy;
+      final bodyTop = tester
+          .getTopLeft(find.byKey(const ValueKey('waflo-shell-v3-body')))
+          .dy;
+      expect(bodyTop, greaterThanOrEqualTo(headerBottom));
+    },
+  );
+
   testWidgets('V3 theme is scoped to the shell subtree', (tester) async {
     await tester.pumpWidget(
       _harness(

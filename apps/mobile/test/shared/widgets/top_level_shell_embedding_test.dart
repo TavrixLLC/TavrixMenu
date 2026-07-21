@@ -26,7 +26,6 @@ import 'package:tavrix_menu_mobile/shared/widgets/app_scaffold.dart';
 import 'package:tavrix_menu_mobile/shared/widgets/app_text_field.dart';
 import 'package:tavrix_menu_mobile/shared/widgets/business_header_card.dart';
 import 'package:tavrix_menu_mobile/shared/widgets/error_view.dart';
-import 'package:tavrix_menu_mobile/shared/widgets/loading_view.dart';
 import 'package:tavrix_menu_mobile/shared/widgets/scanner_action_panel.dart';
 
 void main() {
@@ -97,16 +96,19 @@ void main() {
     expect(find.byType(BusinessHeaderCard), findsNothing);
   });
 
-  testWidgets('menu and loyalty hide workspace identity only when embedded', (
+  testWidgets('menu uses V3 content while loyalty hides embedded identity', (
     tester,
   ) async {
     await _pumpScreen(tester, const MenuScreen());
-    expect(find.text(_business.name), findsOneWidget);
+    expect(find.byKey(const ValueKey('menu-v3-content')), findsOneWidget);
+    expect(find.text('إدارة المنيو'), findsWidgets);
+    expect(find.text('Menu appearance'), findsNothing);
 
     await _pumpScreen(tester, const MenuScreen(embeddedInWorkspaceShell: true));
     expect(find.byType(AppBar), findsNothing);
     expect(find.text(_business.name), findsNothing);
-    expect(find.text('Menu appearance'), findsOneWidget);
+    expect(find.byKey(const ValueKey('menu-v3-content')), findsOneWidget);
+    expect(find.text('Menu appearance'), findsNothing);
 
     await _pumpScreen(tester, const LoyaltyScreen());
     expect(find.text(_business.name), findsOneWidget);
@@ -149,7 +151,7 @@ void main() {
       menuState: const MenuState(status: MenuStatus.loading),
       settle: false,
     );
-    expect(find.byType(LoadingView), findsOneWidget);
+    expect(find.byKey(const ValueKey('menu-loading-state')), findsOneWidget);
 
     await _pumpScreen(
       tester,

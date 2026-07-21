@@ -10,6 +10,7 @@ class MenuItemModel extends MenuItem {
     required super.priceCents,
     required super.isAvailable,
     required super.sortOrder,
+    super.imageUrl,
   });
 
   factory MenuItemModel.fromJson(Map<String, dynamic> json) {
@@ -40,6 +41,7 @@ class MenuItemModel extends MenuItem {
           (json['sort_order'] as num?)?.toInt() ??
           (json['sortOrder'] as num?)?.toInt() ??
           0,
+      imageUrl: _optionalString(json['imageUrl'] ?? json['image_url']),
     );
   }
 
@@ -53,8 +55,16 @@ class MenuItemModel extends MenuItem {
       priceCents: priceCents,
       isAvailable: isAvailable,
       sortOrder: sortOrder,
+      imageUrl: imageUrl,
     );
   }
+}
+
+String? _optionalString(Object? value) {
+  if (value is! String || value.trim().isEmpty) {
+    return null;
+  }
+  return value.trim();
 }
 
 int? _priceToInt(Object? value) {
