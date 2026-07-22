@@ -5,7 +5,8 @@ import 'package:url_launcher/url_launcher.dart';
 import '../../../../core/constants/app_colors.dart';
 import '../../../../core/constants/app_radius.dart';
 import '../../../../core/constants/app_spacing.dart';
-import '../../../../core/copy/pilot_arabic_copy.dart';
+import '../../../../core/localization/app_localizations_extension.dart';
+import '../../../../core/localization/localized_runtime_message.dart';
 import '../../../../shared/widgets/app_scaffold.dart';
 import '../../../../shared/widgets/error_view.dart';
 import '../../../../shared/widgets/loading_view.dart';
@@ -43,39 +44,39 @@ class _MenuAppearanceScreenState extends State<MenuAppearanceScreen> {
   @override
   Widget build(BuildContext context) {
     return Directionality(
-      textDirection: TextDirection.rtl,
+      textDirection: Directionality.of(context),
       child: AppScaffold(
-        title: PilotArabicCopy.menuAppearanceTitle,
+        title: context.l10n.menuAppearanceTitle,
         scrollable: true,
         child: BlocConsumer<MenuAppearanceCubit, MenuAppearanceState>(
           listener: (context, state) {
             final successMessage = state.successMessage;
             if (successMessage != null) {
-              ScaffoldMessenger.of(
-                context,
-              ).showSnackBar(SnackBar(content: Text(successMessage)));
+              ScaffoldMessenger.of(context).showSnackBar(
+                SnackBar(content: Text(context.l10n.menuAppearanceSaved)),
+              );
             }
           },
           builder: (context, state) {
             if (state.status == MenuAppearanceStatus.initial ||
                 state.status == MenuAppearanceStatus.loading) {
-              return const LoadingView(
-                message: PilotArabicCopy.menuAppearanceLoading,
-              );
+              return LoadingView(message: context.l10n.menuAppearanceLoading);
             }
 
             if (state.status == MenuAppearanceStatus.failure) {
               return ErrorView(
-                message:
-                    state.errorMessage ??
-                    PilotArabicCopy.menuAppearanceLoadFailed,
+                message: localizedRuntimeMessage(
+                  context.l10n,
+                  state.errorMessage,
+                  fallback: context.l10n.menuAppearanceLoadFailed,
+                ),
                 onRetry: () => context.read<MenuAppearanceCubit>().load(),
               );
             }
 
             if (!state.hasTemplates) {
               return ErrorView(
-                message: PilotArabicCopy.menuAppearanceEmpty,
+                message: context.l10n.menuAppearanceEmpty,
                 onRetry: () => context.read<MenuAppearanceCubit>().load(),
               );
             }
@@ -86,10 +87,10 @@ class _MenuAppearanceScreenState extends State<MenuAppearanceScreen> {
               crossAxisAlignment: CrossAxisAlignment.start,
               children: [
                 SectionHeader(
-                  title: PilotArabicCopy.publicMenuDesign,
+                  title: context.l10n.publicMenuDesign,
                   subtitle: business == null
-                      ? PilotArabicCopy.publicMenuDesignSubtitle
-                      : '${PilotArabicCopy.publicMenuDesignSubtitle} (${business.name})',
+                      ? context.l10n.publicMenuDesignSubtitle
+                      : '${context.l10n.publicMenuDesignSubtitle} (${business.name})',
                 ),
                 const SizedBox(height: AppSpacing.md),
                 _PreviewNotice(business: business),
@@ -99,7 +100,10 @@ class _MenuAppearanceScreenState extends State<MenuAppearanceScreen> {
                     icon: Icons.warning_amber_outlined,
                     color: AppColors.dangerTint,
                     foregroundColor: AppColors.dangerRed,
-                    message: state.errorMessage!,
+                    message: localizedRuntimeMessage(
+                      context.l10n,
+                      state.errorMessage,
+                    ),
                   ),
                 ],
                 const SizedBox(height: AppSpacing.lg),
@@ -127,13 +131,13 @@ class _MenuAppearanceScreenState extends State<MenuAppearanceScreen> {
                       );
                     },
                   ),
-                  const SizedBox(height: AppSpacing.md),
+                  SizedBox(height: AppSpacing.md),
                 ],
-                const SizedBox(height: AppSpacing.sm),
+                SizedBox(height: AppSpacing.sm),
                 WafloButton(
                   label: state.isSaving
-                      ? PilotArabicCopy.savingTemplate
-                      : PilotArabicCopy.saveTemplate,
+                      ? context.l10n.savingTemplate
+                      : context.l10n.saveTemplate,
                   icon: Icons.check_circle_outline,
                   isLoading: state.isSaving,
                   onPressed: state.canSave
@@ -141,9 +145,9 @@ class _MenuAppearanceScreenState extends State<MenuAppearanceScreen> {
                       : null,
                 ),
                 if (state.saveForbidden || !state.canManageAppearance) ...[
-                  const SizedBox(height: AppSpacing.sm),
+                  SizedBox(height: AppSpacing.sm),
                   Text(
-                    PilotArabicCopy.menuAppearancePermission,
+                    context.l10n.menuAppearancePermission,
                     style: Theme.of(context).textTheme.bodyMedium?.copyWith(
                       color: AppColors.mutedText,
                     ),
@@ -170,7 +174,7 @@ class _MenuAppearanceScreenState extends State<MenuAppearanceScreen> {
     if (uri == null) {
       ScaffoldMessenger.of(
         context,
-      ).showSnackBar(const SnackBar(content: Text(unavailablePreviewMessage)));
+      ).showSnackBar(SnackBar(content: Text(context.l10n.previewUnavailable)));
       return;
     }
 
@@ -179,9 +183,9 @@ class _MenuAppearanceScreenState extends State<MenuAppearanceScreen> {
       return;
     }
 
-    ScaffoldMessenger.of(context).showSnackBar(
-      const SnackBar(content: Text(PilotArabicCopy.previewCouldNotOpen)),
-    );
+    ScaffoldMessenger.of(
+      context,
+    ).showSnackBar(SnackBar(content: Text(context.l10n.previewCouldNotOpen)));
   }
 }
 
@@ -198,13 +202,13 @@ class _PreviewNotice extends StatelessWidget {
       child: Row(
         crossAxisAlignment: CrossAxisAlignment.start,
         children: [
-          const Icon(Icons.palette_outlined, color: AppColors.primaryCoral),
-          const SizedBox(width: AppSpacing.md),
+          Icon(Icons.palette_outlined, color: AppColors.primaryCoral),
+          SizedBox(width: AppSpacing.md),
           Expanded(
             child: Text(
               business == null
-                  ? PilotArabicCopy.previewDraftMenu
-                  : '${PilotArabicCopy.previewDraftMenu} (${business!.name})',
+                  ? context.l10n.previewDraftMenu
+                  : '${context.l10n.previewDraftMenu} (${business!.name})',
             ),
           ),
         ],
@@ -234,7 +238,7 @@ class _TemplateCard extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
-    final merchantCopy = _merchantTemplateCopy(template);
+    final merchantCopy = _merchantTemplateCopy(context, template);
     final bestForLabels = merchantCopy.bestFor.take(3).toList(growable: false);
 
     return WafloCard(
@@ -269,17 +273,17 @@ class _TemplateCard extends StatelessWidget {
                   ],
                 ),
               ),
-              const SizedBox(width: AppSpacing.sm),
+              SizedBox(width: AppSpacing.sm),
               if (isCurrent)
-                const WafloStatusBadge(
-                  label: PilotArabicCopy.currentTemplate,
+                WafloStatusBadge(
+                  label: context.l10n.currentTemplate,
                   icon: Icons.check,
                   color: AppColors.greenTint,
                   foregroundColor: AppColors.freshGreenDark,
                 )
               else if (isDraft)
-                const WafloStatusBadge(
-                  label: PilotArabicCopy.selectedTemplate,
+                WafloStatusBadge(
+                  label: context.l10n.selectedTemplate,
                   icon: Icons.edit_outlined,
                   color: AppColors.coralTint,
                   foregroundColor: AppColors.primaryCoralDark,
@@ -311,23 +315,23 @@ class _TemplateCard extends StatelessWidget {
               },
             ),
           ],
-          const SizedBox(height: AppSpacing.md),
+          SizedBox(height: AppSpacing.md),
           Row(
             children: [
               Expanded(
                 child: WafloButton(
-                  label: PilotArabicCopy.previewAction,
+                  label: context.l10n.previewAction,
                   icon: Icons.open_in_new,
                   variant: WafloButtonVariant.secondary,
                   onPressed: canPreview ? onPreview : null,
                 ),
               ),
-              const SizedBox(width: AppSpacing.sm),
+              SizedBox(width: AppSpacing.sm),
               Expanded(
                 child: WafloButton(
                   label: isDraft
-                      ? PilotArabicCopy.selectedTemplate
-                      : PilotArabicCopy.selectTemplate,
+                      ? context.l10n.selectedTemplate
+                      : context.l10n.selectTemplate,
                   icon: isDraft
                       ? Icons.radio_button_checked
                       : Icons.radio_button_unchecked,
@@ -342,7 +346,7 @@ class _TemplateCard extends StatelessWidget {
           if (!canPreview) ...[
             const SizedBox(height: AppSpacing.sm),
             Text(
-              unavailablePreviewMessage,
+              context.l10n.previewUnavailable,
               style: Theme.of(
                 context,
               ).textTheme.bodyMedium?.copyWith(color: AppColors.mutedText),
@@ -547,7 +551,28 @@ const _merchantTemplateCopyById = <String, _MerchantTemplateCopy>{
   ),
 };
 
-_MerchantTemplateCopy _merchantTemplateCopy(MenuTemplate template) {
+_MerchantTemplateCopy _merchantTemplateCopy(
+  BuildContext context,
+  MenuTemplate template,
+) {
+  final localizedTitle = switch (template.id.trim().toLowerCase()) {
+    'waflo-warm' => context.l10n.templateWafloWarm,
+    'coffeehouse-premium' => context.l10n.templateCoffeehousePremium,
+    'street-bites' => context.l10n.templateStreetBites,
+    'minimal-modern' => context.l10n.templateMinimalModern,
+    'luxury-dining' => context.l10n.templateLuxuryDining,
+    'artisan-cafe' => context.l10n.templateArtisanCafe,
+    'quick-serve-bold' => context.l10n.templateQuickServeBold,
+    _ => null,
+  };
+  if (localizedTitle != null) {
+    return _MerchantTemplateCopy(
+      title: localizedTitle,
+      description: context.l10n.publicMenuDesignSubtitle,
+      bestFor: const [],
+    );
+  }
+
   final knownCopy = _merchantTemplateCopyById[template.id.trim().toLowerCase()];
   if (knownCopy != null) {
     return knownCopy;

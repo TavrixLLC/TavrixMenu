@@ -3,7 +3,7 @@ import 'package:flutter/material.dart';
 import '../../core/constants/app_colors.dart';
 import '../../core/constants/app_radius.dart';
 import '../../core/constants/app_spacing.dart';
-import '../../core/copy/pilot_arabic_copy.dart';
+import '../../core/localization/app_localizations_extension.dart';
 import 'waflo_button.dart';
 import 'waflo_card.dart';
 import 'waflo_status_badge.dart';
@@ -46,7 +46,7 @@ class ScannerActionPanel extends StatelessWidget {
                   ),
                 ),
               ),
-              const SizedBox(width: AppSpacing.md),
+              SizedBox(width: AppSpacing.md),
               Expanded(
                 child: Column(
                   crossAxisAlignment: CrossAxisAlignment.start,
@@ -54,21 +54,21 @@ class ScannerActionPanel extends StatelessWidget {
                     WafloStatusBadge(
                       label: businessName?.trim().isNotEmpty == true
                           ? businessName!.trim()
-                          : PilotArabicCopy.scannerReady,
+                          : context.l10n.scannerReady,
                       icon: Icons.shield_outlined,
                       color: AppColors.charcoalSoft,
                       foregroundColor: AppColors.surfaceWhite,
                     ),
-                    const SizedBox(height: AppSpacing.sm),
+                    SizedBox(height: AppSpacing.sm),
                     Text(
-                      PilotArabicCopy.scanCustomerCard,
+                      context.l10n.staffScannerTitle,
                       style: Theme.of(context).textTheme.titleLarge?.copyWith(
                         color: AppColors.surfaceWhite,
                       ),
                     ),
-                    const SizedBox(height: AppSpacing.xs),
+                    SizedBox(height: AppSpacing.xs),
                     Text(
-                      PilotArabicCopy.scannerPrivacy,
+                      context.l10n.scannerPrivacy,
                       style: Theme.of(context).textTheme.bodyMedium?.copyWith(
                         color: AppColors.surfaceWhite.withValues(alpha: 0.78),
                       ),
@@ -78,12 +78,12 @@ class ScannerActionPanel extends StatelessWidget {
               ),
             ],
           ),
-          const SizedBox(height: AppSpacing.md),
+          SizedBox(height: AppSpacing.md),
           WafloButton(
-            key: const ValueKey('walletOpenCameraButton'),
+            key: ValueKey('walletOpenCameraButton'),
             label: isBusy
-                ? PilotArabicCopy.scannerBusy
-                : PilotArabicCopy.openWalletScanner,
+                ? context.l10n.scannerBusy
+                : context.l10n.openWalletScanner,
             icon: Icons.qr_code_scanner,
             onPressed: isBusy ? null : onScan,
           ),

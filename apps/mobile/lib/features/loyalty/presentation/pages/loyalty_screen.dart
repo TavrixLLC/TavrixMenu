@@ -4,7 +4,9 @@ import 'package:flutter_bloc/flutter_bloc.dart';
 import '../../../../app/router/route_names.dart';
 import '../../../../core/constants/app_colors.dart';
 import '../../../../core/constants/app_spacing.dart';
-import '../../../../core/copy/pilot_arabic_copy.dart';
+import '../../../../core/localization/app_localizations_extension.dart';
+import '../../../../core/localization/localized_runtime_message.dart';
+import '../../../../l10n/generated/app_localizations.dart';
 import '../../../../shared/widgets/app_button.dart';
 import '../../../../shared/widgets/app_card.dart';
 import '../../../../shared/widgets/app_scaffold.dart';
@@ -57,29 +59,32 @@ class _LoyaltyScreenState extends State<LoyaltyScreen> {
   @override
   Widget build(BuildContext context) {
     return AppScaffold(
-      title: 'Loyalty',
+      title: context.l10n.loyaltyTitle,
       embeddedInWorkspaceShell: widget.embeddedInWorkspaceShell,
       scrollable: true,
       child: BlocBuilder<LoyaltyCubit, LoyaltyState>(
         builder: (context, state) {
           if (state.status == LoyaltyStatus.loading ||
               state.status == LoyaltyStatus.initial) {
-            return const LoadingView(message: 'Loading loyalty');
+            return LoadingView(message: context.l10n.loyaltyLoading);
           }
 
           if (state.status == LoyaltyStatus.failure) {
             return ErrorView(
-              message: state.errorMessage ?? 'Loyalty could not load.',
+              message: localizedRuntimeMessage(
+                context.l10n,
+                state.errorMessage,
+                fallback: context.l10n.loyaltyLoadFailed,
+              ),
               onRetry: () => context.read<LoyaltyCubit>().load(),
             );
           }
 
           final business = state.business;
           if (business == null) {
-            return const EmptyState(
-              title: 'Business setup needed',
-              message:
-                  'Create a business profile before running loyalty operations.',
+            return EmptyState(
+              title: context.l10n.businessProfileMissingTitle,
+              message: context.l10n.loyaltySetupNeeded,
               icon: Icons.storefront,
             );
           }
@@ -97,15 +102,14 @@ class _LoyaltyScreenState extends State<LoyaltyScreen> {
               if (!widget.embeddedInWorkspaceShell) ...[
                 SectionHeader(
                   title: business.name,
-                  subtitle:
-                      'Stamp-card loyalty operations for the workspace team.',
+                  subtitle: context.l10n.loyaltyWorkspaceBody,
                 ),
               ],
               if (state.canUseDailyOperations) ...[
                 if (!widget.embeddedInWorkspaceShell)
-                  const SizedBox(height: AppSpacing.md),
+                  SizedBox(height: AppSpacing.md),
                 AppButton(
-                  label: PilotArabicCopy.scanCustomerCard,
+                  label: context.l10n.staffScannerTitle,
                   icon: Icons.document_scanner_outlined,
                   onPressed: () =>
                       Navigator.of(context).pushNamed(AppRouteNames.walletScan),
@@ -115,21 +119,32 @@ class _LoyaltyScreenState extends State<LoyaltyScreen> {
               if (state.summaryErrorMessage != null) ...[
                 const SizedBox(height: AppSpacing.md),
                 _LoyaltyNotice(
-                  title: 'Loyalty status note',
-                  message: state.summaryErrorMessage!,
+                  title: context.l10n.loyaltyStatusNote,
+                  message: localizedRuntimeMessage(
+                    context.l10n,
+                    state.summaryErrorMessage,
+                  ),
                 ),
               ],
               if (state.successMessage != null) ...[
                 const SizedBox(height: AppSpacing.md),
                 _LoyaltyNotice(
-                  title: 'Done',
-                  message: state.successMessage!,
+                  title: context.l10n.genericDone,
+                  message: _localizedSuccessMessage(
+                    context.l10n,
+                    state.successMessage!,
+                  ),
                   icon: Icons.check_circle_outline,
                 ),
               ],
               if (state.errorMessage != null) ...[
                 const SizedBox(height: AppSpacing.md),
-                ErrorView(message: state.errorMessage!),
+                ErrorView(
+                  message: localizedRuntimeMessage(
+                    context.l10n,
+                    state.errorMessage,
+                  ),
+                ),
               ],
               const SizedBox(height: AppSpacing.lg),
               _ProgramSection(
@@ -139,17 +154,21 @@ class _LoyaltyScreenState extends State<LoyaltyScreen> {
                     _showProgramDialog(context, program: program),
               ),
               const SizedBox(height: AppSpacing.lg),
-              if (state.canViewEnrollmentLink)
+              if (state.canViewEnrollmentLink &&
+                  state.program?.isActive == true)
                 LoyaltyEnrollmentCard(
                   businessSlug: business.slug,
                   customerWebBaseUrl: widget.customerWebBaseUrl,
                   publicMenuUrl: business.publicMenuUrl,
                 )
               else
-                const _LoyaltyNotice(
-                  title: 'Enrollment link unavailable',
-                  message:
-                      'Your role cannot share the public loyalty enrollment link for this business.',
+                _LoyaltyNotice(
+                  title: state.program?.isActive == true
+                      ? context.l10n.loyaltyEnrollmentUnavailableTitle
+                      : context.l10n.loyaltyInactiveTitle,
+                  message: state.program?.isActive == true
+                      ? context.l10n.loyaltyEnrollmentUnavailableBody
+                      : context.l10n.loyaltyInactiveBody,
                 ),
               if (state.program != null) ...[
                 const SizedBox(height: AppSpacing.lg),
@@ -210,8 +229,8 @@ class _LoyaltyScreenState extends State<LoyaltyScreen> {
               return AlertDialog(
                 title: Text(
                   program == null
-                      ? 'Set up loyalty program'
-                      : 'Edit loyalty program',
+                      ? context.l10n.setUpLoyaltyProgram
+                      : context.l10n.editProgram,
                 ),
                 content: SingleChildScrollView(
                   child: Column(
@@ -226,49 +245,49 @@ class _LoyaltyScreenState extends State<LoyaltyScreen> {
                       ],
                       TextField(
                         controller: nameController,
-                        decoration: const InputDecoration(
-                          labelText: 'Program name',
-                          hintText: 'Waflo Cafe Stamp Card',
+                        decoration: InputDecoration(
+                          labelText: context.l10n.programName,
                         ),
                       ),
                       const SizedBox(height: AppSpacing.md),
                       TextField(
                         controller: goalController,
                         keyboardType: TextInputType.number,
-                        decoration: const InputDecoration(
-                          labelText: 'Stamp goal',
+                        decoration: InputDecoration(
+                          labelText: context.l10n.stampGoal,
                           hintText: '5',
                         ),
                       ),
                       const SizedBox(height: AppSpacing.md),
                       TextField(
                         controller: rewardController,
-                        decoration: const InputDecoration(
-                          labelText: 'Reward name',
-                          hintText: 'Free coffee',
+                        decoration: InputDecoration(
+                          labelText: context.l10n.rewardName,
                         ),
                       ),
                       const SizedBox(height: AppSpacing.md),
                       TextField(
                         controller: descriptionController,
                         maxLines: 2,
-                        decoration: const InputDecoration(
-                          labelText: 'Description',
+                        decoration: InputDecoration(
+                          labelText: context.l10n.description,
                         ),
                       ),
                       const SizedBox(height: AppSpacing.md),
                       TextField(
                         controller: rewardDescriptionController,
                         maxLines: 2,
-                        decoration: const InputDecoration(
-                          labelText: 'Reward description',
+                        decoration: InputDecoration(
+                          labelText: context.l10n.rewardDescription,
                         ),
                       ),
                       const SizedBox(height: AppSpacing.md),
                       TextField(
                         controller: termsController,
                         maxLines: 2,
-                        decoration: const InputDecoration(labelText: 'Terms'),
+                        decoration: InputDecoration(
+                          labelText: context.l10n.terms,
+                        ),
                       ),
                     ],
                   ),
@@ -276,23 +295,23 @@ class _LoyaltyScreenState extends State<LoyaltyScreen> {
                 actions: [
                   TextButton(
                     onPressed: () => Navigator.of(dialogContext).pop(),
-                    child: const Text('Cancel'),
+                    child: Text(context.l10n.genericCancel),
                   ),
                   FilledButton(
                     onPressed: () {
                       final goal = int.tryParse(goalController.text.trim());
                       if (nameController.text.trim().isEmpty) {
-                        setState(() => error = 'Enter a program name.');
-                        return;
-                      }
-                      if (goal == null || goal < 1 || goal > 50) {
                         setState(
-                          () => error = 'Stamp goal must be from 1 to 50.',
+                          () => error = context.l10n.programNameRequired,
                         );
                         return;
                       }
+                      if (goal == null || goal < 1 || goal > 50) {
+                        setState(() => error = context.l10n.stampGoalInvalid);
+                        return;
+                      }
                       if (rewardController.text.trim().isEmpty) {
-                        setState(() => error = 'Enter a reward name.');
+                        setState(() => error = context.l10n.rewardNameRequired);
                         return;
                       }
 
@@ -307,7 +326,7 @@ class _LoyaltyScreenState extends State<LoyaltyScreen> {
                         ),
                       );
                     },
-                    child: const Text('Save'),
+                    child: Text(context.l10n.genericSave),
                   ),
                 ],
               );
@@ -348,7 +367,7 @@ class _LoyaltyScreenState extends State<LoyaltyScreen> {
           return StatefulBuilder(
             builder: (context, setState) {
               return AlertDialog(
-                title: const Text('Enroll customer'),
+                title: Text(context.l10n.enrollCustomer),
                 content: SingleChildScrollView(
                   child: Column(
                     mainAxisSize: MainAxisSize.min,
@@ -363,26 +382,25 @@ class _LoyaltyScreenState extends State<LoyaltyScreen> {
                       TextField(
                         controller: phoneController,
                         keyboardType: TextInputType.phone,
-                        decoration: const InputDecoration(
-                          labelText: 'Phone',
-                          hintText: '+9647700000000',
+                        decoration: InputDecoration(
+                          labelText: context.l10n.phone,
+                          hintText: context.l10n.phoneOrEmailHint,
                         ),
                       ),
                       const SizedBox(height: AppSpacing.md),
                       TextField(
                         controller: emailController,
                         keyboardType: TextInputType.emailAddress,
-                        decoration: const InputDecoration(
-                          labelText: 'Email',
-                          hintText: 'customer@example.com',
+                        decoration: InputDecoration(
+                          labelText: context.l10n.email,
                         ),
                       ),
                       const SizedBox(height: AppSpacing.md),
                       TextField(
                         controller: nameController,
-                        decoration: const InputDecoration(
-                          labelText: 'Name',
-                          hintText: 'Customer name',
+                        decoration: InputDecoration(
+                          labelText: context.l10n.customerName,
+                          hintText: context.l10n.customerNameHint,
                         ),
                       ),
                     ],
@@ -391,15 +409,13 @@ class _LoyaltyScreenState extends State<LoyaltyScreen> {
                 actions: [
                   TextButton(
                     onPressed: () => Navigator.of(dialogContext).pop(),
-                    child: const Text('Cancel'),
+                    child: Text(context.l10n.genericCancel),
                   ),
                   FilledButton(
                     onPressed: () {
                       if (phoneController.text.trim().isEmpty &&
                           emailController.text.trim().isEmpty) {
-                        setState(
-                          () => error = 'Enter a phone number or email.',
-                        );
+                        setState(() => error = context.l10n.contactRequired);
                         return;
                       }
 
@@ -411,7 +427,7 @@ class _LoyaltyScreenState extends State<LoyaltyScreen> {
                         ),
                       );
                     },
-                    child: const Text('Enroll'),
+                    child: Text(context.l10n.enrollCustomer),
                   ),
                 ],
               );
@@ -440,13 +456,15 @@ class _LoyaltyScreenState extends State<LoyaltyScreen> {
           return StatefulBuilder(
             builder: (context, setState) {
               return AlertDialog(
-                title: const Text('Add stamp'),
+                title: Text(context.l10n.addStampTitle),
                 content: Column(
                   mainAxisSize: MainAxisSize.min,
                   children: [
                     DropdownButtonFormField<int>(
                       initialValue: count,
-                      decoration: const InputDecoration(labelText: 'Count'),
+                      decoration: InputDecoration(
+                        labelText: context.l10n.count,
+                      ),
                       items: [
                         for (var value = 1; value <= 10; value++)
                           DropdownMenuItem(value: value, child: Text('$value')),
@@ -460,9 +478,9 @@ class _LoyaltyScreenState extends State<LoyaltyScreen> {
                     const SizedBox(height: AppSpacing.md),
                     TextField(
                       controller: reasonController,
-                      decoration: const InputDecoration(
-                        labelText: 'Reason',
-                        hintText: 'Coffee purchase',
+                      decoration: InputDecoration(
+                        labelText: context.l10n.reason,
+                        hintText: context.l10n.stampReasonHint,
                       ),
                     ),
                   ],
@@ -470,7 +488,7 @@ class _LoyaltyScreenState extends State<LoyaltyScreen> {
                 actions: [
                   TextButton(
                     onPressed: () => Navigator.of(dialogContext).pop(),
-                    child: const Text('Cancel'),
+                    child: Text(context.l10n.genericCancel),
                   ),
                   FilledButton(
                     onPressed: () => Navigator.of(dialogContext).pop(
@@ -479,7 +497,7 @@ class _LoyaltyScreenState extends State<LoyaltyScreen> {
                         reason: reasonController.text,
                       ),
                     ),
-                    child: const Text('Add'),
+                    child: Text(context.l10n.addAction),
                   ),
                 ],
               );
@@ -506,19 +524,17 @@ class _LoyaltyScreenState extends State<LoyaltyScreen> {
         context: context,
         builder: (dialogContext) {
           return AlertDialog(
-            title: const Text('Redeem reward?'),
+            title: Text(context.l10n.redeemRewardQuestion),
             content: Column(
               mainAxisSize: MainAxisSize.min,
               children: [
-                const Text(
-                  'Confirm that the reward is being given now. The stamp count will reset to 0.',
-                ),
+                Text(context.l10n.redeemConfirmBody),
                 const SizedBox(height: AppSpacing.md),
                 TextField(
                   controller: reasonController,
-                  decoration: const InputDecoration(
-                    labelText: 'Reason',
-                    hintText: 'Free coffee redeemed',
+                  decoration: InputDecoration(
+                    labelText: context.l10n.reason,
+                    hintText: context.l10n.redeemReasonHint,
                   ),
                 ),
               ],
@@ -526,13 +542,13 @@ class _LoyaltyScreenState extends State<LoyaltyScreen> {
             actions: [
               TextButton(
                 onPressed: () => Navigator.of(dialogContext).pop(),
-                child: const Text('Cancel'),
+                child: Text(context.l10n.genericCancel),
               ),
               FilledButton(
                 onPressed: () => Navigator.of(
                   dialogContext,
                 ).pop(RedeemRewardRequest(reason: reasonController.text)),
-                child: const Text('Redeem'),
+                child: Text(context.l10n.redeemReward),
               ),
             ],
           );
@@ -570,19 +586,19 @@ class _ProgramSection extends StatelessWidget {
             const Icon(Icons.loyalty_outlined),
             const SizedBox(height: AppSpacing.sm),
             Text(
-              'No active loyalty program',
+              context.l10n.noActiveLoyaltyProgram,
               style: Theme.of(context).textTheme.titleMedium,
             ),
             const SizedBox(height: AppSpacing.xs),
             Text(
               state.canConfigureProgram
-                  ? 'Create a simple stamp-card program before enrolling customers.'
-                  : 'A loyalty program has not been set up yet. Owners and managers can configure it.',
+                  ? context.l10n.loyaltySetupOwnerBody
+                  : context.l10n.loyaltySetupStaffBody,
             ),
             if (state.canConfigureProgram) ...[
               const SizedBox(height: AppSpacing.md),
               AppButton(
-                label: 'Set up stamp card',
+                label: context.l10n.setUpStampCard,
                 icon: Icons.add_card_outlined,
                 onPressed: state.isMutating ? null : onSetup,
               ),
@@ -611,12 +627,19 @@ class _ProgramSection extends StatelessWidget {
                     ),
                     const SizedBox(height: AppSpacing.xs),
                     Text(
-                      '${program.stampGoal} stamps unlock ${program.rewardName}.',
+                      context.l10n.programRewardRule(
+                        program.stampGoal,
+                        program.rewardName,
+                      ),
                     ),
                   ],
                 ),
               ),
-              StatusBadge(label: program.isActive ? 'Active' : 'Inactive'),
+              StatusBadge(
+                label: program.isActive
+                    ? context.l10n.genericActive
+                    : context.l10n.genericInactive,
+              ),
             ],
           ),
           if ((program.description ?? '').trim().isNotEmpty) ...[
@@ -630,14 +653,14 @@ class _ProgramSection extends StatelessWidget {
           if ((program.terms ?? '').trim().isNotEmpty) ...[
             const SizedBox(height: AppSpacing.sm),
             Text(
-              'Terms: ${program.terms}',
+              context.l10n.termsValue(program.terms!),
               style: Theme.of(context).textTheme.bodySmall,
             ),
           ],
           if (state.canConfigureProgram) ...[
             const SizedBox(height: AppSpacing.md),
             AppButton(
-              label: 'Edit program',
+              label: context.l10n.editProgram,
               icon: Icons.edit_outlined,
               onPressed: state.isMutating ? null : () => onEdit(program),
               variant: AppButtonVariant.secondary,
@@ -645,10 +668,9 @@ class _ProgramSection extends StatelessWidget {
           ],
           if (!state.canConfigureProgram) ...[
             const SizedBox(height: AppSpacing.md),
-            const _LoyaltyNotice(
-              title: 'View-only program access',
-              message:
-                  'Team members can view the active loyalty program but cannot configure it.',
+            _LoyaltyNotice(
+              title: context.l10n.viewOnlyProgramAccess,
+              message: context.l10n.viewOnlyProgramBody,
             ),
           ],
         ],
@@ -679,7 +701,7 @@ class _SearchEnrollSection extends StatelessWidget {
         crossAxisAlignment: CrossAxisAlignment.start,
         children: [
           Text(
-            'Customer lookup',
+            context.l10n.customerLookup,
             style: Theme.of(context).textTheme.titleMedium,
           ),
           const SizedBox(height: AppSpacing.md),
@@ -688,9 +710,9 @@ class _SearchEnrollSection extends StatelessWidget {
             textInputAction: TextInputAction.search,
             onSubmitted: (_) => onSearch(),
             decoration: InputDecoration(
-              labelText: 'Search by phone, email, or name',
+              labelText: context.l10n.searchMembers,
               suffixIcon: IconButton(
-                tooltip: 'Search',
+                tooltip: context.l10n.genericSearch,
                 icon: const Icon(Icons.search),
                 onPressed: state.isSearching ? null : onSearch,
               ),
@@ -706,20 +728,20 @@ class _SearchEnrollSection extends StatelessWidget {
             runSpacing: AppSpacing.sm,
             children: [
               AppButton(
-                label: 'Search',
+                label: context.l10n.genericSearch,
                 icon: Icons.search,
                 onPressed: state.isSearching ? null : onSearch,
                 expand: false,
               ),
               AppButton(
-                label: 'Show all',
+                label: context.l10n.genericShowAll,
                 icon: Icons.list_alt,
                 onPressed: state.isSearching ? null : onClear,
                 variant: AppButtonVariant.secondary,
                 expand: false,
               ),
               AppButton(
-                label: 'Enroll customer',
+                label: context.l10n.enrollCustomer,
                 icon: Icons.person_add_alt_1,
                 onPressed: state.isMutating ? null : onEnroll,
                 variant: AppButtonVariant.secondary,
@@ -743,19 +765,19 @@ class _MembershipResultsSection extends StatelessWidget {
     return Column(
       crossAxisAlignment: CrossAxisAlignment.start,
       children: [
-        const SectionHeader(
-          title: 'Memberships',
-          subtitle: 'Tap a customer to open their stamp card.',
+        SectionHeader(
+          title: context.l10n.memberships,
+          subtitle: context.l10n.membershipHelp,
         ),
         const SizedBox(height: AppSpacing.md),
         if (state.memberships.isEmpty)
           EmptyState(
             title: state.searchQuery.trim().isEmpty
-                ? 'No loyalty members yet'
-                : 'No matches found',
+                ? context.l10n.noLoyaltyMembers
+                : context.l10n.noMembershipMatches,
             message: state.searchQuery.trim().isEmpty
-                ? 'Enroll a customer to create the first stamp-card membership.'
-                : 'Try searching by a different phone, email, or name.',
+                ? context.l10n.noLoyaltyMembersBody
+                : context.l10n.noMembershipMatchesBody,
             icon: Icons.people_outline,
           )
         else
@@ -806,21 +828,25 @@ class _MembershipResultCard extends StatelessWidget {
               crossAxisAlignment: CrossAxisAlignment.start,
               children: [
                 Text(
-                  customer?.displayName ?? 'Loyalty customer',
+                  customer?.displayName ?? context.l10n.loyaltyCustomer,
                   style: Theme.of(context).textTheme.titleMedium,
                 ),
                 const SizedBox(height: AppSpacing.xs),
-                Text(_contactLine(customer)),
+                Text(_contactLine(context.l10n, customer)),
                 const SizedBox(height: AppSpacing.sm),
                 Text(
-                  '${cardState.stampCount}/${cardState.stampGoal} stamps for ${cardState.rewardName}',
+                  context.l10n.cardStampProgress(
+                    cardState.stampCount,
+                    cardState.stampGoal,
+                    cardState.rewardName,
+                  ),
                 ),
               ],
             ),
           ),
           if (cardState.rewardReady)
-            const StatusBadge(
-              label: 'Reward ready',
+            StatusBadge(
+              label: context.l10n.rewardReady,
               color: AppColors.warning,
               foregroundColor: AppColors.textBlack,
             ),
@@ -845,10 +871,9 @@ class _SelectedMembershipSection extends StatelessWidget {
   Widget build(BuildContext context) {
     final membership = state.selectedMembership;
     if (membership == null) {
-      return const EmptyState(
-        title: 'Select a membership',
-        message:
-            'Choose a customer from the list to view card state and actions.',
+      return EmptyState(
+        title: context.l10n.selectMembership,
+        message: context.l10n.selectMembershipBody,
         icon: Icons.credit_card,
       );
     }
@@ -898,17 +923,17 @@ class _CardStateCard extends StatelessWidget {
                   crossAxisAlignment: CrossAxisAlignment.start,
                   children: [
                     Text(
-                      customer?.displayName ?? 'Loyalty customer',
+                      customer?.displayName ?? context.l10n.loyaltyCustomer,
                       style: Theme.of(context).textTheme.titleMedium,
                     ),
                     const SizedBox(height: AppSpacing.xs),
-                    Text(_contactLine(customer)),
+                    Text(_contactLine(context.l10n, customer)),
                   ],
                 ),
               ),
               if (cardState.rewardReady)
-                const StatusBadge(
-                  label: 'Ready',
+                StatusBadge(
+                  label: context.l10n.genericReady,
                   color: AppColors.warning,
                   foregroundColor: AppColors.textBlack,
                 ),
@@ -918,13 +943,21 @@ class _CardStateCard extends StatelessWidget {
           Text(cardState.programName),
           const SizedBox(height: AppSpacing.xs),
           Text(
-            '${cardState.stampCount}/${cardState.stampGoal} stamps',
+            context.l10n.cardStampCount(
+              cardState.stampCount,
+              cardState.stampGoal,
+            ),
             style: Theme.of(context).textTheme.headlineSmall,
           ),
           const SizedBox(height: AppSpacing.sm),
           LinearProgressIndicator(value: cardState.progressRatio),
           const SizedBox(height: AppSpacing.sm),
-          Text('${cardState.progressPercent}% toward ${cardState.rewardName}'),
+          Text(
+            context.l10n.progressTowardReward(
+              cardState.progressPercent,
+              cardState.rewardName,
+            ),
+          ),
           if (cardState.rewardReady) ...[
             const SizedBox(height: AppSpacing.md),
             _RewardReadyBanner(cardState: cardState),
@@ -956,7 +989,7 @@ class _RewardReadyBanner extends StatelessWidget {
             const SizedBox(width: AppSpacing.md),
             Expanded(
               child: Text(
-                'Reward ready: ${cardState.rewardName}. Confirm before redeeming.',
+                context.l10n.rewardReadyMessage(cardState.rewardName),
               ),
             ),
           ],
@@ -986,21 +1019,24 @@ class _MembershipActionsCard extends StatelessWidget {
       child: Column(
         crossAxisAlignment: CrossAxisAlignment.start,
         children: [
-          Text('Actions', style: Theme.of(context).textTheme.titleMedium),
+          Text(
+            context.l10n.actions,
+            style: Theme.of(context).textTheme.titleMedium,
+          ),
           const SizedBox(height: AppSpacing.md),
           Wrap(
             spacing: AppSpacing.sm,
             runSpacing: AppSpacing.sm,
             children: [
               AppButton(
-                label: 'Add stamp',
+                label: context.l10n.addStampTitle,
                 icon: Icons.add_circle_outline,
                 onPressed: isMutating ? null : onAddStamp,
                 expand: false,
               ),
               if (cardState.rewardReady)
                 AppButton(
-                  label: 'Redeem reward',
+                  label: context.l10n.redeemReward,
                   icon: Icons.redeem,
                   onPressed: isMutating ? null : onRedeem,
                   variant: AppButtonVariant.danger,
@@ -1010,9 +1046,7 @@ class _MembershipActionsCard extends StatelessWidget {
           ),
           if (!cardState.rewardReady) ...[
             const SizedBox(height: AppSpacing.md),
-            Text(
-              'Redeem appears when the card reaches ${cardState.stampGoal} stamps.',
-            ),
+            Text(context.l10n.redeemAvailableAt(cardState.stampGoal)),
           ],
           if (isMutating) ...[
             const SizedBox(height: AppSpacing.md),
@@ -1034,12 +1068,12 @@ class _TransactionsSection extends StatelessWidget {
     return Column(
       crossAxisAlignment: CrossAxisAlignment.start,
       children: [
-        const SectionHeader(title: 'Recent transactions'),
+        SectionHeader(title: context.l10n.recentTransactions),
         const SizedBox(height: AppSpacing.md),
         if (transactions.isEmpty)
-          const EmptyState(
-            title: 'No transactions yet',
-            message: 'Stamp additions and reward redemptions will appear here.',
+          EmptyState(
+            title: context.l10n.noTransactionsTitle,
+            message: context.l10n.noTransactionsBody,
             icon: Icons.receipt_long_outlined,
           )
         else
@@ -1074,11 +1108,11 @@ class _TransactionCard extends StatelessWidget {
               crossAxisAlignment: CrossAxisAlignment.start,
               children: [
                 Text(
-                  _transactionLabel(transaction.type),
+                  _transactionLabel(context.l10n, transaction.type),
                   style: Theme.of(context).textTheme.titleMedium,
                 ),
                 const SizedBox(height: AppSpacing.xs),
-                Text(_formatStampDelta(transaction.stampsDelta)),
+                Text(_formatStampDelta(context.l10n, transaction.stampsDelta)),
                 if ((transaction.reason ?? '').trim().isNotEmpty) ...[
                   const SizedBox(height: AppSpacing.xs),
                   Text(transaction.reason!),
@@ -1134,9 +1168,26 @@ class _LoyaltyNotice extends StatelessWidget {
   }
 }
 
-String _contactLine(LoyaltyCustomer? customer) {
+String _localizedSuccessMessage(
+  AppLocalizations localizations,
+  String message,
+) {
+  final normalized = message.trim().toLowerCase();
+  if (normalized.contains('program saved')) {
+    return localizations.loyaltyProgramSaved;
+  }
+  if (normalized.contains('program updated')) {
+    return localizations.loyaltyProgramUpdated;
+  }
+  if (normalized.contains('stamp')) {
+    return localizations.stampSuccess;
+  }
+  return localizations.loyaltyOperationCompleted;
+}
+
+String _contactLine(AppLocalizations localizations, LoyaltyCustomer? customer) {
   if (customer == null) {
-    return 'No customer contact saved';
+    return localizations.noCustomerContact;
   }
 
   final parts = [
@@ -1144,17 +1195,16 @@ String _contactLine(LoyaltyCustomer? customer) {
     customer.email,
   ].where((value) => value != null && value.trim().isNotEmpty).cast<String>();
   final line = parts.join(' • ');
-  return line.isEmpty ? 'No customer contact saved' : line;
+  return line.isEmpty ? localizations.noCustomerContact : line;
 }
 
-String _transactionLabel(String type) {
+String _transactionLabel(AppLocalizations localizations, String type) {
   return switch (type.toUpperCase()) {
-    'STAMP_ADDED' => 'Stamp added',
-    'REWARD_REDEEMED' => 'Reward redeemed',
-    'ADJUSTMENT' => 'Adjustment',
-    'VOID' => 'Void',
-    _ =>
-      type.trim().isEmpty ? 'Unknown transaction' : type.replaceAll('_', ' '),
+    'STAMP_ADDED' => localizations.stampAddedTransaction,
+    'REWARD_REDEEMED' => localizations.rewardRedeemedTransaction,
+    'ADJUSTMENT' => localizations.adjustmentTransaction,
+    'VOID' => localizations.voidTransaction,
+    _ => localizations.unknownTransaction,
   };
 }
 
@@ -1168,14 +1218,14 @@ IconData _transactionIcon(String type) {
   };
 }
 
-String _formatStampDelta(int delta) {
+String _formatStampDelta(AppLocalizations localizations, int delta) {
   if (delta > 0) {
-    return '+$delta stamp${delta == 1 ? '' : 's'}';
+    return localizations.positiveStampDelta(delta);
   }
   if (delta < 0) {
-    return '$delta stamp${delta == -1 ? '' : 's'}';
+    return localizations.negativeStampDelta(delta);
   }
-  return 'No stamp change';
+  return localizations.noStampChange;
 }
 
 String _formatDate(String? value) {

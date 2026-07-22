@@ -1,6 +1,7 @@
 import 'package:flutter/material.dart';
 import 'package:flutter_bloc/flutter_bloc.dart';
 import 'package:flutter_test/flutter_test.dart';
+import 'package:qr_flutter/qr_flutter.dart';
 import 'package:tavrix_menu_mobile/core/constants/app_spacing.dart';
 import 'package:tavrix_menu_mobile/core/copy/pilot_arabic_copy.dart';
 import 'package:tavrix_menu_mobile/features/auth/presentation/bloc/auth_cubit.dart';
@@ -16,12 +17,15 @@ import 'package:tavrix_menu_mobile/features/dashboard/presentation/pages/dashboa
 import 'package:tavrix_menu_mobile/features/loyalty/presentation/bloc/loyalty_cubit.dart';
 import 'package:tavrix_menu_mobile/features/loyalty/presentation/bloc/loyalty_state.dart';
 import 'package:tavrix_menu_mobile/features/loyalty/presentation/pages/loyalty_screen.dart';
+import 'package:tavrix_menu_mobile/features/loyalty/presentation/widgets/loyalty_enrollment_card.dart';
+import 'package:tavrix_menu_mobile/features/loyalty/domain/entities/loyalty_program.dart';
 import 'package:tavrix_menu_mobile/features/menu/presentation/bloc/menu_cubit.dart';
 import 'package:tavrix_menu_mobile/features/menu/presentation/bloc/menu_state.dart';
 import 'package:tavrix_menu_mobile/features/menu/presentation/pages/menu_screen.dart';
 import 'package:tavrix_menu_mobile/features/staff_scanner/presentation/bloc/wallet_scan_cubit.dart';
 import 'package:tavrix_menu_mobile/features/staff_scanner/presentation/bloc/wallet_scan_state.dart';
 import 'package:tavrix_menu_mobile/features/staff_scanner/presentation/pages/staff_scanner_screen.dart';
+import 'package:tavrix_menu_mobile/l10n/generated/app_localizations.dart';
 import 'package:tavrix_menu_mobile/shared/widgets/app_scaffold.dart';
 import 'package:tavrix_menu_mobile/shared/widgets/app_text_field.dart';
 import 'package:tavrix_menu_mobile/shared/widgets/business_header_card.dart';
@@ -162,7 +166,7 @@ void main() {
       ),
     );
     expect(find.byType(ErrorView), findsOneWidget);
-    expect(find.text('Could not load loyalty.'), findsOneWidget);
+    expect(find.text('تعذر تحميل الولاء الآن.'), findsOneWidget);
   });
 
   testWidgets('embedded destinations retain RTL and fit narrow mobile width', (
@@ -178,19 +182,37 @@ void main() {
       const DashboardScreen(embeddedInWorkspaceShell: true),
     );
 
-    final directions = tester.widgetList<Directionality>(
-      find.descendant(
-        of: find.byType(DashboardScreen),
-        matching: find.byType(Directionality),
-      ),
-    );
     expect(
-      directions.any(
-        (direction) => direction.textDirection == TextDirection.rtl,
-      ),
-      isTrue,
+      Directionality.of(tester.element(find.byType(DashboardScreen))),
+      TextDirection.rtl,
     );
     expect(tester.takeException(), isNull);
+  });
+
+  testWidgets('inactive loyalty never exposes enrollment QR or link', (
+    tester,
+  ) async {
+    await _pumpScreen(
+      tester,
+      const LoyaltyScreen(embeddedInWorkspaceShell: true),
+      loyaltyState: const LoyaltyState(
+        status: LoyaltyStatus.success,
+        business: _business,
+        currentRole: 'OWNER',
+        program: LoyaltyProgram(
+          id: 'program-inactive',
+          businessId: 'business-test',
+          name: 'Fixture loyalty',
+          stampGoal: 8,
+          rewardName: 'Fixture reward',
+          isActive: false,
+        ),
+      ),
+    );
+
+    expect(find.byType(LoyaltyEnrollmentCard), findsNothing);
+    expect(find.byType(QrImageView), findsNothing);
+    expect(find.text('برنامج الولاء غير فعّال'), findsOneWidget);
   });
 }
 
@@ -221,7 +243,12 @@ Future<void> _pumpScreen(
           create: (_) => _FakeBusinessSetupCubit(),
         ),
       ],
-      child: MaterialApp(home: screen),
+      child: MaterialApp(
+        locale: const Locale('ar'),
+        localizationsDelegates: AppLocalizations.localizationsDelegates,
+        supportedLocales: AppLocalizations.supportedLocales,
+        home: screen,
+      ),
     ),
   );
   if (settle) {

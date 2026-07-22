@@ -1,27 +1,24 @@
 import 'package:flutter/material.dart';
 import 'package:flutter_test/flutter_test.dart';
 import 'package:tavrix_menu_mobile/features/loyalty/presentation/widgets/loyalty_enrollment_card.dart';
+import 'package:tavrix_menu_mobile/l10n/generated/app_localizations.dart';
 
 void main() {
   testWidgets('shows generated customer enrollment link and actions', (
     tester,
   ) async {
     await tester.pumpWidget(
-      const MaterialApp(
-        home: Scaffold(
-          body: LoyaltyEnrollmentCard(
-            businessSlug: 'tavrix-cafe',
-            customerWebBaseUrl: 'https://menu.example.test',
-          ),
+      _englishApp(
+        const LoyaltyEnrollmentCard(
+          businessSlug: 'tavrix-cafe',
+          customerWebBaseUrl: 'https://menu.example.test',
         ),
       ),
     );
 
-    expect(find.text('Customer Enrollment Link'), findsOneWidget);
+    expect(find.text('Customer enrollment'), findsOneWidget);
     expect(
-      find.text(
-        'Ask the customer to scan this QR or open this link to join the loyalty program.',
-      ),
+      find.text('Share this confirmed link with customers who want to join.'),
       findsOneWidget,
     );
     expect(
@@ -34,21 +31,17 @@ void main() {
 
   testWidgets('shows friendly missing slug state', (tester) async {
     await tester.pumpWidget(
-      const MaterialApp(
-        home: Scaffold(
-          body: LoyaltyEnrollmentCard(
-            businessSlug: '',
-            customerWebBaseUrl: 'https://menu.example.test',
-          ),
+      _englishApp(
+        const LoyaltyEnrollmentCard(
+          businessSlug: '',
+          customerWebBaseUrl: 'https://menu.example.test',
         ),
       ),
     );
 
-    expect(find.text('Customer Enrollment Link'), findsOneWidget);
+    expect(find.text('Enrollment link unavailable'), findsOneWidget);
     expect(
-      find.text(
-        'A business slug is required before customers can join from a public loyalty link.',
-      ),
+      find.text('No active enrollment link is available for this restaurant.'),
       findsOneWidget,
     );
     expect(find.text('Copy link'), findsNothing);
@@ -59,13 +52,11 @@ void main() {
     tester,
   ) async {
     await tester.pumpWidget(
-      const MaterialApp(
-        home: Scaffold(
-          body: LoyaltyEnrollmentCard(
-            businessSlug: 'tavrix-cafe',
-            customerWebBaseUrl: '',
-            publicMenuUrl: 'http://localhost:3001/m/tavrix-cafe',
-          ),
+      _englishApp(
+        const LoyaltyEnrollmentCard(
+          businessSlug: 'tavrix-cafe',
+          customerWebBaseUrl: '',
+          publicMenuUrl: 'http://localhost:3001/m/tavrix-cafe',
         ),
       ),
     );
@@ -80,13 +71,11 @@ void main() {
     tester,
   ) async {
     await tester.pumpWidget(
-      const MaterialApp(
-        home: Scaffold(
-          body: LoyaltyEnrollmentCard(
-            businessSlug: 'tavrix-cafe',
-            customerWebBaseUrl: '',
-            publicMenuUrl: '/m/tavrix-cafe',
-          ),
+      _englishApp(
+        const LoyaltyEnrollmentCard(
+          businessSlug: 'tavrix-cafe',
+          customerWebBaseUrl: '',
+          publicMenuUrl: '/m/tavrix-cafe',
         ),
       ),
     );
@@ -95,4 +84,13 @@ void main() {
     expect(find.text('Copy link'), findsOneWidget);
     expect(find.text('Share link'), findsOneWidget);
   });
+}
+
+Widget _englishApp(Widget child) {
+  return MaterialApp(
+    locale: const Locale('en'),
+    localizationsDelegates: AppLocalizations.localizationsDelegates,
+    supportedLocales: AppLocalizations.supportedLocales,
+    home: Scaffold(body: child),
+  );
 }

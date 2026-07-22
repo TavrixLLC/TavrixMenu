@@ -11,7 +11,8 @@ import '../../../../core/config/app_config.dart';
 import '../../../../core/constants/app_colors.dart';
 import '../../../../core/constants/app_radius.dart';
 import '../../../../core/constants/app_spacing.dart';
-import '../../../../core/copy/pilot_arabic_copy.dart';
+import '../../../../core/localization/app_localizations_extension.dart';
+import '../../../../l10n/generated/app_localizations.dart';
 import '../../../../shared/widgets/app_button.dart';
 import '../../../../shared/widgets/app_card.dart';
 import '../../../../shared/widgets/app_scaffold.dart';
@@ -45,16 +46,16 @@ class LoginScreen extends StatelessWidget {
       },
       builder: (context, state) {
         if (state.status == AuthStatus.restoring) {
-          return const AppScaffold(
+          return AppScaffold(
             child: Directionality(
-              textDirection: TextDirection.rtl,
-              child: LoadingView(message: PilotArabicCopy.restoringSession),
+              textDirection: Directionality.of(context),
+              child: LoadingView(message: context.l10n.restoringSession),
             ),
           );
         }
 
         return Directionality(
-          textDirection: TextDirection.rtl,
+          textDirection: Directionality.of(context),
           child: AppScaffold(
             scrollable: true,
             child: Column(
@@ -80,11 +81,11 @@ class LoginScreen extends StatelessWidget {
                       ),
                 ],
                 if (config.isDevAuthEnabled) ...[
-                  const SizedBox(height: AppSpacing.md),
+                  SizedBox(height: AppSpacing.md),
                   AppButton(
                     label: state.status == AuthStatus.loading
-                        ? PilotArabicCopy.checkingBusinessAccess
-                        : PilotArabicCopy.testAccess,
+                        ? context.l10n.checkingBusinessAccess
+                        : context.l10n.testAccess,
                     icon: Icons.login,
                     variant: AppButtonVariant.secondary,
                     onPressed: state.status == AuthStatus.loading
@@ -115,16 +116,14 @@ class _AuthConfigurationNotice extends StatelessWidget {
         crossAxisAlignment: CrossAxisAlignment.start,
         children: [
           Text(
-            PilotArabicCopy.appConfigNeedsAttention,
+            context.l10n.appConfigNeedsAttention,
             style: Theme.of(context).textTheme.titleMedium,
           ),
-          const SizedBox(height: AppSpacing.xs),
-          const Text(PilotArabicCopy.operatorBuildSupport),
+          SizedBox(height: AppSpacing.xs),
+          Text(context.l10n.operatorBuildSupport),
           if (!isAuthBlocked) ...[
             const SizedBox(height: AppSpacing.xs),
-            const Text(
-              'تسجيل الدخول ممكن، لكن بعض الخدمات قد لا تعمل حتى تكتمل مراجعة نسخة التطبيق.',
-            ),
+            Text(context.l10n.authPartialConfigNotice),
           ],
         ],
       ),
@@ -143,27 +142,27 @@ class _AuthHero extends StatelessWidget {
         borderRadius: BorderRadius.circular(AppRadius.xl),
       ),
       child: Padding(
-        padding: const EdgeInsetsDirectional.all(AppSpacing.lg),
+        padding: EdgeInsetsDirectional.all(AppSpacing.lg),
         child: Column(
           crossAxisAlignment: CrossAxisAlignment.start,
           children: [
-            const WafloStatusBadge(
-              label: PilotArabicCopy.authBadge,
+            WafloStatusBadge(
+              label: context.l10n.authBadge,
               icon: Icons.verified_outlined,
               color: AppColors.charcoalSoft,
               foregroundColor: AppColors.surfaceWhite,
             ),
-            const SizedBox(height: AppSpacing.xl),
+            SizedBox(height: AppSpacing.xl),
             Text(
-              PilotArabicCopy.authTitle,
+              context.l10n.authTitle,
               style: Theme.of(context).textTheme.headlineMedium?.copyWith(
                 color: AppColors.surfaceWhite,
                 fontWeight: FontWeight.w900,
               ),
             ),
-            const SizedBox(height: AppSpacing.sm),
+            SizedBox(height: AppSpacing.sm),
             Text(
-              PilotArabicCopy.authSubtitle,
+              context.l10n.authSubtitle,
               style: Theme.of(context).textTheme.bodyLarge?.copyWith(
                 color: AppColors.surfaceWhite.withValues(alpha: 0.84),
                 height: 1.35,
@@ -205,20 +204,20 @@ class _ClerkSignInPanel extends StatelessWidget {
               crossAxisAlignment: CrossAxisAlignment.start,
               children: [
                 Text(
-                  PilotArabicCopy.signedIn,
+                  context.l10n.signedIn,
                   style: Theme.of(context).textTheme.titleMedium,
                 ),
-                const SizedBox(height: AppSpacing.xs),
-                const Text(PilotArabicCopy.confirmBusinessAccess),
-                const SizedBox(height: AppSpacing.md),
+                SizedBox(height: AppSpacing.xs),
+                Text(context.l10n.confirmBusinessAccess),
+                SizedBox(height: AppSpacing.md),
                 AppButton(
-                  label: PilotArabicCopy.retryWorkspaceCheck,
+                  label: context.l10n.retryWorkspaceCheck,
                   icon: Icons.refresh,
                   onPressed: () => context.read<AuthCubit>().signInWithClerk(),
                 ),
-                const SizedBox(height: AppSpacing.sm),
+                SizedBox(height: AppSpacing.sm),
                 AppButton(
-                  label: PilotArabicCopy.signOut,
+                  label: context.l10n.signOut,
                   icon: Icons.logout,
                   variant: AppButtonVariant.ghost,
                   onPressed: () => context.read<AuthCubit>().signOut(),
@@ -228,9 +227,7 @@ class _ClerkSignInPanel extends StatelessWidget {
           );
         }
 
-        return const LoadingView(
-          message: PilotArabicCopy.checkingBusinessAccess,
-        );
+        return LoadingView(message: context.l10n.checkingBusinessAccess);
       },
     );
   }
@@ -275,11 +272,7 @@ class OwnerAuthCompletion {
     : this._(isComplete: false, requiredStep: requiredStep);
 
   const OwnerAuthCompletion.passwordRequired()
-    : this._(
-        isComplete: false,
-        requiredStep: PilotArabicCopy.passwordRequiredStep,
-        requiresPassword: true,
-      );
+    : this._(isComplete: false, requiresPassword: true);
 
   final bool isComplete;
   final String? requiredStep;
@@ -547,13 +540,15 @@ class _OwnerAuthFormState extends State<OwnerAuthForm> {
   Future<void> _sendCode() async {
     final flow = _flow;
     if (flow == null) {
-      setState(() => _localMessage = _AuthNotice.chooseAuthPath);
+      setState(() => _localMessage = _AuthNotice.chooseAuthPath(context.l10n));
       return;
     }
 
     final identifier = _identifierController.text.trim();
     if (identifier.isEmpty) {
-      setState(() => _localMessage = _AuthNotice.missingIdentifier);
+      setState(
+        () => _localMessage = _AuthNotice.missingIdentifier(context.l10n),
+      );
       return;
     }
 
@@ -588,13 +583,18 @@ class _OwnerAuthFormState extends State<OwnerAuthForm> {
       });
     } on clerk.ClerkError catch (error) {
       _setAuthError(
-        _authErrorNotice(error, flow: flow, stage: _AuthStage.start),
+        _authErrorNotice(
+          error,
+          localizations: context.l10n,
+          flow: flow,
+          stage: _AuthStage.start,
+        ),
       );
     } on Object {
       _setAuthError(
         flow == _AuthFlow.ownerSignUp
-            ? _AuthNotice.signUpStartFailed
-            : _AuthNotice.signInStartFailed,
+            ? _AuthNotice.signUpStartFailed(context.l10n)
+            : _AuthNotice.signInStartFailed(context.l10n),
       );
     }
   }
@@ -604,15 +604,15 @@ class _OwnerAuthFormState extends State<OwnerAuthForm> {
     final strategy = _otpStrategy;
     final code = _codeController.text.trim();
     if (flow == null) {
-      setState(() => _localMessage = _AuthNotice.chooseAuthPath);
+      setState(() => _localMessage = _AuthNotice.chooseAuthPath(context.l10n));
       return;
     }
     if (strategy == null) {
-      setState(() => _localMessage = _AuthNotice.startAgain);
+      setState(() => _localMessage = _AuthNotice.startAgain(context.l10n));
       return;
     }
     if (code.length < 4) {
-      setState(() => _localMessage = _AuthNotice.missingCode);
+      setState(() => _localMessage = _AuthNotice.missingCode(context.l10n));
       return;
     }
 
@@ -635,8 +635,11 @@ class _OwnerAuthFormState extends State<OwnerAuthForm> {
         } else {
           _setAuthError(
             completion.requiresPassword
-                ? _AuthNotice.passwordlessSignupConfigNeeded
-                : _AuthNotice.needsMoreVerification(completion.requiredStep),
+                ? _AuthNotice.passwordlessSignupConfigNeeded(context.l10n)
+                : _AuthNotice.needsMoreVerification(
+                    context.l10n,
+                    completion.requiredStep,
+                  ),
           );
         }
       } else {
@@ -651,16 +654,24 @@ class _OwnerAuthFormState extends State<OwnerAuthForm> {
           context.read<AuthCubit>().signInWithClerk();
         } else {
           _setAuthError(
-            _AuthNotice.needsMoreVerification(completion.requiredStep),
+            _AuthNotice.needsMoreVerification(
+              context.l10n,
+              completion.requiredStep,
+            ),
           );
         }
       }
     } on clerk.ClerkError catch (error) {
       _setAuthError(
-        _authErrorNotice(error, flow: flow, stage: _AuthStage.verify),
+        _authErrorNotice(
+          error,
+          localizations: context.l10n,
+          flow: flow,
+          stage: _AuthStage.verify,
+        ),
       );
     } on Object {
-      _setAuthError(_AuthNotice.verifyFailed);
+      _setAuthError(_AuthNotice.verifyFailed(context.l10n));
     }
   }
 
@@ -711,78 +722,79 @@ class _OwnerAuthFormState extends State<OwnerAuthForm> {
 enum _AuthStage { start, verify }
 
 class _AuthNotice {
-  const _AuthNotice({required this.title, required this.body, this.detail});
+  const _AuthNotice({required this.title, required this.body});
 
   final String title;
   final String body;
-  final String? detail;
 
-  static const chooseAuthPath = _AuthNotice(
-    title: 'اختر طريقة البدء',
-    body: 'اختر دخول لمساحة موجودة أو إنشاء مساحة مطعم جديدة.',
+  static _AuthNotice chooseAuthPath(AppLocalizations l10n) => _AuthNotice(
+    title: l10n.authChoosePathTitle,
+    body: l10n.authChoosePathBody,
   );
 
-  static const missingIdentifier = _AuthNotice(
-    title: 'أدخل وسيلة الدخول',
-    body: 'اكتب إيميل العمل أو رقم الهاتف.',
+  static _AuthNotice missingIdentifier(AppLocalizations l10n) => _AuthNotice(
+    title: l10n.authMissingIdentifierTitle,
+    body: l10n.authMissingIdentifierBody,
   );
 
-  static const missingCode = _AuthNotice(
-    title: 'أدخل رمز التحقق',
-    body: 'اكتب الرمز الذي وصلك على الإيميل أو الهاتف.',
+  static _AuthNotice missingCode(AppLocalizations l10n) => _AuthNotice(
+    title: l10n.authMissingCodeTitle,
+    body: l10n.authMissingCodeBody,
   );
 
-  static const startAgain = _AuthNotice(
-    title: 'ابدأ من جديد',
-    body: 'اطلب رمز جديد قبل الاستمرار.',
+  static _AuthNotice startAgain(AppLocalizations l10n) => _AuthNotice(
+    title: l10n.authStartAgainTitle,
+    body: l10n.authStartAgainBody,
   );
 
-  static const accountNotFound = _AuthNotice(
-    title: PilotArabicCopy.accountNotFoundTitle,
-    body: PilotArabicCopy.accountNotFoundBody,
+  static _AuthNotice accountNotFound(AppLocalizations l10n) => _AuthNotice(
+    title: l10n.accountNotFoundTitle,
+    body: l10n.accountNotFoundBody,
   );
 
-  static const signInStartFailed = _AuthNotice(
-    title: PilotArabicCopy.authTemporaryErrorTitle,
-    body: PilotArabicCopy.authTemporaryErrorBody,
+  static _AuthNotice signInStartFailed(AppLocalizations l10n) => _AuthNotice(
+    title: l10n.authTemporaryErrorTitle,
+    body: l10n.authTemporaryErrorBody,
   );
 
-  static const signUpStartFailed = _AuthNotice(
-    title: PilotArabicCopy.authTemporaryErrorTitle,
-    body: PilotArabicCopy.authTemporaryErrorBody,
+  static _AuthNotice signUpStartFailed(AppLocalizations l10n) => _AuthNotice(
+    title: l10n.authTemporaryErrorTitle,
+    body: l10n.authTemporaryErrorBody,
   );
 
-  static const verifyFailed = _AuthNotice(
-    title: PilotArabicCopy.verificationFailedTitle,
-    body: PilotArabicCopy.verificationFailedBody,
+  static _AuthNotice verifyFailed(AppLocalizations l10n) => _AuthNotice(
+    title: l10n.verificationFailedTitle,
+    body: l10n.verificationFailedBody,
   );
 
-  static _AuthNotice needsMoreVerification(String? requiredStep) => _AuthNotice(
-    title: PilotArabicCopy.needsMoreVerificationTitle,
-    body: PilotArabicCopy.needsMoreVerificationBody,
-    detail: requiredStep == null || requiredStep.trim().isEmpty
-        ? null
-        : requiredStep.trim(),
+  static _AuthNotice needsMoreVerification(
+    AppLocalizations l10n,
+    String? requiredStep,
+  ) => _AuthNotice(
+    title: l10n.needsMoreVerificationTitle,
+    body: l10n.needsMoreVerificationBody,
   );
 
-  static const passwordlessSignupConfigNeeded = _AuthNotice(
-    title: PilotArabicCopy.passwordlessSetupTitle,
-    body: PilotArabicCopy.passwordlessSetupBody,
-  );
+  static _AuthNotice passwordlessSignupConfigNeeded(AppLocalizations l10n) =>
+      _AuthNotice(
+        title: l10n.passwordlessSetupTitle,
+        body: l10n.passwordlessSetupBody,
+      );
 
-  static const tooManyAttempts = _AuthNotice(
-    title: PilotArabicCopy.tooManyAttemptsTitle,
-    body: PilotArabicCopy.tooManyAttemptsBody,
+  static _AuthNotice tooManyAttempts(AppLocalizations l10n) => _AuthNotice(
+    title: l10n.tooManyAttemptsTitle,
+    body: l10n.tooManyAttemptsBody,
   );
 }
 
 _AuthNotice _authErrorNotice(
   clerk.ClerkError error, {
+  required AppLocalizations localizations,
   required _AuthFlow flow,
   required _AuthStage stage,
 }) {
   if (error.code == clerk.ClerkErrorCode.tooManyRetries) {
-    return _AuthNotice.tooManyAttempts;
+    return _AuthNotice.tooManyAttempts(localizations);
   }
 
   final searchable = [
@@ -794,16 +806,16 @@ _AuthNotice _authErrorNotice(
   if (flow == _AuthFlow.signIn &&
       stage == _AuthStage.start &&
       _looksLikeUnknownAccount(searchable)) {
-    return _AuthNotice.accountNotFound;
+    return _AuthNotice.accountNotFound(localizations);
   }
 
   if (flow == _AuthFlow.ownerSignUp && stage == _AuthStage.start) {
-    return _AuthNotice.signUpStartFailed;
+    return _AuthNotice.signUpStartFailed(localizations);
   }
 
   return stage == _AuthStage.verify
-      ? _AuthNotice.verifyFailed
-      : _AuthNotice.signInStartFailed;
+      ? _AuthNotice.verifyFailed(localizations)
+      : _AuthNotice.signInStartFailed(localizations);
 }
 
 bool _looksLikeUnknownAccount(String message) {
@@ -829,10 +841,6 @@ class _AuthNoticeCard extends StatelessWidget {
           Text(notice.title, style: Theme.of(context).textTheme.titleMedium),
           const SizedBox(height: AppSpacing.xs),
           Text(notice.body),
-          if (notice.detail != null) ...[
-            const SizedBox(height: AppSpacing.xs),
-            Text(notice.detail!),
-          ],
         ],
       ),
     );
@@ -847,28 +855,28 @@ class _AuthChoiceStep extends StatelessWidget {
   @override
   Widget build(BuildContext context) {
     return Directionality(
-      textDirection: TextDirection.rtl,
+      textDirection: Directionality.of(context),
       child: Column(
         crossAxisAlignment: CrossAxisAlignment.start,
         children: [
           Text(
-            PilotArabicCopy.authChoiceTitle,
+            context.l10n.authChoiceTitle,
             style: Theme.of(context).textTheme.titleLarge,
           ),
-          const SizedBox(height: AppSpacing.xs),
+          SizedBox(height: AppSpacing.xs),
           Text(
-            PilotArabicCopy.authChoiceSubtitle,
+            context.l10n.authChoiceSubtitle,
             style: Theme.of(context).textTheme.bodyMedium,
           ),
-          const SizedBox(height: AppSpacing.lg),
+          SizedBox(height: AppSpacing.lg),
           WafloButton(
-            label: PilotArabicCopy.signInExistingWorkspace,
+            label: context.l10n.signInExistingWorkspace,
             icon: Icons.login,
             onPressed: () => onSelect(_AuthFlow.signIn),
           ),
-          const SizedBox(height: AppSpacing.sm),
+          SizedBox(height: AppSpacing.sm),
           WafloButton(
-            label: PilotArabicCopy.createBusinessWorkspace,
+            label: context.l10n.createBusinessWorkspace,
             icon: Icons.storefront_outlined,
             onPressed: () => onSelect(_AuthFlow.ownerSignUp),
             variant: WafloButtonVariant.secondary,
@@ -892,22 +900,18 @@ class _FlowHeader extends StatelessWidget {
       crossAxisAlignment: CrossAxisAlignment.start,
       children: [
         IconButton(
-          tooltip: 'Back',
-          icon: const Icon(Icons.arrow_back),
+          tooltip: context.l10n.back,
+          icon: Icon(Icons.arrow_back),
           onPressed: onBack,
         ),
-        const SizedBox(height: AppSpacing.xs),
+        SizedBox(height: AppSpacing.xs),
         Text(
-          isSignIn
-              ? PilotArabicCopy.signInHeader
-              : PilotArabicCopy.signUpHeader,
+          isSignIn ? context.l10n.signInHeader : context.l10n.signUpHeader,
           style: Theme.of(context).textTheme.titleLarge,
         ),
-        const SizedBox(height: AppSpacing.xs),
+        SizedBox(height: AppSpacing.xs),
         Text(
-          isSignIn
-              ? PilotArabicCopy.signInSubtitle
-              : PilotArabicCopy.signUpSubtitle,
+          isSignIn ? context.l10n.signInSubtitle : context.l10n.signUpSubtitle,
           style: Theme.of(context).textTheme.bodyMedium,
         ),
       ],
@@ -933,8 +937,8 @@ class _IdentifierStep extends StatelessWidget {
     return Column(
       children: [
         WafloTextField(
-          label: PilotArabicCopy.contactLabel,
-          hint: PilotArabicCopy.contactHint,
+          label: context.l10n.contactLabel,
+          hint: context.l10n.contactHint,
           controller: controller,
           keyboardType: TextInputType.emailAddress,
           textInputAction: TextInputAction.done,
@@ -947,11 +951,9 @@ class _IdentifierStep extends StatelessWidget {
             }
           },
         ),
-        const SizedBox(height: AppSpacing.md),
+        SizedBox(height: AppSpacing.md),
         WafloButton(
-          label: isBusy
-              ? PilotArabicCopy.sendingCode
-              : PilotArabicCopy.continueLabel,
+          label: isBusy ? context.l10n.sendingCode : context.l10n.continueLabel,
           icon: Icons.arrow_forward,
           isLoading: isBusy,
           onPressed: isBusy ? null : onSubmit,
@@ -983,7 +985,7 @@ class _CodeStep extends StatelessWidget {
     return Column(
       children: [
         WafloTextField(
-          label: PilotArabicCopy.verificationCode,
+          label: context.l10n.verificationCode,
           hint: '123456',
           controller: controller,
           keyboardType: TextInputType.number,
@@ -997,32 +999,32 @@ class _CodeStep extends StatelessWidget {
             }
           },
         ),
-        const SizedBox(height: AppSpacing.md),
+        SizedBox(height: AppSpacing.md),
         WafloButton(
           label: isBusy
-              ? PilotArabicCopy.verifying
+              ? context.l10n.verifying
               : flow == _AuthFlow.ownerSignUp
-              ? PilotArabicCopy.verifyAndCreate
-              : PilotArabicCopy.verifyAndSignIn,
+              ? context.l10n.verifyAndCreate
+              : context.l10n.verifyAndSignIn,
           icon: Icons.verified_outlined,
           isLoading: isBusy,
           onPressed: isBusy ? null : onSubmit,
         ),
-        const SizedBox(height: AppSpacing.sm),
+        SizedBox(height: AppSpacing.sm),
         Row(
           children: [
             Expanded(
               child: WafloButton(
-                label: PilotArabicCopy.resendCode,
+                label: context.l10n.resendCode,
                 icon: Icons.refresh,
                 onPressed: isBusy ? null : onResend,
                 variant: WafloButtonVariant.ghost,
               ),
             ),
-            const SizedBox(width: AppSpacing.sm),
+            SizedBox(width: AppSpacing.sm),
             Expanded(
               child: WafloButton(
-                label: PilotArabicCopy.changeLogin,
+                label: context.l10n.changeLogin,
                 icon: Icons.edit_outlined,
                 onPressed: isBusy ? null : onChangeIdentifier,
                 variant: WafloButtonVariant.secondary,
@@ -1044,12 +1046,21 @@ class _TrustLinks extends StatelessWidget {
       crossAxisAlignment: WrapCrossAlignment.center,
       children: [
         Text(
-          'بالمتابعة أنت توافق على ',
+          context.l10n.consentPrefix,
           style: Theme.of(context).textTheme.bodyMedium,
         ),
-        _PolicyLink(label: 'الشروط', uri: Uri.https('waflo.app', '/terms')),
-        Text(' و ', style: Theme.of(context).textTheme.bodyMedium),
-        _PolicyLink(label: 'الخصوصية', uri: Uri.https('waflo.app', '/privacy')),
+        _PolicyLink(
+          label: context.l10n.termsLink,
+          uri: Uri.https('waflo.app', '/terms'),
+        ),
+        Text(
+          context.l10n.consentJoin,
+          style: Theme.of(context).textTheme.bodyMedium,
+        ),
+        _PolicyLink(
+          label: context.l10n.privacyLink,
+          uri: Uri.https('waflo.app', '/privacy'),
+        ),
         Text('.', style: Theme.of(context).textTheme.bodyMedium),
       ],
     );

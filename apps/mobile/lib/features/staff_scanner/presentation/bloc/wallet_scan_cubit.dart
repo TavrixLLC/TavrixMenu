@@ -1,6 +1,5 @@
 import 'package:flutter_bloc/flutter_bloc.dart';
 
-import '../../../../core/copy/pilot_arabic_copy.dart';
 import '../../../../core/utils/failure_message.dart';
 import '../../../business_setup/domain/usecases/get_my_business.dart';
 import '../../../loyalty/domain/entities/loyalty_requests.dart';
@@ -9,6 +8,9 @@ import '../../domain/usecases/scan_wallet_pass.dart';
 import 'wallet_scan_state.dart';
 
 class WalletScanCubit extends Cubit<WalletScanState> {
+  static const manualCodeRequiredError = 'manual_code_required';
+  static const workspaceUnavailableError = 'workspace_unavailable';
+
   WalletScanCubit({
     required GetMyBusiness getMyBusiness,
     required ScanWalletPass scanWalletPass,
@@ -64,7 +66,7 @@ class WalletScanCubit extends Cubit<WalletScanState> {
       emit(
         state.copyWith(
           status: WalletScanStatus.failure,
-          errorMessage: PilotArabicCopy.loyaltyQrRequired,
+          errorMessage: manualCodeRequiredError,
           clearResult: true,
         ),
       );
@@ -76,7 +78,7 @@ class WalletScanCubit extends Cubit<WalletScanState> {
       emit(
         state.copyWith(
           status: WalletScanStatus.failure,
-          errorMessage: PilotArabicCopy.businessWorkspaceNotReady,
+          errorMessage: workspaceUnavailableError,
           clearResult: true,
         ),
       );

@@ -563,12 +563,7 @@ void main() {
     await tester.tap(find.byKey(const ValueKey('walletAddStampButton')));
     await tester.pumpAndSettle();
 
-    expect(
-      find.text(
-        "We couldn't complete this action right now. Please try again.",
-      ),
-      findsOneWidget,
-    );
+    expect(find.text('تعذر إكمال العملية الآن.'), findsOneWidget);
     expect(
       find.byKey(const ValueKey('walletStampSuccessBanner')),
       findsNothing,
@@ -610,10 +605,7 @@ void main() {
     await tester.tap(find.byKey(const ValueKey('walletAddStampButton')));
     await tester.pumpAndSettle();
 
-    expect(
-      find.text('Membership has already received maximum stamps.'),
-      findsOneWidget,
-    );
+    expect(find.text('تعذر إكمال العملية الآن.'), findsOneWidget);
   });
 }
 

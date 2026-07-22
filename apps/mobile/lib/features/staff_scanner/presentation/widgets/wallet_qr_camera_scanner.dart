@@ -7,7 +7,7 @@ import 'package:url_launcher/url_launcher.dart';
 import '../../../../core/constants/app_colors.dart';
 import '../../../../core/constants/app_radius.dart';
 import '../../../../core/constants/app_spacing.dart';
-import '../../../../core/copy/pilot_arabic_copy.dart';
+import '../../../../core/localization/app_localizations_extension.dart';
 import '../../../../shared/widgets/app_button.dart';
 import '../../../../shared/widgets/app_card.dart';
 import '../../../../shared/widgets/waflo_status_badge.dart';
@@ -47,11 +47,11 @@ class _WalletQrCameraScannerState extends State<WalletQrCameraScanner> {
         crossAxisAlignment: CrossAxisAlignment.start,
         children: [
           Text(
-            PilotArabicCopy.cameraScannerTitle,
+            context.l10n.cameraScannerTitle,
             style: Theme.of(context).textTheme.titleLarge,
           ),
-          const SizedBox(height: AppSpacing.xs),
-          const Text(PilotArabicCopy.cameraScannerSubtitle),
+          SizedBox(height: AppSpacing.xs),
+          Text(context.l10n.cameraScannerSubtitle),
           const SizedBox(height: AppSpacing.md),
           AspectRatio(
             aspectRatio: 1,
@@ -79,10 +79,10 @@ class _WalletQrCameraScannerState extends State<WalletQrCameraScanner> {
               ),
             ),
           ),
-          const SizedBox(height: AppSpacing.md),
+          SizedBox(height: AppSpacing.md),
           AppButton(
-            key: const ValueKey('walletCameraCancelButton'),
-            label: PilotArabicCopy.enterCodeManually,
+            key: ValueKey('walletCameraCancelButton'),
+            label: context.l10n.enterCodeManually,
             icon: Icons.keyboard_outlined,
             onPressed: widget.onCancel,
             variant: AppButtonVariant.secondary,
@@ -150,10 +150,10 @@ class WalletCameraErrorView extends StatelessWidget {
         errorCode == MobileScannerErrorCode.permissionDenied;
     final unsupported = errorCode == MobileScannerErrorCode.unsupported;
     final message = permissionDenied
-        ? PilotArabicCopy.cameraPermissionDeniedBody
+        ? context.l10n.cameraPermissionDeniedBody
         : unsupported
-        ? PilotArabicCopy.cameraUnsupportedBody
-        : PilotArabicCopy.cameraStartFailedBody;
+        ? context.l10n.cameraUnsupportedBody
+        : context.l10n.cameraStartFailedBody;
 
     return DecoratedBox(
       key: const ValueKey('walletCameraErrorState'),
@@ -189,11 +189,11 @@ class WalletCameraErrorView extends StatelessWidget {
                     ),
                   ),
                 ),
-                const SizedBox(height: AppSpacing.sm),
+                SizedBox(height: AppSpacing.sm),
                 Text(
                   permissionDenied
-                      ? PilotArabicCopy.cameraPermissionDeniedTitle
-                      : PilotArabicCopy.cameraUnavailableTitle,
+                      ? context.l10n.cameraPermissionDeniedTitle
+                      : context.l10n.cameraUnavailableTitle,
                   textAlign: TextAlign.center,
                   style: Theme.of(context).textTheme.titleMedium,
                 ),
@@ -207,7 +207,7 @@ class WalletCameraErrorView extends StatelessWidget {
                 ),
                 if (permissionDenied ||
                     (!unsupported && !permissionDenied)) ...[
-                  const SizedBox(height: AppSpacing.md),
+                  SizedBox(height: AppSpacing.md),
                   Wrap(
                     alignment: WrapAlignment.center,
                     spacing: AppSpacing.sm,
@@ -215,7 +215,7 @@ class WalletCameraErrorView extends StatelessWidget {
                     children: [
                       if (permissionDenied)
                         AppButton(
-                          label: PilotArabicCopy.openSettings,
+                          label: context.l10n.openSettings,
                           icon: Icons.settings_outlined,
                           onPressed: onOpenSettings,
                           expand: false,
@@ -223,7 +223,7 @@ class WalletCameraErrorView extends StatelessWidget {
                         ),
                       if (!unsupported && !permissionDenied)
                         AppButton(
-                          label: PilotArabicCopy.tryCameraAgain,
+                          label: context.l10n.tryCameraAgain,
                           icon: Icons.refresh,
                           onPressed: onRetry,
                           expand: false,
@@ -248,7 +248,7 @@ class WalletCameraActiveOverlay extends StatelessWidget {
   Widget build(BuildContext context) {
     return Stack(
       fit: StackFit.expand,
-      children: const [
+      children: [
         IgnorePointer(child: _ScanFrameOverlay()),
         PositionedDirectional(
           start: AppSpacing.md,
@@ -256,7 +256,7 @@ class WalletCameraActiveOverlay extends StatelessWidget {
           bottom: AppSpacing.md,
           child: WafloStatusBadge(
             key: ValueKey('walletCameraSecureScanBadge'),
-            label: PilotArabicCopy.scannerReady,
+            label: context.l10n.scannerReady,
             icon: Icons.lock_outline,
             color: AppColors.charcoalSoft,
             foregroundColor: AppColors.surfaceWhite,

@@ -1,5 +1,6 @@
 import 'package:flutter/material.dart';
 
+import '../../../core/localization/app_localizations_extension.dart';
 import '../../../core/theme/v3/waflo_v3_tokens.dart';
 
 class WafloSkeleton extends StatelessWidget {
@@ -8,19 +9,19 @@ class WafloSkeleton extends StatelessWidget {
     this.width = double.infinity,
     this.height = WafloV3Spacing.minimumTouchTarget,
     this.radius = WafloV3Radius.inputControl,
-    this.semanticLabel = 'جارٍ التحميل',
+    this.semanticLabel,
   });
 
   final double width;
   final double height;
   final double radius;
-  final String semanticLabel;
+  final String? semanticLabel;
 
   @override
   Widget build(BuildContext context) {
     return Semantics(
       container: true,
-      label: semanticLabel,
+      label: semanticLabel ?? context.l10n.genericLoading,
       excludeSemantics: true,
       child: SizedBox(
         width: width,

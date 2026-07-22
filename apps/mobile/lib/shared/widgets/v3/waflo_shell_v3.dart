@@ -2,6 +2,7 @@ import 'dart:typed_data';
 
 import 'package:flutter/material.dart';
 
+import '../../../core/localization/app_localizations_extension.dart';
 import '../../../core/theme/v3/waflo_v3_theme.dart';
 import '../../../core/theme/v3/waflo_v3_tokens.dart';
 import 'waflo_bottom_navigation.dart';
@@ -46,7 +47,7 @@ class WafloShellV3 extends StatefulWidget {
     this.workspaceAvatarFallbackInitial,
     this.onNotificationPressed,
     this.unreadCount,
-    this.workspaceUnavailableMessage = 'تعذر عرض مساحة العمل الآن.',
+    this.workspaceUnavailableMessage,
     this.initialDestination = WafloWorkspaceDestination.home,
   }) : assert(
          workspaceIdentityState != WafloWorkspaceIdentityState.ready ||
@@ -67,7 +68,7 @@ class WafloShellV3 extends StatefulWidget {
   final String? workspaceAvatarFallbackInitial;
   final VoidCallback? onNotificationPressed;
   final int? unreadCount;
-  final String workspaceUnavailableMessage;
+  final String? workspaceUnavailableMessage;
   final WafloWorkspaceDestination initialDestination;
   final Widget home;
   final Widget menu;
@@ -184,7 +185,9 @@ class _WafloShellV3State extends State<WafloShellV3> {
       ),
       WafloWorkspaceIdentityState.loading => const _WorkspaceLoadingHeader(),
       WafloWorkspaceIdentityState.unavailable => _WorkspaceUnavailableHeader(
-        message: widget.workspaceUnavailableMessage,
+        message:
+            widget.workspaceUnavailableMessage ??
+            context.l10n.workspaceUnavailable,
       ),
     };
   }

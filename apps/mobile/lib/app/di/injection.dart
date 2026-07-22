@@ -1,6 +1,8 @@
 import '../../core/auth/auth_session_controller.dart';
 import '../../core/auth/clerk_token_provider.dart';
 import '../../core/auth/dev_token_provider.dart';
+import '../../core/localization/app_locale_controller.dart';
+import '../../core/localization/app_locale_repository.dart';
 import '../../core/network/api_client.dart';
 import '../../core/network/network_info.dart';
 import '../../features/auth/data/datasources/me_remote_data_source.dart';
@@ -57,6 +59,7 @@ import '../config/app_config.dart';
 class AppDependencies {
   AppDependencies._({
     required this.config,
+    required this.appLocaleController,
     required this.authSessionController,
     required this.authCubit,
     required this.businessSetupCubit,
@@ -69,6 +72,7 @@ class AppDependencies {
 
   factory AppDependencies.create({AppConfig? config}) {
     final resolvedConfig = config ?? AppConfig.fromEnvironment();
+    final appLocaleController = AppLocaleController(AppLocaleRepository());
     final clerkTokenProvider = ClerkTokenProvider();
     final devTokenProvider = DevTokenProvider(resolvedConfig.devAuthToken);
     final authSessionController = AuthSessionController(
@@ -170,6 +174,7 @@ class AppDependencies {
 
     return AppDependencies._(
       config: resolvedConfig,
+      appLocaleController: appLocaleController,
       authSessionController: authSessionController,
       authCubit: AuthCubit(
         getCurrentUser: getCurrentUser,
@@ -226,6 +231,7 @@ class AppDependencies {
   }
 
   final AppConfig config;
+  final AppLocaleController appLocaleController;
   final AuthSessionController authSessionController;
   final AuthCubit authCubit;
   final BusinessSetupCubit businessSetupCubit;
@@ -236,6 +242,7 @@ class AppDependencies {
   final WalletScanCubit walletScanCubit;
 
   Future<void> dispose() async {
+    await appLocaleController.close();
     await authCubit.close();
     await businessSetupCubit.close();
     await dashboardCubit.close();

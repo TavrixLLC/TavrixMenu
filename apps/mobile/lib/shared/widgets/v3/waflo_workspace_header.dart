@@ -2,6 +2,7 @@ import 'dart:typed_data';
 
 import 'package:flutter/material.dart';
 
+import '../../../core/localization/app_localizations_extension.dart';
 import '../../../core/theme/v3/waflo_v3_tokens.dart';
 import 'waflo_status_badge.dart';
 
@@ -17,7 +18,7 @@ class WafloWorkspaceHeader extends StatelessWidget {
     this.avatarFallbackInitial,
     this.onNotificationPressed,
     this.unreadCount,
-    this.notificationSemanticLabel = 'الإشعارات',
+    this.notificationSemanticLabel,
   }) : assert(statusLabel == null || statusWidget == null),
        assert(unreadCount == null || unreadCount >= 0);
 
@@ -29,7 +30,7 @@ class WafloWorkspaceHeader extends StatelessWidget {
   final String? avatarFallbackInitial;
   final VoidCallback? onNotificationPressed;
   final int? unreadCount;
-  final String notificationSemanticLabel;
+  final String? notificationSemanticLabel;
 
   @override
   Widget build(BuildContext context) {
@@ -40,7 +41,7 @@ class WafloWorkspaceHeader extends StatelessWidget {
             : WafloStatusBadge(label: statusLabel!, status: statusKind));
 
     return Directionality(
-      textDirection: TextDirection.rtl,
+      textDirection: Directionality.of(context),
       child: DecoratedBox(
         key: const ValueKey('waflo-workspace-header-surface'),
         decoration: BoxDecoration(
@@ -102,7 +103,8 @@ class WafloWorkspaceHeader extends StatelessWidget {
                 _NotificationAction(
                   onPressed: onNotificationPressed!,
                   unreadCount: unreadCount,
-                  semanticLabel: notificationSemanticLabel,
+                  semanticLabel:
+                      notificationSemanticLabel ?? context.l10n.notifications,
                 ),
               ],
             ],
@@ -125,7 +127,7 @@ class _WorkspaceAvatar extends StatelessWidget {
     final fallback = _AvatarFallback(initial: fallbackInitial);
 
     return Semantics(
-      label: 'صورة مساحة العمل',
+      label: context.l10n.workspaceImage,
       image: avatarBytes != null,
       excludeSemantics: true,
       child: ClipOval(
@@ -202,7 +204,7 @@ class _NotificationAction extends StatelessWidget {
         : '$unreadCount';
     final accessibleLabel = unreadCount == null || unreadCount == 0
         ? semanticLabel
-        : '$semanticLabel، $unreadCount غير مقروءة';
+        : '${context.l10n.unreadNotifications(unreadCount!)}، $semanticLabel';
 
     return Semantics(
       key: const ValueKey('waflo-workspace-notification-action'),

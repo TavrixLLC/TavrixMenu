@@ -56,7 +56,10 @@ void main() {
       await tester.pump();
 
       expect(find.text('اكتب اسم المنتج.'), findsOneWidget);
-      expect(find.text('أدخل سعراً صحيحاً أكبر من صفر.'), findsOneWidget);
+      expect(
+        find.text('اكتب مبلغاً صحيحاً موجباً من دون كسور عشرية.'),
+        findsOneWidget,
+      );
       expect(harness.menuRepository.createItemCalls, 0);
 
       await tester.enterText(
@@ -69,7 +72,10 @@ void main() {
       );
       await tester.tap(find.byKey(const ValueKey('product-submit-action')));
       await tester.pump();
-      expect(find.text('أدخل سعراً صحيحاً أكبر من صفر.'), findsOneWidget);
+      expect(
+        find.text('اكتب مبلغاً صحيحاً موجباً من دون كسور عشرية.'),
+        findsOneWidget,
+      );
       expect(harness.menuRepository.createItemCalls, 0);
     });
 
@@ -141,7 +147,7 @@ void main() {
       expect(find.byKey(const ValueKey('product-editor-v3')), findsOneWidget);
       expect(find.text('شاي'), findsOneWidget);
       expect(find.text('3000'), findsOneWidget);
-      expect(find.textContaining('تعذّرت إضافة المنتج'), findsOneWidget);
+      expect(find.text('تعذر إكمال العملية الآن.'), findsOneWidget);
     });
 
     testWidgets('back navigation protects unsaved input', (tester) async {

@@ -161,9 +161,9 @@ void main() {
     await tester.pumpAndSettle();
 
     // 1. Welcome Step
-    expect(find.text('أهلاً بك في وافلو 🎉'), findsOneWidget);
+    expect(find.text('أهلاً بك في Waflo'), findsOneWidget);
     expect(
-      find.text('خلينا نجهز مطعمك ونخلي منيو QR جاهز للزبائن'),
+      find.text('لنجهز مطعمك ومنيو الزبائن خطوة مؤكدة بعد أخرى.'),
       findsOneWidget,
     );
 
@@ -174,10 +174,7 @@ void main() {
 
     // 2. Restaurant workspace step
     expect(find.text('معلومات المطعم'), findsOneWidget);
-    expect(
-      find.text('أضف اسم المطعم ونوعه حتى يظهر للزبائن بشكل احترافي'),
-      findsOneWidget,
-    );
+    expect(find.text('الاسم ونوع النشاط الذي يظهر للفريق.'), findsOneWidget);
 
     // Save button disabled initially because text field is empty
     final saveWorkspaceBtn = find.text('حفظ ومتابعة');
@@ -193,15 +190,19 @@ void main() {
     await tester.pumpAndSettle();
 
     // 3. Choose appearance step
-    expect(find.text('استعرض أشكال المنيو'), findsOneWidget);
+    expect(find.text('اختر شكل المنيو'), findsOneWidget);
+    expect(
+      find.text('عاين اتجاهاً بصرياً الآن. يمكنك تغييره لاحقاً.'),
+      findsOneWidget,
+    );
+    expect(find.textContaining('كلاسيك الدافئ'), findsNothing);
+    expect(find.textContaining('الأنيق العصري'), findsNothing);
     expect(
       find.text(
-        'هاي أمثلة على أشكال ممكنة، وتكدر تضبط الشكل الحقيقي لاحقاً من شكل المنيو.',
+        'المعاينة تفتح منيو QR بشكل مؤقت حتى تشوفه مثل الزبون، بدون حفظ التغيير.',
       ),
       findsOneWidget,
     );
-    expect(find.text('كلاسيك الدافئ (معاينة)'), findsOneWidget);
-    expect(find.text('الأنيق العصري (معاينة)'), findsOneWidget);
 
     final saveAppearanceBtn = find.text('متابعة');
     await tester.tap(saveAppearanceBtn);
@@ -210,25 +211,28 @@ void main() {
     // 4. First category step
     expect(find.text('أضف أول قسم للمنيو'), findsOneWidget);
     // Let's test the skip option
-    final skipCategoryBtn = find.text('لاحقاً (تخطي)');
+    final skipCategoryBtn = find.text('التخطي الآن');
     expect(skipCategoryBtn, findsOneWidget);
     await tester.tap(skipCategoryBtn);
     await tester.pumpAndSettle();
 
     // Skipped category moves directly to Step 6: Product Image honest notice step
-    expect(find.text('صور المنتجات غير مفعّلة حالياً'), findsOneWidget);
-    expect(find.text('رفع الصور غير مربوط حالياً'), findsOneWidget);
+    expect(find.text('صور المنتجات غير مفعّلة حالياً'), findsWidgets);
+    expect(
+      find.text(
+        'هذا الإصدار لا يرفع صور المنتجات. تابع بالأسماء والأسعار الحقيقية الآن.',
+      ),
+      findsWidgets,
+    );
 
     final proceedImageBtn = find.text('متابعة');
     await tester.tap(proceedImageBtn);
     await tester.pumpAndSettle();
 
     // 7. Customer Preview Step
-    expect(find.text('معاينة منيو الزبائن'), findsOneWidget);
+    expect(find.text('معاينة منيو الزبائن'), findsWidgets);
     expect(
-      find.text(
-        'بعد توفر رابط المنيو الحقيقي، تگدر تراجع شكل المنيو كما يراه الزبائن. حالياً كمل خطوات التجهيز الباقية.',
-      ),
+      find.text('راجع معلومات المنيو المؤكدة قبل مشاركته.'),
       findsOneWidget,
     );
 
@@ -237,15 +241,18 @@ void main() {
     await tester.pumpAndSettle();
 
     // 8. QR Publish/Share Step
-    expect(find.text('مشاركة QR غير مفعّلة حالياً'), findsOneWidget);
-    expect(find.text('مشاركة QR غير مربوطة حالياً'), findsOneWidget);
+    expect(find.text('مشاركة QR غير فعّالة بعد'), findsWidgets);
+    expect(
+      find.text('سيعرض Waflo المشاركة فقط بعد تأكيد رابط منيو عام حقيقي.'),
+      findsWidgets,
+    );
 
     final proceedQrBtn = find.text('متابعة');
     await tester.tap(proceedQrBtn);
     await tester.pumpAndSettle();
 
     // 9. Finish step
-    expect(find.text('رائع! بدأت تجهيز مطعمك 🎉'), findsOneWidget);
+    expect(find.text('بدأت إعداد مطعمك'), findsOneWidget);
     final finishBtn = find.text('الانتقال إلى الرئيسية');
     await tester.tap(finishBtn);
     await tester.pumpAndSettle();
@@ -340,7 +347,10 @@ void main() {
 
     await tester.tap(saveProductBtn);
     await tester.pumpAndSettle();
-    expect(find.text('أدخل سعر صحيح بالدينار العراقي'), findsOneWidget);
+    expect(
+      find.text('اكتب مبلغاً صحيحاً موجباً من دون كسور عشرية.'),
+      findsOneWidget,
+    );
     expect(find.text('أضف أول منتج'), findsOneWidget); // still on step 5
 
     // Zero price -> fails validation
@@ -348,21 +358,30 @@ void main() {
     await tester.pumpAndSettle();
     await tester.tap(saveProductBtn);
     await tester.pumpAndSettle();
-    expect(find.text('أدخل سعر صحيح بالدينار العراقي'), findsOneWidget);
+    expect(
+      find.text('اكتب مبلغاً صحيحاً موجباً من دون كسور عشرية.'),
+      findsOneWidget,
+    );
 
     // Negative price -> fails validation
     await tester.enterText(priceFinder, '-1000');
     await tester.pumpAndSettle();
     await tester.tap(saveProductBtn);
     await tester.pumpAndSettle();
-    expect(find.text('أدخل سعر صحيح بالدينار العراقي'), findsOneWidget);
+    expect(
+      find.text('اكتب مبلغاً صحيحاً موجباً من دون كسور عشرية.'),
+      findsOneWidget,
+    );
 
     // Decimals price -> fails validation
     await tester.enterText(priceFinder, '3000.5');
     await tester.pumpAndSettle();
     await tester.tap(saveProductBtn);
     await tester.pumpAndSettle();
-    expect(find.text('أدخل سعر صحيح بالدينار العراقي'), findsOneWidget);
+    expect(
+      find.text('اكتب مبلغاً صحيحاً موجباً من دون كسور عشرية.'),
+      findsOneWidget,
+    );
 
     for (final invalidPrice in <String>[
       ' 3500 ',
@@ -380,7 +399,7 @@ void main() {
       await tester.pumpAndSettle();
 
       expect(
-        find.text('أدخل سعر صحيح بالدينار العراقي'),
+        find.text('اكتب مبلغاً صحيحاً موجباً من دون كسور عشرية.'),
         findsOneWidget,
         reason: 'Invalid price should show validation error: $invalidPrice',
       );
@@ -403,7 +422,7 @@ void main() {
     expect(menuRepository.items.single.priceCents, 3500);
 
     // Successfully transitioned to Step 6
-    expect(find.text('صور المنتجات غير مفعّلة حالياً'), findsOneWidget);
+    expect(find.text('صور المنتجات غير مفعّلة حالياً'), findsWidgets);
   });
 
   testWidgets(
@@ -430,7 +449,7 @@ void main() {
       expect(menuRepository.items, hasLength(1));
       expect(menuRepository.items.single.description, isEmpty);
       expect(menuRepository.items.single.priceCents, 3500);
-      expect(find.text('صور المنتجات غير مفعّلة حالياً'), findsOneWidget);
+      expect(find.text('صور المنتجات غير مفعّلة حالياً'), findsWidgets);
     },
   );
 }

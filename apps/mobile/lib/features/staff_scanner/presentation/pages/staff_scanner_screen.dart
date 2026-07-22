@@ -3,7 +3,8 @@ import 'package:flutter_bloc/flutter_bloc.dart';
 
 import '../../../../core/constants/app_colors.dart';
 import '../../../../core/constants/app_spacing.dart';
-import '../../../../core/copy/pilot_arabic_copy.dart';
+import '../../../../core/localization/app_localizations_extension.dart';
+import '../../../../core/localization/localized_runtime_message.dart';
 import '../../../../shared/widgets/app_button.dart';
 import '../../../../shared/widgets/app_card.dart';
 import '../../../../shared/widgets/app_scaffold.dart';
@@ -61,9 +62,9 @@ class _StaffScannerScreenState extends State<StaffScannerScreen> {
   @override
   Widget build(BuildContext context) {
     return Directionality(
-      textDirection: TextDirection.rtl,
+      textDirection: Directionality.of(context),
       child: AppScaffold(
-        title: PilotArabicCopy.staffScannerTitle,
+        title: context.l10n.staffScannerTitle,
         embeddedInWorkspaceShell: widget.embeddedInWorkspaceShell,
         scrollable: true,
         child: BlocBuilder<WalletScanCubit, WalletScanState>(
@@ -71,31 +72,32 @@ class _StaffScannerScreenState extends State<StaffScannerScreen> {
             if ((state.status == WalletScanStatus.initial ||
                     state.status == WalletScanStatus.loading) &&
                 state.business == null) {
-              return const LoadingView(
-                message: PilotArabicCopy.staffScannerLoading,
-              );
+              return LoadingView(message: context.l10n.staffScannerLoading);
             }
 
             if (state.business == null) {
               return ErrorView(
-                message:
-                    state.errorMessage ??
-                    PilotArabicCopy.staffScannerLoadFailed,
+                message: localizedRuntimeMessage(
+                  context.l10n,
+                  state.errorMessage,
+                  fallback: context.l10n.staffScannerLoadFailed,
+                ),
                 onRetry: () => context.read<WalletScanCubit>().load(),
               );
             }
 
             final isScanning = state.status == WalletScanStatus.scanning;
             final safeErrorMessage = _safeErrorMessage(
+              context,
               state.errorMessage,
               _pendingCameraToken ?? _tokenController.text,
             );
             return Column(
               crossAxisAlignment: CrossAxisAlignment.start,
               children: [
-                const SectionHeader(
-                  title: PilotArabicCopy.staffScannerSectionTitle,
-                  subtitle: PilotArabicCopy.staffScannerSectionSubtitle,
+                SectionHeader(
+                  title: context.l10n.staffScannerTitle,
+                  subtitle: context.l10n.staffScannerSectionSubtitle,
                 ),
                 const SizedBox(height: AppSpacing.md),
                 if (_cameraOpen)
@@ -108,16 +110,16 @@ class _StaffScannerScreenState extends State<StaffScannerScreen> {
                   ),
                 if (_pendingCameraToken != null &&
                     state.status == WalletScanStatus.failure) ...[
-                  const SizedBox(height: AppSpacing.md),
+                  SizedBox(height: AppSpacing.md),
                   _CameraRetryCard(
                     onRetry: _cameraSubmissionLocked ? null : _retryCameraToken,
                     onRescan: _cameraSubmissionLocked ? null : _rescan,
                   ),
                 ],
-                const SizedBox(height: AppSpacing.lg),
-                const SectionHeader(
-                  title: PilotArabicCopy.manualCodeTitle,
-                  subtitle: PilotArabicCopy.manualCodeSubtitle,
+                SizedBox(height: AppSpacing.lg),
+                SectionHeader(
+                  title: context.l10n.manualCodeTitle,
+                  subtitle: context.l10n.manualCodeSubtitle,
                 ),
                 const SizedBox(height: AppSpacing.md),
                 AppCard(
@@ -125,25 +127,25 @@ class _StaffScannerScreenState extends State<StaffScannerScreen> {
                     crossAxisAlignment: CrossAxisAlignment.start,
                     children: [
                       TextField(
-                        key: const ValueKey('walletScanTokenField'),
+                        key: ValueKey('walletScanTokenField'),
                         controller: _tokenController,
                         autocorrect: false,
                         enableSuggestions: false,
-                        autofillHints: const <String>[],
+                        autofillHints: <String>[],
                         textInputAction: TextInputAction.done,
                         onSubmitted: isScanning ? null : (_) => _scanManual(),
-                        decoration: const InputDecoration(
-                          labelText: PilotArabicCopy.loyaltyQrCode,
-                          hintText: PilotArabicCopy.loyaltyQrHint,
+                        decoration: InputDecoration(
+                          labelText: context.l10n.loyaltyQrCode,
+                          hintText: context.l10n.loyaltyQrHint,
                           prefixIcon: Icon(Icons.qr_code_2_outlined),
                         ),
                       ),
-                      const SizedBox(height: AppSpacing.md),
+                      SizedBox(height: AppSpacing.md),
                       AppButton(
-                        key: const ValueKey('walletScanButton'),
+                        key: ValueKey('walletScanButton'),
                         label: isScanning
-                            ? PilotArabicCopy.checkingCard
-                            : PilotArabicCopy.checkCard,
+                            ? context.l10n.checkingCard
+                            : context.l10n.checkCard,
                         icon: Icons.document_scanner_outlined,
                         onPressed: isScanning ? null : _scanManual,
                       ),
@@ -172,10 +174,10 @@ class _StaffScannerScreenState extends State<StaffScannerScreen> {
                         ? null
                         : () => _addStamp(state.stampStatus),
                   ),
-                  const SizedBox(height: AppSpacing.md),
+                  SizedBox(height: AppSpacing.md),
                   AppButton(
-                    key: const ValueKey('walletScanAnotherButton'),
-                    label: PilotArabicCopy.scanAnotherCard,
+                    key: ValueKey('walletScanAnotherButton'),
+                    label: context.l10n.scanAnotherCard,
                     icon: Icons.qr_code_scanner,
                     onPressed: isScanning ? null : _rescan,
                     variant: AppButtonVariant.secondary,
@@ -305,31 +307,31 @@ class _CameraRetryCard extends StatelessWidget {
   @override
   Widget build(BuildContext context) {
     return AppCard(
-      key: const ValueKey('walletCameraRetryCard'),
+      key: ValueKey('walletCameraRetryCard'),
       child: Column(
         crossAxisAlignment: CrossAxisAlignment.start,
         children: [
           Text(
-            PilotArabicCopy.cardNotAccepted,
+            context.l10n.cardNotAccepted,
             style: Theme.of(context).textTheme.titleMedium,
           ),
-          const SizedBox(height: AppSpacing.xs),
-          const Text(PilotArabicCopy.retryCapturedCard),
-          const SizedBox(height: AppSpacing.md),
+          SizedBox(height: AppSpacing.xs),
+          Text(context.l10n.retryCapturedCard),
+          SizedBox(height: AppSpacing.md),
           Wrap(
             spacing: AppSpacing.sm,
             runSpacing: AppSpacing.sm,
             children: [
               AppButton(
-                key: const ValueKey('walletCameraRetryButton'),
-                label: PilotArabicCopy.retry,
+                key: ValueKey('walletCameraRetryButton'),
+                label: context.l10n.genericRetry,
                 icon: Icons.refresh,
                 onPressed: onRetry,
                 expand: false,
               ),
               AppButton(
-                key: const ValueKey('walletCameraRescanButton'),
-                label: PilotArabicCopy.scanAgain,
+                key: ValueKey('walletCameraRescanButton'),
+                label: context.l10n.scanAgain,
                 icon: Icons.qr_code_scanner,
                 onPressed: onRescan,
                 expand: false,
@@ -343,11 +345,15 @@ class _CameraRetryCard extends StatelessWidget {
   }
 }
 
-String? _safeErrorMessage(String? message, String sensitiveValue) {
+String? _safeErrorMessage(
+  BuildContext context,
+  String? message,
+  String sensitiveValue,
+) {
   if (message == null) {
     return null;
   }
-  final friendlyMessage = _staffScanErrorMessage(message);
+  final friendlyMessage = _staffScanErrorMessage(context, message);
   final token = sensitiveValue.trim();
   if (token.isEmpty) {
     return friendlyMessage;
@@ -355,21 +361,27 @@ String? _safeErrorMessage(String? message, String sensitiveValue) {
   return friendlyMessage.replaceAll(token, '[redacted]');
 }
 
-String _staffScanErrorMessage(String message) {
+String _staffScanErrorMessage(BuildContext context, String message) {
+  if (message == WalletScanCubit.manualCodeRequiredError) {
+    return context.l10n.loyaltyQrRequired;
+  }
+  if (message == WalletScanCubit.workspaceUnavailableError) {
+    return context.l10n.businessWorkspaceNotReady;
+  }
   final normalized = message.toLowerCase();
   if (normalized.contains('token') ||
       normalized.contains('invalid') ||
       normalized.contains('inactive') ||
       normalized.contains('expired')) {
-    return PilotArabicCopy.invalidQr;
+    return context.l10n.invalidQr;
   }
   if (normalized.contains('business') ||
       normalized.contains('forbidden') ||
       normalized.contains('not allow') ||
       normalized.contains('denied')) {
-    return PilotArabicCopy.wrongBusiness;
+    return context.l10n.wrongBusiness;
   }
-  return message;
+  return context.l10n.cardNotAccepted;
 }
 
 class _WalletScanResultCard extends StatelessWidget {
@@ -391,7 +403,7 @@ class _WalletScanResultCard extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
-    final phoneHint = _maskedCustomerHint(result.customerPhone);
+    final phoneHint = _maskedCustomerHint(context, result.customerPhone);
     final stamps = updatedStamps ?? result.stamps;
     final goal = updatedGoal ?? result.goal;
 
@@ -399,53 +411,53 @@ class _WalletScanResultCard extends StatelessWidget {
     final stampSucceeded = stampStatus == StampStatus.stampSuccess;
 
     return Column(
-      key: const ValueKey('walletScanResult'),
+      key: ValueKey('walletScanResult'),
       crossAxisAlignment: CrossAxisAlignment.start,
       children: [
-        const SectionHeader(
-          title: PilotArabicCopy.cardFound,
-          subtitle: PilotArabicCopy.cardFoundSubtitle,
+        SectionHeader(
+          title: context.l10n.cardFound,
+          subtitle: context.l10n.cardFoundSubtitle,
         ),
-        const SizedBox(height: AppSpacing.md),
+        SizedBox(height: AppSpacing.md),
         LoyaltyProgressCard(
           customerName: result.customerDisplayName,
-          customerHint: phoneHint ?? PilotArabicCopy.privateCustomerDetails,
+          customerHint: phoneHint ?? context.l10n.privateCustomerDetails,
           programName: result.programName,
           rewardText: result.canRedeem
-              ? '${result.rewardName} ${PilotArabicCopy.rewardReadySuffix}'
-              : '${result.rewardName} ${PilotArabicCopy.rewardNotReadySuffix}',
+              ? '${result.rewardName} ${context.l10n.rewardReadySuffix}'
+              : '${result.rewardName} ${context.l10n.rewardNotReadySuffix}',
           stamps: stamps,
           goal: goal,
           canRedeem: result.canRedeem,
         ),
-        const SizedBox(height: AppSpacing.md),
+        SizedBox(height: AppSpacing.md),
         AppCard(
           child: Column(
             crossAxisAlignment: CrossAxisAlignment.start,
             children: [
               StatusBadge(
                 label: result.canRedeem
-                    ? PilotArabicCopy.rewardAvailable
-                    : PilotArabicCopy.readyToAddStamp,
+                    ? context.l10n.rewardAvailable
+                    : context.l10n.readyToAddStamp,
                 color: result.canRedeem
                     ? AppColors.greenLight
                     : AppColors.ceramic,
               ),
-              const SizedBox(height: AppSpacing.md),
+              SizedBox(height: AppSpacing.md),
               Text(
                 stampSucceeded
-                    ? PilotArabicCopy.stampRecorded
+                    ? context.l10n.stampRecorded
                     : result.canRedeem
-                    ? PilotArabicCopy.rewardAvailableGuidance
-                    : PilotArabicCopy.addOneStamp,
+                    ? context.l10n.rewardAvailableGuidance
+                    : context.l10n.addOneStamp,
                 style: Theme.of(context).textTheme.bodyMedium,
               ),
-              const SizedBox(height: AppSpacing.lg),
+              SizedBox(height: AppSpacing.lg),
               AppButton(
-                key: const ValueKey('walletAddStampButton'),
+                key: ValueKey('walletAddStampButton'),
                 label: isStamping
-                    ? PilotArabicCopy.addingStamp
-                    : PilotArabicCopy.addStamp,
+                    ? context.l10n.addingStamp
+                    : context.l10n.addStamp,
                 icon: Icons.add_circle_outline,
                 onPressed: (isStamping || stampSucceeded) ? null : onAddStamp,
               ),
@@ -464,7 +476,10 @@ class _WalletScanResultCard extends StatelessWidget {
                 const SizedBox(height: AppSpacing.sm),
                 ErrorView(
                   key: const ValueKey('walletAddStampError'),
-                  message: stampErrorMessage!,
+                  message: localizedRuntimeMessage(
+                    context.l10n,
+                    stampErrorMessage,
+                  ),
                 ),
               ],
             ],
@@ -475,7 +490,7 @@ class _WalletScanResultCard extends StatelessWidget {
   }
 }
 
-String? _maskedCustomerHint(String? phone) {
+String? _maskedCustomerHint(BuildContext context, String? phone) {
   final trimmed = phone?.trim();
   if (trimmed == null || trimmed.isEmpty) {
     return null;
@@ -483,7 +498,7 @@ String? _maskedCustomerHint(String? phone) {
   final visible = trimmed.length <= 3
       ? trimmed
       : trimmed.substring(trimmed.length - 3);
-  return '${PilotArabicCopy.phoneEnding} $visible';
+  return '${context.l10n.phoneEnding} $visible';
 }
 
 class _StampSuccessBanner extends StatelessWidget {
@@ -504,12 +519,9 @@ class _StampSuccessBanner extends StatelessWidget {
       ),
       child: Row(
         children: [
-          const Icon(
-            Icons.check_circle_outline,
-            color: AppColors.freshGreenDark,
-          ),
-          const SizedBox(width: AppSpacing.sm),
-          const Expanded(child: Text(PilotArabicCopy.stampSuccess)),
+          Icon(Icons.check_circle_outline, color: AppColors.freshGreenDark),
+          SizedBox(width: AppSpacing.sm),
+          Expanded(child: Text(context.l10n.stampSuccess)),
         ],
       ),
     );

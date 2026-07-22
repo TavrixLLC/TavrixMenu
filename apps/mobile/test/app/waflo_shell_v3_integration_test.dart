@@ -235,21 +235,17 @@ void main() {
     },
   );
 
-  test('untouched scanner and settings sources remain at F2B1 baseline', () {
-    const baseline = '1e295265d6f231b77eae8a6d13d005dfb267a247';
+  test('scanner and settings sources use the localization foundation', () {
     const paths = [
       'apps/mobile/lib/features/staff_scanner/presentation/pages/staff_scanner_screen.dart',
       'apps/mobile/lib/features/business_setup/presentation/pages/business_profile_screen.dart',
     ];
-    final result = Process.runSync('git', [
-      'diff',
-      '--quiet',
-      baseline,
-      '--',
-      ...paths,
-    ], workingDirectory: '../..');
 
-    expect(result.exitCode, 0);
+    for (final path in paths) {
+      final source = File('../../$path').readAsStringSync();
+      expect(source, contains('context.l10n'));
+      expect(source, isNot(contains('textDirection: TextDirection.rtl')));
+    }
   });
 }
 

@@ -6,6 +6,7 @@ import 'package:share_plus/share_plus.dart';
 import '../../../../core/constants/app_colors.dart';
 import '../../../../core/constants/app_radius.dart';
 import '../../../../core/constants/app_spacing.dart';
+import '../../../../core/localization/app_localizations_extension.dart';
 import '../../../../shared/widgets/app_button.dart';
 import '../../../../shared/widgets/app_card.dart';
 import '../../domain/entities/loyalty_enrollment_link.dart';
@@ -42,13 +43,11 @@ class LoyaltyEnrollmentCard extends StatelessWidget {
                 crossAxisAlignment: CrossAxisAlignment.start,
                 children: [
                   Text(
-                    'Customer Enrollment Link',
+                    context.l10n.loyaltyEnrollmentUnavailableTitle,
                     style: Theme.of(context).textTheme.titleMedium,
                   ),
                   const SizedBox(height: AppSpacing.xs),
-                  const Text(
-                    'A business slug is required before customers can join from a public loyalty link.',
-                  ),
+                  Text(context.l10n.loyaltyEnrollmentUnavailableBody),
                 ],
               ),
             ),
@@ -71,13 +70,11 @@ class LoyaltyEnrollmentCard extends StatelessWidget {
                   crossAxisAlignment: CrossAxisAlignment.start,
                   children: [
                     Text(
-                      'Customer Enrollment Link',
+                      context.l10n.loyaltyEnrollmentTitle,
                       style: Theme.of(context).textTheme.titleMedium,
                     ),
                     const SizedBox(height: AppSpacing.xs),
-                    const Text(
-                      'Ask the customer to scan this QR or open this link to join the loyalty program.',
-                    ),
+                    Text(context.l10n.loyaltyEnrollmentHelp),
                   ],
                 ),
               ),
@@ -104,11 +101,6 @@ class LoyaltyEnrollmentCard extends StatelessWidget {
             ),
           ),
           const SizedBox(height: AppSpacing.lg),
-          Text(
-            'Enrollment URL',
-            style: Theme.of(context).textTheme.titleMedium,
-          ),
-          const SizedBox(height: AppSpacing.xs),
           SelectableText(enrollmentUrl),
           const SizedBox(height: AppSpacing.md),
           Wrap(
@@ -116,14 +108,14 @@ class LoyaltyEnrollmentCard extends StatelessWidget {
             runSpacing: AppSpacing.sm,
             children: [
               AppButton(
-                label: 'Copy link',
+                label: context.l10n.copyLink,
                 icon: Icons.copy_outlined,
                 onPressed: () => _copyLink(context, enrollmentUrl),
                 variant: AppButtonVariant.secondary,
                 expand: false,
               ),
               AppButton(
-                label: 'Share link',
+                label: context.l10n.shareLink,
                 icon: Icons.ios_share_outlined,
                 onPressed: () => _shareLink(context, enrollmentUrl),
                 variant: AppButtonVariant.secondary,
@@ -144,16 +136,16 @@ class LoyaltyEnrollmentCard extends StatelessWidget {
 
     ScaffoldMessenger.of(
       context,
-    ).showSnackBar(const SnackBar(content: Text('Enrollment link copied')));
+    ).showSnackBar(SnackBar(content: Text(context.l10n.linkCopied)));
   }
 
   Future<void> _shareLink(BuildContext context, String enrollmentUrl) async {
     try {
       await SharePlus.instance.share(
         ShareParams(
-          title: 'Join our loyalty program',
-          subject: 'Join our loyalty program',
-          text: 'Join our loyalty program: $enrollmentUrl',
+          title: context.l10n.loyaltyEnrollmentTitle,
+          subject: context.l10n.loyaltyEnrollmentTitle,
+          text: context.l10n.loyaltyEnrollmentShareText(enrollmentUrl),
         ),
       );
     } catch (_) {
@@ -163,9 +155,7 @@ class LoyaltyEnrollmentCard extends StatelessWidget {
       }
 
       ScaffoldMessenger.of(context).showSnackBar(
-        const SnackBar(
-          content: Text('Sharing is unavailable. Enrollment link copied.'),
-        ),
+        SnackBar(content: Text(context.l10n.sharingUnavailableCopied)),
       );
     }
   }

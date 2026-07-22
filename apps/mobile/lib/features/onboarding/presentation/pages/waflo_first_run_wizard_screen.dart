@@ -2,6 +2,8 @@ import 'package:flutter/material.dart';
 import 'package:flutter_bloc/flutter_bloc.dart';
 
 import '../../../../app/router/route_names.dart';
+import '../../../../core/localization/app_localizations_extension.dart';
+import '../../../../core/localization/localized_runtime_message.dart';
 import '../../../../core/theme/v2/waflo_tokens_v2.dart';
 import '../../../../shared/widgets/v2/waflo_button_v2.dart';
 import '../../../../shared/widgets/v2/waflo_card_v2.dart';
@@ -28,8 +30,6 @@ class _WafloFirstRunWizardScreenState extends State<WafloFirstRunWizardScreen> {
   // Controllers & Selections
   final _businessNameController = TextEditingController();
   String _selectedBusinessType = 'cafe'; // cafe, restaurant, shop
-
-  String _selectedTemplate = 'classic'; // classic, elegant, modern
 
   final _categoryNameController = TextEditingController();
   final _productNameController = TextEditingController();
@@ -126,7 +126,7 @@ class _WafloFirstRunWizardScreenState extends State<WafloFirstRunWizardScreen> {
   @override
   Widget build(BuildContext context) {
     return Directionality(
-      textDirection: TextDirection.rtl,
+      textDirection: Directionality.of(context),
       child: MultiBlocListener(
         listeners: [
           BlocListener<BusinessSetupCubit, BusinessSetupState>(
@@ -221,7 +221,7 @@ class _WafloFirstRunWizardScreenState extends State<WafloFirstRunWizardScreen> {
           mainAxisAlignment: MainAxisAlignment.spaceBetween,
           children: [
             Text(
-              'الخطوة ${_currentStep + 1} من 9',
+              context.l10n.wizardStep(_currentStep + 1, 9),
               style: WafloTypographyV2.bodyBold.copyWith(
                 color: WafloColorsV2.primaryCoral,
               ),
@@ -239,7 +239,7 @@ class _WafloFirstRunWizardScreenState extends State<WafloFirstRunWizardScreen> {
                     ),
                     const SizedBox(width: 4),
                     Text(
-                      'رجوع',
+                      context.l10n.back,
                       style: WafloTypographyV2.body.copyWith(
                         color: WafloColorsV2.textMedium,
                       ),
@@ -301,17 +301,17 @@ class _WafloFirstRunWizardScreenState extends State<WafloFirstRunWizardScreen> {
       crossAxisAlignment: CrossAxisAlignment.center,
       children: [
         const SizedBox(height: WafloSpacingV2.xl),
-        const Center(
+        Center(
           child: Text(
-            'أهلاً بك في وافلو 🎉',
+            context.l10n.onboardingWelcomeTitle,
             style: WafloTypographyV2.display,
             textAlign: TextAlign.center,
           ),
         ),
         const SizedBox(height: WafloSpacingV2.md),
-        const Center(
+        Center(
           child: Text(
-            'خلينا نجهز مطعمك ونخلي منيو QR جاهز للزبائن',
+            context.l10n.onboardingWelcomeBody,
             style: WafloTypographyV2.h2,
             textAlign: TextAlign.center,
           ),
@@ -334,7 +334,7 @@ class _WafloFirstRunWizardScreenState extends State<WafloFirstRunWizardScreen> {
         ),
         const SizedBox(height: WafloSpacingV2.xxl),
         WafloButtonV2(
-          label: 'ابدأ الآن',
+          label: context.l10n.startNow,
           icon: Icons.play_arrow_outlined,
           onPressed: _nextStep,
         ),
@@ -351,21 +351,21 @@ class _WafloFirstRunWizardScreenState extends State<WafloFirstRunWizardScreen> {
     return Column(
       crossAxisAlignment: CrossAxisAlignment.start,
       children: [
-        const Text('معلومات المطعم', style: WafloTypographyV2.h1),
+        Text(context.l10n.restaurantInfo, style: WafloTypographyV2.h1),
         const SizedBox(height: WafloSpacingV2.xs),
-        const Text(
-          'أضف اسم المطعم ونوعه حتى يظهر للزبائن بشكل احترافي',
+        Text(
+          context.l10n.restaurantInfoSubtitle,
           style: WafloTypographyV2.body,
         ),
         const SizedBox(height: WafloSpacingV2.lg),
         WafloInputV2(
-          label: 'اسم المطعم أو المقهى',
-          hint: 'مثال: Royal Cup Cafe',
+          label: context.l10n.restaurantName,
+          hint: context.l10n.restaurantNameHint,
           controller: _businessNameController,
         ),
         const SizedBox(height: WafloSpacingV2.lg),
         Text(
-          'نوع النشاط التجاري',
+          context.l10n.businessType,
           style: WafloTypographyV2.bodyBold.copyWith(
             color: WafloColorsV2.textDark,
           ),
@@ -376,7 +376,7 @@ class _WafloFirstRunWizardScreenState extends State<WafloFirstRunWizardScreen> {
             Expanded(
               child: _buildBusinessTypeCard(
                 type: 'cafe',
-                label: 'كافيه',
+                label: context.l10n.restaurantTypeCafe,
                 icon: Icons.local_cafe_outlined,
               ),
             ),
@@ -384,7 +384,7 @@ class _WafloFirstRunWizardScreenState extends State<WafloFirstRunWizardScreen> {
             Expanded(
               child: _buildBusinessTypeCard(
                 type: 'restaurant',
-                label: 'مطعم',
+                label: context.l10n.restaurantTypeRestaurant,
                 icon: Icons.restaurant_outlined,
               ),
             ),
@@ -392,7 +392,7 @@ class _WafloFirstRunWizardScreenState extends State<WafloFirstRunWizardScreen> {
             Expanded(
               child: _buildBusinessTypeCard(
                 type: 'shop',
-                label: 'متجر / محل',
+                label: context.l10n.restaurantTypeShop,
                 icon: Icons.storefront_outlined,
               ),
             ),
@@ -402,13 +402,13 @@ class _WafloFirstRunWizardScreenState extends State<WafloFirstRunWizardScreen> {
             businessState.errorMessage != null) ...[
           const SizedBox(height: WafloSpacingV2.md),
           Text(
-            businessState.errorMessage!,
+            localizedRuntimeMessage(context.l10n, businessState.errorMessage),
             style: WafloTypographyV2.body.copyWith(color: WafloColorsV2.danger),
           ),
         ],
         const SizedBox(height: WafloSpacingV2.xl),
         WafloButtonV2(
-          label: 'حفظ ومتابعة',
+          label: context.l10n.saveAndContinue,
           icon: Icons.save_outlined,
           isLoading: isLoading,
           onPressed: _businessNameController.text.trim().isEmpty
@@ -475,120 +475,34 @@ class _WafloFirstRunWizardScreenState extends State<WafloFirstRunWizardScreen> {
     return Column(
       crossAxisAlignment: CrossAxisAlignment.start,
       children: [
-        const Text('استعرض أشكال المنيو', style: WafloTypographyV2.h1),
+        Text(context.l10n.chooseMenuStyle, style: WafloTypographyV2.h1),
         const SizedBox(height: WafloSpacingV2.xs),
-        const Text(
-          'هاي أمثلة على أشكال ممكنة، وتكدر تضبط الشكل الحقيقي لاحقاً من شكل المنيو.',
-          style: WafloTypographyV2.body,
-        ),
+        Text(context.l10n.chooseMenuStyleBody, style: WafloTypographyV2.body),
         const SizedBox(height: WafloSpacingV2.lg),
-        _buildAppearanceTemplateCard(
-          template: 'classic',
-          title: 'كلاسيك الدافئ (معاينة)',
-          description: 'تصميم بألوان خشبية دافئة وممتازة للمطاعم الكلاسيكية.',
-          colorPreview: [const Color(0xFF8B4513), const Color(0xFFFFF5EE)],
-        ),
-        const SizedBox(height: WafloSpacingV2.md),
-        _buildAppearanceTemplateCard(
-          template: 'elegant',
-          title: 'الأنيق العصري (معاينة)',
-          description:
-              'تصميم بسيط بألوان هادئة ونظيفة، مثالي للكافيهات والمقاهي الحديثة.',
-          colorPreview: [const Color(0xFF1E293B), const Color(0xFFF8FAFC)],
-        ),
-        const SizedBox(height: WafloSpacingV2.md),
-        _buildAppearanceTemplateCard(
-          template: 'modern',
-          title: 'الجريء الملون (معاينة)',
-          description:
-              'تصميم بألوان حيوية متباينة تعطي طاقة وحماس للمطاعم السريعة.',
-          colorPreview: [const Color(0xFFFF6B4A), const Color(0xFFFFF5F0)],
+        WafloCardV2(
+          backgroundColor: WafloColorsV2.infoBg,
+          borderRadius: WafloRadiusV2.lgBorder,
+          child: Row(
+            crossAxisAlignment: CrossAxisAlignment.start,
+            children: [
+              const Icon(Icons.palette_outlined, color: WafloColorsV2.info),
+              const SizedBox(width: WafloSpacingV2.md),
+              Expanded(
+                child: Text(
+                  context.l10n.previewDraftMenu,
+                  style: WafloTypographyV2.body,
+                ),
+              ),
+            ],
+          ),
         ),
         const SizedBox(height: WafloSpacingV2.xl),
         WafloButtonV2(
-          label: 'متابعة',
+          label: context.l10n.continueAction,
           icon: Icons.arrow_back,
           onPressed: _nextStep,
         ),
-        const SizedBox(height: WafloSpacingV2.md),
-        WafloButtonV2(
-          label: 'أختاره لاحقاً',
-          variant: WafloButtonV2Variant.secondary,
-          onPressed: _nextStep,
-        ),
       ],
-    );
-  }
-
-  Widget _buildAppearanceTemplateCard({
-    required String template,
-    required String title,
-    required String description,
-    required List<Color> colorPreview,
-  }) {
-    final isSelected = _selectedTemplate == template;
-
-    return WafloCardV2(
-      onTap: () {
-        setState(() {
-          _selectedTemplate = template;
-        });
-      },
-      backgroundColor: isSelected
-          ? WafloColorsV2.backgroundWarm
-          : WafloColorsV2.surfaceWhite,
-      borderRadius: WafloRadiusV2.lgBorder,
-      child: RadioGroup<String>(
-        groupValue: _selectedTemplate,
-        onChanged: (value) {
-          if (value != null) {
-            setState(() {
-              _selectedTemplate = value;
-            });
-          }
-        },
-        child: Row(
-          crossAxisAlignment: CrossAxisAlignment.center,
-          children: [
-            Container(
-              width: 50,
-              height: 50,
-              decoration: BoxDecoration(
-                gradient: LinearGradient(
-                  colors: colorPreview,
-                  begin: Alignment.topRight,
-                  end: Alignment.bottomLeft,
-                ),
-                borderRadius: WafloRadiusV2.mdBorder,
-                border: Border.all(color: WafloColorsV2.borderSoft),
-              ),
-            ),
-            const SizedBox(width: WafloSpacingV2.md),
-            Expanded(
-              child: Column(
-                crossAxisAlignment: CrossAxisAlignment.start,
-                children: [
-                  Text(
-                    title,
-                    style: WafloTypographyV2.title.copyWith(
-                      color: isSelected
-                          ? WafloColorsV2.primaryCoral
-                          : WafloColorsV2.textDark,
-                    ),
-                  ),
-                  const SizedBox(height: WafloSpacingV2.xs),
-                  Text(description, style: WafloTypographyV2.caption),
-                ],
-              ),
-            ),
-            const SizedBox(width: WafloSpacingV2.xs),
-            Radio<String>(
-              value: template,
-              activeColor: WafloColorsV2.primaryCoral,
-            ),
-          ],
-        ),
-      ),
     );
   }
 
@@ -601,28 +515,25 @@ class _WafloFirstRunWizardScreenState extends State<WafloFirstRunWizardScreen> {
     return Column(
       crossAxisAlignment: CrossAxisAlignment.start,
       children: [
-        const Text('أضف أول قسم للمنيو', style: WafloTypographyV2.h1),
+        Text(context.l10n.firstCategory, style: WafloTypographyV2.h1),
         const SizedBox(height: WafloSpacingV2.xs),
-        const Text(
-          'المنيو يترتب على شكل أقسام مثل: مشروبات باردة، وجبات رئيسية، مقبلات.',
-          style: WafloTypographyV2.body,
-        ),
+        Text(context.l10n.firstCategoryBody, style: WafloTypographyV2.body),
         const SizedBox(height: WafloSpacingV2.lg),
         WafloInputV2(
-          label: 'اسم القسم الأول',
-          hint: 'مثال: وجبات سريعة، حلويات، كوكيز',
+          label: context.l10n.categoryName,
+          hint: context.l10n.categoryNameHint,
           controller: _categoryNameController,
         ),
         if (menuState.errorMessage != null) ...[
           const SizedBox(height: WafloSpacingV2.md),
           Text(
-            menuState.errorMessage!,
+            localizedRuntimeMessage(context.l10n, menuState.errorMessage),
             style: WafloTypographyV2.body.copyWith(color: WafloColorsV2.danger),
           ),
         ],
         const SizedBox(height: WafloSpacingV2.xl),
         WafloButtonV2(
-          label: 'حفظ ومتابعة',
+          label: context.l10n.saveAndContinue,
           icon: Icons.add_circle_outline,
           isLoading: isLoading,
           onPressed: _categoryNameController.text.trim().isEmpty
@@ -634,7 +545,7 @@ class _WafloFirstRunWizardScreenState extends State<WafloFirstRunWizardScreen> {
         ),
         const SizedBox(height: WafloSpacingV2.md),
         WafloButtonV2(
-          label: 'لاحقاً (تخطي)',
+          label: context.l10n.skipForNow,
           variant: WafloButtonV2Variant.secondary,
           onPressed: () {
             setState(() {
@@ -656,22 +567,19 @@ class _WafloFirstRunWizardScreenState extends State<WafloFirstRunWizardScreen> {
     return Column(
       crossAxisAlignment: CrossAxisAlignment.start,
       children: [
-        const Text('أضف أول منتج', style: WafloTypographyV2.h1),
+        Text(context.l10n.firstProduct, style: WafloTypographyV2.h1),
         const SizedBox(height: WafloSpacingV2.xs),
-        const Text(
-          'اكتب اسم المنتج وسعره بالدينار العراقي ليظهر للزبائن.',
-          style: WafloTypographyV2.body,
-        ),
+        Text(context.l10n.firstProductBody, style: WafloTypographyV2.body),
         const SizedBox(height: WafloSpacingV2.lg),
         WafloInputV2(
-          label: 'اسم المنتج',
-          hint: 'مثال: شاي عراقي مهيّل، ليمونادة، بيتزا خضار',
+          label: context.l10n.productName,
+          hint: context.l10n.productName,
           controller: _productNameController,
         ),
         const SizedBox(height: WafloSpacingV2.md),
         WafloInputV2(
-          label: 'السعر (بالدينار العراقي)',
-          hint: 'مثال: 3000',
+          label: '${context.l10n.productPrice} (${context.l10n.iqd})',
+          hint: context.l10n.productPrice,
           controller: _productPriceController,
           keyboardType: TextInputType.number,
         ),
@@ -685,13 +593,13 @@ class _WafloFirstRunWizardScreenState extends State<WafloFirstRunWizardScreen> {
         if (menuState.errorMessage != null) ...[
           const SizedBox(height: WafloSpacingV2.md),
           Text(
-            menuState.errorMessage!,
+            localizedRuntimeMessage(context.l10n, menuState.errorMessage),
             style: WafloTypographyV2.body.copyWith(color: WafloColorsV2.danger),
           ),
         ],
         const SizedBox(height: WafloSpacingV2.xl),
         WafloButtonV2(
-          label: 'حفظ ومتابعة',
+          label: context.l10n.saveAndContinue,
           icon: Icons.add_circle_outline,
           isLoading: isLoading,
           onPressed:
@@ -705,7 +613,7 @@ class _WafloFirstRunWizardScreenState extends State<WafloFirstRunWizardScreen> {
                   );
                   if (parsedPrice == null) {
                     setState(() {
-                      _priceError = 'أدخل سعر صحيح بالدينار العراقي';
+                      _priceError = context.l10n.productPriceInvalid;
                     });
                     return;
                   }
@@ -735,7 +643,7 @@ class _WafloFirstRunWizardScreenState extends State<WafloFirstRunWizardScreen> {
         ),
         const SizedBox(height: WafloSpacingV2.md),
         WafloButtonV2(
-          label: 'لاحقاً (تخطي)',
+          label: context.l10n.skipForNow,
           variant: WafloButtonV2Variant.secondary,
           onPressed: _nextStep,
         ),
@@ -748,35 +656,39 @@ class _WafloFirstRunWizardScreenState extends State<WafloFirstRunWizardScreen> {
     return Column(
       crossAxisAlignment: CrossAxisAlignment.start,
       children: [
-        const Text(
-          'صور المنتجات غير مفعّلة حالياً',
+        Text(
+          context.l10n.productImagesUnavailableTitle,
           style: WafloTypographyV2.h1,
         ),
         const SizedBox(height: WafloSpacingV2.xs),
-        const Text(
-          'إضافة الصور للمنيو يعطي طابعاً شهياً وأكثر احترافية للزبائن',
+        Text(
+          context.l10n.productImagesUnavailableBody,
           style: WafloTypographyV2.body,
         ),
         const SizedBox(height: WafloSpacingV2.lg),
         WafloCardV2(
           backgroundColor: WafloColorsV2.warningBg,
           borderRadius: WafloRadiusV2.lgBorder,
-          child: const Row(
+          child: Row(
             crossAxisAlignment: CrossAxisAlignment.start,
             children: [
-              Icon(Icons.info_outline, color: WafloColorsV2.warning, size: 24),
-              SizedBox(width: WafloSpacingV2.md),
+              const Icon(
+                Icons.info_outline,
+                color: WafloColorsV2.warning,
+                size: 24,
+              ),
+              const SizedBox(width: WafloSpacingV2.md),
               Expanded(
                 child: Column(
                   crossAxisAlignment: CrossAxisAlignment.start,
                   children: [
                     Text(
-                      'رفع الصور غير مربوط حالياً',
+                      context.l10n.productImagesUnavailableTitle,
                       style: WafloTypographyV2.title,
                     ),
-                    SizedBox(height: WafloSpacingV2.xs),
+                    const SizedBox(height: WafloSpacingV2.xs),
                     Text(
-                      'رفع صور المنتجات غير مربوط في هذا الإصدار. راح نفعّله فقط بعد ربطه فعلياً بالنظام.',
+                      context.l10n.productImagesUnavailableBody,
                       style: WafloTypographyV2.body,
                     ),
                   ],
@@ -787,7 +699,7 @@ class _WafloFirstRunWizardScreenState extends State<WafloFirstRunWizardScreen> {
         ),
         const SizedBox(height: WafloSpacingV2.xl),
         WafloButtonV2(
-          label: 'متابعة',
+          label: context.l10n.continueAction,
           icon: Icons.arrow_back,
           onPressed: _nextStep,
         ),
@@ -800,36 +712,36 @@ class _WafloFirstRunWizardScreenState extends State<WafloFirstRunWizardScreen> {
     return Column(
       crossAxisAlignment: CrossAxisAlignment.start,
       children: [
-        const Text('معاينة منيو الزبائن', style: WafloTypographyV2.h1),
+        Text(context.l10n.previewCustomerMenu, style: WafloTypographyV2.h1),
         const SizedBox(height: WafloSpacingV2.xs),
-        const Text(
-          'معاينة شكل المنيو الحقيقي للزبائن.',
+        Text(
+          context.l10n.previewCustomerMenuBody,
           style: WafloTypographyV2.body,
         ),
         const SizedBox(height: WafloSpacingV2.lg),
         WafloCardV2(
           backgroundColor: WafloColorsV2.surfaceWhite,
           borderRadius: WafloRadiusV2.lgBorder,
-          child: const Row(
+          child: Row(
             crossAxisAlignment: CrossAxisAlignment.start,
             children: [
-              Icon(
+              const Icon(
                 Icons.preview_outlined,
                 color: WafloColorsV2.primaryCoral,
                 size: 24,
               ),
-              SizedBox(width: WafloSpacingV2.md),
+              const SizedBox(width: WafloSpacingV2.md),
               Expanded(
                 child: Column(
                   crossAxisAlignment: CrossAxisAlignment.start,
                   children: [
                     Text(
-                      'معاينة المنيو للزبائن',
+                      context.l10n.previewCustomerMenu,
                       style: WafloTypographyV2.title,
                     ),
-                    SizedBox(height: WafloSpacingV2.xs),
+                    const SizedBox(height: WafloSpacingV2.xs),
                     Text(
-                      'بعد توفر رابط المنيو الحقيقي، تگدر تراجع شكل المنيو كما يراه الزبائن. حالياً كمل خطوات التجهيز الباقية.',
+                      context.l10n.previewUnavailable,
                       style: WafloTypographyV2.body,
                     ),
                   ],
@@ -840,7 +752,7 @@ class _WafloFirstRunWizardScreenState extends State<WafloFirstRunWizardScreen> {
         ),
         const SizedBox(height: WafloSpacingV2.xl),
         WafloButtonV2(
-          label: 'متابعة',
+          label: context.l10n.continueAction,
           icon: Icons.arrow_back,
           onPressed: _nextStep,
         ),
@@ -853,36 +765,33 @@ class _WafloFirstRunWizardScreenState extends State<WafloFirstRunWizardScreen> {
     return Column(
       crossAxisAlignment: CrossAxisAlignment.start,
       children: [
-        const Text('مشاركة QR غير مفعّلة حالياً', style: WafloTypographyV2.h1),
+        Text(context.l10n.qrNotActiveYet, style: WafloTypographyV2.h1),
         const SizedBox(height: WafloSpacingV2.xs),
-        const Text(
-          'اطبع رمز الـ QR وضعه على الطاولات ليسهل على الزبائن تصفح المنيو بدون انتظار الموظف',
-          style: WafloTypographyV2.body,
-        ),
+        Text(context.l10n.qrNotActiveYetBody, style: WafloTypographyV2.body),
         const SizedBox(height: WafloSpacingV2.lg),
         WafloCardV2(
           backgroundColor: WafloColorsV2.infoBg,
           borderRadius: WafloRadiusV2.lgBorder,
-          child: const Row(
+          child: Row(
             crossAxisAlignment: CrossAxisAlignment.start,
             children: [
-              Icon(
+              const Icon(
                 Icons.qr_code_2_outlined,
                 color: WafloColorsV2.info,
                 size: 24,
               ),
-              SizedBox(width: WafloSpacingV2.md),
+              const SizedBox(width: WafloSpacingV2.md),
               Expanded(
                 child: Column(
                   crossAxisAlignment: CrossAxisAlignment.start,
                   children: [
                     Text(
-                      'مشاركة QR غير مربوطة حالياً',
+                      context.l10n.qrNotActiveYet,
                       style: WafloTypographyV2.title,
                     ),
-                    SizedBox(height: WafloSpacingV2.xs),
+                    const SizedBox(height: WafloSpacingV2.xs),
                     Text(
-                      'تنزيل أو مشاركة QR راح يظهر فقط بعد ربط ميزة QR الحقيقية. حالياً كمل تجهيز المطعم من الرئيسية.',
+                      context.l10n.qrNotActiveYetBody,
                       style: WafloTypographyV2.body,
                     ),
                   ],
@@ -892,7 +801,11 @@ class _WafloFirstRunWizardScreenState extends State<WafloFirstRunWizardScreen> {
           ),
         ),
         const SizedBox(height: WafloSpacingV2.xl),
-        WafloButtonV2(label: 'متابعة', icon: Icons.check, onPressed: _nextStep),
+        WafloButtonV2(
+          label: context.l10n.continueAction,
+          icon: Icons.check,
+          onPressed: _nextStep,
+        ),
       ],
     );
   }
@@ -903,17 +816,17 @@ class _WafloFirstRunWizardScreenState extends State<WafloFirstRunWizardScreen> {
       crossAxisAlignment: CrossAxisAlignment.center,
       children: [
         const SizedBox(height: WafloSpacingV2.xl),
-        const Center(
+        Center(
           child: Text(
-            'رائع! بدأت تجهيز مطعمك 🎉',
+            context.l10n.setupCompleteTitle,
             style: WafloTypographyV2.display,
             textAlign: TextAlign.center,
           ),
         ),
         const SizedBox(height: WafloSpacingV2.md),
-        const Center(
+        Center(
           child: Text(
-            'تقدر تكمل باقي الخطوات وتدير المنتجات والأسعار من اللوحة الرئيسية للمطعم.',
+            context.l10n.setupCompleteBody,
             style: WafloTypographyV2.h2,
             textAlign: TextAlign.center,
           ),
@@ -936,7 +849,7 @@ class _WafloFirstRunWizardScreenState extends State<WafloFirstRunWizardScreen> {
         ),
         const SizedBox(height: WafloSpacingV2.xxl),
         WafloButtonV2(
-          label: 'الانتقال إلى الرئيسية',
+          label: context.l10n.finishSetup,
           icon: Icons.home_outlined,
           onPressed: () {
             Navigator.of(context).pushReplacementNamed(AppRouteNames.dashboard);

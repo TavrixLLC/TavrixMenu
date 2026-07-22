@@ -4,6 +4,8 @@ import 'package:flutter/material.dart';
 import 'package:flutter_bloc/flutter_bloc.dart';
 
 import '../../../../app/router/route_names.dart';
+import '../../../../core/localization/app_localizations_extension.dart';
+import '../../../../core/localization/localized_runtime_message.dart';
 import '../../../../core/theme/v3/waflo_v3_tokens.dart';
 import '../../../../core/utils/money_formatter.dart';
 import '../../../../shared/widgets/app_scaffold.dart';
@@ -50,10 +52,10 @@ class _MenuScreenState extends State<MenuScreen> {
   @override
   Widget build(BuildContext context) {
     return Directionality(
-      textDirection: TextDirection.rtl,
+      textDirection: Directionality.of(context),
       child: AppScaffold(
         key: const ValueKey('menu-management-v3'),
-        title: 'إدارة المنيو',
+        title: context.l10n.menuManagementTitle,
         embeddedInWorkspaceShell: widget.embeddedInWorkspaceShell,
         scrollable: true,
         padding: const EdgeInsets.all(WafloV3Spacing.standardPageMargin),
@@ -63,7 +65,11 @@ class _MenuScreenState extends State<MenuScreen> {
               MenuStatus.initial ||
               MenuStatus.loading => const _MenuLoadingState(),
               MenuStatus.failure => _MenuLoadError(
-                message: state.errorMessage ?? 'تعذّر تحميل المنيو.',
+                message: localizedRuntimeMessage(
+                  context.l10n,
+                  state.errorMessage,
+                  fallback: context.l10n.menuLoadFailed,
+                ),
                 onRetry: () => context.read<MenuCubit>().load(),
               ),
               MenuStatus.mutating || MenuStatus.success => _MenuContent(
@@ -138,14 +144,14 @@ class _MenuContent extends StatelessWidget {
       crossAxisAlignment: CrossAxisAlignment.stretch,
       children: [
         Text(
-          'إدارة المنيو',
+          context.l10n.menuManagementTitle,
           style: Theme.of(
             context,
           ).textTheme.headlineMedium?.copyWith(fontWeight: FontWeight.w800),
         ),
         const SizedBox(height: WafloV3Spacing.space8),
         Text(
-          'رتّب أقسام مطعمك وأضف المنتجات التي سيراها زبائنك.',
+          context.l10n.menuManagementBody,
           style: Theme.of(context).textTheme.bodyLarge?.copyWith(
             color: WafloV3Colors.primaryText.withValues(alpha: 0.68),
           ),
@@ -155,7 +161,7 @@ class _MenuContent extends StatelessWidget {
         if (state.summaryErrorMessage != null) ...[
           const SizedBox(height: WafloV3Spacing.space12),
           Text(
-            state.summaryErrorMessage!,
+            localizedRuntimeMessage(context.l10n, state.summaryErrorMessage),
             style: Theme.of(context).textTheme.bodySmall?.copyWith(
               color: WafloV3Colors.primaryText.withValues(alpha: 0.68),
             ),
@@ -163,7 +169,9 @@ class _MenuContent extends StatelessWidget {
         ],
         if (state.errorMessage != null) ...[
           const SizedBox(height: WafloV3Spacing.space12),
-          WafloInlineError(message: state.errorMessage!),
+          WafloInlineError(
+            message: localizedRuntimeMessage(context.l10n, state.errorMessage),
+          ),
         ],
         const SizedBox(height: WafloV3Spacing.space16),
         if (categories.isEmpty)
@@ -185,12 +193,12 @@ class _MenuContent extends StatelessWidget {
             controller: searchController,
             textInputAction: TextInputAction.search,
             decoration: InputDecoration(
-              hintText: 'ابحث عن منتج',
+              hintText: context.l10n.searchProducts,
               prefixIcon: const Icon(Icons.search_rounded),
               suffixIcon: state.searchQuery.isEmpty
                   ? null
                   : IconButton(
-                      tooltip: 'مسح البحث',
+                      tooltip: context.l10n.clearSearch,
                       onPressed: () {
                         searchController.clear();
                         context.read<MenuCubit>().setSearchQuery('');
@@ -255,15 +263,23 @@ class _ReadinessCard extends StatelessWidget {
           Row(
             children: [
               Expanded(
-                child: _Metric(label: 'الأقسام', value: '$categories'),
-              ),
-              Expanded(
-                child: _Metric(label: 'المنتجات', value: '$products'),
+                child: _Metric(
+                  label: context.l10n.categories,
+                  value: '$categories',
+                ),
               ),
               Expanded(
                 child: _Metric(
-                  label: 'حالة المنيو',
-                  value: state.canPreviewPublicMenu ? 'جاهز' : 'غير جاهز',
+                  label: context.l10n.products,
+                  value: '$products',
+                ),
+              ),
+              Expanded(
+                child: _Metric(
+                  label: context.l10n.menuStatus,
+                  value: state.canPreviewPublicMenu
+                      ? context.l10n.genericReady
+                      : context.l10n.genericNotReady,
                   emphasized: !state.canPreviewPublicMenu,
                 ),
               ),
@@ -272,10 +288,10 @@ class _ReadinessCard extends StatelessWidget {
           const SizedBox(height: WafloV3Spacing.space16),
           Text(
             categories == 0
-                ? 'أضف أول قسم حتى تبدأ بناء منيوك.'
+                ? context.l10n.menuAddCategoryHint
                 : products == 0
-                ? 'أضف أول منتج حتى يبدأ منيوك بالتكوّن.'
-                : 'منتجاتك محمّلة من مساحة عملك وجاهزة للإدارة.',
+                ? context.l10n.menuAddProductHint
+                : context.l10n.menuLoadedHint,
           ),
         ],
       ),
@@ -330,16 +346,15 @@ class _NoCategoriesState extends StatelessWidget {
         children: [
           WafloEmptyState(
             icon: Icons.grid_view_rounded,
-            title: 'ابدأ بأول قسم في منيوك',
-            description:
-                'رتّب منتجاتك ضمن أقسام واضحة ليسهل على زبائنك الاختيار.',
-            primaryActionLabel: 'إضافة قسم',
+            title: context.l10n.noCategoriesTitle,
+            description: context.l10n.noCategoriesBody,
+            primaryActionLabel: context.l10n.addCategory,
             onPrimaryAction: canManage ? onAddCategory : null,
           ),
           if (!canManage)
-            const Padding(
-              padding: EdgeInsets.only(bottom: WafloV3Spacing.space16),
-              child: Text('صلاحيتك الحالية لا تسمح بإضافة قسم.'),
+            Padding(
+              padding: const EdgeInsets.only(bottom: WafloV3Spacing.space16),
+              child: Text(context.l10n.addCategoryPermissionDenied),
             ),
         ],
       ),
@@ -371,7 +386,7 @@ class _CategorySection extends StatelessWidget {
           children: [
             Expanded(
               child: Text(
-                'الأقسام',
+                context.l10n.categories,
                 style: Theme.of(
                   context,
                 ).textTheme.titleLarge?.copyWith(fontWeight: FontWeight.w800),
@@ -381,7 +396,7 @@ class _CategorySection extends StatelessWidget {
               key: const ValueKey('menu-add-category-action'),
               onPressed: canManage && !isAdding ? onAddCategory : null,
               icon: const Icon(Icons.add_rounded),
-              label: const Text('إضافة قسم'),
+              label: Text(context.l10n.addCategory),
             ),
           ],
         ),
@@ -422,16 +437,15 @@ class _NoProductsState extends StatelessWidget {
         children: [
           WafloEmptyState(
             icon: Icons.restaurant_menu_rounded,
-            title: 'هذا القسم بعده بدون منتجات',
-            description:
-                'أضف أول منتج وحدد اسمه وسعره حتى يبدأ منيوك بالتكوّن.',
-            primaryActionLabel: 'إضافة أول منتج',
+            title: context.l10n.noProductsTitle,
+            description: context.l10n.noProductsBody,
+            primaryActionLabel: context.l10n.addFirstProduct,
             onPrimaryAction: canManage ? onAddProduct : null,
           ),
           if (!canManage)
-            const Padding(
-              padding: EdgeInsets.only(bottom: WafloV3Spacing.space16),
-              child: Text('صلاحيتك الحالية لا تسمح بإضافة منتج.'),
+            Padding(
+              padding: const EdgeInsets.only(bottom: WafloV3Spacing.space16),
+              child: Text(context.l10n.addProductPermissionDenied),
             ),
         ],
       ),
@@ -450,9 +464,9 @@ class _SearchEmptyState extends StatelessWidget {
       key: const ValueKey('menu-search-empty-state'),
       child: WafloEmptyState(
         icon: Icons.search_off_rounded,
-        title: 'لا توجد نتائج للبحث',
-        description: 'جرّب كلمة أخرى أو امسح البحث لعرض كل منتجات القسم.',
-        secondaryActionLabel: 'مسح البحث',
+        title: context.l10n.noSearchResultsTitle,
+        description: context.l10n.noSearchResultsBody,
+        secondaryActionLabel: context.l10n.clearSearch,
         onSecondaryAction: onClear,
       ),
     );
@@ -483,14 +497,17 @@ class _ProductList extends StatelessWidget {
           children: [
             Expanded(
               child: Text(
-                '${state.selectedCategoryItems.length} منتج في هذا القسم • $available متوفر',
+                context.l10n.productsInCategory(
+                  state.selectedCategoryItems.length,
+                  available,
+                ),
               ),
             ),
             TextButton.icon(
               key: const ValueKey('menu-add-product-action'),
               onPressed: state.canManageMenu ? onAddProduct : null,
               icon: const Icon(Icons.add_circle_outline_rounded),
-              label: const Text('إضافة منتج'),
+              label: Text(context.l10n.addProduct),
             ),
           ],
         ),
@@ -668,10 +685,10 @@ class _AvailabilityControl extends StatelessWidget {
           Expanded(
             child: Text(
               pending
-                  ? 'جارٍ تحديث التوفر…'
+                  ? context.l10n.availabilityUpdating
                   : item.isAvailable
-                  ? 'متوفر للزبائن'
-                  : 'غير متوفر للزبائن',
+                  ? context.l10n.productAvailable
+                  : context.l10n.productUnavailable,
               style: TextStyle(color: color, fontWeight: FontWeight.w700),
             ),
           ),
@@ -700,7 +717,7 @@ class _PreviewCard extends StatelessWidget {
         crossAxisAlignment: CrossAxisAlignment.stretch,
         children: [
           Text(
-            'معاينة منيو الزبائن',
+            context.l10n.previewCustomerMenu,
             style: Theme.of(
               context,
             ).textTheme.titleMedium?.copyWith(fontWeight: FontWeight.w800),
@@ -708,12 +725,12 @@ class _PreviewCard extends StatelessWidget {
           const SizedBox(height: WafloV3Spacing.space4),
           Text(
             enabled
-                ? 'افتح الرابط الحقيقي الذي سيراه زبائنك.'
-                : 'تتفعّل المعاينة بعد جاهزية منيو الزبائن.',
+                ? context.l10n.previewMenuReadyBody
+                : context.l10n.previewMenuUnavailableBody,
           ),
           const SizedBox(height: WafloV3Spacing.space12),
           WafloSecondaryButton(
-            label: 'معاينة منيو الزبائن',
+            label: context.l10n.previewCustomerMenu,
             onPressed: enabled ? onPressed : null,
           ),
         ],
@@ -743,7 +760,7 @@ class _AddCategoryDialogState extends State<_AddCategoryDialog> {
   @override
   Widget build(BuildContext context) {
     return Directionality(
-      textDirection: TextDirection.rtl,
+      textDirection: Directionality.of(context),
       child: AlertDialog(
         key: const ValueKey('add-category-dialog'),
         scrollable: true,
@@ -751,7 +768,7 @@ class _AddCategoryDialogState extends State<_AddCategoryDialog> {
           horizontal: WafloV3Spacing.space16,
           vertical: WafloV3Spacing.space24,
         ),
-        title: const Text('إضافة قسم'),
+        title: Text(context.l10n.addCategory),
         contentPadding: const EdgeInsetsDirectional.fromSTEB(
           WafloV3Spacing.space24,
           WafloV3Spacing.space8,
@@ -764,8 +781,8 @@ class _AddCategoryDialogState extends State<_AddCategoryDialog> {
           autofocus: true,
           maxLength: 160,
           decoration: InputDecoration(
-            labelText: 'اسم القسم',
-            hintText: 'مثال: المقبلات',
+            labelText: context.l10n.categoryName,
+            hintText: context.l10n.categoryNameHint,
             errorText: _error,
           ),
           onSubmitted: (_) => _submit(),
@@ -783,7 +800,7 @@ class _AddCategoryDialogState extends State<_AddCategoryDialog> {
               minimumSize: const Size(96, WafloV3Spacing.minimumTouchTarget),
             ),
             onPressed: _submitting ? null : () => Navigator.of(context).pop(),
-            child: const Text('إلغاء'),
+            child: Text(context.l10n.genericCancel),
           ),
           FilledButton(
             key: const ValueKey('add-category-submit'),
@@ -796,7 +813,7 @@ class _AddCategoryDialogState extends State<_AddCategoryDialog> {
                     dimension: 20,
                     child: CircularProgressIndicator(strokeWidth: 2),
                   )
-                : const Text('إضافة'),
+                : Text(context.l10n.addCategory),
           ),
         ],
       ),
@@ -806,7 +823,7 @@ class _AddCategoryDialogState extends State<_AddCategoryDialog> {
   Future<void> _submit() async {
     final name = _controller.text.trim();
     if (name.isEmpty) {
-      setState(() => _error = 'اكتب اسم القسم.');
+      setState(() => _error = context.l10n.categoryRequired);
       return;
     }
     setState(() {
@@ -818,7 +835,7 @@ class _AddCategoryDialogState extends State<_AddCategoryDialog> {
     if (created == null) {
       setState(() {
         _submitting = false;
-        _error = 'تعذّرت إضافة القسم. حاول مرة ثانية.';
+        _error = context.l10n.categoryCreateFailed;
       });
       return;
     }
@@ -857,7 +874,7 @@ class _MenuLoadError extends StatelessWidget {
   Widget build(BuildContext context) {
     return WafloInlineError(
       key: const ValueKey('menu-load-error'),
-      title: 'لم نتمكن من فتح المنيو',
+      title: context.l10n.menuLoadFailed,
       message: message,
       onRetry: onRetry,
     );

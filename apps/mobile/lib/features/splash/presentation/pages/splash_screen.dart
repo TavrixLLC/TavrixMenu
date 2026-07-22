@@ -4,7 +4,7 @@ import 'package:flutter_bloc/flutter_bloc.dart';
 import '../../../../app/router/route_names.dart';
 import '../../../../core/constants/app_colors.dart';
 import '../../../../core/constants/app_spacing.dart';
-import '../../../../core/copy/pilot_arabic_copy.dart';
+import '../../../../core/localization/app_localizations_extension.dart';
 import '../../../../shared/widgets/app_scaffold.dart';
 import '../../../../shared/widgets/status_badge.dart';
 import '../../../auth/presentation/bloc/auth_cubit.dart';
@@ -45,13 +45,13 @@ class _SplashScreenState extends State<SplashScreen> {
         }
       },
       child: Directionality(
-        textDirection: TextDirection.rtl,
+        textDirection: Directionality.of(context),
         child: AppScaffold(
           child: Center(
             child: Column(
               mainAxisSize: MainAxisSize.min,
               children: [
-                const StatusBadge(label: PilotArabicCopy.authBadge),
+                StatusBadge(label: context.l10n.authBadge),
                 const SizedBox(height: AppSpacing.lg),
                 Text(
                   'Waflo للتجار',
@@ -60,8 +60,8 @@ class _SplashScreenState extends State<SplashScreen> {
                     fontWeight: FontWeight.w900,
                   ),
                 ),
-                const SizedBox(height: AppSpacing.xs),
-                const Text(PilotArabicCopy.restoringSession),
+                SizedBox(height: AppSpacing.xs),
+                Text(context.l10n.restoringSession),
               ],
             ),
           ),

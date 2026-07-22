@@ -2,6 +2,8 @@ import 'package:flutter/material.dart';
 import 'package:flutter/services.dart';
 import 'package:flutter_bloc/flutter_bloc.dart';
 
+import '../../../../core/localization/app_localizations_extension.dart';
+import '../../../../core/localization/localized_runtime_message.dart';
 import '../../../../core/theme/v3/waflo_v3_theme.dart';
 import '../../../../core/theme/v3/waflo_v3_tokens.dart';
 import '../../../../core/utils/money_formatter.dart';
@@ -75,7 +77,7 @@ class _ProductEditorScreenState extends State<ProductEditorScreen> {
     return Theme(
       data: WafloV3Theme.light(),
       child: Directionality(
-        textDirection: TextDirection.rtl,
+        textDirection: Directionality.of(context),
         child: BlocConsumer<MenuCubit, MenuState>(
           listenWhen: (previous, current) {
             return previous.status != current.status ||
@@ -142,12 +144,11 @@ class _ProductEditorScreenState extends State<ProductEditorScreen> {
                           textInputAction: TextInputAction.next,
                           textAlign: TextAlign.start,
                           decoration: _fieldDecoration(
-                            label: 'اسم المنتج',
-                            hint: 'مثال: قهوة عربية',
+                            label: context.l10n.productName,
                           ),
                           validator: (value) {
                             if ((value ?? '').trim().isEmpty) {
-                              return 'اكتب اسم المنتج.';
+                              return context.l10n.productNameRequired;
                             }
                             return null;
                           },
@@ -162,8 +163,7 @@ class _ProductEditorScreenState extends State<ProductEditorScreen> {
                           textInputAction: TextInputAction.newline,
                           textAlign: TextAlign.start,
                           decoration: _fieldDecoration(
-                            label: 'الوصف (اختياري)',
-                            hint: 'أضف وصفاً مختصراً للزبائن',
+                            label: context.l10n.productDescriptionOptional,
                           ),
                         ),
                         const SizedBox(height: WafloV3Spacing.space12),
@@ -171,7 +171,9 @@ class _ProductEditorScreenState extends State<ProductEditorScreen> {
                           key: const ValueKey('product-category-field'),
                           initialValue: _selectedCategoryId,
                           isExpanded: true,
-                          decoration: _fieldDecoration(label: 'القسم'),
+                          decoration: _fieldDecoration(
+                            label: context.l10n.productCategory,
+                          ),
                           items: [
                             for (final category in categories)
                               DropdownMenuItem(
@@ -189,7 +191,7 @@ class _ProductEditorScreenState extends State<ProductEditorScreen> {
                           validator: (value) {
                             if (value == null ||
                                 !_isAuthoritativeCategory(value, categories)) {
-                              return 'اختر قسماً من أقسام مساحة عملك.';
+                              return context.l10n.productCategoryRequired;
                             }
                             return null;
                           },
@@ -206,8 +208,7 @@ class _ProductEditorScreenState extends State<ProductEditorScreen> {
                           textAlign: TextAlign.start,
                           scrollPadding: const EdgeInsets.only(bottom: 160),
                           decoration: _fieldDecoration(
-                            label: 'السعر',
-                            hint: 'مثال: ٦٥٠٠',
+                            label: context.l10n.productPrice,
                             suffixIcon: _CurrencyAffordance(
                               label: _currencyLabel(state),
                             ),
@@ -217,7 +218,7 @@ class _ProductEditorScreenState extends State<ProductEditorScreen> {
                                   value ?? '',
                                 ) ==
                                 null) {
-                              return 'أدخل سعراً صحيحاً أكبر من صفر.';
+                              return context.l10n.productPriceInvalid;
                             }
                             return null;
                           },
@@ -233,12 +234,17 @@ class _ProductEditorScreenState extends State<ProductEditorScreen> {
                         const _UnavailableFeatureNote(),
                         if (state.errorMessage != null) ...[
                           const SizedBox(height: WafloV3Spacing.space16),
-                          WafloInlineError(message: state.errorMessage!),
+                          WafloInlineError(
+                            message: localizedRuntimeMessage(
+                              context.l10n,
+                              state.errorMessage,
+                            ),
+                          ),
                         ],
                         const SizedBox(height: WafloV3Spacing.space16),
                         WafloPrimaryButton(
                           key: const ValueKey('product-submit-action'),
-                          label: 'إضافة المنتج',
+                          label: context.l10n.addProduct,
                           isLoading: state.isProductMutationPending,
                           onPressed:
                               state.canManageMenu &&
@@ -248,8 +254,8 @@ class _ProductEditorScreenState extends State<ProductEditorScreen> {
                         ),
                         if (!state.canManageMenu) ...[
                           const SizedBox(height: WafloV3Spacing.space8),
-                          const Text(
-                            'صلاحيتك الحالية لا تسمح بإضافة منتج.',
+                          Text(
+                            context.l10n.addProductPermissionDenied,
                             textAlign: TextAlign.center,
                           ),
                         ],
@@ -316,16 +322,16 @@ class _ProductEditorScreenState extends State<ProductEditorScreen> {
     final discard = await showDialog<bool>(
       context: context,
       builder: (context) => AlertDialog(
-        title: const Text('ترك التعديلات؟'),
-        content: const Text('ستفقد البيانات التي أدخلتها.'),
+        title: Text(context.l10n.leaveChangesTitle),
+        content: Text(context.l10n.leaveChangesBody),
         actions: [
           TextButton(
             onPressed: () => Navigator.of(context).pop(false),
-            child: const Text('البقاء'),
+            child: Text(context.l10n.stay),
           ),
           TextButton(
             onPressed: () => Navigator.of(context).pop(true),
-            child: const Text('ترك التعديلات'),
+            child: Text(context.l10n.leave),
           ),
         ],
       ),
@@ -360,7 +366,7 @@ class _FocusedHeader extends StatelessWidget {
       children: [
         IconButton.outlined(
           key: const ValueKey('product-editor-back'),
-          tooltip: 'رجوع',
+          tooltip: context.l10n.back,
           constraints: const BoxConstraints.tightFor(
             width: WafloV3Spacing.minimumTouchTarget,
             height: WafloV3Spacing.minimumTouchTarget,
@@ -374,14 +380,14 @@ class _FocusedHeader extends StatelessWidget {
             crossAxisAlignment: CrossAxisAlignment.start,
             children: [
               Text(
-                'إضافة منتج',
+                context.l10n.addProduct,
                 style: Theme.of(
                   context,
                 ).textTheme.titleLarge?.copyWith(fontWeight: FontWeight.w800),
               ),
               const SizedBox(height: WafloV3Spacing.space4),
               Text(
-                'أضف التفاصيل التي سيراها زبائنك.',
+                context.l10n.firstProductBody,
                 maxLines: 2,
                 overflow: TextOverflow.ellipsis,
                 style: Theme.of(context).textTheme.bodyMedium?.copyWith(
@@ -434,11 +440,15 @@ class _AvailabilityControl extends StatelessWidget {
                 child: Column(
                   crossAxisAlignment: CrossAxisAlignment.start,
                   children: [
-                    const Text(
-                      'التوفر للزبائن',
-                      style: TextStyle(fontWeight: FontWeight.w700),
+                    Text(
+                      context.l10n.productAvailable,
+                      style: const TextStyle(fontWeight: FontWeight.w700),
                     ),
-                    Text(value ? 'متوفر' : 'غير متوفر'),
+                    Text(
+                      value
+                          ? context.l10n.genericAvailable
+                          : context.l10n.genericNotAvailable,
+                    ),
                   ],
                 ),
               ),
@@ -467,19 +477,20 @@ class _UnavailableFeatureNote extends StatelessWidget {
           Radius.circular(WafloV3Radius.inputControl),
         ),
       ),
-      child: const Padding(
-        padding: EdgeInsetsDirectional.symmetric(
+      child: Padding(
+        padding: const EdgeInsetsDirectional.symmetric(
           horizontal: WafloV3Spacing.space12,
           vertical: WafloV3Spacing.space8,
         ),
         child: Row(
           crossAxisAlignment: CrossAxisAlignment.center,
           children: [
-            Icon(Icons.info_outline_rounded, size: WafloV3Spacing.space20),
-            SizedBox(width: WafloV3Spacing.space8),
-            Expanded(
-              child: Text('إضافة صورة للمنتج غير متاحة في هذه المرحلة.'),
+            const Icon(
+              Icons.info_outline_rounded,
+              size: WafloV3Spacing.space20,
             ),
+            const SizedBox(width: WafloV3Spacing.space8),
+            Expanded(child: Text(context.l10n.productImageUnavailable)),
           ],
         ),
       ),
@@ -528,7 +539,7 @@ class _CurrencyAffordance extends StatelessWidget {
       child: Center(
         child: Text(
           label,
-          textDirection: TextDirection.rtl,
+          textDirection: Directionality.of(context),
           style: Theme.of(context).textTheme.labelLarge?.copyWith(
             color: WafloV3Colors.primary,
             fontWeight: FontWeight.w800,

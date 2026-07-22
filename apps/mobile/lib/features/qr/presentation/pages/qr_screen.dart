@@ -2,6 +2,7 @@ import 'package:flutter/material.dart';
 import 'package:flutter_bloc/flutter_bloc.dart';
 
 import '../../../../core/constants/app_spacing.dart';
+import '../../../../core/localization/app_localizations_extension.dart';
 import '../../../../shared/widgets/app_scaffold.dart';
 import '../../../../shared/widgets/empty_state.dart';
 import '../../../../shared/widgets/loading_view.dart';
@@ -32,22 +33,21 @@ class _QRScreenState extends State<QRScreen> {
   @override
   Widget build(BuildContext context) {
     return AppScaffold(
-      title: 'QR menu',
+      title: context.l10n.publicMenuQrTitle,
       scrollable: true,
       child: BlocBuilder<DashboardCubit, DashboardState>(
         builder: (context, state) {
           if (state.status == DashboardStatus.initial ||
               state.status == DashboardStatus.loading) {
-            return const LoadingView(message: 'Preparing QR preview');
+            return LoadingView(message: context.l10n.publicMenuQrLoading);
           }
 
           final canViewPublicLink =
               state.permissions?.canViewPublicLink ?? true;
           if (!canViewPublicLink) {
-            return const EmptyState(
-              title: 'Restricted access',
-              message:
-                  'Your business permissions do not allow public link access.',
+            return EmptyState(
+              title: context.l10n.permissionUnavailable,
+              message: context.l10n.publicMenuQrUnavailableBody,
               icon: Icons.lock_outline,
             );
           }
@@ -55,19 +55,17 @@ class _QRScreenState extends State<QRScreen> {
           final publicUrl =
               state.summary?.publicMenu.url ??
               state.business?.publicMenuUrl ??
-              'https://menu.tavrix.com/m/your-business';
-          final qrPayload = state.summary?.publicMenu.qrPayload ?? publicUrl;
+              '';
 
           return Column(
             crossAxisAlignment: CrossAxisAlignment.start,
             children: [
-              const SectionHeader(
-                title: 'Public menu preview',
-                subtitle:
-                    'Copy the public menu link for table cards, stickers, or operator sharing.',
+              SectionHeader(
+                title: context.l10n.previewCustomerMenu,
+                subtitle: context.l10n.previewCustomerMenuBody,
               ),
               const SizedBox(height: AppSpacing.lg),
-              QRPreviewCard(publicUrl: publicUrl, qrPayload: qrPayload),
+              QRPreviewCard(publicUrl: publicUrl),
             ],
           );
         },

@@ -1,5 +1,6 @@
 import 'package:flutter/material.dart';
 
+import '../../../core/localization/app_localizations_extension.dart';
 import '../../../core/theme/v3/waflo_v3_tokens.dart';
 import 'waflo_secondary_button.dart';
 
@@ -10,14 +11,14 @@ class WafloInlineError extends StatelessWidget {
     this.title,
     this.onRetry,
     this.isRetrying = false,
-    this.retryLabel = 'إعادة المحاولة',
+    this.retryLabel,
   });
 
   final String message;
   final String? title;
   final VoidCallback? onRetry;
   final bool isRetrying;
-  final String retryLabel;
+  final String? retryLabel;
 
   @override
   Widget build(BuildContext context) {
@@ -75,7 +76,7 @@ class WafloInlineError extends StatelessWidget {
                 Align(
                   alignment: AlignmentDirectional.centerStart,
                   child: WafloSecondaryButton(
-                    label: retryLabel,
+                    label: retryLabel ?? context.l10n.genericRetry,
                     onPressed: onRetry,
                     isLoading: isRetrying,
                     fullWidth: false,

@@ -2,7 +2,8 @@ import 'package:flutter/material.dart';
 import 'package:flutter_bloc/flutter_bloc.dart';
 
 import '../../../../core/constants/app_spacing.dart';
-import '../../../../core/copy/pilot_arabic_copy.dart';
+import '../../../../core/localization/app_localizations_extension.dart';
+import '../../../../core/localization/localized_runtime_message.dart';
 import '../../../../shared/widgets/app_button.dart';
 import '../../../../shared/widgets/app_card.dart';
 import '../../../../shared/widgets/app_scaffold.dart';
@@ -14,6 +15,7 @@ import '../../../../shared/widgets/section_header.dart';
 import '../../../auth/presentation/bloc/auth_cubit.dart';
 import '../../../dashboard/presentation/bloc/dashboard_cubit.dart';
 import '../../../dashboard/presentation/bloc/dashboard_state.dart';
+import '../../../localization/presentation/widgets/app_language_picker.dart';
 import '../../domain/entities/business.dart';
 import '../bloc/business_setup_cubit.dart';
 import '../bloc/business_setup_state.dart';
@@ -93,7 +95,7 @@ class _BusinessProfileScreenState extends State<BusinessProfileScreen> {
   @override
   Widget build(BuildContext context) {
     return Directionality(
-      textDirection: TextDirection.rtl,
+      textDirection: Directionality.of(context),
       child: BlocConsumer<BusinessSetupCubit, BusinessSetupState>(
         listener: (context, setupState) async {
           if (!_submitted) {
@@ -124,7 +126,7 @@ class _BusinessProfileScreenState extends State<BusinessProfileScreen> {
 
           setState(() => _submitted = false);
           ScaffoldMessenger.of(context).showSnackBar(
-            const SnackBar(content: Text(PilotArabicCopy.businessProfileSaved)),
+            SnackBar(content: Text(context.l10n.businessProfileSaved)),
           );
           Navigator.of(context).pop();
         },
@@ -134,10 +136,10 @@ class _BusinessProfileScreenState extends State<BusinessProfileScreen> {
               if (dashboardState.status == DashboardStatus.initial ||
                   dashboardState.status == DashboardStatus.loading) {
                 return AppScaffold(
-                  title: PilotArabicCopy.businessProfileTitle,
+                  title: context.l10n.businessProfileTitle,
                   embeddedInWorkspaceShell: widget.embeddedInWorkspaceShell,
-                  child: const LoadingView(
-                    message: PilotArabicCopy.businessProfileLoading,
+                  child: LoadingView(
+                    message: context.l10n.businessProfileLoading,
                   ),
                 );
               }
@@ -145,11 +147,11 @@ class _BusinessProfileScreenState extends State<BusinessProfileScreen> {
               final business = dashboardState.business;
               if (business == null) {
                 return AppScaffold(
-                  title: PilotArabicCopy.businessProfileTitle,
+                  title: context.l10n.businessProfileTitle,
                   embeddedInWorkspaceShell: widget.embeddedInWorkspaceShell,
-                  child: const EmptyState(
-                    title: PilotArabicCopy.businessProfileMissingTitle,
-                    message: PilotArabicCopy.businessProfileMissingBody,
+                  child: EmptyState(
+                    title: context.l10n.businessProfileMissingTitle,
+                    message: context.l10n.businessProfileMissingBody,
                     icon: Icons.storefront,
                   ),
                 );
@@ -162,12 +164,20 @@ class _BusinessProfileScreenState extends State<BusinessProfileScreen> {
                   (dashboardState.effectiveRole == 'OWNER');
               if (!canManageBusiness) {
                 return AppScaffold(
-                  title: PilotArabicCopy.businessProfileTitle,
+                  title: context.l10n.businessProfileTitle,
                   embeddedInWorkspaceShell: widget.embeddedInWorkspaceShell,
-                  child: const EmptyState(
-                    title: PilotArabicCopy.businessProfileRestrictedTitle,
-                    message: PilotArabicCopy.businessProfileRestrictedBody,
-                    icon: Icons.lock_outline,
+                  scrollable: true,
+                  child: Column(
+                    crossAxisAlignment: CrossAxisAlignment.stretch,
+                    children: [
+                      const _AppLanguageSection(),
+                      const SizedBox(height: AppSpacing.md),
+                      EmptyState(
+                        title: context.l10n.businessProfileRestrictedTitle,
+                        message: context.l10n.businessProfileRestrictedBody,
+                        icon: Icons.lock_outline,
+                      ),
+                    ],
                   ),
                 );
               }
@@ -177,47 +187,49 @@ class _BusinessProfileScreenState extends State<BusinessProfileScreen> {
                   _submitted;
 
               return AppScaffold(
-                title: PilotArabicCopy.businessProfileTitle,
+                title: context.l10n.businessProfileTitle,
                 embeddedInWorkspaceShell: widget.embeddedInWorkspaceShell,
                 scrollable: true,
                 child: Column(
                   crossAxisAlignment: CrossAxisAlignment.start,
                   children: [
-                    const SectionHeader(
-                      title: PilotArabicCopy.businessProfileEditTitle,
-                      subtitle: PilotArabicCopy.businessProfileEditSubtitle,
-                    ),
+                    const _AppLanguageSection(),
                     const SizedBox(height: AppSpacing.lg),
+                    SectionHeader(
+                      title: context.l10n.businessProfileEditTitle,
+                      subtitle: context.l10n.businessProfileEditSubtitle,
+                    ),
+                    SizedBox(height: AppSpacing.lg),
                     _ProfileSectionCard(
                       icon: Icons.storefront_outlined,
-                      title: PilotArabicCopy.restaurantInfo,
-                      subtitle: PilotArabicCopy.restaurantInfoSubtitle,
+                      title: context.l10n.restaurantInfo,
+                      subtitle: context.l10n.restaurantInfoSubtitle,
                       children: [
                         AppTextField(
-                          label: PilotArabicCopy.restaurantName,
+                          label: context.l10n.restaurantName,
                           controller: _nameController,
-                          hint: PilotArabicCopy.restaurantNameHint,
+                          hint: context.l10n.restaurantNameHint,
                         ),
-                        const SizedBox(height: AppSpacing.md),
+                        SizedBox(height: AppSpacing.md),
                         DropdownButtonFormField<String>(
                           initialValue: _type,
-                          decoration: const InputDecoration(
-                            labelText: PilotArabicCopy.restaurantType,
+                          decoration: InputDecoration(
+                            labelText: context.l10n.restaurantType,
                           ),
-                          items: const [
+                          items: [
                             DropdownMenuItem(
                               value: 'cafe',
-                              child: Text(PilotArabicCopy.restaurantTypeCafe),
+                              child: Text(context.l10n.restaurantTypeCafe),
                             ),
                             DropdownMenuItem(
                               value: 'restaurant',
                               child: Text(
-                                PilotArabicCopy.restaurantTypeRestaurant,
+                                context.l10n.restaurantTypeRestaurant,
                               ),
                             ),
                             DropdownMenuItem(
                               value: 'shop',
-                              child: Text(PilotArabicCopy.restaurantTypeShop),
+                              child: Text(context.l10n.restaurantTypeShop),
                             ),
                           ],
                           onChanged: isLoading
@@ -228,17 +240,16 @@ class _BusinessProfileScreenState extends State<BusinessProfileScreen> {
                         ),
                       ],
                     ),
-                    const SizedBox(height: AppSpacing.md),
+                    SizedBox(height: AppSpacing.md),
                     _ProfileSectionCard(
                       icon: Icons.tune_outlined,
-                      title: PilotArabicCopy.locationCurrencyLanguage,
-                      subtitle:
-                          PilotArabicCopy.locationCurrencyLanguageSubtitle,
+                      title: context.l10n.locationCurrencyLanguage,
+                      subtitle: context.l10n.locationCurrencyLanguageSubtitle,
                       children: [
                         DropdownButtonFormField<String>(
                           initialValue: _city,
-                          decoration: const InputDecoration(
-                            labelText: PilotArabicCopy.city,
+                          decoration: InputDecoration(
+                            labelText: context.l10n.city,
                           ),
                           items: [
                             for (final city in _selectorOptions(
@@ -253,11 +264,11 @@ class _BusinessProfileScreenState extends State<BusinessProfileScreen> {
                                   _city = value ?? _cityOptions.first;
                                 }),
                         ),
-                        const SizedBox(height: AppSpacing.md),
+                        SizedBox(height: AppSpacing.md),
                         DropdownButtonFormField<String>(
                           initialValue: _currency,
-                          decoration: const InputDecoration(
-                            labelText: PilotArabicCopy.currency,
+                          decoration: InputDecoration(
+                            labelText: context.l10n.currency,
                           ),
                           items: [
                             for (final currency in _selectorOptions(
@@ -266,7 +277,7 @@ class _BusinessProfileScreenState extends State<BusinessProfileScreen> {
                             ))
                               DropdownMenuItem(
                                 value: currency,
-                                child: Text(_currencyLabel(currency)),
+                                child: Text(_currencyLabel(context, currency)),
                               ),
                           ],
                           onChanged: isLoading
@@ -275,11 +286,11 @@ class _BusinessProfileScreenState extends State<BusinessProfileScreen> {
                                   _currency = value ?? 'IQD';
                                 }),
                         ),
-                        const SizedBox(height: AppSpacing.md),
+                        SizedBox(height: AppSpacing.md),
                         DropdownButtonFormField<String>(
                           initialValue: _language,
-                          decoration: const InputDecoration(
-                            labelText: PilotArabicCopy.language,
+                          decoration: InputDecoration(
+                            labelText: context.l10n.menuLanguage,
                           ),
                           items: [
                             for (final language in _selectorOptions(
@@ -288,7 +299,7 @@ class _BusinessProfileScreenState extends State<BusinessProfileScreen> {
                             ))
                               DropdownMenuItem(
                                 value: language,
-                                child: Text(_languageLabel(language)),
+                                child: Text(_languageLabel(context, language)),
                               ),
                           ],
                           onChanged: isLoading
@@ -299,22 +310,22 @@ class _BusinessProfileScreenState extends State<BusinessProfileScreen> {
                         ),
                       ],
                     ),
-                    const SizedBox(height: AppSpacing.md),
+                    SizedBox(height: AppSpacing.md),
                     _ProfileSectionCard(
                       icon: Icons.image_outlined,
-                      title: PilotArabicCopy.identityAndPhotos,
-                      subtitle: PilotArabicCopy.managedPhotosBody,
+                      title: context.l10n.identityAndPhotos,
+                      subtitle: context.l10n.managedPhotosBody,
                       children: [
                         AppTextField(
-                          label: PilotArabicCopy.optionalLogoLink,
-                          hint: PilotArabicCopy.optionalImageLinkHint,
+                          label: context.l10n.optionalLogoLink,
+                          hint: context.l10n.optionalImageLinkHint,
                           controller: _logoUrlController,
                           keyboardType: TextInputType.url,
                         ),
-                        const SizedBox(height: AppSpacing.md),
+                        SizedBox(height: AppSpacing.md),
                         AppTextField(
-                          label: PilotArabicCopy.optionalCoverLink,
-                          hint: PilotArabicCopy.optionalImageLinkHint,
+                          label: context.l10n.optionalCoverLink,
+                          hint: context.l10n.optionalImageLinkHint,
                           controller: _coverUrlController,
                           keyboardType: TextInputType.url,
                         ),
@@ -323,14 +334,19 @@ class _BusinessProfileScreenState extends State<BusinessProfileScreen> {
                     if (setupState.status == BusinessSetupStatus.failure &&
                         setupState.errorMessage != null &&
                         _submitted) ...[
-                      const SizedBox(height: AppSpacing.md),
-                      ErrorView(message: setupState.errorMessage!),
+                      SizedBox(height: AppSpacing.md),
+                      ErrorView(
+                        message: localizedRuntimeMessage(
+                          context.l10n,
+                          setupState.errorMessage,
+                        ),
+                      ),
                     ],
-                    const SizedBox(height: AppSpacing.lg),
+                    SizedBox(height: AppSpacing.lg),
                     AppButton(
                       label: isLoading
-                          ? PilotArabicCopy.savingChanges
-                          : PilotArabicCopy.saveChanges,
+                          ? context.l10n.savingChanges
+                          : context.l10n.saveChanges,
                       icon: Icons.save_outlined,
                       onPressed: isLoading
                           ? null
@@ -356,6 +372,15 @@ class _BusinessProfileScreenState extends State<BusinessProfileScreen> {
         },
       ),
     );
+  }
+}
+
+class _AppLanguageSection extends StatelessWidget {
+  const _AppLanguageSection();
+
+  @override
+  Widget build(BuildContext context) {
+    return AppCard(child: const AppLanguagePicker());
   }
 }
 
@@ -388,18 +413,18 @@ List<String> _selectorOptions(String current, List<String> defaults) {
   return [...defaults, current];
 }
 
-String _currencyLabel(String value) {
+String _currencyLabel(BuildContext context, String value) {
   return switch (value) {
-    'IQD' => PilotArabicCopy.currencyIqd,
-    'USD' => PilotArabicCopy.currencyUsd,
+    'IQD' => context.l10n.currencyIqd,
+    'USD' => context.l10n.currencyUsd,
     _ => value,
   };
 }
 
-String _languageLabel(String value) {
+String _languageLabel(BuildContext context, String value) {
   return switch (value) {
-    'ar' => PilotArabicCopy.languageArabic,
-    'en' => PilotArabicCopy.languageEnglish,
+    'ar' => context.l10n.languageArabic,
+    'en' => context.l10n.languageEnglish,
     _ => value,
   };
 }

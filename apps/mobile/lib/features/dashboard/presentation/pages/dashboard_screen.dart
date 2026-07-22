@@ -3,6 +3,8 @@ import 'dart:async';
 import 'package:flutter/material.dart';
 import 'package:flutter_bloc/flutter_bloc.dart';
 
+import '../../../../core/localization/app_localizations_extension.dart';
+import '../../../../core/localization/localized_runtime_message.dart';
 import '../../../../core/theme/v3/waflo_v3_tokens.dart';
 import '../../../../shared/widgets/app_scaffold.dart';
 import '../../../../shared/widgets/v3/waflo_bottom_navigation.dart';
@@ -61,7 +63,7 @@ class _DashboardScreenState extends State<DashboardScreen> {
     );
 
     return Directionality(
-      textDirection: TextDirection.rtl,
+      textDirection: Directionality.of(context),
       child: widget.embeddedInWorkspaceShell
           ? ColoredBox(
               color: WafloV3Colors.background,
@@ -76,7 +78,11 @@ class _DashboardScreenState extends State<DashboardScreen> {
                 children: [dashboard],
               ),
             )
-          : AppScaffold(title: 'الرئيسية', scrollable: true, child: dashboard),
+          : AppScaffold(
+              title: context.l10n.homeTitle,
+              scrollable: true,
+              child: dashboard,
+            ),
     );
   }
 }
@@ -104,8 +110,12 @@ class _DashboardStateView extends StatelessWidget {
     if (state.status == DashboardStatus.failure) {
       return WafloInlineError(
         key: const ValueKey('dashboard-v3-load-error'),
-        title: 'تعذّر تحميل الرئيسية',
-        message: state.errorMessage ?? 'حاول مرة ثانية بعد قليل.',
+        title: context.l10n.dashboardLoadFailedTitle,
+        message: localizedRuntimeMessage(
+          context.l10n,
+          state.errorMessage,
+          fallback: context.l10n.authTemporaryErrorBody,
+        ),
         onRetry: onRetry,
       );
     }
@@ -114,10 +124,12 @@ class _DashboardStateView extends StatelessWidget {
     if (summary == null) {
       return WafloInlineError(
         key: const ValueKey('dashboard-v3-summary-error'),
-        title: 'تعذّر تحميل تفاصيل المطعم',
-        message:
-            state.summaryErrorMessage ??
-            'لا نعرض أرقاماً تقديرية. أعد المحاولة لعرض البيانات الحقيقية.',
+        title: context.l10n.dashboardDetailsFailedTitle,
+        message: localizedRuntimeMessage(
+          context.l10n,
+          state.summaryErrorMessage,
+          fallback: context.l10n.dashboardHonestDataBody,
+        ),
         onRetry: onRetry,
       );
     }
@@ -128,8 +140,11 @@ class _DashboardStateView extends StatelessWidget {
       children: [
         if (state.summaryErrorMessage != null) ...[
           WafloInlineError(
-            title: 'تعذّر تحديث بعض التفاصيل',
-            message: state.summaryErrorMessage!,
+            title: context.l10n.dashboardPartialFailureTitle,
+            message: localizedRuntimeMessage(
+              context.l10n,
+              state.summaryErrorMessage,
+            ),
             onRetry: onRetry,
           ),
           const SizedBox(height: WafloV3Spacing.space16),
@@ -141,25 +156,25 @@ class _DashboardStateView extends StatelessWidget {
           onOpenPublicMenu: onOpenPublicMenu,
         ),
         const SizedBox(height: WafloV3Spacing.space24),
-        const WafloSectionHeader(title: 'إجراءات سريعة'),
+        WafloSectionHeader(title: context.l10n.quickActions),
         const SizedBox(height: WafloV3Spacing.space12),
         _QuickActions(
           state: state,
           onDestinationSelected: onDestinationSelected,
         ),
         const SizedBox(height: WafloV3Spacing.space24),
-        const WafloSectionHeader(title: 'لمحة سريعة'),
+        WafloSectionHeader(title: context.l10n.atAGlance),
         const SizedBox(height: WafloV3Spacing.space12),
         _MetricsGrid(state: state),
         const SizedBox(height: WafloV3Spacing.space24),
-        const WafloSectionHeader(title: 'النشاط الأخير'),
+        WafloSectionHeader(title: context.l10n.recentActivity),
         const SizedBox(height: WafloV3Spacing.space12),
-        const _Surface(
+        _Surface(
           child: WafloEmptyState(
             key: ValueKey('dashboard-v3-activity-unavailable'),
             icon: Icons.inbox_outlined,
-            title: 'النشاط الأخير غير متاح حالياً',
-            description: 'سنُظهر النشاط هنا عندما تتوفر بيانات موثوقة للمطعم.',
+            title: context.l10n.recentActivityUnavailable,
+            description: context.l10n.recentActivityHelp,
           ),
         ),
         const SizedBox(height: WafloV3Spacing.space24),
@@ -201,19 +216,19 @@ class _ProgressHero extends StatelessWidget {
     final canManageMenu = _canManageMenu(state);
     final canOpenMenu = publicMenuReady && onOpenPublicMenu != null;
     final title = !hasCategories
-        ? 'ابدأ بأول قسم في منيوك'
+        ? context.l10n.heroStartCategory
         : !hasProducts
-        ? 'خلّ منيوك جاهز للزبائن'
+        ? context.l10n.heroAddProducts
         : publicMenuReady
-        ? 'منيوك جاهز للمشاركة'
-        : 'راجع منيوك قبل مشاركته';
+        ? context.l10n.heroMenuReady
+        : context.l10n.heroReviewMenu;
     final description = !hasCategories
-        ? 'رتّب المنيو بإضافة قسم حقيقي، وبعدها أضف منتجاتك.'
+        ? context.l10n.heroStartCategoryBody
         : !hasProducts
-        ? 'أضف أول منتجاتك حتى تقدر تعرض المنيو وتشاركه مع الزبائن.'
+        ? context.l10n.heroAddProductsBody
         : publicMenuReady
-        ? 'المنتجات والمنيو العام جاهزان. افتح المنيو وراجعه قبل المشاركة.'
-        : 'بيانات المنتجات موجودة، لكن المنيو العام غير جاهز للفتح بعد.';
+        ? context.l10n.heroMenuReadyBody
+        : context.l10n.heroReviewMenuBody;
 
     return _Surface(
       key: const ValueKey('dashboard-v3-progress-hero'),
@@ -224,7 +239,7 @@ class _ProgressHero extends StatelessWidget {
           Align(
             alignment: AlignmentDirectional.centerStart,
             child: WafloStatusBadge(
-              label: '$completedSteps من 4 خطوات جاهزة',
+              label: context.l10n.setupProgress(completedSteps, 4),
               status: completedSteps == 4
                   ? WafloStatusKind.active
                   : WafloStatusKind.warning,
@@ -253,24 +268,26 @@ class _ProgressHero extends StatelessWidget {
           const SizedBox(height: WafloV3Spacing.space20),
           WafloPrimaryButton(
             key: const ValueKey('dashboard-v3-primary-menu-action'),
-            label: hasCategories ? 'إضافة منتج' : 'إدارة الأقسام',
+            label: hasCategories
+                ? context.l10n.addProduct
+                : context.l10n.manageCategories,
             onPressed: canManageMenu ? onSelectMenu : null,
           ),
           if (!canManageMenu) ...[
             const SizedBox(height: WafloV3Spacing.space8),
-            const _HelperText(text: 'صلاحيتك الحالية لا تسمح بتعديل المنيو.'),
+            _HelperText(text: context.l10n.menuPermissionDenied),
           ],
           const SizedBox(height: WafloV3Spacing.space8),
           WafloSecondaryButton(
             key: const ValueKey('dashboard-v3-open-menu-action'),
-            label: 'فتح المنيو',
+            label: context.l10n.openMenu,
             onPressed: canOpenMenu ? onOpenPublicMenu : null,
           ),
           if (!canOpenMenu) ...[
             const SizedBox(height: WafloV3Spacing.space8),
-            const _HelperText(
+            _HelperText(
               key: ValueKey('dashboard-v3-open-menu-helper'),
-              text: 'يتوفر فتح المنيو بعد إضافة منتج وتجهيز الرابط العام.',
+              text: context.l10n.publicMenuNotReady,
             ),
           ],
         ],
@@ -287,7 +304,7 @@ class _ProgressSteps extends StatelessWidget {
   @override
   Widget build(BuildContext context) {
     return Semantics(
-      label: '$completedSteps من 4 خطوات جاهزة',
+      label: context.l10n.setupProgress(completedSteps, 4),
       excludeSemantics: true,
       child: Row(
         children: List.generate(4, (index) {
@@ -330,38 +347,42 @@ class _QuickActions extends StatelessWidget {
     final actions = [
       _QuickActionData(
         key: const ValueKey('dashboard-v3-loyalty-action'),
-        label: 'إنشاء بطاقة ولاء',
+        label: context.l10n.createLoyaltyCard,
         icon: Icons.loyalty_outlined,
         enabled: _canAccessLoyalty(state),
-        helper: _canAccessLoyalty(state) ? null : 'غير متاح لصلاحيتك الحالية',
+        helper: _canAccessLoyalty(state)
+            ? null
+            : context.l10n.permissionUnavailable,
         onPressed: () =>
             onDestinationSelected(WafloWorkspaceDestination.loyalty),
       ),
       _QuickActionData(
         key: const ValueKey('dashboard-v3-categories-action'),
-        label: 'إدارة الأقسام',
+        label: context.l10n.manageCategories,
         icon: Icons.grid_view_rounded,
         enabled: _canManageMenu(state),
-        helper: _canManageMenu(state) ? null : 'تحتاج صلاحية إدارة المنيو',
+        helper: _canManageMenu(state)
+            ? null
+            : context.l10n.menuPermissionRequired,
         onPressed: () => onDestinationSelected(WafloWorkspaceDestination.menu),
       ),
       _QuickActionData(
         key: const ValueKey('dashboard-v3-scanner-action'),
-        label: 'مسح بطاقة',
+        label: context.l10n.scanCard,
         icon: Icons.qr_code_scanner_rounded,
         enabled: _canScanCustomerWallet(state),
         helper: _canScanCustomerWallet(state)
             ? null
-            : 'المسح غير متاح لصلاحيتك الحالية',
+            : context.l10n.scanPermissionDenied,
         onPressed: () =>
             onDestinationSelected(WafloWorkspaceDestination.scanner),
       ),
-      const _QuickActionData(
+      _QuickActionData(
         key: ValueKey('dashboard-v3-notification-action'),
-        label: 'إرسال إشعار',
+        label: context.l10n.sendNotification,
         icon: Icons.send_outlined,
         enabled: false,
-        helper: 'يتفعّل عند توفر إشعارات العملاء',
+        helper: context.l10n.customerNotificationsLater,
       ),
     ];
 
@@ -506,27 +527,27 @@ class _MetricsGrid extends StatelessWidget {
     final metrics = [
       _MetricData(
         key: const ValueKey('dashboard-v3-products-metric'),
-        label: 'المنتجات',
+        label: context.l10n.products,
         value: '${counts.availableItems}',
         icon: Icons.shopping_bag_outlined,
       ),
       _MetricData(
         key: const ValueKey('dashboard-v3-categories-metric'),
-        label: 'الأقسام',
+        label: context.l10n.categories,
         value: '${counts.activeCategories}',
         icon: Icons.receipt_long_outlined,
       ),
-      const _MetricData(
+      _MetricData(
         key: ValueKey('dashboard-v3-loyalty-metric'),
-        label: 'بطاقات الولاء',
-        value: 'غير متاح',
+        label: context.l10n.loyaltyCards,
+        value: context.l10n.genericUnavailable,
         icon: Icons.credit_card_outlined,
         unavailable: true,
       ),
-      const _MetricData(
+      _MetricData(
         key: ValueKey('dashboard-v3-customers-metric'),
-        label: 'العملاء',
-        value: 'غير متاح',
+        label: context.l10n.customers,
+        value: context.l10n.genericUnavailable,
         icon: Icons.groups_outlined,
         unavailable: true,
       ),
@@ -656,14 +677,14 @@ class _LoyaltyPanel extends StatelessWidget {
                   crossAxisAlignment: CrossAxisAlignment.start,
                   children: [
                     Text(
-                      'رجّع زبائنك ببرنامج ولاء',
+                      context.l10n.loyaltyPromotionTitle,
                       style: Theme.of(context).textTheme.titleLarge?.copyWith(
                         fontWeight: FontWeight.w800,
                       ),
                     ),
                     const SizedBox(height: WafloV3Spacing.space8),
                     Text(
-                      'افتح قسم الولاء لإعداد البرنامج أو متابعة بطاقات الزبائن.',
+                      context.l10n.loyaltyPromotionBody,
                       style: Theme.of(context).textTheme.bodyMedium?.copyWith(
                         color: WafloV3Colors.primaryText.withValues(
                           alpha: 0.72,
@@ -679,14 +700,12 @@ class _LoyaltyPanel extends StatelessWidget {
           const SizedBox(height: WafloV3Spacing.space16),
           WafloSecondaryButton(
             key: const ValueKey('dashboard-v3-open-loyalty-action'),
-            label: 'فتح الولاء',
+            label: context.l10n.openLoyalty,
             onPressed: enabled ? onPressed : null,
           ),
           if (!enabled) ...[
             const SizedBox(height: WafloV3Spacing.space8),
-            const _HelperText(
-              text: 'صلاحيتك الحالية لا تسمح بإدارة برنامج الولاء.',
-            ),
+            _HelperText(text: context.l10n.loyaltyPermissionDenied),
           ],
         ],
       ),

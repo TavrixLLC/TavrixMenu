@@ -101,7 +101,7 @@ void main() {
     final meCallsBeforeSubmit = meRepository.getMeCalls;
     expect(find.text(PilotArabicCopy.currency), findsOneWidget);
     expect(find.text(PilotArabicCopy.currencyIqd), findsOneWidget);
-    expect(find.text(PilotArabicCopy.language), findsOneWidget);
+    expect(find.text('لغة منيو الزبائن'), findsOneWidget);
     expect(find.text(PilotArabicCopy.languageArabic), findsOneWidget);
 
     await tester.tap(find.text(PilotArabicCopy.businessCreateAction).last);

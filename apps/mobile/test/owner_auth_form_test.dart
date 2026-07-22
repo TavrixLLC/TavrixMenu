@@ -62,7 +62,7 @@ void main() {
     expect(find.text(PilotArabicCopy.contactLabel), findsOneWidget);
     expect(find.text(PilotArabicCopy.continueLabel), findsOneWidget);
 
-    await tester.tap(find.byTooltip('Back'));
+    await tester.tap(find.byIcon(Icons.arrow_back));
     await tester.pumpAndSettle();
     await tester.tap(find.text(PilotArabicCopy.createBusinessWorkspace));
     await tester.pumpAndSettle();
@@ -244,7 +244,7 @@ void main() {
         find.text(PilotArabicCopy.needsMoreVerificationBody),
         findsOneWidget,
       );
-      expect(find.text('تحقق من رقم الهاتف'), findsOneWidget);
+      expect(find.text('تحقق من رقم الهاتف'), findsNothing);
       expect(meRepository.getMeCalls, 0);
       expect(find.textContaining('missing_requirements'), findsNothing);
 

@@ -1,5 +1,6 @@
 import 'package:flutter/material.dart';
 
+import '../../../core/localization/app_localizations_extension.dart';
 import '../../../core/theme/v3/waflo_v3_theme.dart';
 import '../../../core/theme/v3/waflo_v3_tokens.dart';
 
@@ -10,14 +11,14 @@ class WafloSecondaryButton extends StatefulWidget {
     super.key,
     this.isLoading = false,
     this.fullWidth = true,
-    this.loadingSemanticLabel = 'جارٍ التنفيذ',
+    this.loadingSemanticLabel,
   });
 
   final String label;
   final VoidCallback? onPressed;
   final bool isLoading;
   final bool fullWidth;
-  final String loadingSemanticLabel;
+  final String? loadingSemanticLabel;
 
   @override
   State<WafloSecondaryButton> createState() => _WafloSecondaryButtonState();
@@ -66,7 +67,9 @@ class _WafloSecondaryButtonState extends State<WafloSecondaryButton> {
       button: true,
       enabled: _isEnabled,
       label: widget.label,
-      value: widget.isLoading ? widget.loadingSemanticLabel : null,
+      value: widget.isLoading
+          ? widget.loadingSemanticLabel ?? context.l10n.genericLoading
+          : null,
       liveRegion: widget.isLoading,
       excludeSemantics: true,
       child: OutlinedButton(

@@ -1,5 +1,6 @@
 import 'package:flutter/material.dart';
 
+import '../../../core/localization/app_localizations_extension.dart';
 import '../../../core/theme/v3/waflo_v3_tokens.dart';
 
 enum WafloWorkspaceDestination {
@@ -38,6 +39,14 @@ enum WafloWorkspaceDestination {
   final String label;
   final IconData icon;
   final IconData selectedIcon;
+
+  String localizedLabel(BuildContext context) => switch (this) {
+    WafloWorkspaceDestination.home => context.l10n.navHome,
+    WafloWorkspaceDestination.menu => context.l10n.navMenu,
+    WafloWorkspaceDestination.scanner => context.l10n.navScan,
+    WafloWorkspaceDestination.loyalty => context.l10n.navLoyalty,
+    WafloWorkspaceDestination.settings => context.l10n.navSettings,
+  };
 }
 
 /// Presentation-only navigation for the five canonical workspace destinations.
@@ -59,7 +68,7 @@ class WafloBottomNavigation extends StatelessWidget {
   @override
   Widget build(BuildContext context) {
     return Directionality(
-      textDirection: TextDirection.rtl,
+      textDirection: Directionality.of(context),
       child: Material(
         color: WafloV3Colors.surface,
         child: DecoratedBox(
@@ -126,6 +135,7 @@ class _DestinationItem extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
+    final label = destination.localizedLabel(context);
     final color = isSelected
         ? WafloV3Colors.primary
         : isEnabled
@@ -138,7 +148,7 @@ class _DestinationItem extends StatelessWidget {
       button: true,
       selected: isSelected,
       enabled: isEnabled,
-      label: destination.label,
+      label: label,
       excludeSemantics: true,
       child: InkWell(
         onTap: onTap,
@@ -183,7 +193,7 @@ class _DestinationItem extends StatelessWidget {
                 ),
                 const SizedBox(height: WafloV3Spacing.space4),
                 Text(
-                  destination.label,
+                  label,
                   key: ValueKey(
                     'waflo-bottom-navigation-label-${destination.name}',
                   ),

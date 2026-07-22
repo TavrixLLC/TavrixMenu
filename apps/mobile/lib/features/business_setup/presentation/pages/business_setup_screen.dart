@@ -3,7 +3,8 @@ import 'package:flutter_bloc/flutter_bloc.dart';
 
 import '../../../../app/router/route_names.dart';
 import '../../../../core/constants/app_spacing.dart';
-import '../../../../core/copy/pilot_arabic_copy.dart';
+import '../../../../core/localization/app_localizations_extension.dart';
+import '../../../../core/localization/localized_runtime_message.dart';
 import '../../../../shared/widgets/app_button.dart';
 import '../../../../shared/widgets/app_card.dart';
 import '../../../../shared/widgets/app_scaffold.dart';
@@ -47,7 +48,7 @@ class _BusinessSetupScreenState extends State<BusinessSetupScreen> {
             context.read<DashboardCubit>().primeBusiness(business);
           }
           ScaffoldMessenger.of(context).showSnackBar(
-            const SnackBar(content: Text(PilotArabicCopy.businessSetupSaved)),
+            SnackBar(content: Text(context.l10n.businessSetupSaved)),
           );
           Navigator.of(context).pushReplacementNamed(AppRouteNames.dashboard);
         }
@@ -56,46 +57,46 @@ class _BusinessSetupScreenState extends State<BusinessSetupScreen> {
         final isLoading = state.status == BusinessSetupStatus.loading;
 
         return Directionality(
-          textDirection: TextDirection.rtl,
+          textDirection: Directionality.of(context),
           child: AppScaffold(
-            title: PilotArabicCopy.businessSetupTitle,
+            title: context.l10n.businessSetupTitle,
             scrollable: true,
             child: Column(
               crossAxisAlignment: CrossAxisAlignment.start,
               children: [
-                const SectionHeader(
-                  title: PilotArabicCopy.businessSetupTitle,
-                  subtitle: PilotArabicCopy.businessSetupSubtitle,
+                SectionHeader(
+                  title: context.l10n.businessSetupTitle,
+                  subtitle: context.l10n.businessSetupSubtitle,
                 ),
-                const SizedBox(height: AppSpacing.lg),
+                SizedBox(height: AppSpacing.lg),
                 _SetupSectionCard(
                   icon: Icons.storefront_outlined,
-                  title: PilotArabicCopy.restaurantInfo,
-                  subtitle: PilotArabicCopy.restaurantInfoSubtitle,
+                  title: context.l10n.restaurantInfo,
+                  subtitle: context.l10n.restaurantInfoSubtitle,
                   children: [
                     AppTextField(
-                      label: PilotArabicCopy.restaurantName,
+                      label: context.l10n.restaurantName,
                       controller: _nameController,
-                      hint: PilotArabicCopy.restaurantNameHint,
+                      hint: context.l10n.restaurantNameHint,
                     ),
-                    const SizedBox(height: AppSpacing.md),
+                    SizedBox(height: AppSpacing.md),
                     DropdownButtonFormField<String>(
                       initialValue: _type,
-                      decoration: const InputDecoration(
-                        labelText: PilotArabicCopy.restaurantType,
+                      decoration: InputDecoration(
+                        labelText: context.l10n.restaurantType,
                       ),
-                      items: const [
+                      items: [
                         DropdownMenuItem(
                           value: 'cafe',
-                          child: Text(PilotArabicCopy.restaurantTypeCafe),
+                          child: Text(context.l10n.restaurantTypeCafe),
                         ),
                         DropdownMenuItem(
                           value: 'restaurant',
-                          child: Text(PilotArabicCopy.restaurantTypeRestaurant),
+                          child: Text(context.l10n.restaurantTypeRestaurant),
                         ),
                         DropdownMenuItem(
                           value: 'shop',
-                          child: Text(PilotArabicCopy.restaurantTypeShop),
+                          child: Text(context.l10n.restaurantTypeShop),
                         ),
                       ],
                       onChanged: isLoading
@@ -106,23 +107,21 @@ class _BusinessSetupScreenState extends State<BusinessSetupScreen> {
                     ),
                   ],
                 ),
-                const SizedBox(height: AppSpacing.md),
-                const _SetupSectionCard(
+                SizedBox(height: AppSpacing.md),
+                _SetupSectionCard(
                   icon: Icons.image_outlined,
-                  title: PilotArabicCopy.identityAndPhotos,
-                  subtitle: PilotArabicCopy.managedPhotosBody,
+                  title: context.l10n.identityAndPhotos,
+                  subtitle: context.l10n.managedPhotosBody,
                 ),
-                const SizedBox(height: AppSpacing.md),
+                SizedBox(height: AppSpacing.md),
                 _SetupSectionCard(
                   icon: Icons.tune_outlined,
-                  title: PilotArabicCopy.locationCurrencyLanguage,
-                  subtitle: PilotArabicCopy.locationCurrencyLanguageSubtitle,
+                  title: context.l10n.locationCurrencyLanguage,
+                  subtitle: context.l10n.locationCurrencyLanguageSubtitle,
                   children: [
                     DropdownButtonFormField<String>(
                       initialValue: _city,
-                      decoration: const InputDecoration(
-                        labelText: PilotArabicCopy.city,
-                      ),
+                      decoration: InputDecoration(labelText: context.l10n.city),
                       items: [
                         for (final city in _cityOptions)
                           DropdownMenuItem(value: city, child: Text(city)),
@@ -133,20 +132,20 @@ class _BusinessSetupScreenState extends State<BusinessSetupScreen> {
                               _city = value ?? _cityOptions.first;
                             }),
                     ),
-                    const SizedBox(height: AppSpacing.md),
+                    SizedBox(height: AppSpacing.md),
                     DropdownButtonFormField<String>(
                       initialValue: _currency,
-                      decoration: const InputDecoration(
-                        labelText: PilotArabicCopy.currency,
+                      decoration: InputDecoration(
+                        labelText: context.l10n.currency,
                       ),
-                      items: const [
+                      items: [
                         DropdownMenuItem(
                           value: 'IQD',
-                          child: Text(PilotArabicCopy.currencyIqd),
+                          child: Text(context.l10n.currencyIqd),
                         ),
                         DropdownMenuItem(
                           value: 'USD',
-                          child: Text(PilotArabicCopy.currencyUsd),
+                          child: Text(context.l10n.currencyUsd),
                         ),
                       ],
                       onChanged: isLoading
@@ -155,20 +154,20 @@ class _BusinessSetupScreenState extends State<BusinessSetupScreen> {
                               _currency = value ?? 'IQD';
                             }),
                     ),
-                    const SizedBox(height: AppSpacing.md),
+                    SizedBox(height: AppSpacing.md),
                     DropdownButtonFormField<String>(
                       initialValue: _language,
-                      decoration: const InputDecoration(
-                        labelText: PilotArabicCopy.language,
+                      decoration: InputDecoration(
+                        labelText: context.l10n.menuLanguage,
                       ),
-                      items: const [
+                      items: [
                         DropdownMenuItem(
                           value: 'ar',
-                          child: Text(PilotArabicCopy.languageArabic),
+                          child: Text(context.l10n.languageArabic),
                         ),
                         DropdownMenuItem(
                           value: 'en',
-                          child: Text(PilotArabicCopy.languageEnglish),
+                          child: Text(context.l10n.languageEnglish),
                         ),
                       ],
                       onChanged: isLoading
@@ -179,22 +178,27 @@ class _BusinessSetupScreenState extends State<BusinessSetupScreen> {
                     ),
                   ],
                 ),
-                const SizedBox(height: AppSpacing.md),
-                const _SetupSectionCard(
+                SizedBox(height: AppSpacing.md),
+                _SetupSectionCard(
                   icon: Icons.location_on_outlined,
-                  title: PilotArabicCopy.contactAndAddress,
-                  subtitle: PilotArabicCopy.contactAndAddressBody,
+                  title: context.l10n.contactAndAddress,
+                  subtitle: context.l10n.contactAndAddressBody,
                 ),
                 if (state.status == BusinessSetupStatus.failure &&
                     state.errorMessage != null) ...[
-                  const SizedBox(height: AppSpacing.md),
-                  ErrorView(message: state.errorMessage!),
+                  SizedBox(height: AppSpacing.md),
+                  ErrorView(
+                    message: localizedRuntimeMessage(
+                      context.l10n,
+                      state.errorMessage,
+                    ),
+                  ),
                 ],
-                const SizedBox(height: AppSpacing.lg),
+                SizedBox(height: AppSpacing.lg),
                 AppButton(
                   label: isLoading
-                      ? PilotArabicCopy.businessCreateLoading
-                      : PilotArabicCopy.businessCreateAction,
+                      ? context.l10n.businessCreateLoading
+                      : context.l10n.businessCreateAction,
                   icon: Icons.storefront,
                   onPressed: isLoading
                       ? null
