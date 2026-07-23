@@ -1,7 +1,8 @@
 # Waflo V2 Loyalty Domain
 
-Status: `PLANNED` domain proposal. This document proposes entities and
-invariants; **Phase 0 does not change Prisma and does not run a migration**.
+Status: `PLANNED` domain proposal aligned to the approved Blueprint. This
+document proposes entities and invariants; **Phase 1 does not change Prisma,
+run a migration, or provide loyalty mutations**.
 
 ## Why the current model cannot be extended in place
 
@@ -82,16 +83,19 @@ not turn `CustomerAccount` into a shared mutable tenant record.
 Proposed fields:
 
 - `id`, `businessId`, `name`, `description`;
-- `kind: STAMP_VISIT | FIXED_POINTS | SPEND_POINTS | PRODUCT_SERVICE | HYBRID`;
-- `status: DRAFT | ACTIVE | PAUSED | ARCHIVED`;
+- `kind/configuration` resolves Blueprint earning rules rather than making one
+  stamp-shaped program type the aggregate authority;
+- lifecycle: `DRAFT | VALIDATED | PUBLISHED | PAUSED | ARCHIVED`;
 - `version`, `startsAt`, `endsAt`, timestamps;
 - wallet/display reference to a base design, not embedded theme fields;
 - unique `[businessId, id]` for composite tenant relations.
 
-V1 UI exposes the first four kinds. `HYBRID` is reserved for future authored
-combinations. Multiple programs per business are supported; whether multiple
-programs may be simultaneously active is an explicit policy decision, not a
-schema limitation.
+V1 supports one `PUBLISHED` program per Business, with multiple Draft and
+Archived programs. “Active” is derived from `PUBLISHED` plus temporal and
+operational conditions; it is not a parallel lifecycle state. The published
+program may contain several EarningRules and RewardDefinitions, including a
+bounded Hybrid configuration. Presentation/API shapes remain list-based so
+future multi-active support is not blocked.
 
 Activated policy is versioned. Material earning changes create a new version or
 an audited effective-dated rule set; they do not reinterpret historical ledger
@@ -104,7 +108,8 @@ entries.
 Proposed common fields:
 
 - `id`, `businessId`, `programId`, `programVersion`;
-- `kind: VISIT | FIXED_POINTS | SPEND | PRODUCT_SERVICE | REFERRAL | OCCASION | MEMBERSHIP`;
+- V1 `kind: VISIT_STAMP | SPEND_BASED | ITEM_BASED | CATEGORY_BASED |
+  COMPLETED_SERVICE | HYBRID | WELCOME_EVENT`;
 - `unit: STAMP | VISIT | POINT | CREDIT`;
 - `status`, `priority`, effective timestamps;
 - `fixedUnits` for visit/fixed-point rules;
@@ -115,7 +120,12 @@ Proposed common fields:
 
 For V1, typed columns and validated child records are preferred over an opaque
 `configJson`. A JSON extension field may carry forward-compatible metadata, but
-it cannot bypass validation.
+it cannot bypass validation. Welcome is V1 only where no Scheduler is required;
+Birthday, Referral, slow-hour, and tier automation remain V1.5 or later.
+
+Manual Adjustment is not an EarningRule kind. It is a Secure Operations command
+with explicit permission, Reason, AuditLog, and policy-based approval. It
+creates audited ledger facts only after later backend implementation.
 
 `ProductServiceTarget` links a rule to a catalog reference:
 
@@ -130,12 +140,21 @@ This allows Growth Menu to supply references without owning the loyalty model.
 
 `RewardDefinition` answers: what can the customer receive?
 
-V1 types:
+Blueprint Planned V1 types:
 
-- `FREE_PRODUCT_SERVICE`;
-- `PERCENT_DISCOUNT`;
-- `FIXED_DISCOUNT`;
-- `CUSTOM`.
+- `FREE_ITEM`;
+- `FREE_SERVICE_ADD_ON`;
+- `FIXED_AMOUNT_DISCOUNT`;
+- `PERCENTAGE_DISCOUNT`;
+- `ITEM_CATEGORY_DISCOUNT`;
+- `BUY_X_GET_Y`;
+- `BUNDLE_COMBO`;
+- `MULTI_MILESTONE`;
+- `VOUCHER`;
+- `WELCOME_REWARD`.
+
+These are Product Scope contracts. Phase 1 does not implement eligibility,
+granting, redemption, inventory, discount calculation, or persistence.
 
 Proposed fields:
 

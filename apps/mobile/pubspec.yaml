@@ -36,3 +36,14 @@ dev_dependencies:
 flutter:
   generate: true
   uses-material-design: true
+  assets:
+    - assets/waflo_v2/brand/waflo-mark-primary-256.png
+    - assets/waflo_v2/fonts/OFL-Manrope.txt
+    - assets/waflo_v2/fonts/OFL-NotoSansArabic.txt
+  fonts:
+    - family: Manrope
+      fonts:
+        - asset: assets/waflo_v2/fonts/Manrope-VariableFont_wght.ttf
+    - family: Noto Sans Arabic
+      fonts:
+        - asset: assets/waflo_v2/fonts/NotoSansArabic-VariableFont_wdth-wght.ttf

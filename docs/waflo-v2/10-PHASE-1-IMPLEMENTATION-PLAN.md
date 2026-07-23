@@ -1,6 +1,6 @@
 # Phase 1 Implementation Plan
 
-Status: `Planned — not started`. This plan requires owner approval before code changes. It introduces no Prisma migration, production API, scheduler, deployment, customer notification, or live Wallet action.
+Status: `Implemented in the working tree — human visual/linguistic gate open; not committed or pushed`. The owner approved the plan and resolved its six open decisions on 2026-07-23. The implementation introduces no Prisma migration, production API, scheduler, deployment, customer notification, or live Wallet action.
 
 ## 1. Phase objective
 

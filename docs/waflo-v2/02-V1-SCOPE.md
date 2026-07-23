@@ -25,24 +25,39 @@ in customer history, reporting, and audit.
 - Customer accounts scoped to the business, with verified identity/recovery
   policy.
 
-### Program types
+### Earning scope
 
-1. `STAMP_VISIT`: one or more configured units per eligible visit.
-2. `FIXED_POINTS`: fixed points for a verified operation.
-3. `SPEND_POINTS`: points derived from an integer-safe IQD amount and a defined
-   rounding rule.
-4. `PRODUCT_SERVICE`: value for a configured product or service reference.
+The Blueprint is the production authority for the V1 earning catalog:
 
-V1 supports one primary earning rule per simple program plus explicit bounded
-conditions. The schema permits multiple rules/hybrid programs later; a complex
-rule-composer UI is out of V1.
+1. `VISIT_STAMP` for an eligible visit.
+2. `SPEND_BASED` using integer-safe IQD amounts and `floor` per confirmed
+   transaction.
+3. `ITEM_BASED` using an authoritative item identifier.
+4. `CATEGORY_BASED` using an authoritative category identifier.
+5. `COMPLETED_SERVICE` after verified completion.
+6. `HYBRID` composition of bounded rules.
+7. `WELCOME_EVENT` after enrollment/verification when no Scheduler is needed.
+
+`MANUAL_ADJUSTMENT` is not an EarningRule. It is a protected administrative
+operation requiring permission, Reason, AuditLog, and policy-based approval;
+its operational implementation is deferred to Secure Operations. Phase 1
+defines presentation contracts only and provides no earning mutation.
 
 ### Reward types
 
-- Free product or service.
-- Percentage discount.
-- Fixed-amount discount in the business currency.
-- Merchant-written custom reward.
+The full Blueprint Planned V1 catalog is Product Scope, not Phase 1 backend
+functionality:
+
+- Free item.
+- Free service or add-on.
+- Fixed-amount discount.
+- Percentage discount with a required maximum.
+- Item/category discount.
+- Buy X get Y.
+- Bundle/combo.
+- Multi-milestone reward.
+- Single-use voucher/entitlement.
+- Welcome reward.
 
 Reward configuration includes fulfillment instructions, eligibility threshold,
 expiry policy if enabled, and staff-visible terms. Discount calculation is
@@ -74,7 +89,7 @@ Waflo records the authorized redemption and does not fake a checkout discount.
 ### Card Customization Studio — V1 baseline
 
 - Logo and cover/hero media.
-- Primary, secondary, background, and text colors.
+- Five independent colors: primary, secondary, accent, background, and text.
 - Stamp shape/icon for stamp programs.
 - Reward image/icon.
 - Customer join page presentation.
@@ -85,6 +100,9 @@ Waflo records the authorized redemption and does not fake a checkout discount.
 
 V1 does not promise pixel-identical provider rendering. Previews declare their
 provider constraints and live-device verification remains a release gate.
+The Phase 1 Studio is preview-only: Waflo rendering is deterministic, while
+Apple/Google surfaces are labeled `Platform approximation`. Phase 1 contains no
+upload, save, publish, issuance, QR, or loyalty mutation path.
 
 ### Reporting and audit
 
@@ -119,9 +137,9 @@ uses the same audited publish/fallback path and does not weaken launch gates.
 - Cashback or store credit as a monetary liability.
 - Paid memberships/subscriptions for customers.
 - Referral rewards.
-- Automated welcome/birthday earning campaigns.
+- Birthday/anniversary scheduling and automated occasion campaigns.
 - Full tiers (`Silver`, `Gold`, `VIP`) and tier migration UI.
-- Arbitrary hybrid rule builder.
+- Unbounded arbitrary rule scripting outside the validated Hybrid builder.
 - POS/e-commerce/payment processing integration.
 - Advanced CRM segmentation, campaigns, notifications, and automation.
 - Dark mode unless required by a platform/accessibility gate.
@@ -138,7 +156,7 @@ uses the same audited publish/fallback path and does not weaken launch gates.
 2. Create or authoritatively select business.
 3. Add branch.
 4. Choose loyalty goal.
-5. Choose one of four V1 program types.
+5. Choose a Blueprint V1 earning configuration, including bounded Hybrid.
 6. Configure earning rule and evidence requirements.
 7. Configure one or more supported rewards.
 8. Customize the base card/join/poster design.
@@ -168,7 +186,8 @@ uses the same audited publish/fallback path and does not weaken launch gates.
 
 ### Loyalty correctness
 
-- All four program types pass positive, boundary, and negative tests.
+- Every Blueprint V1 earning kind passes positive, boundary, and negative
+  tests before production enablement.
 - Earning and reward definitions are separate persisted concepts.
 - Ledger entries are immutable; corrections use reversal/adjustment entries.
 - The same idempotency key cannot apply value twice.

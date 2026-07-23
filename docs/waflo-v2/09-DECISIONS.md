@@ -142,11 +142,130 @@ Each record states the decision, repository/product evidence, consequences, and 
 
 **Consequences:** Semantic tokens must allow a later dark palette, but no partial/unverified dark UI ships.
 
-## Open decisions requiring owner approval
+## D-018 — Customer identity and recovery are Business-scoped
 
-1. **Customer identity:** approve Business-scoped CustomerAccount and choose phone/email verification, recovery, transfer, and optional platform-identity policy.
-2. **Program cardinality:** confirm whether V1 allows multiple simultaneously active programs per Business or enforces one default active program plus drafts.
-3. **Branch permissions:** approve whether Staff is assigned to one branch, multiple branches, or all Business branches, and who may override the active branch.
-4. **Points precision:** confirm points/spend rounding, currency source, refunds/reversals, and whether points may expire in V1.
-5. **Design release split:** approve basic Card Studio in V1 and advanced Seasonal Theme Engine in V1.5 as recorded in D-013/D-014.
-6. **Phase 1 boundary:** approve an isolated new Flutter V2 namespace and contract/design-system work only, with no Prisma migration, scheduler, or production publishing.
+**Decision:** `Accepted for Phase 1 contracts.` A future `CustomerAccount` belongs to exactly one Business. Verified phone/email uniqueness is enforced within that Business, never globally. OTP is the verification and normal recovery basis. A normal phone change verifies both the old and new numbers. If the old number is unavailable, only an Owner or explicitly authorized Manager may initiate a fully audited manual recovery.
+
+**Why:** Global identity uniqueness can leak tenant existence and incorrectly couple unrelated merchant/customer relationships. Contact similarity is not enough evidence for ownership or identity equivalence.
+
+**Consequences:** No cross-Business transfer or merge and no automatic merge by phone/email similarity. Any future recovery or deliberately approved merge records Actor, Reason, and Timestamp in `AuditLog`. Phase 1 defines assumptions only; it does not change Prisma or authentication.
+
+## D-019 — V1 has one published/active program per Business
+
+**Decision:** `Accepted for Phase 1 contracts.` A Business may have one Published/Active loyalty program and multiple Draft or Archived programs. The active program may own multiple EarningRules and RewardDefinitions, including a hybrid configuration.
+
+**Why:** One live program keeps Wallet, scanner, reporting, and customer communication understandable for V1 while hybrid rules avoid forcing the program back into a stamp-only shape.
+
+**Consequences:** Presentation contracts use collections and stable program identifiers so later multi-active support is additive. Phase 1 flags an invalid fixture portfolio but adds no persistence or backend enforcement.
+
+## D-020 — Branch visibility follows role assignments
+
+**Decision:** `Accepted for Phase 1 presentation contracts.` Owner sees every branch. Manager may be assigned one, several, or all branches. Staff may be assigned one or several specific branches and defaults to one. Only assigned branches and operations appear in Flutter.
+
+**Why:** Counter operations need explicit Branch context, but hiding UI is not authorization.
+
+**Consequences:** The future backend must independently authorize Business and Branch for every operation. Phase 1 performs deterministic presentation filtering only and never treats list position as selection.
+
+## D-021 — IQD, points, rounding, refunds, and expiry policy
+
+**Decision:** `Accepted for future backend implementation; contracts only in Phase 1.` Monetary values use integers in the currency's smallest unit; IQD has scale `1`. Points are integers. Spend-based earning floors each confirmed transaction. Refunds append linked reversing ledger entries rather than updating history. Partial refunds reverse the corresponding amount under the original rule. A refund may produce a negative computed balance and blocks new redemption until available balance is sufficient. Points do not expire in V1.
+
+**Why:** Integer arithmetic and append-only reversals are deterministic and auditable under retries, partial refunds, and concurrent scanner activity.
+
+**Consequences:** A future refund command requires idempotency key, Actor, Reason, original transaction linkage, and audit metadata. Optional expiry is deferred, policy-driven, and non-retroactive by default. Phase 1 contains no Ledger or refund mutation.
+
+## D-022 — Phase 1 uses an isolated Flutter namespace
+
+**Decision:** `Accepted and implemented pending human visual approval.` New foundations live under `apps/mobile/lib/waflo_v2/`. Existing Flutter generations, application bootstrap, W2A workspace/scanner isolation, and late-result protections remain unchanged.
+
+**Why:** The repository contains multiple UI generations. An additive namespace gives Waflo V2 a coherent foundation without destabilizing verified Legacy flows.
+
+**Consequences:** The Phase 1 review host is fixture-only and test-only. No Prisma schema, backend mutation, scheduler, Wallet issuance, upload, QR export, or production route is added.
+
+## D-023 — Official Brand System governs Phase 1 UI tokens
+
+**Decision:** `Accepted.` Use the eleven official Brand System primitives, five
+independent CardDesign colors (`primaryColor`, `secondaryColor`, `accentColor`,
+`backgroundColor`, `textColor`), radii `8/14/22/32/999`, the official elevation
+token, Manrope for Latin, Noto Sans Arabic for Arabic/Sorani, and the official
+primary Waflo mark.
+
+**Why:** The first Phase 1 review used partial palette values, platform font
+fallbacks, and a temporary “W” mark, so it was not eligible for visual approval.
+
+**Consequences:** Primitive, semantic, and component layers are separate.
+Accessible status foreground/container pairs are tested; Coral and Warning use
+Warm Ink where white fails. Font files and OFL licenses are bundled from the
+official Google Fonts repository with no runtime font download.
+
+## D-024 — Staff navigation has four operational destinations
+
+**Decision:** `Accepted.` Staff navigation is Scan, Rewards, My Activity, and
+Account. Manual customer search is a fallback inside Scan and is never a
+top-level destination.
+
+**Why:** Staff needs a focused counter workflow plus its own results/account,
+without Owner/Manager configuration or a broad customer browser.
+
+**Consequences:** Presentation capabilities control visibility, but the future
+backend must still authorize every Business, Branch, and operation.
+
+## D-025 — Blueprint governs V1 earning scope
+
+**Decision:** `Accepted.` V1 Product Scope includes Visit/Stamp, Spend-based,
+Item-based, Category-based, Completed Service, bounded Hybrid, and Welcome when
+no Scheduler is required.
+
+**Why:** These rules cover the approved business scenarios without making the
+domain stamp-only or pulling scheduled campaigns into V1.
+
+**Consequences:** Manual Adjustment is not an EarningRule. It is a protected
+Secure Operations command requiring explicit permission, Reason, AuditLog, and
+policy-based approval. Phase 1 exposes contracts only and no earning mutation.
+
+## D-026 — Blueprint Planned V1 reward catalog is Product Scope
+
+**Decision:** `Accepted.` V1 Product Scope includes Free Item, Free
+Service/Add-on, Fixed Amount Discount, Percentage Discount, Item/Category
+Discount, Buy X Get Y, Bundle/Combo, Multi-milestone, Voucher, and Welcome
+Reward.
+
+**Why:** These are the approved merchant outcomes and require distinct
+eligibility/fulfillment guardrails rather than one custom text field.
+
+**Consequences:** Phase 1 defines extensible presentation contracts only. It
+does not claim Reward Engine, entitlement, inventory, discount calculation, or
+redemption functionality.
+
+## D-027 — Active is derived from the official Program lifecycle
+
+**Decision:** `Accepted.` Program lifecycle is `DRAFT → VALIDATED → PUBLISHED →
+PAUSED → ARCHIVED`. Active is derived from `PUBLISHED` plus temporal and
+operational conditions, not stored as a parallel lifecycle state.
+
+**Why:** A separate Active state can contradict schedule, pause, and operational
+readiness and makes transition/audit logic ambiguous.
+
+**Consequences:** V1 allows one Published program per Business and multiple
+Draft/Archived programs. Contracts provide `isOperationallyActiveAt` without
+adding backend enforcement or schema work in Phase 1.
+
+## D-028 — Blueprint is production authority; Phase 1 Studio is preview-only
+
+**Decision:** `Accepted.` The approved Blueprint supersedes earlier production
+phase assumptions. Phase 1 Card Studio is an isolated preview foundation only.
+
+**Why:** A visually convincing fixture must not be mistaken for upload, save,
+publish, Wallet issuance, QR, Scheduler, or Loyalty functionality.
+
+**Consequences:** Waflo preview is labeled exact/deterministic. Apple and Google
+are structurally distinct and labeled `Platform approximation`; neither claims
+real-device verification. Production enablement follows the Blueprint roadmap
+and its human/security gates.
+
+## Phase 1 approval status
+
+The former open questions and Brand Alignment decisions were resolved by the
+owner on 2026-07-23 through D-018–D-028. `HUMAN_VISUAL_PASS` is still withheld;
+the remaining gate is the owner's visual/linguistic acceptance after reviewing
+the regenerated evidence. Codex cannot issue that pass.
